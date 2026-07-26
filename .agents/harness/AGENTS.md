@@ -61,6 +61,7 @@ TheManTest — UE 5.7.4 单人游戏项目。C++ 负责数据结构、GAS 配置
 | `.agents/harness/arch/12-anim-blueprint.md` | 搭建/修改 ABP 层结构、Slot、AimIK 节点图、武器动画扩展时（06 的详细版） |
 | `.agents/harness/arch/13-game-flow.md` | 修改回合/倒计时/阶段升级、死亡处理、关卡切换、选角色流程、GameInstance 跨关卡持久时 |
 | `.agents/harness/arch/cross-system-guide.md` | 跨系统修改时，参考文件读取顺序 |
+| `.agents/harness/guides/unreal-mcp-workflow.md` | 使用 Unreal MCP 检查、导入、移动、重命名或验证资产前 |
 
 ---
 

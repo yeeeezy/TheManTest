@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-26-session83
+**最后更新：** 2026-07-26-session84
 **当前功能：** **FEAT-051（基于原始骨架重建角色与 Enemy 动画蓝图）**
 **会话编号：** 83
 
@@ -22,6 +22,7 @@
 - [x] 修正 `arch/09` 的旧动画层目标描述，以及 `arch/12` 顶部过期核心资产表。
 - [x] 建立 FEAT-051，并记录玩家统一 Skeleton / Enemy 原始 Skeleton 策略。
 - [x] FEAT-052：创建 `/Game/Weapons/_Shared/Mesh/SM_Shared_Bullet`，并按 Mesh / Material / Textures 整理通用与 RepairGun 专属资源。
+- [x] FEAT-053：建立 `guides/unreal-mcp-workflow.md`，沉淀 UE 5.7 MCP 操作与排错经验。
 
 ---
 
@@ -58,7 +59,7 @@
 
 # 会话交接
 
-## Session83 handoff - FEAT-051 active (2026-07-26)
+## Session84 handoff - FEAT-051 active (2026-07-26)
 
 - 当前 active feature 是 `FEAT-051`。
 - FEAT-046 已转为 `needs_improvement`；MCP 证实其实际状态和 BlendSpace 与旧记录不符。
@@ -69,3 +70,4 @@
 - 新 Git 安全规则：任何写入前检查工作区；必要时自动创建本地 WIP checkpoint，结果提交仍由用户明确触发。
 - Rider 的 MCP C4702 编译错误已修复：外部插件本地分支 `fix/ue57-c4702`，commit `c9bee30`；UE 5.7 `TheManTestEditor Win64 Development -WarningsAsErrors` 40/40 构建通过。
 - FEAT-052 已完成但不改变 active feature：新增通用弹体 `/Game/Weapons/_Shared/Mesh/SM_Shared_Bullet`；通用材质位于 `_Shared/Material`；RepairGun 子弹材质已移动到 `RepairGun/Material`；MCP 验证引用、尺寸与无重定向器均通过。
+- FEAT-053 已完成但不改变 active feature：后续 Unreal MCP 资产操作先读 `guides/unreal-mcp-workflow.md`，并优先使用定向查询、结果复核和选择性 Git checkpoint。

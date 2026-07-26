@@ -1,6 +1,6 @@
 ﻿{
   "schema_version": "1.0",
-  "last_updated": "2026-07-26-session83",
+  "last_updated": "2026-07-26-session84",
   "active_feature": "FEAT-051",
   "features": [
     {
@@ -878,6 +878,22 @@
         "/Game/Weapons 下不存在 ObjectRedirector ✓"
       ],
       "verification_evidence": "2026-07-26-session83：Unreal MCP 验证 SM_Shared_Bullet bounds 为 8 × 2.5 × 2.5 cm，材质槽引用 M_Shared_Bullet 与 M_Shared_Bullet_Accent；SM_RepairGun_Bullet 依赖已更新至 /Game/Weapons/RepairGun/Material/M_RepairGun_Bullet；Asset Registry 递归扫描 /Game/Weapons 返回 CODEX_REDIRECTORS=NONE。"
+    },
+    {
+      "id": "FEAT-053",
+      "name": "Unreal MCP 操作经验手册",
+      "status": "done",
+      "description": "把 UE 5.7 MCP 的可靠操作流程、定向验证方式、超时处理、输出控制和已知兼容问题整理为可持续维护的 harness 指南。",
+      "archive_file": "archive/FEAT-053-unreal-mcp-workflow-guide.md",
+      "created": "2026-07-26",
+      "updated": "2026-07-26-session84",
+      "done_criteria": [
+        "建立 guides/unreal-mcp-workflow.md ✓",
+        "AGENTS.md 架构地图包含明确读取触发规则 ✓",
+        "记录资产移动、导入、Redirector、超时和输出控制流程 ✓",
+        "记录 UE 5.7 插件版本、C4702 修复与 Git/LFS 注意事项 ✓"
+      ],
+      "verification_evidence": "2026-07-26-session84：指南已建立并由 AGENTS.md 路由；feature_list.json JSON 解析与文档 diff 检查通过。"
     }
 
   ],
