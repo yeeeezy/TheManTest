@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-26-session77  
+**最后更新：** 2026-07-26-session78  
 **当前功能：** **FEAT-046（步枪上半身 1D BlendSpace 状态机）**  
 **会话编号：** 75
 
@@ -11,6 +11,8 @@ FEAT-045（新选角场景摄像机远近切换）已关闭，状态和验证证
 FEAT-047（RepairGun 球形子弹 Static Mesh）已作为一次性资产任务完成并归档；active feature 保持 FEAT-046。
 
 FEAT-048（RepairGun 科技多面体泡沫子弹）已覆盖 FEAT-047 的简单球体并完成归档；active feature 保持 FEAT-046。
+
+FEAT-049（Git 与 Git LFS 项目基线）已完成；本地 `main` 分支和 LFS 基线已建立，尚未配置远程。active feature 保持 FEAT-046。
 
 当前只做 FEAT-046：步枪上半身 Linked Anim Layer 保留 `SM_FirearmUpperBody` 状态机壳，改为普通 `Idle <-> Locomotion`。`Locomotion` 内使用 1D BlendSpace 按 `Speed` 混合 Idle/Walk/Run 上半身持枪循环。
 
@@ -75,7 +77,7 @@ FEAT-048（RepairGun 科技多面体泡沫子弹）已覆盖 FEAT-047 的简单�
 
 # 会话交接
 
-## Session77 handoff - FEAT-046 remains active (2026-07-26)
+## Session78 handoff - FEAT-046 remains active (2026-07-26)
 
 - 当前 active_feature 是 `FEAT-046`。
 - 用户决定放弃 Walk/Run Start/Loop/End 多状态方案，因为动画衔接不理想。
@@ -86,3 +88,4 @@ FEAT-048（RepairGun 科技多面体泡沫子弹）已覆盖 FEAT-047 的简单�
 - 用户要求一步一步教编辑器操作，并且每一步做完用户说“好了”再继续。
 - FEAT-047 已完成：`/Game/Weapons/RepairGun/Mesh/SM_RepairGun_Bullet` 与蓝色材质已导入并通过独立命令行加载验证；未赋值到 RepairGun 子弹蓝图。详见 `archive/FEAT-047-repairgun-bullet-mesh.md`。
 - FEAT-048 已完成并取代 FEAT-047 的简单球体：`SM_RepairGun_Bullet` 现为用户确认的科技多面体泡沫核心；独立加载验证通过。详见 `archive/FEAT-048-repairgun-tech-foam-bullet.md`。
+- FEAT-049 已完成：项目现有本地 Git `main` 基线和 Git LFS；基线提交为 `33c70d1`，无远程、无上传。详见 `archive/FEAT-049-git-lfs-baseline.md`。

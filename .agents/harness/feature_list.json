@@ -807,6 +807,23 @@
         "未修改 RepairGun 子弹蓝图和 C++ 膨胀逻辑 ✓"
       ],
       "verification_evidence": "2026-07-26-session77：用户确认科技多面体低曝光预览；Blender 源文件保存在 D:\\Blender Projects\\RepairGunBullet。UE 5.7 Interchange 构建并保存覆盖后的 SM_RepairGun_Bullet，未出现平滑组警告；保存后仍触发已知的无界面 Slate Content Browser 断言。随后独立 Python commandlet 成功加载为 StaticMesh，确认 1 个材质槽并以 0 error / 0 warning 退出。"
+    },
+    {
+      "id": "FEAT-049",
+      "name": "Git 与 Git LFS 项目基线",
+      "status": "done",
+      "description": "为现有 UE 5.7 项目初始化本地 Git main 分支和 Git LFS，建立 Unreal 忽略规则与首次可回滚基线；不配置远程、不上传数据。",
+      "archive_file": "archive/FEAT-049-git-lfs-baseline.md",
+      "created": "2026-07-26",
+      "updated": "2026-07-26-session78",
+      "done_criteria": [
+        "本地 Git 仓库 main 分支初始化完成 ✓",
+        "Unreal 生成目录和本机私有配置未纳入版本控制 ✓",
+        "Unreal 二进制资产由 Git LFS 管理 ✓",
+        "首次项目基线提交创建成功 ✓",
+        "Git/LFS 完整性检查通过且未配置远程 ✓"
+      ],
+      "verification_evidence": "2026-07-26-session78：创建基线提交 33c70d1，共 1653 个文件；1463 个二进制资产由 LFS 管理，89 个超过 10 MB 的暂存文件全部为受 LFS 管理的 .uasset；git lfs fsck 通过，无远程仓库。"
     }
 
   ],
