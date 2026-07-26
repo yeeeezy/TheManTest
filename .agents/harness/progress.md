@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-26-session80
+**最后更新：** 2026-07-26-session81
 **当前功能：** **FEAT-051（基于原始骨架重建角色与 Enemy 动画蓝图）**
 **会话编号：** 80
 
@@ -50,13 +50,14 @@
 - 不把“Enemy 使用原始 Skeleton”误解为重构 C++ 动画架构；复用 AnimInstance 驱动和 Template 状态机，变化的是具体 Skeleton、子 AnimBP 和动画 Override。
 - 玩家 Skeleton 继续统一，以保证 `GetMesh()`、`ArmsViewMesh` 和武器 Linked Anim Layer 兼容。
 - Enemy 骨骼命名可能不同，骨骼相关节点不能未经核对直接复用。
+- 写入代码、配置、蓝图、关卡或资产前先检查 Git；工作区存在明确改动时先创建本地 WIP checkpoint。范围异常或归属不明时先报告。只读操作不提交，写入结果仍等用户明确说“更新 Git”，且不自动 push/merge。
 - 当前归档：FEAT-046 见 `archive/FEAT-046-rifle-upperbody-start-end.md`；FEAT-051 见 `archive/FEAT-051-original-skeleton-character-enemy-animation.md`。
 
 ---
 
 # 会话交接
 
-## Session80 handoff - FEAT-051 active (2026-07-26)
+## Session81 handoff - FEAT-051 active (2026-07-26)
 
 - 当前 active feature 是 `FEAT-051`。
 - FEAT-046 已转为 `needs_improvement`；MCP 证实其实际状态和 BlendSpace 与旧记录不符。
@@ -64,3 +65,4 @@
 - Enemy 使用动画原始 Skeleton，从现有无骨架 Template AnimBP 派生对应子 AnimBP，C++/状态机架构不变。
 - 用户负责具体动画资产的手动删除、选择与 Override；下一步应从一个明确的 Enemy 子 AnimBP 开始，编译后再 PIE 验证。
 - MCP 另发现 `BP_Infiltrator` 仍硬引用 `BP_Infiltrator_Old`，仅记录，尚未修改。
+- 新 Git 安全规则：任何写入前检查工作区；必要时自动创建本地 WIP checkpoint，结果提交仍由用户明确触发。
