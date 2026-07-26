@@ -1,6 +1,6 @@
 ﻿{
   "schema_version": "1.0",
-  "last_updated": "2026-07-26-session86",
+  "last_updated": "2026-07-26-session87",
   "active_feature": "FEAT-051",
   "features": [
     {
@@ -912,6 +912,23 @@
         "InteractableBase 目录不存在 ObjectRedirector ✓"
       ],
       "verification_evidence": "2026-07-26-session86：Unreal MCP 验证 Static Mesh bounds 为 100 × 100 × 100 cm；材质槽解析到 M_InteractableBase_Panel 与 M_InteractableBase_Default；BP_InteractableBase dependencies 仅有 /Script/TheManTest 和新本地 Mesh；递归扫描 InteractableBase 返回 CODEX_REDIRECTORS=NONE。"
+    },
+    {
+      "id": "FEAT-055",
+      "name": "维修工 UE4 Mannequin 下半身 Mesh",
+      "status": "done",
+      "description": "从迁入的完整 UE4 Mannequin 导出带蒙皮 FBX，在 Blender 中删除腰部以上与低位手部几何，保留完整标准骨架和下肢权重，并导回维修工专属目录。",
+      "archive_file": "archive/FEAT-055-maintenance-worker-lower-body-mesh.md",
+      "created": "2026-07-26",
+      "updated": "2026-07-26-session87",
+      "done_criteria": [
+        "Blender 工程、源 FBX、结果 FBX、脚本和预览位于 D:\\Blender Projects\\MaintenanceWorkerLowerBody ✓",
+        "下半身仅保留 pelvis/thigh/calf/foot/ball 主导几何，无手部残片 ✓",
+        "Skeletal Mesh 导入为 /Game/Characters/MaintenanceWorker/Meshes/SKM_MaintenanceWorker_LowerBody ✓",
+        "绑定 /Game/Characters/MaintenanceWorker/TempCharacterBody/Meshes/SK_UE4Mannequin，不创建新 Skeleton ✓",
+        "Unreal bounds 为 48.50 × 29.88 × 104.91 cm，材质为 M_MannequinUE4_Body ✓"
+      ],
+      "verification_evidence": "2026-07-26-session87：Blender 最终模型 6450 顶点 / 11444 面、67 骨骼、1 材质槽；自动预览确认无手部残片。Unreal MCP 验证 Skeleton、48.50 × 29.88 × 104.91 cm bounds 和 M_MannequinUE4_Body 材质路径均正确。"
     }
 
   ],
