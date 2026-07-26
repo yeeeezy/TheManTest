@@ -14,4 +14,4 @@ Before making code or asset-related changes, read these files in order:
 
 Use the harness rules for scope, completion criteria, verification commands, and handoff updates.
 
-Current known caveat: if `feature_list.json` or `.agents/harness/init.ps1` fails validation, report that first and continue from the readable harness/archive state unless the user asks to repair the harness.
+If `feature_list.json` cannot be parsed, report that first and continue from the readable harness/archive state unless the user asks to repair the harness.

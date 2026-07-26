@@ -97,5 +97,5 @@ FEAT-049（Git 与 Git LFS 项目基线）已完成；本地 `main` 分支和 LF
 - UE 5.7.4 Development Editor / Win64 编译成功；编辑器运行时 MCP 仅监听 `127.0.0.1:3000`。
 - 原生 MCP `initialize` 与 `tools/list` 已验证，返回 23 个工具；未执行任何资产写入。
 - Codex 用户配置已登记 `unreal-engine`；需要重启 Codex 会话后才会作为原生工具加载。
-- `.agents/harness/init.ps1` 仍因既有乱码/解析错误无法运行，本次按 caveat 未修复。
+- 用户确认删除无实际价值且已损坏的 `.agents/harness/init.ps1`；启动流程和根 `AGENTS.md` 已同步移除相关要求。
 - active_feature 仍为 FEAT-046；后续业务开发继续其 1D BlendSpace 编辑器验证。

@@ -30,5 +30,5 @@ Evaluate a third-party Unreal MCP without changing the stable UE 5.7.4 baseline 
 - The plugin logs that `Resources/MCP/server-info.json` is absent and uses built-in defaults. Handshake and tool discovery still succeed; this is non-blocking for v0.5.30.
 - `StructUtils` produces a UE 5.7 deprecation warning in plugin metadata, but compilation succeeds.
 - A new Codex session is required before the newly registered MCP appears as a native tool in the session.
-- `.agents/harness/init.ps1` remains invalid due to existing encoding/parser errors; it was reported and not repaired as part of this feature.
+- The obsolete and corrupted `.agents/harness/init.ps1` startup check was removed after user approval; harness state is read directly from `AGENTS.md`, `feature_list.json`, `progress.md`, and the active feature archive.
 - Do not merge the test branch into `main` until the user explicitly approves retaining the plugin.

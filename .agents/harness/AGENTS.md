@@ -9,8 +9,7 @@ TheManTest — UE 5.7.4 单人游戏项目。C++ 负责数据结构、GAS 配置
 1. 完整阅读本文件。
 2. 阅读 `progress.md`，重点看底部的**会话交接**部分，了解上一次会话的遗留状态。
 3. 阅读 `feature_list.json`，确认当前活跃功能及其完成标准。
-4. 运行 `.\init.ps1`，验证源码目录结构完整。
-5. 打开 `archive/<当前功能ID>-<名称>.md`，检查是否有未解决的 Bug 或遗留决策。
+4. 打开 `archive/<当前功能ID>-<名称>.md`，检查是否有未解决的 Bug 或遗留决策。
 
 **框架地图的使用方式（贯穿整个会话）：**
 - 需要接触某个系统时，在下方框架地图找到对应 arch 文件路径，用 Read 工具读取后再动手，不得凭印象假设文件内容。
@@ -215,9 +214,6 @@ AFPSInfiltrator::SetupPlayerInputComponent（override，先 Super）
 ## 验证命令
 
 ```powershell
-# 会话开始时运行：检查 harness 健康状态
-.\.agents\harness\init.ps1
-
 # 命令行构建（UE 5.7 实测装在 D 盘，非默认 C 盘）
 & "D:\Program Files\Epic Games\UE_5.7\Engine\Build\BatchFiles\Build.bat" `
     TheManTestEditor Win64 Development `
