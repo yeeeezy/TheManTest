@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-26-session81
+**最后更新：** 2026-07-26-session82
 **当前功能：** **FEAT-051（基于原始骨架重建角色与 Enemy 动画蓝图）**
 **会话编号：** 80
 
@@ -57,7 +57,7 @@
 
 # 会话交接
 
-## Session81 handoff - FEAT-051 active (2026-07-26)
+## Session82 handoff - FEAT-051 active (2026-07-26)
 
 - 当前 active feature 是 `FEAT-051`。
 - FEAT-046 已转为 `needs_improvement`；MCP 证实其实际状态和 BlendSpace 与旧记录不符。
@@ -66,3 +66,4 @@
 - 用户负责具体动画资产的手动删除、选择与 Override；下一步应从一个明确的 Enemy 子 AnimBP 开始，编译后再 PIE 验证。
 - MCP 另发现 `BP_Infiltrator` 仍硬引用 `BP_Infiltrator_Old`，仅记录，尚未修改。
 - 新 Git 安全规则：任何写入前检查工作区；必要时自动创建本地 WIP checkpoint，结果提交仍由用户明确触发。
+- Rider 的 MCP C4702 编译错误已修复：外部插件本地分支 `fix/ue57-c4702`，commit `c9bee30`；UE 5.7 `TheManTestEditor Win64 Development -WarningsAsErrors` 40/40 构建通过。

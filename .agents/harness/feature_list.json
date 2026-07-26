@@ -1,6 +1,6 @@
 ﻿{
   "schema_version": "1.0",
-  "last_updated": "2026-07-26-session81",
+  "last_updated": "2026-07-26-session82",
   "active_feature": "FEAT-051",
   "features": [
     {
@@ -832,7 +832,7 @@
       "description": "在独立测试分支中以外部插件目录接入固定版本 Unreal MCP，仅监听本机回环地址；完成 UE 5.7.4 编译、编辑器启动和原生 HTTP MCP 握手验证，不修改游戏资产。",
       "archive_file": "archive/FEAT-050-unreal-mcp-integration.md",
       "created": "2026-07-26",
-      "updated": "2026-07-26-session79",
+      "updated": "2026-07-26-session82",
       "done_criteria": [
         "第三方插件固定为 ChiR24/Unreal_mcp v0.5.30，并保存在项目目录之外 ✓",
         "测试分支 test/unreal-mcp-5.7 上启用插件，main 保持不变 ✓",
@@ -841,7 +841,7 @@
         "MCP initialize 与 tools/list 成功，列出 23 个工具 ✓",
         "Codex 用户配置已登记 unreal-engine，未执行资产写入工具 ✓"
       ],
-      "verification_evidence": "2026-07-26-session79：McpAutomationBridge v0.5.30 在 UE 5.7.4 完成 25/25 编译并启动；日志确认 23 个自描述工具注册、Native MCP 位于 http://127.0.0.1:3000/mcp；initialize 协商 protocolVersion 2025-03-26，tools/list 返回 23 个工具。插件仓库位于 D:\\Unreal Plugins\\Unreal_mcp-v0.5.30；Codex 配置登记为 unreal-engine。未调用任何修改资产的工具。"
+      "verification_evidence": "2026-07-26-session79：McpAutomationBridge v0.5.30 在 UE 5.7.4 完成 25/25 编译并启动；日志确认 23 个自描述工具注册、Native MCP 位于 http://127.0.0.1:3000/mcp；initialize 协商 protocolVersion 2025-03-26，tools/list 返回 23 个工具。2026-07-26-session82：Rider 严格构建发现 LevelHandlers 的退休旧路径在无条件 return 后触发 C4702；外部插件本地分支 fix/ue57-c4702 提交 c9bee30 隔离该不可达块。TheManTestEditor Win64 Development 使用 -WarningsAsErrors 完整构建 40/40 成功。插件仓库位于 D:\\Unreal Plugins\\Unreal_mcp-v0.5.30；未上传远程。"
     },
     {
       "id": "FEAT-051",

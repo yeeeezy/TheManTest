@@ -32,3 +32,12 @@ Evaluate a third-party Unreal MCP without changing the stable UE 5.7.4 baseline 
 - A new Codex session is required before the newly registered MCP appears as a native tool in the session.
 - The obsolete and corrupted `.agents/harness/init.ps1` startup check was removed after user approval; harness state is read directly from `AGENTS.md`, `feature_list.json`, `progress.md`, and the active feature archive.
 - Do not merge the test branch into `main` until the user explicitly approves retaining the plugin.
+
+## 2026-07-26-session82 - Rider C4702 compatibility patch
+
+- Rider-triggered UBT compilation treated MSVC C4702 as an error in `McpAutomationBridge_LevelHandlers.cpp`.
+- Root cause: the UE 5.7-safe `create_new_level` route returned through `HandleManageLevelStructureAction`, while the retired legacy implementation remained lexically after that unconditional return.
+- Created local external-plugin branch `fix/ue57-c4702` from tag `v0.5.30`.
+- Commit `c9bee30` excludes the retired block from compilation; no runtime path was changed because that block was already unreachable.
+- Verification: `TheManTestEditor Win64 Development -WarningsAsErrors` completed 40/40 actions successfully.
+- The patch exists only in `D:\Unreal Plugins\Unreal_mcp-v0.5.30`; it has not been pushed upstream.
