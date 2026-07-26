@@ -924,7 +924,7 @@
       "done_criteria": [
         "Blender 工程、源 FBX、结果 FBX、脚本和预览位于 D:\\Blender Projects\\MaintenanceWorkerLowerBody ✓",
         "下半身仅保留 pelvis/thigh/calf/foot/ball 主导几何，无手部残片 ✓",
-        "Skeletal Mesh 导入为 /Game/Characters/MaintenanceWorker/Meshes/SKM_MaintenanceWorker_LowerBody ✓",
+        "Skeletal Mesh 导入为 /Game/Characters/MaintenanceWorker/TempCharacterBody/Meshes/SKM_MaintenanceWorker_LowerBody ✓",
         "绑定 /Game/Characters/MaintenanceWorker/TempCharacterBody/Meshes/SK_UE4Mannequin，不创建新 Skeleton ✓",
         "Unreal bounds 为 48.50 × 29.88 × 104.91 cm，材质为 M_MannequinUE4_Body ✓"
       ],

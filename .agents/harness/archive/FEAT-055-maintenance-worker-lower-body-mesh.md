@@ -19,7 +19,7 @@
 
 ## Result
 
-- Unreal asset: `/Game/Characters/MaintenanceWorker/Meshes/SKM_MaintenanceWorker_LowerBody`
+- Unreal asset: `/Game/Characters/MaintenanceWorker/TempCharacterBody/Meshes/SKM_MaintenanceWorker_LowerBody`
 - Geometry: 6450 vertices, 11444 polygons.
 - Bounds: 48.50 × 29.88 × 104.91 cm.
 - Skeleton: existing `/Game/Characters/MaintenanceWorker/TempCharacterBody/Meshes/SK_UE4Mannequin`.

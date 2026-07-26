@@ -78,4 +78,4 @@
 - FEAT-053 已完成但不改变 active feature：后续 Unreal MCP 资产操作先读 `guides/unreal-mcp-workflow.md`，并优先使用定向查询、结果复核和选择性 Git checkpoint。
 - MCP 定向检查最初确认 3 个 SCI_FI_WEAPON_PACK 直接引用：`BP_Infiltrator` 的手臂 Mesh、`BP_InteractableBase` 的默认方块 Mesh、`BP_RepairGun` 的开火音效。`BP_TestGunBullet` 已使用共享子弹，无该资源包引用。
 - FEAT-054 已解除其中的 `BP_InteractableBase` 引用：蓝图现使用 `/Game/Actors/Interable/InteractableBase/Mesh/SM_InteractableBase_Default`；尺寸、材质路径、蓝图依赖和 Redirector 均已由 MCP 验证。其余待处理引用为 `BP_Infiltrator` 手臂 Mesh 与 `BP_RepairGun` 开火音效。
-- FEAT-055 已完成资产制作：维修工下半身位于 `/Game/Characters/MaintenanceWorker/Meshes/SKM_MaintenanceWorker_LowerBody`，绑定迁入的 `SK_UE4Mannequin`；尚未配置到角色蓝图组件。
+- FEAT-055 已完成资产制作：维修工下半身位于 `/Game/Characters/MaintenanceWorker/TempCharacterBody/Meshes/SKM_MaintenanceWorker_LowerBody`，绑定迁入的 `SK_UE4Mannequin`；尚未配置到角色蓝图组件。
