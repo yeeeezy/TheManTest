@@ -29,6 +29,8 @@
 
 **人形怪动画：**
 
+> **FEAT-051 原始骨架策略：** 保留 `UBaseLocomotionAnimInstance -> UHumanoidEnemyAnimInstance -> 无骨架 Template AnimBP` 的驱动架构；每种 Enemy 优先使用其动画原始 Skeleton，并创建对应骨架的子 AnimBP，通过 Asset Override 填入兼容动画。状态机逻辑可复用，但 `hand_r` / `hand_l` / spine 链 / `AimSocket` / IK 骨骼与 Socket 必须按每套原始骨架核对。玩家仍让 `GetMesh()`、`ArmsViewMesh` 和武器层共用玩家 Skeleton，下半身可继续使用效果合格的重定向动画。
+
 | 文件 | 关键内容 |
 |---|---|
 | `Source/TheManTest/Public/Characters/Enemy/Humanoid/HumanoidEnemyAnimInstance.h` | 继承基类；AIState / bIsTurning / TurnAngle / TurnAnimIndex；bIsPatrolScanning / PatrolScanAnimIndex；**无 Stopping 状态**：StopDecelerationRate / VirtualSpeed / bIsVirtualDecelerating 驱动虚拟减速；**AimIK**：AimTargetComponentSpace / AimSourceLocalTransform / AimAxisSocketName / AimAxis / bHasValidAimTarget / bIsAiming / AimAlpha / AimAlphaInterpSpeed；**左手 IK**：LeftHandIKTarget / bHasWeapon / WeaponGripLeftSocket |

@@ -28,8 +28,8 @@ Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE
 - 蓝图侧：Shadow/Legs 组件相对变换需 Yaw=-90 + Z=-CapsuleHalfHeight(=-88)（同默认 GetMesh() 摆法）。
 - 蓝图侧 **Mesh（GetMesh()）组件**：指定全身骨架 mesh + locomotion AnimClass + 相对 Transform；**Cast Shadow 取消勾选**（BP 勾选会覆盖 C++ 的 false，造成手臂形状影子与 ShadowBodyMesh 穿帮）。`OnlyOwnerSee` 已由 C++ 设——故编辑器视口（无 owner）看不见手臂，PIE 里可见，属正常。
 
-**根运动与 GetMesh 合并（FEAT-039，关键架构变更）：**
-- **手臂宿主从独立 `ArmsMesh` 组件合并进 `GetMesh()`**。原因：`UCharacterMovementComponent` **只从 `GetMesh()` 提取根运动**驱动胶囊体；动画若挂在独立 ArmsMesh 上，根运动（含蒙太奇）永远推不动胶囊。合并后 `GetArmsMesh()` 返回 `GetMesh()`，装备/武器层/蒙太奇等所有调用点不变。
+**根运动历史决策（FEAT-039，已被 FEAT-042/session62 的独立 Viewmodel 方案取代）：**
+- FEAT-039 曾短暂把手臂宿主合并进 `GetMesh()`，以便由 `UCharacterMovementComponent` 提取根运动；这不是当前组件结构。当前 `GetArmsMesh()` 返回独立 `ArmsViewMesh`，玩家普通移动交给 CharacterMovement，武器层按 session70 同时链接 `ArmsViewMesh` 与 `GetMesh()`。
 - 前提条件成立才安全：session47 相机已从 head 骨骼挪到 capsule → 手臂无人依赖，可合并。
 - **根运动方案（详见 arch/12 + archive/FEAT-039）**：ABP 根运动模式与「输入驱动 locomotion」的取舍是本项目踩过的大坑，务必看 12。一句话：**`Root Motion from Everything` 会让动画接管移动、压制 WASD 输入**——铁律「原地 clip（idle/走跑循环/跳跃）Enable Root Motion 必须关，只有位移 clip（停步等）才开」；漏关一个原地 clip（尤其 idle）→ 移动卡死+抖动。
 - **session62 FP viewmodel 方案修正（重要）**：相机仍挂 capsule 固定眼高、只用控制器旋转转向；FP 手臂不再绕肩部 `ArmsPivot` 手动俯仰，而是 `HeadCamera -> ViewmodelRoot -> ArmsViewMesh`。这样旋转支点就是相机原点，手臂屏幕位置不随 pitch 漂移。不要把相机挂到动画 head 骨骼下，也不要旋转 Character capsule pitch。后续相机/移动惯性优先叠到 `ViewmodelRoot` 或 `ArmsViewMesh`，不用 SpringArm。
@@ -37,3 +37,5 @@ Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE
 - FEAT-038 C++ 已完成（session43 编译通过，session47 改相机/俯仰/BodyRoot/速度）；身体 mesh 已物理拆好导入，角色 BP 三件套装配在蓝图侧进行。
 
 > 旧 `ATheManCharacterBase` / `Infiltrator` / `MaintenanceWorker` / `TheExecutive` 及 `UTheManAnimInstanceBase` 已于 FEAT-041 删除，备份在 scratchpad/deprecated-char-backup-session43。
+
+> **MCP 审计遗留项（2026-07-26）：** 活动资产 `BP_Infiltrator` 仍硬引用 `/Game/Characters/Infiltrator/Blueprint/BP_Infiltrator_Old`。当前仅确认依赖存在，尚未定位具体属性或图节点；在用户手动确认前不得自动删除或重写该引用。

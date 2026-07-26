@@ -108,3 +108,10 @@ Recommended asset name: `BS_Rifle_UpperBody_Locomotion`. This should be rifle-la
 - Session75 C++ cleanup build succeeded with no new warnings.
 - Pending AnimBP compile verification.
 - Pending PIE verification.
+
+### 2026-07-26-session80 - MCP audit and handoff
+
+- Unreal MCP found the actual `SM_FirearmUpperBody` states are `Idle <-> WalkRun`, not the recorded `Idle <-> Locomotion`.
+- `/Game/Weapons/RepairGun/Animation/BlendSpace/BS_Rifle_UpperBody_IdleWalkRun` is currently a 2D BlendSpace with zero samples, not the planned populated 1D BlendSpace.
+- The user removed part of the unsatisfactory retargeted animation set and changed the immediate priority to rebuilding character/enemy AnimBPs around suitable original skeletons.
+- FEAT-046 is now `needs_improvement`; FEAT-051 owns the next animation pass.

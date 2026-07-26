@@ -3,7 +3,7 @@
 **何时读取：** 搭建或修改 ABP 层结构、Linked Anim Layer、Slot 蒙太奇插槽、AimIK 节点链、武器动画扩展时。
 
 > 本文是 `06-animation.md` 的详细版：06 速查 C++ AnimInstance 类与变量，本文讲 ABP 资产的层/Slot/节点图与扩展策略。
-> **当前 ABP = 单一骨骼（FPS Arms）。** 旧双骨骼系统的 C++ 已于 FEAT-041 删除（文末旧系统节仅作历史参考）。
+> **当前玩家 ABP = 玩家统一 Skeleton。** `GetMesh()`、`ArmsViewMesh` 与武器 Linked Anim Layer 共用玩家 Skeleton；Enemy 可使用各自动画原始 Skeleton，通过无骨架 Template AnimBP 派生对应子 AnimBP。旧双骨骼系统的 C++ 已于 FEAT-041 删除（文末旧系统节仅作历史参考）。
 
 > 当前方向（session63）：不再使用 Motion Matching，也不再做专门停步动画。玩家全身主 ABP 走 UE 模板式普通 locomotion：Idle 与 Walk/Run BlendSpace 直接按 `Speed` / `Direction` 混合；跳跃用 `bIsFalling` / `Velocity_Z`。`HeadCamera -> ViewmodelRoot -> ArmsViewMesh` 独立 FP 手臂结构保留，装备/开火蒙太奇仍通过 `GetArmsMesh()` 走 FP 手臂。
 
@@ -21,11 +21,11 @@
 
 | 资产 / 类 | 路径 | 作用 |
 |---|---|---|
-| `ABP_FPS_Arm_MainCharacter` | `Content/Characters/CharacterBase/Animations/Logic/` | FPS 手臂基础动画蓝图，含 Locomotion StateMachine 和层路由 |
+| `ABP_BodyLocomotion` | `Content/Characters/CharacterBase/Animations/Logic/` | 当前玩家主 AnimBP；`GetMesh()` 与 `ArmsViewMesh` 可各自使用该主 ABP，并接收同一玩家 Skeleton 上的武器 Linked Anim Layer |
 | `ALI_WeaponAnim` | `Content/Weapons/_Shared/Animations/Interface/` | 武器动画层接口，定义两个层：`WeaponAimOffset`、`WeaponUpperBody` |
-| `ABP_FirearmBase` | `Content/Weapons/_Shared/Animations/Firearm/` | 枪械动画层实现基类，内含 AimIK 节点 |
+| `TABP_Firearm_UpperBodyBase` | `Content/Weapons/_Shared/Animations/Logic/` | 当前枪械上半身 Template AnimBP，实现 `ALI_WeaponAnim`；具体玩家骨架层继续与玩家 Skeleton 兼容 |
 | `UFPSCharacterAnimInstance` | `Source/.../Characters/FPSCharacterBase/Animation/FPSCharacterAnimInstance.h` | 玩家 ABP 的 C++ 父类（FEAT-041 由 `UFPSArmsAnimInstance` 改名），持有 Locomotion 变量（继承基类）；CoreRedirect 保旧链接 |
-| `UFirearmAnimInstance` | `Source/.../Equipment/Firearms/FirearmAnimInstance.h` | `ABP_FirearmBase` 的 C++ 父类，持有四个 AimIK 变量 |
+| `UFirearmAnimInstance` | `Source/.../Equipment/Firearms/FirearmAnimInstance.h` | 当前枪械动画层模板 `TABP_Firearm_UpperBodyBase` 的 C++ 父类，持有四个 AimIK 变量 |
 
 > 敌人 ABP（`ABP_HumanoidEnemy`）见下方“敌人动画架构”节及 `11-enemy-ai.md`。
 
@@ -56,7 +56,7 @@ Jump_End ─(Speed<3 && Land 剩余<0.3)─> Idle ；─(Speed>3)─> Run/Walk
 
 ---
 
-## ABP_FPS_Arm_MainCharacter AnimGraph 流程
+## 旧 ABP_FPS_Arm_MainCharacter AnimGraph 流程（仅迁移历史）
 
 > ⚠️ 旧手臂主 ABP，FEAT-039 全身主 ABP（上方 `ABP_BodyLocomotion`）验证通过后将取代它。下面节点图在迁移期仍作参考。
 
@@ -85,7 +85,7 @@ Slot "FullBodySlot"         ← 全身覆盖蒙太奇（预留，死亡/特殊�
 Output Pose (Root)
 ```
 
-主 ABP 不含任何 IK 节点，AimIK 完全封装在武器层（`ABP_FirearmBase`）内。
+当前主 ABP 不含武器专属 IK 节点；AimIK 应封装在当前武器层模板 `TABP_Firearm_UpperBodyBase` 或其骨架兼容子层内。
 
 ---
 
@@ -99,7 +99,7 @@ UEquipmentAnimInstance
 ```
 
 - 所有装备通用上半身动画层优先继承 `UEquipmentAnimInstance`，可直接读取 `Speed` / `Direction` / `Velocity_Z` / `bIsFalling`。
-- FEAT-046 session75 起，步枪上半身回退为普通 1D BlendSpace：保留 `SM_FirearmUpperBody` 壳，内部用 `Idle <-> Locomotion`，`Locomotion` 中的 1D BlendSpace Player 只读 `Speed`。不要再依赖已删除的 Start/End 状态机专用变量。
+- FEAT-046 原计划把步枪上半身改为普通 1D BlendSpace，但 session80 MCP 复核发现实际仍为 `Idle <-> WalkRun`，且现有 `BS_Rifle_UpperBody_IdleWalkRun` 是 2D、0 samples；该切片已转为 `needs_improvement`，后续由 FEAT-051 按用户保留的动画资产重新落地。不要依赖已删除的 Start/End 状态机专用变量。
 - 枪械动画层继承 `UFirearmAnimInstance`，在通用移动变量之外额外获得 AimIK 变量：`AimSourceLocalTransform` / `AimTargetComponentSpace` / `bHasValidAimTarget` / `bIsAiming`。
 - 步枪 Template ABP 若需要 BBBAimIK，应以 `UFirearmAnimInstance` 为父类；非枪械装备可用 `UEquipmentAnimInstance`。
 
@@ -189,7 +189,7 @@ ABP_BodyLocomotion:
 
 ---
 
-## ABP_FirearmBase（WeaponAimOffset 层实现）内部流程
+## TABP_Firearm_UpperBodyBase（武器层模板）AimIK 目标流程
 
 ```
 WeaponAimInPose（输入 Pose）
@@ -224,9 +224,9 @@ BBBAimIK 节点
 ## 武器动画扩展指南
 
 - **新增不需要 AimIK 的武器**：新建该武器 `WeaponAimOffset` 层实现，直接 pass-through 输入 Pose，不放 BBBAimIK 节点。
-- **新增需要 AimIK 的武器**：让该武器动画层 ABP 继承（或直接复用）`ABP_FirearmBase`。
+- **新增需要 AimIK 的武器**：让该武器动画层 ABP 继承或复用与玩家 Skeleton 兼容的 `TABP_Firearm_UpperBodyBase` 路线。
 - **新增需要专属跑跳的武器**：在 `WeaponAimOffset` 层内自建 StateMachine，忽略 `WeaponAimInPose` 输入。
-- **修改骨骼链权重**：在 `ABP_FirearmBase` 的 BBBAimIK 节点 BoneChain 属性里调各骨骼 Weight。
+- **修改骨骼链权重**：在实际使用的武器层模板/子 AnimBP 的 BBBAimIK 节点 BoneChain 属性里调各骨骼 Weight。
 
 ---
 
