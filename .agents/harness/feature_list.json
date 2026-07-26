@@ -1,6 +1,6 @@
 ﻿{
   "schema_version": "1.0",
-  "last_updated": "2026-07-26-session82",
+  "last_updated": "2026-07-26-session83",
   "active_feature": "FEAT-051",
   "features": [
     {
@@ -861,6 +861,23 @@
         "PIE：玩家 locomotion/武器层正常；各 Enemy 巡逻、转身、瞄准和攻击动画正常"
       ],
       "verification_evidence": "2026-07-26-session80：MCP 复扫确认玩家 ABP_BodyLocomotion、ALI_WeaponAnim、TABP_Firearm_UpperBodyBase 仍存在；Enemy 侧无骨架模板 ABP_HumanoidEnemy 与 Phantom 子 AnimBP ABP_Phantom 仍存在，支持继续沿用现有模板架构。具体动画资产由用户手动管理，AnimBP 编译与 PIE 待验证。"
+    },
+    {
+      "id": "FEAT-052",
+      "name": "通用子弹与武器资产目录整理",
+      "status": "done",
+      "description": "创建可由多种枪械复用的科技感通用弹体，并将通用资源与 RepairGun 专属资源按 Mesh、Material、Textures 类型分层整理。",
+      "archive_file": "archive/FEAT-052-shared-bullet-asset-organization.md",
+      "created": "2026-07-26",
+      "updated": "2026-07-26-session83",
+      "done_criteria": [
+        "Blender 源工程和导出文件保存在 D:\\Blender Projects\\SharedBullet，不污染 Unreal 项目目录 ✓",
+        "通用弹体导入为 /Game/Weapons/_Shared/Mesh/SM_Shared_Bullet，尺寸为 8 × 2.5 × 2.5 cm ✓",
+        "通用弹体材质位于 /Game/Weapons/_Shared/Material，两个材质槽引用有效 ✓",
+        "RepairGun 子弹材质移动到 /Game/Weapons/RepairGun/Material，Static Mesh 引用自动更新 ✓",
+        "/Game/Weapons 下不存在 ObjectRedirector ✓"
+      ],
+      "verification_evidence": "2026-07-26-session83：Unreal MCP 验证 SM_Shared_Bullet bounds 为 8 × 2.5 × 2.5 cm，材质槽引用 M_Shared_Bullet 与 M_Shared_Bullet_Accent；SM_RepairGun_Bullet 依赖已更新至 /Game/Weapons/RepairGun/Material/M_RepairGun_Bullet；Asset Registry 递归扫描 /Game/Weapons 返回 CODEX_REDIRECTORS=NONE。"
     }
 
   ],

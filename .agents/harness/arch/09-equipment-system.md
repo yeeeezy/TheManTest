@@ -12,6 +12,13 @@
 | `Source/TheManTest/Public/Equipment/Firearms/Bullets/BulletBase.h` | CollisionSphere(QueryOnly) + BulletMesh + ProjectileMovement；`Damage`(SetByCaller 传入 HitEffectClass) / `HitEffectClass` / `bDestroyOnHit`；`InitBullet(发射者, SourceASC)`(忽略发射者防自撞) / `ProcessHit()` BlueprintNativeEvent |
 | `Source/TheManTest/Public/Equipment/Firearms/Bullets/RepairGunBullet.h` | 指数膨胀（e^(Rate×t)）；膨胀到 MaxExpansionScale 后锁定，LifetimeAfterExpansion 秒后销毁 |
 
+## 武器资产目录约定（FEAT-052）
+
+- 多种武器复用的资源放在 `/Game/Weapons/_Shared/`，并按 `Mesh`、`Material`、`Textures`、`Animations`、`GAS` 等类型继续分层。
+- 某把武器专属的资源放在 `/Game/Weapons/<WeaponName>/`，按 `Blueprint`、`Mesh`、`Material`、`Textures`、`Animation` 分层；不要把材质或贴图放进 `Mesh`。
+- 通用弹体：`/Game/Weapons/_Shared/Mesh/SM_Shared_Bullet`，材质为 `/Game/Weapons/_Shared/Material/M_Shared_Bullet` 与 `M_Shared_Bullet_Accent`。
+- RepairGun 科技泡沫弹体：`/Game/Weapons/RepairGun/Mesh/SM_RepairGun_Bullet`，专属材质为 `/Game/Weapons/RepairGun/Material/M_RepairGun_Bullet`。
+
 ## ⚠️ 武器动画两字段对 MM 角色（FEAT-042）的影响
 
 `Equip()` 用武器 BP 上两个 `Equipment|Animation` 字段操作 Leader mesh(`GetMesh()`) 的 AnimInstance：
