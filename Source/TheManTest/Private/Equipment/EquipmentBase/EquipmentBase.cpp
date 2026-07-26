@@ -99,13 +99,7 @@ void AEquipmentBase::Equip(AActor* NewOwner)
     {
         if (!AnimMesh) { continue; }
 
-        // 先整体替换基础 ABP（会销毁旧 AnimInstance）
-        if (EquipmentAnimClass)
-        {
-            AnimMesh->SetAnimInstanceClass(EquipmentAnimClass);
-        }
-
-        // 再叠加装备专属层。蒙太奇不在此播放——由调用方在合适时机调用 PlayEquipMontage()，
+        // 叠加装备专属层。蒙太奇不在此播放——由调用方在合适时机调用 PlayEquipMontage()，
         // 避免初始化（BeginPlay）期间手臂姿势未就绪就开播导致武器起始位置错乱。
         if (UAnimInstance* AnimInst = AnimMesh->GetAnimInstance())
         {

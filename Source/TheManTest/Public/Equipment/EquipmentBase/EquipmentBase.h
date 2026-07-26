@@ -83,10 +83,6 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Equipment|Animation")
     UAnimMontage* EquipMontage;
 
-    // 装备时整体替换 ArmsMesh 的基础动画蓝图（为 null 则不替换）
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Equipment|Animation")
-    TSubclassOf<UAnimInstance> EquipmentAnimClass;
-
     // 这件装备专属的动画链接图层类 (Linked Anim Layer)
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Equipment|Animation")
     TSubclassOf<UAnimInstance> EquipmentAnimLayerClass;
