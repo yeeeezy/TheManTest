@@ -175,6 +175,8 @@ ABP_BodyLocomotion:
 
 **原地转身：** session89 起暂停。玩家 ABP 不应包含 Turn 状态、`TurnRootYaw` 曲线读取或 root-bone 转向抵消节点；Pawn 与 `BodyRoot` 直接跟随 Controller/Actor yaw。后续转体方案另立功能重新设计。
 
+未来重新设计时可参考本机 `D:\Unreal Projects\GameAnimationSample`，但不要直接移植整套 Motion Matching。该样例通过 TurnInPlace/Pivot/Spin Pose Search Database、未来轨迹、左右支撑脚动画版本、`Offset Root Bone`、`Orientation Warping` 和 `Foot Placement` 共同减少滑脚；适合提炼为“脚相选择 + 左右脚转身动画 + 明确的 Actor/Root 同步 + Foot IK”方案。
+
 ---
 
 ## TABP_Firearm_UpperBodyBase（武器层模板）AimIK 目标流程

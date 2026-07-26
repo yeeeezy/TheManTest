@@ -20,6 +20,9 @@
 - [x] RepairGun 专属层 `ABP_RepairGun_AnimLayer` 与 `BS_WalkRun_RepairGun` 已创建。
 - [x] 删除无用 `EquipmentAnimClass` 整体替换路径；武器只通过 `EquipmentAnimLayerClass` 链接专属层。
 - [x] 暂停玩家原地转身：删除 `BodyVisualYaw`/45° Turn/曲线进度 C++ 链，`BodyRoot` 直接跟随 Actor yaw；ABP 转体节点待用户手动清理。
+- [x] 用户已清理 `TABP_BodyLocomotion` 的旧 Turn 节点；修改已保存到本地 WIP checkpoint `8e6a8e0`。
+- [x] 只读调研 `D:\Unreal Projects\GameAnimationSample`：其转向脚步依赖 Motion Matching 数据库、左右支撑脚动画、Offset Root Bone、Orientation Warping 与 Foot Placement；仅作为未来独立转体方案参考。
+- [x] 修复 RepairGun 子弹停在枪口：根 `CollisionSphere` 曾误设为 Static，导致 ProjectileMovement 无法移动；恢复 Movable 后用户确认飞行和命中膨胀正常。
 - [x] Enemy 模板/子资产仍存在：`ABP_HumanoidEnemy`、`ABP_Phantom`；Phantom 保留原始 `SK_Cyber01_Skeleton` 动画集。
 - [x] FEAT-046 改为 `needs_improvement`：实际 `SM_FirearmUpperBody` 为 `Idle <-> WalkRun`，不是旧记录中的 `Idle <-> Locomotion`。
 - [x] MCP 确认 `BS_Rifle_UpperBody_IdleWalkRun` 为 2D BlendSpace 且 0 samples，原 1D 目标未完成。
@@ -35,7 +38,7 @@
 ## 当前待办
 
 - [ ] 在 `BP_RepairGun` 将 `EquipmentAnimLayerClass` 配置为 `ABP_RepairGun_AnimLayer`，编译并验证装备/卸下。
-- [ ] 从 `TABP_BodyLocomotion` / `ABP_MaintenanceWorker` 清理旧 Turn 状态与 root-bone 转向抵消节点并重新编译。
+- [ ] 下次启动编辑器后编译 `TABP_BodyLocomotion` 与 `ABP_MaintenanceWorker`，确认删除 C++ Turn 变量后无失效节点；随后 PIE 验证 Pawn 直接旋转、基础 locomotion 和 RepairGun 动画层。
 - [ ] 为每种 Enemy 使用其动画原始 Skeleton 创建或确认子 AnimBP。
 - [ ] 按每套 Enemy 原始骨架检查 `hand_r` / `hand_l` / spine 链 / `AimSocket` / 武器握把与 IK 节点。
 - [ ] 检查活动 AnimBP 是否存在指向已删除动画资产的失效引用，并逐个编译。
@@ -49,7 +52,7 @@
 
 ## 当前阻塞
 
-具体动画资产由用户手动选择和配置；Codex 等待用户完成一个可验证的子 AnimBP 或指定下一步编辑器操作。
+今日工作已收尾。下次从重新启动编辑器、编译玩家模板/维修工 ABP、检查 RepairGun Linked Anim Layer，再进行 PIE 验证开始。
 
 ---
 

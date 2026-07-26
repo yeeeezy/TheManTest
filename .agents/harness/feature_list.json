@@ -860,7 +860,7 @@
         "所有活动 AnimBP 编译无错误，且不存在指向用户已删除动画资产的失效引用",
         "PIE：玩家 locomotion/武器层正常；各 Enemy 巡逻、转身、瞄准和攻击动画正常"
       ],
-      "verification_evidence": "2026-07-26-session80：MCP 复扫确认玩家 ABP_BodyLocomotion、ALI_WeaponAnim、TABP_Firearm_UpperBodyBase 仍存在；Enemy 侧无骨架模板 ABP_HumanoidEnemy 与 Phantom 子 AnimBP ABP_Phantom 仍存在。2026-07-26-session88：用户将玩家模板整理为 TABP_BodyLocomotion，创建并编译 ABP_MaintenanceWorker、BS_RunWalk_MaintenanceWorker、ABP_RepairGun_AnimLayer 与 BS_WalkRun_RepairGun；维修工临时统一使用手臂 Skeleton。AEquipmentBase 已删除 EquipmentAnimClass 整体替换路径，只保留 EquipmentAnimLayerClass；TheManTestEditor Win64 Development 完整构建 41/41 成功。2026-07-26-session89：暂停玩家原地转身，删除 BodyVisualYaw、固定 45 度转步及 TurnRootYaw 曲线驱动 C++ 链；BodyRoot 改为直接跟随 Actor yaw。AnimBP 旧 Turn 节点清理与 PIE 仍待验证。"
+      "verification_evidence": "2026-07-26-session80：MCP 复扫确认玩家 ABP_BodyLocomotion、ALI_WeaponAnim、TABP_Firearm_UpperBodyBase 仍存在；Enemy 侧无骨架模板 ABP_HumanoidEnemy 与 Phantom 子 AnimBP ABP_Phantom 仍存在。2026-07-26-session88：用户将玩家模板整理为 TABP_BodyLocomotion，创建并编译 ABP_MaintenanceWorker、BS_RunWalk_MaintenanceWorker、ABP_RepairGun_AnimLayer 与 BS_WalkRun_RepairGun；维修工临时统一使用手臂 Skeleton。AEquipmentBase 已删除 EquipmentAnimClass 整体替换路径，只保留 EquipmentAnimLayerClass；TheManTestEditor Win64 Development 完整构建 41/41 成功。2026-07-26-session89：暂停玩家原地转身，删除 BodyVisualYaw、固定 45 度转步及 TurnRootYaw 曲线驱动 C++ 链；BodyRoot 改为直接跟随 Actor yaw，TheManTestEditor 编译 7/7 成功。用户已清理 TABP_BodyLocomotion 的 Turn 节点；Game Animation Sample 转向系统完成只读调研。RepairGun 子弹根 CollisionSphere 的 Static Mobility 问题经 MCP 与 PIE 日志定位，恢复 Movable 后用户确认修复。重启后的 AnimBP 编译与完整 PIE 仍待验证。"
     },
     {
       "id": "FEAT-052",
