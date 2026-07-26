@@ -1,6 +1,6 @@
 ﻿{
   "schema_version": "1.0",
-  "last_updated": "2026-07-26-session85",
+  "last_updated": "2026-07-26-session86",
   "active_feature": "FEAT-051",
   "features": [
     {
@@ -894,6 +894,24 @@
         "记录 UE 5.7 插件版本、C4702 修复与 Git/LFS 注意事项 ✓"
       ],
       "verification_evidence": "2026-07-26-session84：指南已建立并由 AGENTS.md 路由；feature_list.json JSON 解析与文档 diff 检查通过。"
+    },
+    {
+      "id": "FEAT-054",
+      "name": "InteractableBase 通用科技模型",
+      "status": "done",
+      "description": "使用 Blender 创建无符号装饰的 1 米通用科技交互箱体，导入 InteractableBase 专属目录并替换被删除的 SCI-FI 1M_Cube 默认引用。",
+      "archive_file": "archive/FEAT-054-interactable-base-default-mesh.md",
+      "created": "2026-07-26",
+      "updated": "2026-07-26-session86",
+      "done_criteria": [
+        "Blender 工程、FBX、脚本和预览位于 D:\\Blender Projects\\InteractableBase ✓",
+        "模型无加减号、圆点等符号装饰，尺寸为 100 × 100 × 100 cm ✓",
+        "Static Mesh 位于 /Game/Actors/Interable/InteractableBase/Mesh/SM_InteractableBase_Default ✓",
+        "两个材质位于 /Game/Actors/Interable/InteractableBase/Material ✓",
+        "BP_InteractableBase 已编译保存并引用新 Mesh，不再依赖 SCI_FI_WEAPON_PACK ✓",
+        "InteractableBase 目录不存在 ObjectRedirector ✓"
+      ],
+      "verification_evidence": "2026-07-26-session86：Unreal MCP 验证 Static Mesh bounds 为 100 × 100 × 100 cm；材质槽解析到 M_InteractableBase_Panel 与 M_InteractableBase_Default；BP_InteractableBase dependencies 仅有 /Script/TheManTest 和新本地 Mesh；递归扫描 InteractableBase 返回 CODEX_REDIRECTORS=NONE。"
     }
 
   ],

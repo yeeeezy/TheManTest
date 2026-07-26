@@ -39,6 +39,7 @@ TheManTest — UE 5.7.4 单人游戏项目。C++ 负责数据结构、GAS 配置
 - **不要污染 Unreal 项目。** 不得把独立的 `.blend` 文件、Blender 建模脚本、MCP 下载文件或其他 Blender 工作文件放进 `D:\Unreal Projects\TheManTest`。只有明确准备导入游戏的最终导出资产，才可按 Unreal 项目既有资产目录规范放入本项目。
 - **Blender MCP 使用方式。** 本机已安装 Blender MCP。实时控制时必须打开 Blender 图形界面，并在 3D Viewport 的 Blender MCP 侧栏启动 MCP Server；新增或重配 MCP 后通常需要重启 Codex 会话才能加载工具。
 - **允许后台批处理。** 不需要交互界面的简单创建、转换或验证，可调用 Blender `--background` 配合 Python API；输出仍须保存到 `D:\Blender Projects\<项目名>\`，不得默认写入 Unreal 项目。
+- **建模完成后自动打开预览。** 每次 Blender 建模或改模完成后，默认生成清晰可辨的本地预览图，并立即用系统图片查看器打开给用户查看；此动作不再单独询问用户。导入 Unreal、覆盖现有资产或修改蓝图仍遵循原有确认规则。
 
 ## 项目框架地图（按需读取）
 

@@ -33,6 +33,7 @@
 ## 导入验证
 
 - Blender 源工程、脚本、FBX 和预览图保存在 `D:\Blender Projects\<项目名>\`，不放进 Unreal 项目。
+- Blender 建模或改模完成后默认生成亮度和结构均清晰的预览图，并立即用系统图片查看器打开；无需再次征求用户许可。预览确认不等于授权导入或覆盖 Unreal 资产。
 - 导入前确认 Unreal 坐标、前向轴、单位和预期尺寸；导入后从 Static Mesh bounds 验证实际尺寸。
 - 验证材质槽数量及每个槽的完整资产路径，不要只确认材质文件“看起来存在”。
 - 没有独立 Texture 资产不一定是错误：纯参数材质可以只有 Material/Material Instance。
