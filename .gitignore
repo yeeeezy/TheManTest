@@ -1,0 +1,37 @@
+# Unreal generated directories
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# IDE and editor state
+.vs/
+.idea/
+.vscode/
+.claude/settings.local.json
+*.sln
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+
+# Build products and transient files
+*.log
+*.tmp
+*.temp
+*.bak
+*.cache
+*.pdb
+*.obj
+*.pch
+*.ipch
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local Blender working files belong under D:\Blender Projects
+*.blend1
+*.blend2
