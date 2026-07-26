@@ -24,7 +24,7 @@
 - 不再使用 `StopAnimIndex` / `bShouldStop` / `bShouldMove` / 脚相位 / 延迟停 / 保持原速滑行。
 - ABP 应采用最小状态机：`Idle <-> WalkRun BlendSpace`，常用条件为 `Speed > 3` 与 `Speed <= 3`；跳跃可继续用 `bIsFalling` / `Velocity_Z`。
 - `UFPSCharacterAnimInstance` 继承 `UBaseLocomotionAnimInstance`，保留 `AccelDirection` / `bHasAcceleration` 给起步 Lean 或后续玩家专属动画使用。若 ABP 不需要 Lean，可以完全不读这两个变量。
-- session64+66 新增玩家原地转身触发变量：`bIsTurningInPlace` / `TurnInPlaceAngle` / `TurnInPlaceIndex`（0=左45，1=右45）/ `TurnInPlacePlayRate`。触发逻辑由 `AFPSCharacterBase` 的 `BodyVisualYaw` 驱动：Pawn/相机实时跟控制器 yaw，下半身/影子用 `BodyRoot` 的视觉 yaw，空闲低速时先滞后，超过 `BodyTurnInPlaceThreshold`（默认 30）后锁定一次 45 度左/右目标 yaw，不再追实时相机，转完后再用新的腿部朝向与相机朝向判断下一次。视觉 yaw 的推进不再由 C++ 匀速估算，而是由 `UFPSCharacterAnimInstance` 读取 Turn 动画上的 `TurnRootYaw` 曲线帧差并调用 `AFPSCharacterBase::ApplyBodyTurnRootYawDelta()`；左转曲线应为 `0 -> -45`，右转曲线应为 `0 -> +45`。`BodyTurnInPlacePlayRate` 同时缩放 C++ 锁定时长和 ABP Sequence Player Play Rate。
+- session89 起玩家暂不使用原地转身：`UFPSCharacterAnimInstance` 只保留 locomotion 与可选加速度变量，不再输出 Turn In Place 变量或读取 `TurnRootYaw` 曲线。玩家身体直接跟随 Pawn yaw；具体转体方案以后单独设计。
 - 若蓝图仍报缺变量，说明 ABP 里残留 FEAT-039 停步节点，需要删除 Stop 状态、Stop 过渡和相关变量引用。
 
 **人形怪动画：**

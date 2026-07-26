@@ -196,19 +196,6 @@ void AFPSCharacterBase::BeginPlay()
 	GetWorldTimerManager().SetTimerForNextTick(this, &AFPSCharacterBase::RevealArmsAndWeapon);
 
 	LastControlRotation = GetControlRotation();
-	BodyVisualYaw = GetActorRotation().Yaw;
-	bBodyVisualYawInitialized = true;
-	bBodyTurnVisualInProgress = false;
-	bBodyTurnRequestActive = false;
-	BodyTurnInPlaceAngle = 0.f;
-	BodyTurnInPlaceIndex = 0;
-	BodyTurnStartYaw = BodyVisualYaw;
-	BodyTurnTargetYaw = BodyVisualYaw;
-	BodyTurnAnimLockRemaining = 0.f;
-	BodyTurnElapsedTime = 0.f;
-	BodyTurnDuration = 0.f;
-	BodyTurnCurveAlpha = 0.f;
-	bBodyTurnCurveAlphaValid = false;
 }
 
 void AFPSCharacterBase::RevealArmsAndWeapon()
@@ -415,131 +402,10 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!bBodyVisualYawInitialized)
-	{
-		BodyVisualYaw = GetActorRotation().Yaw;
-		bBodyVisualYawInitialized = true;
-	}
-
-	const float PawnYaw = GetActorRotation().Yaw;
-	if (BodyTurnAnimLockRemaining > 0.f)
-	{
-		BodyTurnAnimLockRemaining = FMath::Max(0.f, BodyTurnAnimLockRemaining - DeltaTime);
-	}
-
-	const UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
-	const bool bHasMovementIntent =
-		!GetLastMovementInputVector().IsNearlyZero() ||
-		(MovementComponent && !MovementComponent->GetCurrentAcceleration().IsNearlyZero());
-	const bool bBodyShouldFollowPawn =
-		(bHasMovementIntent && GetVelocity().Size2D() > BodyTurnInPlaceMoveSpeed) ||
-		(MovementComponent && MovementComponent->IsFalling());
-
-	if (bBodyShouldFollowPawn)
-	{
-		BodyVisualYaw = PawnYaw;
-		bBodyTurnVisualInProgress = false;
-		bBodyTurnRequestActive = false;
-		BodyTurnInPlaceAngle = 0.f;
-		BodyTurnStartYaw = BodyVisualYaw;
-		BodyTurnTargetYaw = BodyVisualYaw;
-		BodyTurnAnimLockRemaining = 0.f;
-		BodyTurnElapsedTime = 0.f;
-		BodyTurnDuration = 0.f;
-		BodyTurnCurveAlpha = 0.f;
-		bBodyTurnCurveAlphaValid = false;
-	}
-	else
-	{
-		const float YawDelta = FMath::FindDeltaAngleDegrees(BodyVisualYaw, PawnYaw);
-		if (!bBodyTurnVisualInProgress &&
-			BodyTurnAnimLockRemaining <= 0.f &&
-			FMath::Abs(YawDelta) >= BodyTurnInPlaceThreshold)
-		{
-			bBodyTurnVisualInProgress = true;
-			bBodyTurnRequestActive = true;
-			++BodyTurnSequenceId;
-			BodyTurnInPlaceAngle = YawDelta;
-			BodyTurnInPlaceIndex = (YawDelta < 0.f) ? 0 : 1;
-			const float SafePlayRate = FMath::Max(BodyTurnInPlacePlayRate, KINDA_SMALL_NUMBER);
-			const float TurnTime = FMath::Max(BodyTurnInPlaceAnimLockTime / SafePlayRate, KINDA_SMALL_NUMBER);
-			BodyTurnAnimLockRemaining = TurnTime;
-
-			BodyTurnStartYaw = BodyVisualYaw;
-			const float MaxTurnAngle = FMath::Abs(BodyTurnInPlaceStepAngle);
-			const float ClampedTurnDelta = MaxTurnAngle > KINDA_SMALL_NUMBER
-				? FMath::Clamp(YawDelta, -MaxTurnAngle, MaxTurnAngle)
-				: YawDelta;
-			BodyTurnTargetYaw = FMath::UnwindDegrees(BodyTurnStartYaw + ClampedTurnDelta);
-			BodyTurnInPlaceAngle = ClampedTurnDelta;
-			BodyTurnElapsedTime = 0.f;
-			BodyTurnDuration = TurnTime;
-			BodyTurnCurveAlpha = 0.f;
-			bBodyTurnCurveAlphaValid = false;
-		}
-
-		if (bBodyTurnVisualInProgress)
-		{
-			BodyTurnElapsedTime += DeltaTime;
-			const float RawTimeAlpha = BodyTurnDuration > KINDA_SMALL_NUMBER
-				? FMath::Clamp(BodyTurnElapsedTime / BodyTurnDuration, 0.f, 1.f)
-				: 1.f;
-			const float TimeAlpha = RawTimeAlpha * RawTimeAlpha * (3.f - 2.f * RawTimeAlpha);
-			float TurnAlpha = TimeAlpha;
-			if (bBodyTurnCurveAlphaValid)
-			{
-				TurnAlpha = FMath::Max(TurnAlpha, FMath::Clamp(BodyTurnCurveAlpha, 0.f, 1.f));
-			}
-			const float TargetDeltaYaw = FMath::FindDeltaAngleDegrees(BodyTurnStartYaw, BodyTurnTargetYaw);
-			BodyVisualYaw = FMath::UnwindDegrees(BodyTurnStartYaw + TargetDeltaYaw * TurnAlpha);
-		}
-
-		if (bBodyTurnVisualInProgress && BodyTurnAnimLockRemaining <= 0.f)
-		{
-			BodyVisualYaw = BodyTurnTargetYaw;
-			const float RemainingYawDelta = FMath::FindDeltaAngleDegrees(BodyVisualYaw, PawnYaw);
-			if (FMath::Abs(RemainingYawDelta) >= BodyTurnInPlaceThreshold)
-			{
-				bBodyTurnVisualInProgress = true;
-				bBodyTurnRequestActive = true;
-				++BodyTurnSequenceId;
-				BodyTurnInPlaceIndex = (RemainingYawDelta < 0.f) ? 0 : 1;
-				const float SafePlayRate = FMath::Max(BodyTurnInPlacePlayRate, KINDA_SMALL_NUMBER);
-				const float TurnTime = FMath::Max(BodyTurnInPlaceAnimLockTime / SafePlayRate, KINDA_SMALL_NUMBER);
-				BodyTurnAnimLockRemaining = TurnTime;
-
-				BodyTurnStartYaw = BodyVisualYaw;
-				const float MaxTurnAngle = FMath::Abs(BodyTurnInPlaceStepAngle);
-				const float ClampedTurnDelta = MaxTurnAngle > KINDA_SMALL_NUMBER
-					? FMath::Clamp(RemainingYawDelta, -MaxTurnAngle, MaxTurnAngle)
-					: RemainingYawDelta;
-				BodyTurnTargetYaw = FMath::UnwindDegrees(BodyTurnStartYaw + ClampedTurnDelta);
-				BodyTurnInPlaceAngle = ClampedTurnDelta;
-				BodyTurnElapsedTime = 0.f;
-				BodyTurnDuration = TurnTime;
-				BodyTurnCurveAlpha = 0.f;
-				bBodyTurnCurveAlphaValid = false;
-			}
-			else
-			{
-				bBodyTurnVisualInProgress = false;
-				bBodyTurnRequestActive = false;
-				BodyTurnInPlaceAngle = 0.f;
-				BodyTurnStartYaw = BodyVisualYaw;
-				BodyTurnTargetYaw = BodyVisualYaw;
-				BodyTurnElapsedTime = 0.f;
-				BodyTurnDuration = 0.f;
-				BodyTurnCurveAlpha = 0.f;
-				bBodyTurnCurveAlphaValid = false;
-			}
-		}
-	}
-
-	// FEAT-038：身体保持直立——只跟随视觉偏航，丢弃相机俯仰（绝对旋转 + 每帧覆盖）。
-	// Pawn/相机/武器可实时跟控制器 yaw；下半身/影子通过 BodyVisualYaw 在空闲时滞后并播放转身。
+	// 身体保持直立并直接跟随 Pawn yaw；相机俯仰不传给身体组件。
 	if (BodyRoot)
 	{
-		BodyRoot->SetWorldRotation(FRotator(0.f, BodyVisualYaw, 0.f));
+		BodyRoot->SetWorldRotation(FRotator(0.f, GetActorRotation().Yaw, 0.f));
 	}
 
 	// 后坐力：角速度积分驱动，FInterpTo 衰减
@@ -581,23 +447,6 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation + CurrentSway);
 		CurrentArmsPitch = 0.f;
 	}
-}
-
-void AFPSCharacterBase::SetBodyTurnProgressAlpha(float Alpha)
-{
-	if (!bBodyTurnVisualInProgress)
-	{
-		return;
-	}
-
-	const float ClampedAlpha = FMath::Clamp(Alpha, 0.f, 1.f);
-	if (!bBodyTurnCurveAlphaValid && ClampedAlpha <= KINDA_SMALL_NUMBER)
-	{
-		return;
-	}
-
-	BodyTurnCurveAlpha = FMath::Max(BodyTurnCurveAlpha, ClampedAlpha);
-	bBodyTurnCurveAlphaValid = true;
 }
 
 void AFPSCharacterBase::OnDeath()

@@ -57,15 +57,6 @@ public:
 
 	FORCEINLINE bool IsSprinting() const { return bIsSprinting; }
 
-	FORCEINLINE bool  IsBodyTurningInPlace() const { return bBodyTurnRequestActive; }
-	FORCEINLINE bool  IsBodyTurnVisualInProgress() const { return bBodyTurnVisualInProgress; }
-	FORCEINLINE float GetBodyTurnInPlaceAngle() const { return BodyTurnInPlaceAngle; }
-	FORCEINLINE int32 GetBodyTurnInPlaceIndex() const { return BodyTurnInPlaceIndex; }
-	FORCEINLINE float GetBodyTurnInPlacePlayRate() const { return BodyTurnInPlacePlayRate; }
-	FORCEINLINE int32 GetBodyTurnSequenceId() const { return BodyTurnSequenceId; }
-	FORCEINLINE float GetBodyVisualYaw() const { return BodyVisualYaw; }
-	void SetBodyTurnProgressAlpha(float Alpha);
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float WalkSpeed;
 
@@ -105,24 +96,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ArmsAiming")
 	float ArmsPitchInterpSpeed = 12.f;
-
-	// Lower-body visual yaw lags behind Pawn yaw and plays fixed turn-in-place steps while idle.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BodyTurn")
-	float BodyTurnInPlaceThreshold = 30.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BodyTurn")
-	float BodyTurnInPlaceMoveSpeed = 3.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BodyTurn")
-	float BodyTurnInPlaceStepAngle = 45.f;
-
-	// Base duration of a single turn step at play rate 1.0.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BodyTurn")
-	float BodyTurnInPlaceAnimLockTime = 0.45f;
-
-	// Shared C++ timing scale and ABP Sequence Player play rate.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BodyTurn", meta = (ClampMin = "0.1", ClampMax = "3.0"))
-	float BodyTurnInPlacePlayRate = 1.3f;
 
 protected:
 	virtual void BeginPlay() override;
@@ -194,18 +167,4 @@ private:
 
 	bool bIsSprinting = false;
 
-	float BodyVisualYaw = 0.f;
-	bool bBodyVisualYawInitialized = false;
-	bool bBodyTurnVisualInProgress = false;
-	bool bBodyTurnRequestActive = false;
-	float BodyTurnInPlaceAngle = 0.f;
-	int32 BodyTurnInPlaceIndex = 0;
-	float BodyTurnStartYaw = 0.f;
-	float BodyTurnTargetYaw = 0.f;
-	float BodyTurnAnimLockRemaining = 0.f;
-	float BodyTurnElapsedTime = 0.f;
-	float BodyTurnDuration = 0.f;
-	float BodyTurnCurveAlpha = 0.f;
-	bool bBodyTurnCurveAlphaValid = false;
-	int32 BodyTurnSequenceId = 0;
 };

@@ -764,7 +764,7 @@
       "description": "步枪上半身 Linked Anim Layer 的旧尝试。2026-07-26 MCP 复核发现实际 SM_FirearmUpperBody 仍为 Idle <-> WalkRun，现有 BS_Rifle_UpperBody_IdleWalkRun 是 2D BlendSpace 且 0 samples，与原计划的 Locomotion + 1D BlendSpace 不一致；用户随后删除了一部分效果不佳的重定向动画资产，本功能暂停并由 FEAT-051 接管后续动画整理。",
       "archive_file": "archive/FEAT-046-rifle-upperbody-start-end.md",
       "created": "2026-07-05",
-      "updated": "2026-07-26-session88",
+      "updated": "2026-07-26-session89",
       "done_criteria": [
         "UEquipmentAnimInstance 仅保留通用装备动画层变量 Speed / Direction / Velocity_Z / bIsFalling；Start/End 状态机临时变量已删除",
         "C++ Development Editor / Win64 编译无错误无新增警告",
@@ -860,7 +860,7 @@
         "所有活动 AnimBP 编译无错误，且不存在指向用户已删除动画资产的失效引用",
         "PIE：玩家 locomotion/武器层正常；各 Enemy 巡逻、转身、瞄准和攻击动画正常"
       ],
-      "verification_evidence": "2026-07-26-session80：MCP 复扫确认玩家 ABP_BodyLocomotion、ALI_WeaponAnim、TABP_Firearm_UpperBodyBase 仍存在；Enemy 侧无骨架模板 ABP_HumanoidEnemy 与 Phantom 子 AnimBP ABP_Phantom 仍存在。2026-07-26-session88：用户将玩家模板整理为 TABP_BodyLocomotion，创建并编译 ABP_MaintenanceWorker、BS_RunWalk_MaintenanceWorker、ABP_RepairGun_AnimLayer 与 BS_WalkRun_RepairGun；维修工临时统一使用手臂 Skeleton。AEquipmentBase 已删除 EquipmentAnimClass 整体替换路径，只保留 EquipmentAnimLayerClass；TheManTestEditor Win64 Development 完整构建 41/41 成功。AnimBP 编辑器配置与 PIE 仍待验证。"
+      "verification_evidence": "2026-07-26-session80：MCP 复扫确认玩家 ABP_BodyLocomotion、ALI_WeaponAnim、TABP_Firearm_UpperBodyBase 仍存在；Enemy 侧无骨架模板 ABP_HumanoidEnemy 与 Phantom 子 AnimBP ABP_Phantom 仍存在。2026-07-26-session88：用户将玩家模板整理为 TABP_BodyLocomotion，创建并编译 ABP_MaintenanceWorker、BS_RunWalk_MaintenanceWorker、ABP_RepairGun_AnimLayer 与 BS_WalkRun_RepairGun；维修工临时统一使用手臂 Skeleton。AEquipmentBase 已删除 EquipmentAnimClass 整体替换路径，只保留 EquipmentAnimLayerClass；TheManTestEditor Win64 Development 完整构建 41/41 成功。2026-07-26-session89：暂停玩家原地转身，删除 BodyVisualYaw、固定 45 度转步及 TurnRootYaw 曲线驱动 C++ 链；BodyRoot 改为直接跟随 Actor yaw。AnimBP 旧 Turn 节点清理与 PIE 仍待验证。"
     },
     {
       "id": "FEAT-052",

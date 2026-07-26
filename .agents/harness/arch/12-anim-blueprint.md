@@ -170,22 +170,10 @@ ABP_BodyLocomotion:
 |---|---|---|
 | `AccelDirection` | `float` | 加速度方向角 [-180,180]，可选用于起步 Lean |
 | `bHasAcceleration` | `bool` | 当前是否有移动输入加速度 |
-| `bIsTurningInPlace` | `bool` | 角色 `BodyVisualYaw` 正在补向 PawnYaw 时触发原地转身状态 |
-| `TurnInPlaceAngle` | `float` | 触发原地转身的有符号累计角，负数=左，正数=右 |
-| `TurnInPlaceIndex` | `int32` | 0=左 45 度，1=右 45 度 |
-| `TurnInPlacePlayRate` | `float` | 接到 Turn_L45 / Turn_R45 Sequence Player 的 Play Rate；同一个值也缩放 C++ 重触发锁定时长 |
-| `TurnRootYawCurveName` | `FName` | 默认 `TurnRootYaw`；AnimInstance 每帧读取该曲线的增量驱动 `BodyVisualYaw` |
-| `TurnRootYawPoseFixRotation` | `FRotator` | 等于 `-TurnRootYaw` 的 yaw Rotator。仅用于 `LocomotionSM` 外侧全局 `Transform Modify Bone(root)`，不要放进 Turn 状态内部 |
 
 > 走跑档由 `AFPSCharacterBase::StartSprint/StopSprint` 改 `CharacterMovement->MaxWalkSpeed`，ABP 通常只读 `Speed` 进入同一个 Walk/Run BlendSpace。
 
-**原地转身（session66 曲线驱动版）：**
-- 使用 `Content/RTG/RTG_W2_Stand_Aim_L_45` 与 `Content/RTG/RTG_W2_Stand_Aim_R_45` 这类非 Root Motion 的 45 度转身资产。资产必须带 `TurnRootYaw` 曲线：左转 `0 -> -45`，右转 `0 -> +45`。
-- `LocomotionSM` 中从 `Idle` 进入 Turn 状态条件为 `bIsTurningInPlace && TurnInPlaceIndex == 0/1`。Turn 状态可按 `Relevant Anim Time Remaining < 0.1` 正常回 `Idle`；C++ 会在 Turn 结束时把 `BodyVisualYaw` 对齐到触发时锁定的 `PawnYaw`，因此回 Idle 的落点就是最终朝向。Sequence Player 建议非循环。
-- Turn Sequence Player 的 `Play Rate` 接 `TurnInPlacePlayRate`。角色 BP 只调 `BodyTurnInPlacePlayRate`，它会同时影响曲线播放速度和 C++ 下一段 45 度 turn 的重触发锁定时长。
-- 若 turn 资产姿势里本身带 root bone yaw，必须把抵消放在 `LocomotionSM` 外面对最终混合姿势全局应用一次：`LocomotionSM -> Local To Component -> Transform Modify Bone(root) -> Component To Local -> 后续 Slot/Layer/Output`。`Transform Modify Bone` 设置 `Rotation Mode=Add to Existing`，`Rotation` 接 `TurnRootYawPoseFixRotation`。不要把该节点放进 `Turn_L45` / `Turn_R45` 状态内部，否则 Turn->Idle 过渡时抵消会随状态权重混掉，出现“回 Idle 再拉回”。Turn 状态内部只保留对应 Sequence Player。
-- 当前 `AFPSCharacterBase` 仍 `bUseControllerRotationYaw=true`，胶囊体/相机跟随控制器 yaw；下半身/影子由 `BodyRoot` 使用 `BodyVisualYaw` 视觉朝向。触发 Turn 时 C++ 锁定当前 `PawnYaw` 为 `BodyTurnTargetYaw`，用 `TurnRootYaw` 曲线帧差作为速度曲线，并按 `abs(YawDelta) / BodyTurnInPlaceStepAngle` 缩放曲线增量；Turn 结束时 `BodyVisualYaw` 直接对齐锁定目标。方向过滤会忽略状态退出时曲线归零产生的反向增量。
-- Root Motion 版本暂不启用，避免和胶囊体旋转叠加。
+**原地转身：** session89 起暂停。玩家 ABP 不应包含 Turn 状态、`TurnRootYaw` 曲线读取或 root-bone 转向抵消节点；Pawn 与 `BodyRoot` 直接跟随 Controller/Actor yaw。后续转体方案另立功能重新设计。
 
 ---
 

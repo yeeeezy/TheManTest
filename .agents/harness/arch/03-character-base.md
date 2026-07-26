@@ -23,7 +23,7 @@ Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE
     ├─ ShadowBodyMesh = Follower，全身，OwnerNoSee + bCastHiddenShadow（只投影）
     └─ LegsMesh       = Follower，只渲染腿材质段，OnlyOwnerSee，无影
 ```
-- session66 原地转身：`BodyRoot` 的 yaw 使用 `AFPSCharacterBase::BodyVisualYaw`，移动/下落时跟 PawnYaw，空闲时可滞后并触发 45 度 Turn。Turn 动画资产上的 `TurnRootYaw` 曲线由 `UFPSCharacterAnimInstance` 读取后通过 `ApplyBodyTurnRootYawDelta()` 推进 `BodyVisualYaw`；因此转身视觉节奏应由动画曲线决定，而不是在 `Tick()` 里手动匀速旋转。
+- session89 起暂停原地转身方案：`bUseControllerRotationYaw=true`，Pawn 直接跟随 Controller yaw；`BodyRoot` 每帧直接使用 Actor yaw 并保持 Pitch/Roll 为 0。旧 `BodyVisualYaw` 滞后、固定 45 度转步和动画曲线驱动代码均已删除，后续转体作为独立方案重新设计。
 - 三 mesh 须引用**同一 Skeleton**；几何分离只用材质段（`ShowMaterialSection`）/OpacityMask，**禁用 HideBoneByName**（会改共享姿势）。本项目实际用「物理拆 mesh」（Blender 拆 Arms/Legs，原整块当 Shadow），`ArmsHiddenSections/LegsHiddenSections` 留空。
 - 蓝图侧：Shadow/Legs 组件相对变换需 Yaw=-90 + Z=-CapsuleHalfHeight(=-88)（同默认 GetMesh() 摆法）。
 - 蓝图侧 **Mesh（GetMesh()）组件**：指定全身骨架 mesh + locomotion AnimClass + 相对 Transform；**Cast Shadow 取消勾选**（BP 勾选会覆盖 C++ 的 false，造成手臂形状影子与 ShadowBodyMesh 穿帮）。`OnlyOwnerSee` 已由 C++ 设——故编辑器视口（无 owner）看不见手臂，PIE 里可见，属正常。

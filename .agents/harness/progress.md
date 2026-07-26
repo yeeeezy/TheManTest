@@ -2,9 +2,9 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-26-session88
+**最后更新：** 2026-07-26-session89
 **当前功能：** **FEAT-051（基于原始骨架重建角色与 Enemy 动画蓝图）**
-**会话编号：** 88
+**会话编号：** 89
 
 用户已手动删除一部分效果不佳的重定向动画和动画蓝图。现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构继续保留。
 
@@ -19,6 +19,7 @@
 - [x] 维修工身体、下半身、手臂与临时动画统一到手臂 Skeleton；当前阶段接受参考姿势差异，只验证代码和 AnimBP 架构。
 - [x] RepairGun 专属层 `ABP_RepairGun_AnimLayer` 与 `BS_WalkRun_RepairGun` 已创建。
 - [x] 删除无用 `EquipmentAnimClass` 整体替换路径；武器只通过 `EquipmentAnimLayerClass` 链接专属层。
+- [x] 暂停玩家原地转身：删除 `BodyVisualYaw`/45° Turn/曲线进度 C++ 链，`BodyRoot` 直接跟随 Actor yaw；ABP 转体节点待用户手动清理。
 - [x] Enemy 模板/子资产仍存在：`ABP_HumanoidEnemy`、`ABP_Phantom`；Phantom 保留原始 `SK_Cyber01_Skeleton` 动画集。
 - [x] FEAT-046 改为 `needs_improvement`：实际 `SM_FirearmUpperBody` 为 `Idle <-> WalkRun`，不是旧记录中的 `Idle <-> Locomotion`。
 - [x] MCP 确认 `BS_Rifle_UpperBody_IdleWalkRun` 为 2D BlendSpace 且 0 samples，原 1D 目标未完成。
@@ -34,6 +35,7 @@
 ## 当前待办
 
 - [ ] 在 `BP_RepairGun` 将 `EquipmentAnimLayerClass` 配置为 `ABP_RepairGun_AnimLayer`，编译并验证装备/卸下。
+- [ ] 从 `TABP_BodyLocomotion` / `ABP_MaintenanceWorker` 清理旧 Turn 状态与 root-bone 转向抵消节点并重新编译。
 - [ ] 为每种 Enemy 使用其动画原始 Skeleton 创建或确认子 AnimBP。
 - [ ] 按每套 Enemy 原始骨架检查 `hand_r` / `hand_l` / spine 链 / `AimSocket` / 武器握把与 IK 节点。
 - [ ] 检查活动 AnimBP 是否存在指向已删除动画资产的失效引用，并逐个编译。
