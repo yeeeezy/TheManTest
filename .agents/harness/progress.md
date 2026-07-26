@@ -2,9 +2,9 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-26-session84
+**最后更新：** 2026-07-26-session85
 **当前功能：** **FEAT-051（基于原始骨架重建角色与 Enemy 动画蓝图）**
-**会话编号：** 83
+**会话编号：** 85
 
 用户已手动删除一部分效果不佳的重定向动画和动画蓝图。现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构继续保留。
 
@@ -34,6 +34,9 @@
 - [ ] 检查活动 AnimBP 是否存在指向已删除动画资产的失效引用，并逐个编译。
 - [ ] PIE 验证玩家 locomotion/武器层，以及各 Enemy 的巡逻、转身、瞄准和攻击动画。
 - [ ] 调查活动 `BP_Infiltrator` 对 `BP_Infiltrator_Old` 的硬引用来源；未经用户确认不自动修改。
+- [ ] 替换 `BP_Infiltrator` 对 `/Game/SCI_FI_WEAPON_PACK/SCF_Rifle_02/Demo/FirstPerson/Character/Mesh/SK_Mannequin_Arms` 的直接引用。
+- [ ] 替换 `BP_InteractableBase` 对 `/Game/SCI_FI_WEAPON_PACK/SCF_Rifle/Demo/Geometry/Meshes/1M_Cube` 的直接引用。
+- [ ] 替换 `BP_RepairGun` 对 `/Game/SCI_FI_WEAPON_PACK/SCF_Rifle/Demo/FirstPerson/Audio/FirstPersonTemplateWeaponFire02` 的直接引用。
 
 ---
 
@@ -59,7 +62,7 @@
 
 # 会话交接
 
-## Session84 handoff - FEAT-051 active (2026-07-26)
+## Session85 handoff - FEAT-051 active (2026-07-26)
 
 - 当前 active feature 是 `FEAT-051`。
 - FEAT-046 已转为 `needs_improvement`；MCP 证实其实际状态和 BlendSpace 与旧记录不符。
@@ -71,3 +74,4 @@
 - Rider 的 MCP C4702 编译错误已修复：外部插件本地分支 `fix/ue57-c4702`，commit `c9bee30`；UE 5.7 `TheManTestEditor Win64 Development -WarningsAsErrors` 40/40 构建通过。
 - FEAT-052 已完成但不改变 active feature：新增通用弹体 `/Game/Weapons/_Shared/Mesh/SM_Shared_Bullet`；通用材质位于 `_Shared/Material`；RepairGun 子弹材质已移动到 `RepairGun/Material`；MCP 验证引用、尺寸与无重定向器均通过。
 - FEAT-053 已完成但不改变 active feature：后续 Unreal MCP 资产操作先读 `guides/unreal-mcp-workflow.md`，并优先使用定向查询、结果复核和选择性 Git checkpoint。
+- MCP 定向检查确认 3 个待解除的 SCI_FI_WEAPON_PACK 直接引用：`BP_Infiltrator` 的手臂 Mesh、`BP_InteractableBase` 的默认方块 Mesh、`BP_RepairGun` 的开火音效；已加入当前待办，尚未修改资产。`BP_TestGunBullet` 已使用共享子弹，无该资源包引用。
