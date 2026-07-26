@@ -3,6 +3,9 @@
 	"EngineAssociation": "5.7",
 	"Category": "",
 	"Description": "",
+	"AdditionalPluginDirectories": [
+		"D:/Unreal Plugins/Unreal_mcp-v0.5.30/plugins"
+	],
 	"Modules": [
 		{
 			"Name": "TheManTest",
@@ -24,6 +27,10 @@
 		},
 		{
 			"Name": "GameplayAbilities",
+			"Enabled": true
+		},
+		{
+			"Name": "McpAutomationBridge",
 			"Enabled": true
 		}
 	]

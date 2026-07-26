@@ -1,6 +1,6 @@
 ﻿{
   "schema_version": "1.0",
-  "last_updated": "2026-07-05-session75",
+  "last_updated": "2026-07-26-session79",
   "active_feature": "FEAT-046",
   "features": [
     {
@@ -824,6 +824,24 @@
         "Git/LFS 完整性检查通过且未配置远程 ✓"
       ],
       "verification_evidence": "2026-07-26-session78：创建基线提交 33c70d1，共 1653 个文件；1463 个二进制资产由 LFS 管理，89 个超过 10 MB 的暂存文件全部为受 LFS 管理的 .uasset；git lfs fsck 通过，无远程仓库。"
+    },
+    {
+      "id": "FEAT-050",
+      "name": "UE 5.7 Unreal MCP 隔离集成",
+      "status": "done",
+      "description": "在独立测试分支中以外部插件目录接入固定版本 Unreal MCP，仅监听本机回环地址；完成 UE 5.7.4 编译、编辑器启动和原生 HTTP MCP 握手验证，不修改游戏资产。",
+      "archive_file": "archive/FEAT-050-unreal-mcp-integration.md",
+      "created": "2026-07-26",
+      "updated": "2026-07-26-session79",
+      "done_criteria": [
+        "第三方插件固定为 ChiR24/Unreal_mcp v0.5.30，并保存在项目目录之外 ✓",
+        "测试分支 test/unreal-mcp-5.7 上启用插件，main 保持不变 ✓",
+        "UE 5.7.4 Development Editor / Win64 编译成功 ✓",
+        "编辑器启动后原生 MCP 仅监听 127.0.0.1:3000 ✓",
+        "MCP initialize 与 tools/list 成功，列出 23 个工具 ✓",
+        "Codex 用户配置已登记 unreal-engine，未执行资产写入工具 ✓"
+      ],
+      "verification_evidence": "2026-07-26-session79：McpAutomationBridge v0.5.30 在 UE 5.7.4 完成 25/25 编译并启动；日志确认 23 个自描述工具注册、Native MCP 位于 http://127.0.0.1:3000/mcp；initialize 协商 protocolVersion 2025-03-26，tools/list 返回 23 个工具。插件仓库位于 D:\\Unreal Plugins\\Unreal_mcp-v0.5.30；Codex 配置登记为 unreal-engine。未调用任何修改资产的工具。"
     }
 
   ],

@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-26-session78  
+**最后更新：** 2026-07-26-session79
 **当前功能：** **FEAT-046（步枪上半身 1D BlendSpace 状态机）**  
 **会话编号：** 75
 
@@ -89,3 +89,13 @@ FEAT-049（Git 与 Git LFS 项目基线）已完成；本地 `main` 分支和 LF
 - FEAT-047 已完成：`/Game/Weapons/RepairGun/Mesh/SM_RepairGun_Bullet` 与蓝色材质已导入并通过独立命令行加载验证；未赋值到 RepairGun 子弹蓝图。详见 `archive/FEAT-047-repairgun-bullet-mesh.md`。
 - FEAT-048 已完成并取代 FEAT-047 的简单球体：`SM_RepairGun_Bullet` 现为用户确认的科技多面体泡沫核心；独立加载验证通过。详见 `archive/FEAT-048-repairgun-tech-foam-bullet.md`。
 - FEAT-049 已完成：项目现有本地 Git `main` 基线和 Git LFS；基线提交为 `33c70d1`，无远程、无上传。详见 `archive/FEAT-049-git-lfs-baseline.md`。
+
+## Session79 handoff - Unreal MCP isolated integration (2026-07-26)
+
+- FEAT-050 已在 `test/unreal-mcp-5.7` 分支完成；`main` 未合并、未受影响。
+- 外部插件固定为 `D:\Unreal Plugins\Unreal_mcp-v0.5.30`，项目通过 `AdditionalPluginDirectories` 引用。
+- UE 5.7.4 Development Editor / Win64 编译成功；编辑器运行时 MCP 仅监听 `127.0.0.1:3000`。
+- 原生 MCP `initialize` 与 `tools/list` 已验证，返回 23 个工具；未执行任何资产写入。
+- Codex 用户配置已登记 `unreal-engine`；需要重启 Codex 会话后才会作为原生工具加载。
+- `.agents/harness/init.ps1` 仍因既有乱码/解析错误无法运行，本次按 caveat 未修复。
+- active_feature 仍为 FEAT-046；后续业务开发继续其 1D BlendSpace 编辑器验证。
