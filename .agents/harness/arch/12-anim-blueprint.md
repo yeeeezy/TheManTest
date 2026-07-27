@@ -149,6 +149,7 @@ ABP_BodyLocomotion:
 - `ArmsViewMesh` 与 `GetMesh()` 各自有独立 AnimInstance。BBBAimIK 使用同一相机射线目标，但会分别转换到各自 Component Space，因此第一人称手臂和身体/影子都能瞄准相机指向位置。
 - `ShadowBodyMesh` / `LegsMesh` 不设置自己的 AnimClass，继续 `SetLeaderPoseComponent(GetMesh())`。
 - 不使用 `Copy Pose From Mesh`。武器切换仍靠武器 BP 的 `EquipmentAnimLayerClass`。
+- 武器 `WeaponUpperBody` 从 `spine_01` 使用 `Layered Blend per Bone` 覆盖全身 locomotion 时，应开启 `Mesh Space Rotation Blend`。否则侧移时 pelvis/root 的局部旋转会继续传给上半身，使第一人称手臂和枪口跟随左右偏转；开启后仍保持身体、影子和 FP 手臂共用同一 locomotion 时序。
 
 ---
 

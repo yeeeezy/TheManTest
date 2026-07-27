@@ -2,9 +2,9 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-26-session89
+**最后更新：** 2026-07-27-session90
 **当前功能：** **FEAT-051（基于原始骨架重建角色与 Enemy 动画蓝图）**
-**会话编号：** 89
+**会话编号：** 90
 
 用户已手动删除一部分效果不佳的重定向动画和动画蓝图。现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构继续保留。
 
@@ -18,6 +18,9 @@
 - [x] 玩家模板已整理为 `TABP_BodyLocomotion`；维修工子 AnimBP `ABP_MaintenanceWorker` 及 `BS_RunWalk_MaintenanceWorker` 已创建并由用户编译通过。
 - [x] 维修工身体、下半身、手臂与临时动画统一到手臂 Skeleton；当前阶段接受参考姿势差异，只验证代码和 AnimBP 架构。
 - [x] RepairGun 专属层 `ABP_RepairGun_AnimLayer` 与 `BS_WalkRun_RepairGun` 已创建。
+- [x] 修复左右移动时第一人称手臂/枪口朝向被侧移 pelvis 带偏：`TABP_Firearm_UpperBodyBase.WeaponUpperBody` 现从 `spine_01` 保持既有分层，并为 `Layered Blend per Bone` 开启 `Mesh Space Rotation Blend`；玩家全身、影子与第一人称仍共用 locomotion 时序。
+- [x] MCP 编译并保存 `TABP_Firearm_UpperBodyBase`、`ABP_RepairGun_AnimLayer`、`TABP_BodyLocomotion`、`ABP_MaintenanceWorker` 均成功；PIE 自动 A/D 横移运行无加载/编译错误。
+- [x] PIE 定量验证通过：A 与 D 在相同 Walk 动画相位下，`ArmsViewMesh.hand_r` 相对相机的 5 组 Pitch/Yaw/Roll 样本逐项一致；左右方向只改变全身 `spine_01` 姿势，不再改变持枪手最终朝向。运行时 `CharacterMesh0` 与 `ArmsViewMesh` 均使用 `ABP_MaintenanceWorker_C`，`ShadowBodyMesh` 与 `LegsMesh` 的 Leader Pose 均为 `CharacterMesh0`，同步链保持不变。
 - [x] 删除无用 `EquipmentAnimClass` 整体替换路径；武器只通过 `EquipmentAnimLayerClass` 链接专属层。
 - [x] 暂停玩家原地转身：删除 `BodyVisualYaw`/45° Turn/曲线进度 C++ 链，`BodyRoot` 直接跟随 Actor yaw；ABP 转体节点待用户手动清理。
 - [x] 用户已清理 `TABP_BodyLocomotion` 的旧 Turn 节点；修改已保存到本地 WIP checkpoint `8e6a8e0`。
@@ -38,7 +41,6 @@
 ## 当前待办
 
 - [ ] 在 `BP_RepairGun` 将 `EquipmentAnimLayerClass` 配置为 `ABP_RepairGun_AnimLayer`，编译并验证装备/卸下。
-- [ ] 下次启动编辑器后编译 `TABP_BodyLocomotion` 与 `ABP_MaintenanceWorker`，确认删除 C++ Turn 变量后无失效节点；随后 PIE 验证 Pawn 直接旋转、基础 locomotion 和 RepairGun 动画层。
 - [ ] 为每种 Enemy 使用其动画原始 Skeleton 创建或确认子 AnimBP。
 - [ ] 按每套 Enemy 原始骨架检查 `hand_r` / `hand_l` / spine 链 / `AimSocket` / 武器握把与 IK 节点。
 - [ ] 检查活动 AnimBP 是否存在指向已删除动画资产的失效引用，并逐个编译。
@@ -52,7 +54,7 @@
 
 ## 当前阻塞
 
-今日工作已收尾。下次从重新启动编辑器、编译玩家模板/维修工 ABP、检查 RepairGun Linked Anim Layer，再进行 PIE 验证开始。
+当前无阻塞。A/D 横移的第一人称持枪朝向与影子同步链已完成运行时验证。
 
 ---
 
