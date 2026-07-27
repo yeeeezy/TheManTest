@@ -56,7 +56,4 @@ protected:
 	// 当前装备在数组中的下标
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Equipment|State")
 	int32 CurrentEquipmentIndex = 0;
-
-	// 有 Montage 的切枪期间继续留在手里的旧装备；新姿势就绪后与新装备原子交换。
-	TWeakObjectPtr<AEquipmentBase> PendingVisibleEquipment;
 };

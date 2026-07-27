@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Characters/Components/EquipmentManagerComponent.h"
+#include "Characters/FPSCharacterBase/FPSCharacterBase.h"
 #include "Equipment/EquipmentBase/EquipmentBase.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Character.h"
@@ -128,12 +129,10 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
     if (!OwnerCharacter) return;
 
     USkeletalMeshComponent* TargetMesh = AttachTargetMesh ? AttachTargetMesh : OwnerCharacter->GetMesh();
-
-    // 快速连续切枪可能发生在上一次原子交换完成前；先收好仍留在手里的旧装备。
-    if (PendingVisibleEquipment.IsValid())
+    USkeletalMeshComponent* ViewmodelMesh = nullptr;
+    if (const AFPSCharacterBase* FPSCharacter = Cast<AFPSCharacterBase>(OwnerCharacter))
     {
-        FinalizeUnequippedEquipment(PendingVisibleEquipment.Get(), TargetMesh);
-        PendingVisibleEquipment.Reset();
+        ViewmodelMesh = FPSCharacter->GetArmsMesh();
     }
 
     int32 OldEquipmentIndex = CurrentEquipmentIndex;
@@ -147,7 +146,6 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
 
     AEquipmentBase* OldEquipment = Inventory[OldEquipmentIndex];
     AEquipmentBase* NewEquipment = Inventory[NewEquipmentIndex];
-    const bool bDelayVisibilitySwap = NewEquipment && NewEquipment->GetEquipMontage() != nullptr;
     CurrentEquipmentIndex = NewEquipmentIndex;
 
     if (OldEquipment)
@@ -156,15 +154,7 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
         OldEquipment->SetActorEnableCollision(false);
         OldEquipment->SetActorTickEnabled(false);
 
-        if (bDelayVisibilitySwap)
-        {
-            // 新武器起始姿势尚未就绪，旧武器继续留在手里，避免出现一帧空手。
-            PendingVisibleEquipment = OldEquipment;
-        }
-        else
-        {
-            FinalizeUnequippedEquipment(OldEquipment, TargetMesh);
-        }
+        FinalizeUnequippedEquipment(OldEquipment, TargetMesh);
     }
 
     if (NewEquipment)
@@ -174,6 +164,12 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
         // 避免先露出持枪 Idle，再从上方向下混到拔枪起始姿势。
         const bool bHasEquipMontage = NewEquipment->GetEquipMontage() != nullptr;
         NewEquipment->SetActorHiddenInGame(bHasEquipMontage);
+        if (ViewmodelMesh)
+        {
+            // Linked Layer 会先评估一次最终持枪 Idle，Montage 下一帧才开始。
+            // 准备期间隐藏整套 FP viewmodel，避免手臂在最终位置闪帧。
+            ViewmodelMesh->SetVisibility(!bHasEquipMontage, false);
+        }
         NewEquipment->SetActorEnableCollision(true);
         NewEquipment->SetActorTickEnabled(true);
         
@@ -187,10 +183,9 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
         // LinkAnimClassLayers 会在下一次动画更新时完成初始化；同帧播放 Montage 会被
         // 该初始化清掉。延迟一帧，并确认快速滚轮后它仍是当前装备再播放。
         const TWeakObjectPtr<AEquipmentBase> EquipmentToPlay = NewEquipment;
-        const TWeakObjectPtr<AEquipmentBase> OldEquipmentToFinalize = OldEquipment;
-        const TWeakObjectPtr<USkeletalMeshComponent> SwapTargetMesh = TargetMesh;
+        const TWeakObjectPtr<USkeletalMeshComponent> ViewmodelToReveal = ViewmodelMesh;
         GetWorld()->GetTimerManager().SetTimerForNextTick(
-            FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToPlay, OldEquipmentToFinalize, SwapTargetMesh]()
+            FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToPlay, ViewmodelToReveal]()
             {
                 if (EquipmentToPlay.IsValid() && GetCurrentEquipment() == EquipmentToPlay.Get())
                 {
@@ -202,15 +197,14 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
 					{
 						const TWeakObjectPtr<AEquipmentBase> EquipmentToReveal = EquipmentToPlay;
 						World->GetTimerManager().SetTimerForNextTick(
-							FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToReveal, OldEquipmentToFinalize, SwapTargetMesh]()
+							FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToReveal, ViewmodelToReveal]()
 							{
 								if (EquipmentToReveal.IsValid() && GetCurrentEquipment() == EquipmentToReveal.Get())
 								{
-									FinalizeUnequippedEquipment(OldEquipmentToFinalize.Get(), SwapTargetMesh.Get());
 									EquipmentToReveal->SetActorHiddenInGame(false);
-									if (PendingVisibleEquipment == OldEquipmentToFinalize)
+									if (ViewmodelToReveal.IsValid())
 									{
-										PendingVisibleEquipment.Reset();
+										ViewmodelToReveal->SetVisibility(true, false);
 									}
 								}
 							}));

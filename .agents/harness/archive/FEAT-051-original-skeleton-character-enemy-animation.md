@@ -96,6 +96,12 @@ Session98 removed the remaining one-frame empty-hands flash. The flash was a dir
 
 Paused PIE visibility evidence remained mutually exclusive at every stage: initial RepairGun `(Repair false, Test true)`, TestGun `(Repair true, Test false)`, waiting to re-equip RepairGun `(Repair true, Test false)`, and ready RepairGun `(Repair false, Test true)`, where the booleans are hidden-state values. Four rapid switches ended in the same safe waiting state without two hidden weapons. `AtomicEquipSwap_FirstRepairFrame.png` shows the first RepairGun frame with no empty-hands flash. Development Editor/Win64 and Live Coding succeeded; post-switch W movement remained 250 cm/s and body/shadow `thigh_l` transforms still matched.
 
+Session99 corrected that diagnosis after the user clarified the visible artifact: it was not an empty-hand frame. During the frames before the RepairGun raised from below, the first-person hands and gun briefly appeared in their final held position. Linking the incoming weapon layer immediately changed `ArmsViewMesh` to that layer's held Idle pose; hiding only the incoming weapon actor could not hide the already-visible arms, and retaining the outgoing gun made the flash read as a complete held viewmodel.
+
+For Montage switches, `SwitchEquipment()` now finalizes the outgoing equipment immediately and hides both the incoming equipment actor and `ArmsViewMesh` while the linked layer and Montage start pose are prepared. After playback starts and one animation evaluation has completed, the same callback reveals the incoming weapon and arms. `CharacterMesh0` is never hidden, so the full-body animation and `ShadowBodyMesh` Leader Pose remain continuous. Non-Montage equipment restores the arms immediately, and weak current-equipment checks prevent stale rapid-switch callbacks from revealing the wrong state.
+
+Paused PIE evidence was `ArmsViewMesh=false / RepairGun hidden=true` during preparation, then `ArmsViewMesh=true / RepairGun hidden=false / Montage position=0.3333334` on the first visible automated frame. `EquipViewmodel_FirstVisible.png` records that frame. Four rapid switches ended with RepairGun and arms visible; W movement remained 250 cm/s, and `ShadowBodyMesh` still reported `CharacterMesh0` as its Leader. Development Editor/Win64 and Live Coding both succeeded.
+
 ## Known Cleanup Item
 
 - Active `BP_Infiltrator` still has a hard dependency on `/Game/Characters/Infiltrator/Blueprint/BP_Infiltrator_Old`. The exact referring property/node has not yet been identified; do not delete or rewrite it automatically.
