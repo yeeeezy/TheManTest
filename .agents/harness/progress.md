@@ -29,6 +29,7 @@
 - [x] 修复切回 RepairGun 时 Equip Montage 在下一动画 Tick 被取消：切枪完成 Linked Layer/挂载后改为下一帧播放，并校验快速滚轮后目标仍是当前装备；`PlayEquipMontage()` 同步驱动 `ArmsViewMesh` 与 `CharacterMesh0`，影子经 Leader Pose 继承。PIE 两实例从 0 同步推进至 0.3333 秒，结束后 W locomotion/影子同步正常。
 - [x] 修复 RepairGun Equip Montage “正在播放但画面无动作”：原 Montage 仅有 `DefaultSlot`，其上半身输出被主 ABP 后续中央 `WeaponUpperBody` 完全覆盖；现加入同源动画的 `UpperBodySlot` 轨道。暂停 PIE 逐帧截图在 0/0.333/0.666 秒显示清晰拔枪姿势变化，第一人称与影子同步。
 - [x] 修复 RepairGun 切入时先从上方放下再拿起：源序列采样证明动画本身从下方向上抬，异常来自 Montage 默认 0.25 秒 Blend In 与武器提前显示。现 Blend In=0；切枪时有 Montage 的武器先隐藏，启动并评估一帧后再显示。PIE 首张可见图位于下方，后续只向上抬；移动速度 250、影子 Leader/腿骨同步正常。
+- [x] 修复新武器抬起前的一帧空手残影：不再先隐藏旧武器；有 Montage 时旧武器保持在手，待新姿势就绪后旧/新武器同帧原子交换。PIE 各阶段始终恰有一把武器可见，连续 4 次快速切换也无双隐藏；移动/影子回归正常。
 - [x] 删除无用 `EquipmentAnimClass` 整体替换路径；武器只通过 `EquipmentAnimLayerClass` 链接专属层。
 - [x] 暂停玩家原地转身：删除 `BodyVisualYaw`/45° Turn/曲线进度 C++ 链，`BodyRoot` 直接跟随 Actor yaw；ABP 转体节点待用户手动清理。
 - [x] 用户已清理 `TABP_BodyLocomotion` 的旧 Turn 节点；修改已保存到本地 WIP checkpoint `8e6a8e0`。
@@ -82,7 +83,7 @@
 
 # 会话交接
 
-## Session97 handoff - FEAT-051 active (2026-07-27)
+## Session98 handoff - FEAT-051 active (2026-07-27)
 
 - 当前 active feature 是 `FEAT-051`。
 - FEAT-046 已转为 `needs_improvement`；MCP 证实其实际状态和 BlendSpace 与旧记录不符。
@@ -103,3 +104,4 @@
 - RepairGun Equip Montage 切枪时序已修复：旧流程在 LinkAnimClassLayers 同帧立即播放，下一动画更新会把 Montage 清掉；现在下一帧确认当前装备后再播放，且手臂/身体 Leader 双实例同步。帧步进验证两边位置由 0 同步到 0.3333 秒；截图 `EquipMontage_Synced_0333.png`，结束后移动回归截图 `EquipMontage_PostMove.png`。TestGun 当前 `EquipMontage=None`，切入 TestGun 无动画属于资产尚未配置。
 - RepairGun Montage 的可视输出也已修复：原资产只有 `DefaultSlot`，被中央武器层从 `spine_01` 覆盖，所以运行时显示 playing 但动作不可见；现 Montage 有 `UpperBodySlot` 轨道（总计 2 slots、0 notifies、0.8667 秒）。逐帧截图 `EquipUpperSlot_T0.png` / `T0333.png` / `T0666.png` 显示枪与双臂明显下沉、展开、抬起，影子同步。
 - “先放下再拿起”并非源动画方向错误：`AS_Rifle_A_Equip` 的 hand_r/hand_l 原始姿势从 t=0 起持续向抬枪方向变化；问题是 Montage 0.25 秒 Hermite Blend In 从已显示的持枪 Idle 混回下方起点。现 Montage Blend In=0，切枪新武器在 Montage 启动时保持隐藏，下一动画帧评估完成才显示。帧步进状态为 `hidden=True/playing=True/pos=0` → `hidden=False/playing=True/pos=0.3333`；截图 `EquipRaise_FirstVisible.png` → `EquipRaise_Later.png` 只显示从下往上。
+- 空手残影来自旧武器先隐藏、新武器延迟显示而手臂持续渲染。现有 Montage 的切换保留旧武器为 `PendingVisibleEquipment`；新姿势就绪时调用 `FinalizeUnequippedEquipment` 收起旧武器，并在同一回调显示新武器。状态序列为 Repair visible → Test visible → 切回等待时 Test visible/Repair hidden → 原子交换后 Test hidden/Repair visible；从未同时隐藏。截图 `AtomicEquipSwap_FirstRepairFrame.png`，快速 4 连切与 W=250/Shadow Leader 骨骼同步均通过。

@@ -8,6 +8,7 @@
 
 // 前向声明
 class AEquipmentBase;
+class USkeletalMeshComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class THEMANTEST_API UEquipmentManagerComponent : public UActorComponent
@@ -46,6 +47,8 @@ public:
 	 * 🎒 内部数据资产
 	 * ========================================== */
 protected:
+	void FinalizeUnequippedEquipment(AEquipmentBase* Equipment, USkeletalMeshComponent* TargetMesh);
+
 	// 真正的背包数组！存放已经实例化的装备实体
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Equipment|Inventory")
 	TArray<AEquipmentBase*> Inventory;
@@ -53,4 +56,7 @@ protected:
 	// 当前装备在数组中的下标
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Equipment|State")
 	int32 CurrentEquipmentIndex = 0;
+
+	// 有 Montage 的切枪期间继续留在手里的旧装备；新姿势就绪后与新装备原子交换。
+	TWeakObjectPtr<AEquipmentBase> PendingVisibleEquipment;
 };

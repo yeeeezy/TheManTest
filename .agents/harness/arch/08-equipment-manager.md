@@ -4,5 +4,5 @@
 
 | 文件 | 关键内容 |
 |---|---|
-| `Source/TheManTest/Public/Characters/Components/EquipmentManagerComponent.h` | `InitializeEquipment()`、`SwitchEquipment(int32 Direction)`、`GetCurrentEquipment()`、`Inventory` 数组、`AttachTargetMesh` |
-| `Source/TheManTest/Private/Characters/Components/EquipmentManagerComponent.cpp` | 背包初始化（生成 Actor，初次装备不播蒙太奇，由角色下一帧安全播放）；切换逻辑（Unequip → Equip/挂载；无 Montage 的装备立即显示；有 Montage 的装备先保持隐藏，下一帧确认仍为当前装备后播放，再下一帧姿势已评估后显示），避免 Linked Anim Layer 初始化清掉同帧 Montage、快速滚轮误播旧装备，以及先露出持枪 Idle 再向下混到拔枪起始姿势；**EndPlay 先 `Unequip()` 回收技能再销毁 Inventory**（防切角色技能泄漏） |
+| `Source/TheManTest/Public/Characters/Components/EquipmentManagerComponent.h` | `InitializeEquipment()`、`SwitchEquipment(int32 Direction)`、`GetCurrentEquipment()`、`Inventory` 数组、`AttachTargetMesh`；`PendingVisibleEquipment` 记录 Montage 切枪期间继续显示的旧装备 |
+| `Source/TheManTest/Private/Characters/Components/EquipmentManagerComponent.cpp` | 背包初始化（生成 Actor，初次装备不播蒙太奇，由角色下一帧安全播放）；切换逻辑（Unequip → Equip/挂载；无 Montage 的装备立即交换；有 Montage 时旧装备继续显示、新装备隐藏，下一帧播放，再下一帧姿势评估完成后同帧收起旧装备并显示新装备），避免 Linked Anim Layer 初始化清掉同帧 Montage、快速滚轮误播、先露出持枪 Idle，以及短暂空手；`FinalizeUnequippedEquipment()` 统一处理隐藏/挂回 Holster；**EndPlay 先 `Unequip()` 回收技能再销毁 Inventory**（防切角色技能泄漏） |

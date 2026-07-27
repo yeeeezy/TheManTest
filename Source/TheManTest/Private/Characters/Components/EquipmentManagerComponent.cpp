@@ -95,6 +95,26 @@ AEquipmentBase* UEquipmentManagerComponent::GetCurrentEquipment() const
     return nullptr;
 }
 
+void UEquipmentManagerComponent::FinalizeUnequippedEquipment(
+    AEquipmentBase* Equipment,
+    USkeletalMeshComponent* TargetMesh)
+{
+    if (!Equipment) { return; }
+
+    const FName HolsterName = Equipment->GetHolsterSocketName();
+    if (HolsterName != NAME_None && TargetMesh)
+    {
+        Equipment->AttachToComponent(
+            TargetMesh,
+            FAttachmentTransformRules::SnapToTargetIncludingScale,
+            HolsterName);
+    }
+    else
+    {
+        Equipment->SetActorHiddenInGame(true);
+    }
+}
+
 // 极其纯净的无动画切枪逻辑
 void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
 {
@@ -109,6 +129,13 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
 
     USkeletalMeshComponent* TargetMesh = AttachTargetMesh ? AttachTargetMesh : OwnerCharacter->GetMesh();
 
+    // 快速连续切枪可能发生在上一次原子交换完成前；先收好仍留在手里的旧装备。
+    if (PendingVisibleEquipment.IsValid())
+    {
+        FinalizeUnequippedEquipment(PendingVisibleEquipment.Get(), TargetMesh);
+        PendingVisibleEquipment.Reset();
+    }
+
     int32 OldEquipmentIndex = CurrentEquipmentIndex;
     int32 NewEquipmentIndex = (CurrentEquipmentIndex + Direction + Inventory.Num()) % Inventory.Num();
 
@@ -117,26 +144,30 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
     {
         return;
     }
+
+    AEquipmentBase* OldEquipment = Inventory[OldEquipmentIndex];
+    AEquipmentBase* NewEquipment = Inventory[NewEquipmentIndex];
+    const bool bDelayVisibilitySwap = NewEquipment && NewEquipment->GetEquipMontage() != nullptr;
     CurrentEquipmentIndex = NewEquipmentIndex;
 
-    if (AEquipmentBase* OldEquipment = Inventory[OldEquipmentIndex])
+    if (OldEquipment)
     {
         OldEquipment->Unequip(); 
         OldEquipment->SetActorEnableCollision(false);
         OldEquipment->SetActorTickEnabled(false);
-        
-        FName HolsterName = OldEquipment->GetHolsterSocketName();
-        if (HolsterName != NAME_None)
+
+        if (bDelayVisibilitySwap)
         {
-            OldEquipment->AttachToComponent(TargetMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, HolsterName);
+            // 新武器起始姿势尚未就绪，旧武器继续留在手里，避免出现一帧空手。
+            PendingVisibleEquipment = OldEquipment;
         }
         else
         {
-            OldEquipment->SetActorHiddenInGame(true);
+            FinalizeUnequippedEquipment(OldEquipment, TargetMesh);
         }
     }
 
-    if (AEquipmentBase* NewEquipment = Inventory[CurrentEquipmentIndex])
+    if (NewEquipment)
     {
         NewEquipment->Equip(OwnerCharacter); 
         // 有拔枪 Montage 时先保持隐藏：Linked Layer 初始化完成并评估到动画首帧后再显示，
@@ -156,8 +187,10 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
         // LinkAnimClassLayers 会在下一次动画更新时完成初始化；同帧播放 Montage 会被
         // 该初始化清掉。延迟一帧，并确认快速滚轮后它仍是当前装备再播放。
         const TWeakObjectPtr<AEquipmentBase> EquipmentToPlay = NewEquipment;
+        const TWeakObjectPtr<AEquipmentBase> OldEquipmentToFinalize = OldEquipment;
+        const TWeakObjectPtr<USkeletalMeshComponent> SwapTargetMesh = TargetMesh;
         GetWorld()->GetTimerManager().SetTimerForNextTick(
-            FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToPlay]()
+            FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToPlay, OldEquipmentToFinalize, SwapTargetMesh]()
             {
                 if (EquipmentToPlay.IsValid() && GetCurrentEquipment() == EquipmentToPlay.Get())
                 {
@@ -169,11 +202,16 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
 					{
 						const TWeakObjectPtr<AEquipmentBase> EquipmentToReveal = EquipmentToPlay;
 						World->GetTimerManager().SetTimerForNextTick(
-							FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToReveal]()
+							FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToReveal, OldEquipmentToFinalize, SwapTargetMesh]()
 							{
 								if (EquipmentToReveal.IsValid() && GetCurrentEquipment() == EquipmentToReveal.Get())
 								{
+									FinalizeUnequippedEquipment(OldEquipmentToFinalize.Get(), SwapTargetMesh.Get());
 									EquipmentToReveal->SetActorHiddenInGame(false);
+									if (PendingVisibleEquipment == OldEquipmentToFinalize)
+									{
+										PendingVisibleEquipment.Reset();
+									}
 								}
 							}));
 					}
