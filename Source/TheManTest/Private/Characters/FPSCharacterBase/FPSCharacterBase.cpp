@@ -179,42 +179,23 @@ void AFPSCharacterBase::BeginPlay()
 	HideMeshMaterialSlots(ArmsViewMesh, ArmsHiddenSections);
 	HideMeshMaterialSlots(LegsMesh, LegsHiddenSections);
 
-	// 切换角色时新角色第一帧手臂动画实例与姿势尚未就绪，此刻播放拔枪蒙太奇会导致
-	// 武器起始位置错乱。先藏起手臂+当前武器，待下一帧姿势就绪后由 RevealArmsAndWeapon
-	// 播放拔枪动画并恢复显示。影子/腿同样先藏，避免首帧参考姿势闪现。
-	GetMesh()->SetVisibility(false, true);
-	if (ArmsViewMesh)   { ArmsViewMesh->SetVisibility(false, true); }
-	if (ShadowBodyMesh) { ShadowBodyMesh->SetVisibility(false, true); }
-	if (LegsMesh)       { LegsMesh->SetVisibility(false, true); }
-	if (EquipmentManager)
-	{
-		if (AEquipmentBase* Current = EquipmentManager->GetCurrentEquipment())
-		{
-			Current->SetActorHiddenInGame(true);
-		}
-	}
-	GetWorldTimerManager().SetTimerForNextTick(this, &AFPSCharacterBase::RevealArmsAndWeapon);
+	// 角色与装备保持首帧可见；只把拔枪 Montage 延迟到下一帧，等待 AnimInstance
+	// 完成初始化。不要在这里隐藏整套 Mesh，否则进入地图时会出现一帧“角色未加载”的空白。
+	GetWorldTimerManager().SetTimerForNextTick(this, &AFPSCharacterBase::PlayInitialEquipMontage);
 
 	LastControlRotation = GetControlRotation();
 }
 
-void AFPSCharacterBase::RevealArmsAndWeapon()
+void AFPSCharacterBase::PlayInitialEquipMontage()
 {
-	// 此时手臂动画实例与姿势已就绪：先播放当前武器拔枪动画（从第 0 帧干净开始），
-	// 再恢复手臂与武器显示，消除切角色时武器起始位置错乱。
+	// 此时手臂动画实例与姿势已就绪，从第 0 帧播放当前武器拔枪动画。
 	if (EquipmentManager)
 	{
 		if (AEquipmentBase* Current = EquipmentManager->GetCurrentEquipment())
 		{
 			Current->PlayEquipMontage();
-			Current->SetActorHiddenInGame(false);
 		}
 	}
-	GetMesh()->SetVisibility(true, true);
-	// FEAT-038/042：姿势就绪后一并恢复 FP 手臂/影子/腿显示。
-	if (ArmsViewMesh)   { ArmsViewMesh->SetVisibility(true, true); }
-	if (ShadowBodyMesh) { ShadowBodyMesh->SetVisibility(true, true); }
-	if (LegsMesh)       { LegsMesh->SetVisibility(true, true); }
 }
 
 void AFPSCharacterBase::PossessedBy(AController* NewController)

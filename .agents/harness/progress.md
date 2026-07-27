@@ -24,6 +24,7 @@
 - [x] PIE 定量验证通过：A 与 D 在相同 Walk 动画相位下，`ArmsViewMesh.hand_r` 相对相机的 5 组 Pitch/Yaw/Roll 样本逐项一致；左右方向只改变全身 `spine_01` 姿势，不再改变持枪手最终朝向。运行时 `CharacterMesh0` 与 `ArmsViewMesh` 均使用 `ABP_MaintenanceWorker_C`，`ShadowBodyMesh` 与 `LegsMesh` 的 Leader Pose 均为 `CharacterMesh0`，同步链保持不变。
 - [x] 中央混合重构后再次编译保存四个 AnimBP 并完成 PIE A/D 复测；运行时仍只有 `ShadowBodyMesh` 投影，`ShadowBodyMesh` / `LegsMesh` 的 Leader Pose 均为 `CharacterMesh0`，第一人称与全身 AnimClass 均为 `ABP_MaintenanceWorker_C`。
 - [x] 修复中央混合首次重接造成的 locomotion 回归：Pose 输出不能一对多，连接 `WeaponUpperBody.UpperBodyInPose` 时曾顶掉中央混合的 `BasePose`；现恢复 `DefaultSlot.Pose -> LayeredBlend.BasePose`，纯武器层不读取接口输入。PIE W 移动连续 5 次腿骨采样均变化，A/D 截图也显示移动动画恢复。
+- [x] 修复 TestMap 进入 PIE 后角色延迟显示：移除 `AFPSCharacterBase::BeginPlay` 对身体、第一人称手臂、影子、腿和当前武器的整套隐藏/下一帧显示流程；装备仍同步初始化并保持可见，仅将可选拔枪 Montage 留到下一帧。Development Editor/Win64 与 Live Coding 均成功，PIE 确认默认 `BP_MaintenanceWorker` 同步生成且首个正常动画 Tick 后手臂、武器、影子完整显示。
 - [x] 删除无用 `EquipmentAnimClass` 整体替换路径；武器只通过 `EquipmentAnimLayerClass` 链接专属层。
 - [x] 暂停玩家原地转身：删除 `BodyVisualYaw`/45° Turn/曲线进度 C++ 链，`BodyRoot` 直接跟随 Actor yaw；ABP 转体节点待用户手动清理。
 - [x] 用户已清理 `TABP_BodyLocomotion` 的旧 Turn 节点；修改已保存到本地 WIP checkpoint `8e6a8e0`。
@@ -77,7 +78,7 @@
 
 # 会话交接
 
-## Session87 handoff - FEAT-051 active (2026-07-26)
+## Session93 handoff - FEAT-051 active (2026-07-27)
 
 - 当前 active feature 是 `FEAT-051`。
 - FEAT-046 已转为 `needs_improvement`；MCP 证实其实际状态和 BlendSpace 与旧记录不符。
@@ -92,3 +93,5 @@
 - MCP 定向检查最初确认 3 个 SCI_FI_WEAPON_PACK 直接引用：`BP_Infiltrator` 的手臂 Mesh、`BP_InteractableBase` 的默认方块 Mesh、`BP_RepairGun` 的开火音效。`BP_TestGunBullet` 已使用共享子弹，无该资源包引用。
 - FEAT-054 已解除其中的 `BP_InteractableBase` 引用：蓝图现使用 `/Game/Actors/Interable/InteractableBase/Mesh/SM_InteractableBase_Default`；尺寸、材质路径、蓝图依赖和 Redirector 均已由 MCP 验证。其余待处理引用为 `BP_Infiltrator` 手臂 Mesh 与 `BP_RepairGun` 开火音效。
 - FEAT-055 已完成资产制作：维修工下半身位于 `/Game/Characters/MaintenanceWorker/TempCharacterBody/Meshes/SKM_MaintenanceWorker_LowerBody`，绑定迁入的 `SK_UE4Mannequin`；尚未配置到角色蓝图组件。
+- TestMap 的默认角色没有异步加载问题；`BP_TheManGamemodeBase` 在未选择角色时同步回退到 `BP_MaintenanceWorker`。此前的可见延迟来自 `AFPSCharacterBase::BeginPlay` 主动隐藏全部角色渲染组件与武器，再用 next-tick 回调显示；该隐藏流程已删除，下一帧回调现在只负责播放可选 Equip Montage。
+- MCP 自动化失焦时日志显示 PIE 会被编辑器节流到 3 FPS，因此“强制零 Tick 截图”只显示影子参考姿势，不能用作玩家首帧判断；约 1200ms（已有正常 Tick）截图确认第一人称手臂、RepairGun 和影子均正常。正常前台 60 FPS 下动画首 Tick 约为 16.7ms。

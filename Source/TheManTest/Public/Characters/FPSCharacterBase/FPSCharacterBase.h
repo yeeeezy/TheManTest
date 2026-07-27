@@ -152,7 +152,7 @@ protected:
 private:
 	void EnsureViewmodelAttachment();
 
-	void RevealArmsAndWeapon();
+	void PlayInitialEquipMontage();
 
 	FRotator CurrentSway;
 	FRotator LastControlRotation;

@@ -66,6 +66,14 @@ Unreal compiled and saved `TABP_BodyLocomotion`, `TABP_Firearm_UpperBodyBase`, `
 
 Session92 corrected a regression in the first central graph wiring. AnimGraph pose outputs are single-link: connecting `DefaultSlot.Pose` to `WeaponUpperBody.UpperBodyInPose` after connecting it to the central blend silently removed the `BasePose` link. The character therefore translated at runtime while the original locomotion pose was absent. The firearm layer now remains a pure-pose provider with its unused interface input disconnected, while `DefaultSlot.Pose` feeds the central blend's `BasePose` directly. Four AnimBPs compiled and saved again. During a 250 cm/s W test, five successive `thigh_l` and `calf_l` component-space samples all changed, proving the walk cycle was evaluating; A/D screenshots `CentralBlend_Fixed_A.png` and `CentralBlend_Fixed_D.png` provided visual regression coverage.
 
+## Immediate Initial Character Visibility
+
+Session93 audited the apparent delay when entering the current `TestMap`. The map's `BP_TheManGamemodeBase` synchronously falls back to `BP_MaintenanceWorker` when `SelectedCharacterID` is empty, and PIE already contains that pawn when the play request returns; there is no asynchronous character-class load on this path.
+
+The delay came from `AFPSCharacterBase::BeginPlay`: after synchronous equipment initialization it explicitly hid `GetMesh()`, `ArmsViewMesh`, `ShadowBodyMesh`, `LegsMesh`, and the current equipment actor, then restored them in a next-tick callback. That callback also played the initial Equip Montage. Session93 removed the hide/show lifecycle entirely. All character render components and the equipped weapon now retain their configured visibility from spawn, while `PlayInitialEquipMontage()` remains scheduled for the next tick so animation-instance initialization order stays safe.
+
+Development Editor/Win64 compiled successfully and the final patch loaded through Live Coding. Runtime inspection confirmed `BP_MaintenanceWorker_C_0` as the immediate view target; its first-person arms, shadow body, legs, and RepairGun remain visible (the inherited `CharacterMesh0` is still intentionally OwnerNoSee). PIE visual regression confirmed the arms, RepairGun, and complete shadow after animation evaluation. MCP-driven tests can report a 3 FPS PIE max tick rate while the editor is unfocused, so a forced screenshot before the first world tick is not equivalent to a player-visible frame and was excluded from completion evidence.
+
 ## Known Cleanup Item
 
 - Active `BP_Infiltrator` still has a hard dependency on `/Game/Characters/Infiltrator/Blueprint/BP_Infiltrator_Old`. The exact referring property/node has not yet been identified; do not delete or rewrite it automatically.
