@@ -139,11 +139,19 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
     if (AEquipmentBase* NewEquipment = Inventory[CurrentEquipmentIndex])
     {
         NewEquipment->Equip(OwnerCharacter); 
-        NewEquipment->SetActorHiddenInGame(false);
+        // 有拔枪 Montage 时先保持隐藏：Linked Layer 初始化完成并评估到动画首帧后再显示，
+        // 避免先露出持枪 Idle，再从上方向下混到拔枪起始姿势。
+        const bool bHasEquipMontage = NewEquipment->GetEquipMontage() != nullptr;
+        NewEquipment->SetActorHiddenInGame(bHasEquipMontage);
         NewEquipment->SetActorEnableCollision(true);
         NewEquipment->SetActorTickEnabled(true);
         
         NewEquipment->AttachToComponent(TargetMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, NewEquipment->GetEquipSocketName());
+
+        if (!bHasEquipMontage)
+        {
+            return;
+        }
 
         // LinkAnimClassLayers 会在下一次动画更新时完成初始化；同帧播放 Montage 会被
         // 该初始化清掉。延迟一帧，并确认快速滚轮后它仍是当前装备再播放。
@@ -154,6 +162,21 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
                 if (EquipmentToPlay.IsValid() && GetCurrentEquipment() == EquipmentToPlay.Get())
                 {
                     EquipmentToPlay->PlayEquipMontage();
+
+					// Timer 回调发生在本帧动画更新之后；再等一帧，让 Montage 的零混合
+					// 起始姿势先写入手臂/身体骨骼，然后才显示武器。
+					if (UWorld* World = GetWorld())
+					{
+						const TWeakObjectPtr<AEquipmentBase> EquipmentToReveal = EquipmentToPlay;
+						World->GetTimerManager().SetTimerForNextTick(
+							FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToReveal]()
+							{
+								if (EquipmentToReveal.IsValid() && GetCurrentEquipment() == EquipmentToReveal.Get())
+								{
+									EquipmentToReveal->SetActorHiddenInGame(false);
+								}
+							}));
+					}
                 }
             }));
     }
