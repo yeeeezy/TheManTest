@@ -160,19 +160,21 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
         NewEquipment->SetActorTickEnabled(true);
         NewEquipment->AttachToComponent(TargetMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, NewEquipment->GetEquipSocketName());
 
-        if (!NewEquipment->GetEquipMontage())
-        {
-            return;
-        }
+        // 当帧先播放一次，确保新层的最终 Idle 没有可见窗口；下一帧层初始化稳定后
+        // 再从 0 正式重启。零 Blend In 下只会多保持起始姿势一帧。
+        NewEquipment->PlayEquipMontage();
 
-        const TWeakObjectPtr<AEquipmentBase> EquipmentToPlay = NewEquipment;
-        GetWorld()->GetTimerManager().SetTimerForNextTick(
-            FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToPlay]()
-            {
-                if (EquipmentToPlay.IsValid() && GetCurrentEquipment() == EquipmentToPlay.Get())
+        if (NewEquipment->GetEquipMontage())
+        {
+            const TWeakObjectPtr<AEquipmentBase> EquipmentToReplay = NewEquipment;
+            GetWorld()->GetTimerManager().SetTimerForNextTick(
+                FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToReplay]()
                 {
-                    EquipmentToPlay->PlayEquipMontage();
-                }
-            }));
+                    if (EquipmentToReplay.IsValid() && GetCurrentEquipment() == EquipmentToReplay.Get())
+                    {
+                        EquipmentToReplay->PlayEquipMontage();
+                    }
+                }));
+        }
     }
 }

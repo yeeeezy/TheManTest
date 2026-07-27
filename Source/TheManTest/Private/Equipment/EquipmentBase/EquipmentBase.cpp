@@ -120,7 +120,7 @@ void AEquipmentBase::Unequip()
 {
     AActor* CurrentOwner = GetOwner();
 
-    if (EquipmentAnimLayerClass && CurrentOwner)
+    if (CurrentOwner)
     {
         TArray<USkeletalMeshComponent*> AnimMeshes;
         GetAnimLayerMeshes(CurrentOwner, AnimMeshes);
@@ -129,7 +129,16 @@ void AEquipmentBase::Unequip()
             if (!AnimMesh) { continue; }
             if (UAnimInstance* AnimInst = AnimMesh->GetAnimInstance())
             {
-                AnimInst->UnlinkAnimClassLayers(EquipmentAnimLayerClass);
+                // 快速切走时用极短非零 Blend Out 结束旧装备 Montage。
+                // 不能使用 0 秒硬停，否则同一 Montage 在实例清理前无法立即重新播放。
+                if (EquipMontage && AnimInst->Montage_IsActive(EquipMontage))
+                {
+                    AnimInst->Montage_Stop(0.01f, EquipMontage);
+                }
+                if (EquipmentAnimLayerClass)
+                {
+                    AnimInst->UnlinkAnimClassLayers(EquipmentAnimLayerClass);
+                }
             }
         }
     }
