@@ -52,7 +52,7 @@ Jump_End ─(Speed<3 && Land 剩余<0.3)─> Idle ；─(Speed>3)─> Run/Walk
 - **不再使用 Stop 状态**：删除 `StopAnimIndex`、`bShouldStop`、`bShouldMove`、`bLeftFootUp`、`StopDirectionIndex` 等变量节点和过渡。
 - ⚠️ **状态机直接播的 clip 必须 No Additive**（被当差值叠加 → 塌进地里，见 BUG-039-002，最初 Land 动画踩过）。
 - **根运动**：普通 Idle/WalkRun 方案建议 `Root Motion from Montages Only`，地面移动交给 CharacterMovement。原地 locomotion clip 的 Enable Root Motion 应关闭。
-- AnimGraph 输出链（待 FEAT-039 后半段）：LocomotionSM → Layered blend per bone(spine 起) 叠加上半身武器 Linked Layer（`ALI_WeaponAnim`，含 BBBAimIK + `AimPitch` 驱动俯仰）。
+- AnimGraph 输出链：LocomotionSM → DefaultSlot → 主 ABP 唯一的 Layered Blend per Bone.BasePose；`WeaponUpperBody` Linked Layer 只产出纯武器 Pose并接 BlendPose（当前纯武器实现不读取 `UpperBodyInPose`）→ WeaponAimOffset → UpperBodySlot → FullBodySlot → Output。分层策略由主 ABP 统一拥有，武器层不得重复混合全身 locomotion。注意 AnimGraph 的 Pose 输出不能一对多，不能把 `DefaultSlot.Pose` 同时直接接给 BasePose 与 Linked Layer 输入，否则后一次连接会顶掉前一条。
 
 ---
 
@@ -149,7 +149,7 @@ ABP_BodyLocomotion:
 - `ArmsViewMesh` 与 `GetMesh()` 各自有独立 AnimInstance。BBBAimIK 使用同一相机射线目标，但会分别转换到各自 Component Space，因此第一人称手臂和身体/影子都能瞄准相机指向位置。
 - `ShadowBodyMesh` / `LegsMesh` 不设置自己的 AnimClass，继续 `SetLeaderPoseComponent(GetMesh())`。
 - 不使用 `Copy Pose From Mesh`。武器切换仍靠武器 BP 的 `EquipmentAnimLayerClass`。
-- 武器 `WeaponUpperBody` 从 `spine_01` 使用 `Layered Blend per Bone` 覆盖全身 locomotion 时，应开启 `Mesh Space Rotation Blend`。否则侧移时 pelvis/root 的局部旋转会继续传给上半身，使第一人称手臂和枪口跟随左右偏转；开启后仍保持身体、影子和 FP 手臂共用同一 locomotion 时序。
+- 主 `TABP_BodyLocomotion` 是武器上半身分层的唯一所有者：它把基础 locomotion 与 `WeaponUpperBody` 产出的纯武器 Pose 从 `spine_01` 以 Depth 4 渐进混合，并开启 `Mesh Space Rotation Blend`。武器模板不再放置第二个 `Layered Blend per Bone`；这样所有武器统一避免 pelvis/root 横移旋转带偏枪口，并保持身体、影子和 FP 手臂共用同一 locomotion 时序。影子腰部缺口若来自身体模型的几何分段，应修改模型，不能用动画混合作为修复手段。
 
 ---
 

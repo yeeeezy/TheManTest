@@ -56,6 +56,16 @@ Session90 enabled `Mesh Space Rotation Blend` on that existing layered blend. No
 
 PIE runtime sampling supplied stronger verification than screenshots: while moving at 250 cm/s, A and D produced identical five-sample `ArmsViewMesh.hand_r` rotations relative to the camera at matching Walk animation phases, even though the full-body `spine_01` rotations differed by strafe direction. Runtime topology also confirmed both `CharacterMesh0` and `ArmsViewMesh` use `ABP_MaintenanceWorker_C`, while `ShadowBodyMesh` and `LegsMesh` retain `CharacterMesh0` as their Leader Pose. Thus the first-person weapon direction is no longer direction-biased and the body/shadow synchronization chain remains intact.
 
+## Centralized Upper-Body Blend
+
+Session91 moved the ownership of upper-body composition out of `TABP_Firearm_UpperBodyBase` and into the main `TABP_BodyLocomotion`. `WeaponUpperBody` now outputs only `SM_FirearmUpperBody`; the firearm template's duplicate `Layered Blend per Bone` was deleted. The main graph owns the single blend between `DefaultSlot` locomotion and the linked weapon pose, followed by `WeaponAimOffset`, `UpperBodySlot`, the highest-priority `FullBodySlot`, and the output pose.
+
+The central blend uses `spine_01`, blend depth 4, weight 1, and Mesh Space Rotation Blend. Mesh-space rotation retains the completed A/D first-person weapon-direction fix for every weapon layer using the interface.
+
+Unreal compiled and saved `TABP_BodyLocomotion`, `TABP_Firearm_UpperBodyBase`, `ABP_RepairGun_AnimLayer`, and `ABP_MaintenanceWorker`. Runtime audit again confirmed that only `ShadowBodyMesh` casts the player shadow, both `ShadowBodyMesh` and `LegsMesh` follow `CharacterMesh0`, and both animated meshes use `ABP_MaintenanceWorker_C`. Subsequent user inspection established that the apparent waist break in the shadow comes from the current full-body model's segmented waist geometry, not from animation blending. A true silhouette fix therefore requires editing or replacing that mesh.
+
+Session92 corrected a regression in the first central graph wiring. AnimGraph pose outputs are single-link: connecting `DefaultSlot.Pose` to `WeaponUpperBody.UpperBodyInPose` after connecting it to the central blend silently removed the `BasePose` link. The character therefore translated at runtime while the original locomotion pose was absent. The firearm layer now remains a pure-pose provider with its unused interface input disconnected, while `DefaultSlot.Pose` feeds the central blend's `BasePose` directly. Four AnimBPs compiled and saved again. During a 250 cm/s W test, five successive `thigh_l` and `calf_l` component-space samples all changed, proving the walk cycle was evaluating; A/D screenshots `CentralBlend_Fixed_A.png` and `CentralBlend_Fixed_D.png` provided visual regression coverage.
+
 ## Known Cleanup Item
 
 - Active `BP_Infiltrator` still has a hard dependency on `/Game/Characters/Infiltrator/Blueprint/BP_Infiltrator_Old`. The exact referring property/node has not yet been identified; do not delete or rewrite it automatically.

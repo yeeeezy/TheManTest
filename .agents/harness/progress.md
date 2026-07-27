@@ -2,9 +2,9 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-27-session90
+**最后更新：** 2026-07-27-session92
 **当前功能：** **FEAT-051（基于原始骨架重建角色与 Enemy 动画蓝图）**
-**会话编号：** 90
+**会话编号：** 92
 
 用户已手动删除一部分效果不佳的重定向动画和动画蓝图。现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构继续保留。
 
@@ -18,9 +18,12 @@
 - [x] 玩家模板已整理为 `TABP_BodyLocomotion`；维修工子 AnimBP `ABP_MaintenanceWorker` 及 `BS_RunWalk_MaintenanceWorker` 已创建并由用户编译通过。
 - [x] 维修工身体、下半身、手臂与临时动画统一到手臂 Skeleton；当前阶段接受参考姿势差异，只验证代码和 AnimBP 架构。
 - [x] RepairGun 专属层 `ABP_RepairGun_AnimLayer` 与 `BS_WalkRun_RepairGun` 已创建。
-- [x] 修复左右移动时第一人称手臂/枪口朝向被侧移 pelvis 带偏：`TABP_Firearm_UpperBodyBase.WeaponUpperBody` 现从 `spine_01` 保持既有分层，并为 `Layered Blend per Bone` 开启 `Mesh Space Rotation Blend`；玩家全身、影子与第一人称仍共用 locomotion 时序。
+- [x] 将武器上半身分层职责集中到主 `TABP_BodyLocomotion`：唯一 `Layered Blend per Bone` 从 `spine_01`、Depth 4 渐进混合并开启 `Mesh Space Rotation Blend`；武器模板只输出武器姿势，所有武器统一避免 A/D 横移带偏枪口。
+- [x] 影子腰部断层最终诊断为当前完整身体模型自身的腰部几何分段，并非动画混合产生；中央混合不能修复模型轮廓，后续需补齐/重叠腰部网格或替换连续全身模型。`FullBodySlot` 仍调整为最终最高优先级覆盖。
 - [x] MCP 编译并保存 `TABP_Firearm_UpperBodyBase`、`ABP_RepairGun_AnimLayer`、`TABP_BodyLocomotion`、`ABP_MaintenanceWorker` 均成功；PIE 自动 A/D 横移运行无加载/编译错误。
 - [x] PIE 定量验证通过：A 与 D 在相同 Walk 动画相位下，`ArmsViewMesh.hand_r` 相对相机的 5 组 Pitch/Yaw/Roll 样本逐项一致；左右方向只改变全身 `spine_01` 姿势，不再改变持枪手最终朝向。运行时 `CharacterMesh0` 与 `ArmsViewMesh` 均使用 `ABP_MaintenanceWorker_C`，`ShadowBodyMesh` 与 `LegsMesh` 的 Leader Pose 均为 `CharacterMesh0`，同步链保持不变。
+- [x] 中央混合重构后再次编译保存四个 AnimBP 并完成 PIE A/D 复测；运行时仍只有 `ShadowBodyMesh` 投影，`ShadowBodyMesh` / `LegsMesh` 的 Leader Pose 均为 `CharacterMesh0`，第一人称与全身 AnimClass 均为 `ABP_MaintenanceWorker_C`。
+- [x] 修复中央混合首次重接造成的 locomotion 回归：Pose 输出不能一对多，连接 `WeaponUpperBody.UpperBodyInPose` 时曾顶掉中央混合的 `BasePose`；现恢复 `DefaultSlot.Pose -> LayeredBlend.BasePose`，纯武器层不读取接口输入。PIE W 移动连续 5 次腿骨采样均变化，A/D 截图也显示移动动画恢复。
 - [x] 删除无用 `EquipmentAnimClass` 整体替换路径；武器只通过 `EquipmentAnimLayerClass` 链接专属层。
 - [x] 暂停玩家原地转身：删除 `BodyVisualYaw`/45° Turn/曲线进度 C++ 链，`BodyRoot` 直接跟随 Actor yaw；ABP 转体节点待用户手动清理。
 - [x] 用户已清理 `TABP_BodyLocomotion` 的旧 Turn 节点；修改已保存到本地 WIP checkpoint `8e6a8e0`。
