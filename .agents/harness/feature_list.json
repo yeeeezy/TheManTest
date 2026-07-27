@@ -1,955 +1,349 @@
-﻿{
-  "schema_version": "1.0",
-  "last_updated": "2026-07-27-session103",
-  "active_feature": "FEAT-051",
-  "features": [
-    {
-      "id": "FEAT-001",
-      "name": "FirstPersonMesh 作为相机父级",
-      "status": "done",
-      "description": "将组件挂载层级从「HeadCamera → FirstPersonMesh」改为「FirstPersonMesh → HeadCamera」，FirstPersonMesh 挂到 GetMesh() 根节点与第三人称 Mesh 重叠，HeadCamera 挂在 FirstPersonMesh 的 head 插槽上。",
-      "archive_file": "archive/FEAT-001-firstpersonmesh-as-camera-root.md",
-      "created": "2026-06-06",
-      "updated": "2026-06-06",
-      "done_criteria": [
-        "C++ 编译无错误无警告（Development Editor / Win64）",
-        "蓝图无编译错误（UE 编辑器验证）",
-        "PIE 测试：相机视角跟随正常，第一人称手臂网格位置正确，角色切换后视角不异常"
-      ],
-      "verification_evidence": "用户确认验证通过（2026-06-06）"
-    },
-    {
-      "id": "FEAT-002",
-      "name": "相机俯仰角限制",
-      "status": "done",
-      "description": "新增 PitchMin / PitchMax 两个 BlueprintReadWrite 变量，在 PossessedBy 时写入 PlayerCameraManager 限制相机俯仰范围，防止视角过低穿地。",
-      "archive_file": "archive/FEAT-002-camera-pitch-clamp.md",
-      "created": "2026-06-06",
-      "updated": "2026-06-06",
-      "done_criteria": [
-        "C++ 编译无错误无警告",
-        "蓝图 Camera 分类下可见 PitchMin / PitchMax 两个变量",
-        "PIE 测试：向下看超过 PitchMax 时视角被锁住，向上看超过 PitchMin 时同样被锁住"
-      ],
-      "verification_evidence": "用户确认验证通过（2026-06-06）"
-    },
-    {
-      "id": "FEAT-003",
-      "name": "BBBAimIK 插件集成",
-      "status": "in_progress",
-      "description": "集成 BBBAimIK 插件实现上半身 CCD AimIK。架构：AimIK 放在 ABP_FirearmBase 的 WeaponAimOffset 层内，由 UFirearmAnimInstance 驱动，与主角色 AnimInstance 完全解耦。",
-      "archive_file": "archive/FEAT-003-bbbaim-ik-integration.md",
-      "created": "2026-06-06",
-      "updated": "2026-06-06",
-      "done_criteria": [
-        "Build.cs 添加 BBBAimIK 模块依赖，C++ 编译无错误",
-        "UFirearmAnimInstance 持有四个 AimIK 变量，NativeUpdateAnimation 每帧驱动射线检测",
-        "ABP_FirearmBase WeaponAimOffset 层内 AimIK 节点配置完成",
-        "AimSourceLocalTransform 在装备时由装备系统写入",
-        "PIE 测试：瞄准状态下上半身骨骼链跟随目标旋转"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-004",
-      "name": "武器动画层装配",
-      "status": "in_progress",
-      "description": "装备/切换武器时自动链接/解链武器专属 Linked Anim Layer（ABP_FirearmBase），并在装备时将 MuzzleLocalTransform 写入 UFirearmAnimInstance.AimSourceLocalTransform。",
-      "archive_file": "archive/FEAT-004-weapon-anim-layer-binding.md",
-      "created": "2026-06-06",
-      "updated": "2026-06-06",
-      "done_criteria": [
-        "C++ 编译无错误无警告 ✓",
-        "AFirearm::Equip() 正确取到 UFirearmAnimInstance（调试打印绿色确认）✓",
-        "武器蓝图 EquipmentAnimLayerClass 设为 ABP_FirearmBase ✓",
-        "武器蓝图 MuzzleLocalTransform 填入枪口偏移值（待做）",
-        "PIE 测试：AimIK 偏移修正，枪口精确跟随视线（待验证）"
-      ],
-      "verification_evidence": "层链接 C++ 验证通过（2026-06-06），MuzzleLocalTransform 配置待做"
-    },
-    {
-      "id": "FEAT-005",
-      "name": "FPS 角色基类重构",
-      "status": "done",
-      "description": "新建 AFPSCharacterBase 平行基类（ArmsMesh→HeadCamera on head bone 架构），以及三个具体角色的 FPS 版本（AFPSInfiltrator / AFPSMaintenanceWorker / AFPSTheExecutive）。原有 ATheManCharacterBase 及其三个子类保留不动。",
-      "archive_file": "archive/FEAT-005-fps-character-base.md",
-      "created": "2026-06-07",
-      "updated": "2026-06-07",
-      "done_criteria": [
-        "C++ 编译无错误无警告（Development Editor / Win64）",
-        "在编辑器中基于 AFPSMaintenanceWorker 创建 BP_FPSMaintenanceWorker，配置手臂骨骼",
-        "PIE 测试：相机随 SpringArm 正确俯仰，手臂网格跟随相机"
-      ],
-      "verification_evidence": "用户确认 PIE 测试通过（2026-06-07）"
-    },
-    {
-      "id": "FEAT-006",
-      "name": "FPS 动画架构",
-      "status": "in_progress",
-      "description": "为纯第一人称手臂骨骼建立完整动画架构：C++ 驱动的 ABP_FPSArms 基础动画蓝图 + ALI_WeaponAnim Linked Anim Layer 武器层。基础层处理移动/跳跃通用逻辑，每种武器类型有独立的 Linked Layer AnimBP。同步修复 AFirearm::Equip() 改从 ArmsMesh 取 AnimInstance。",
-      "archive_file": "archive/FEAT-006-fps-anim-architecture.md",
-      "created": "2026-06-07",
-      "updated": "2026-06-07",
-      "done_criteria": [
-        "新建 UFPSArmsAnimInstance C++ 类，暴露 Speed / bIsFalling / AimPitch 变量，NativeUpdateAnimation 每帧从 AFPSCharacterBase 驱动",
-        "ABP_FPSArms 在编辑器中创建，使用 UFPSArmsAnimInstance，配置 ALI_WeaponAnim 武器层插槽",
-        "AFirearm::Equip() 改为从 AFPSCharacterBase::ArmsMesh 取 AnimInstance（不再用 GetMesh()）",
-        "至少一个武器 Linked Layer（ABP_RepairGun 或新建）实现 ALI_WeaponAnim，装备时正确链接",
-        "PIE 测试：基础移动动画正常，装备武器后武器层覆盖，卸下后恢复"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-007",
-      "name": "动画根骨骼位置修复",
-      "status": "planned",
-      "description": "ArmsMesh 使用的动画资产根骨骼不在原点，导致 HeadCamera 位置偏移。临时方案：在蓝图中手动调整 HeadCamera 的 Transform 偏移补偿。正式修复需要美术介入：修正动画资产的根骨骼位置，或在骨骼编辑器中将 root 骨骼 Translation Retargeting 设为 Skeleton 模式。",
-      "archive_file": "archive/FEAT-007-anim-root-bone-fix.md",
-      "created": "2026-06-07",
-      "updated": "2026-06-07",
-      "done_criteria": [
-        "动画资产根骨骼位置修正，或骨骼 Translation Retargeting 配置正确",
-        "HeadCamera 无需手动偏移，位置自动对齐",
-        "PIE 测试：相机视角位置正确"
-      ],
-      "verification_evidence": "临时方案：蓝图中手动调整 HeadCamera Transform（2026-06-07）"
-    },
-    {
-      "id": "FEAT-008",
-      "name": "武器摇摆（Weapon Sway）",
-      "status": "done",
-      "description": "纯 C++ 实现武器惯性摇摆。在 AFPSCharacterBase::Tick() 中用 FMath::RInterpTo 平滑插值鼠标 delta，以 SetRelativeRotation 叠加到 ArmsMesh 上。",
-      "archive_file": "archive/FEAT-008-weapon-sway.md",
-      "created": "2026-06-07",
-      "updated": "2026-06-07",
-      "done_criteria": [
-        "C++ 编译无错误无警告",
-        "PIE 测试：鼠标移动时手臂轻微反向偏转，停止后平滑回正",
-        "SwayIntensity / SwayInterpSpeedX / SwayInterpSpeedY 在蓝图 Details 面板可调"
-      ],
-      "verification_evidence": "用户确认 PIE 测试通过（2026-06-07）"
-    },
-    {
-      "id": "FEAT-009",
-      "name": "GAS 射击系统",
-      "status": "done",
-      "description": "通过 GAS 实现枪械开火功能。LMB 路由到 AFPSCharacterBase::PrimaryFire()，向 ASC 发送 GameplayEvent，UGA_Shoot 监听触发。子弹从枪口生成，OnComponentHit 驱动命中逻辑。",
-      "archive_file": "archive/FEAT-009-gas-shooting.md",
-      "created": "2026-06-07",
-      "updated": "2026-06-08",
-      "done_criteria": [
-        "C++ 编译通过 ✓",
-        "子弹从枪口射出，OnComponentHit 触发膨胀 ✓",
-        "膨胀完成后可被新子弹命中并二次膨胀 ✓",
-        "蓝图配置（IA_PrimaryFire、GA_Shoot BP、RepairGun 武器设置）完成 ✓",
-        "切换武器后技能回收/授予 PIE 验证 ✓"
-      ],
-      "verification_evidence": "PIE 全流程验证通过（2026-06-08）"
-    },
-    {
-      "id": "FEAT-010",
-      "name": "子弹类 + 枪口射线",
-      "status": "done",
-      "description": "建立子弹类继承体系（ABulletBase → ARepairGunBullet），Firearm 加 BulletClass / MuzzleSocketName 配置，GA_Shoot 射线起点改为武器骨骼 Muzzle Socket。",
-      "archive_file": "archive/FEAT-010-bullet-class-muzzle-trace.md",
-      "created": "2026-06-07",
-      "updated": "2026-06-08",
-      "done_criteria": [
-        "C++ 编译无错误无警告 ✓",
-        "武器骨骼添加 Muzzle Socket，名称与 MuzzleSocketName 一致 ✓",
-        "PIE 测试：调试射线从枪口位置出发，命中点与准星一致 ✓"
-      ],
-      "verification_evidence": "PIE 验证通过（2026-06-08）"
-    },
-    {
-      "id": "FEAT-011",
-      "name": "开火动画蒙太奇",
-      "status": "done",
-      "description": "按下 LMB 开火时，在 ArmsMesh 上播放武器专属的开火蒙太奇。FireMontage 配置在 AFirearm 上，由 GA_Shoot::ActivateAbility 在发射逻辑执行后调用。",
-      "archive_file": "archive/FEAT-011-fire-montage.md",
-      "created": "2026-06-07",
-      "updated": "2026-06-07",
-      "done_criteria": [
-        "AFirearm 新增 FireMontage UPROPERTY（EditDefaultsOnly）✓",
-        "GA_Shoot::ActivateAbility 在射击后取 ArmsMesh AnimInstance 播放蒙太奇 ✓",
-        "PIE 测试：按 LMB 手臂播放开火动画 ✓"
-      ],
-      "verification_evidence": "C++ 实现完成，用户确认蒙太奇播放正常（2026-06-07）"
-    },
-    {
-      "id": "FEAT-012",
-      "name": "武器后坐力系统",
-      "status": "done",
-      "description": "开火时向 AFPSCharacterBase 施加角速度，通过 FInterpTo 每帧衰减产生快起慢停的后坐力手感。不自动归位，玩家需手动压枪。参数配置在每把武器蓝图上。",
-      "archive_file": "archive/FEAT-012-recoil.md",
-      "created": "2026-06-07",
-      "updated": "2026-06-07",
-      "done_criteria": [
-        "AFirearm 新增 RecoilPitch / RecoilYawMin / RecoilYawMax / RecoilDamping ✓",
-        "AFPSCharacterBase::AddRecoil() 叠加角速度 ✓",
-        "Tick 中角速度积分驱动旋转 + FInterpTo 衰减 ✓",
-        "GA_Shoot 调用 AddRecoil ✓",
-        "PIE 测试：开火视角向上飘，停止后保持位置 ✓"
-      ],
-      "verification_evidence": "PIE 验证通过（2026-06-07）"
-    },
-    {
-      "id": "FEAT-013",
-      "name": "开火音效",
-      "status": "done",
-      "description": "开火时在枪口位置播放武器专属音效，支持音量/音调倍率调节。",
-      "archive_file": "archive/FEAT-013-fire-sound.md",
-      "created": "2026-06-07",
-      "updated": "2026-06-07",
-      "done_criteria": [
-        "AFirearm 新增 FireSound / FireSoundVolumeMultiplier / FireSoundPitchMultiplier ✓",
-        "GA_Shoot 在枪口位置播放音效 ✓",
-        "PIE 测试：开火有声音从枪口位置发出 ✓"
-      ],
-      "verification_evidence": "PIE 验证通过（2026-06-07）"
-    },
-    {
-      "id": "FEAT-014",
-      "name": "环境危险区系统（火焰）",
-      "status": "done",
-      "description": "基于接口的可扩展环境危险区系统。IEnvironmentHazard 伤害接口（留空）、IHazardSuppressor 标记接口、AEnvironmentHazardBase 抽象基类（Niagara 特效 + 伤害 tick + 压制/恢复逻辑）、AFlameHazard 具体类。RepairGun 泡泡进入危险区时暂停特效和伤害，泡泡销毁后自动恢复。",
-      "archive_file": "archive/FEAT-014-environment-hazard.md",
-      "created": "2026-06-07",
-      "updated": "2026-06-07",
-      "done_criteria": [
-        "C++ 编译无错误无警告 ✓",
-        "在编辑器中基于 AFlameHazard 创建 BP_FlameHazard，配置 Niagara 资产",
-        "PIE 测试：RepairGun 泡泡接触 BP_FlameHazard，火焰特效关闭；泡泡销毁后火焰恢复"
-      ],
-      "verification_evidence": "C++ 编译通过，PIE 验证通过（2026-06-07）"
-    },
-    {
-      "id": "FEAT-016",
-      "name": "输入架构重构（Controller 纯注册表）",
-      "status": "done",
-      "description": "将输入绑定职责从 Controller 完全移入各 Character 的 SetupPlayerInputComponent。Controller 只持有 IA 资产 + AddMappingContext，通过公开 getter 供 Character 读取。每个 Character 类在 SetupPlayerInputComponent 中绑定自己需要响应的键，角色专属输入在子类 override 中追加。",
-      "archive_file": "archive/FEAT-016-input-architecture-refactor.md",
-      "created": "2026-06-08",
-      "updated": "2026-06-08",
-      "done_criteria": [
-        "Controller SetupInputComponent 只含 TestSwitchCharacterAction 绑定 ✓",
-        "FPSCharacterBase::SetupPlayerInputComponent 绑定所有通用输入 ✓",
-        "Move/Look/SwitchEquipment 签名改为 const FInputActionValue& ✓",
-        "FPSInfiltrator::SetupPlayerInputComponent override，额外绑定 ScanAction ✓",
-        "PIE 测试：Move/Look/Jump/Fire 正常，E 键在 Infiltrator 上触发扫描"
-      ],
-      "verification_evidence": "C++ 编译通过（待验证），PIE 待测试"
-    },
-    {
-      "id": "FEAT-017",
-      "name": "Infiltrator 扫描技能 GAS 框架",
-      "status": "done",
-      "description": "为 AFPSInfiltrator 建立扫描技能 GAS 完整链路。E 键 → TAG_Input_Character_Interact → UGA_InfiltratorScan Toggle 全息 UI（BP_uiFrame）附着相机正前方，Show/Hide 蓝图动画，再按销毁。",
-      "archive_file": "archive/FEAT-017-infiltrator-scan-ability.md",
-      "created": "2026-06-08",
-      "updated": "2026-06-08-session10",
-      "done_criteria": [
-        "编译无错误无警告 ✓",
-        "E 键触发链路 PIE 验证通过 ✓",
-        "蓝图：创建 BGA_InfiltratorScan，Hologram Actor Class 填入 BP_uiFrame ✓",
-        "蓝图：BP_FPSInfiltrator DefaultAbilityClasses 填入 BGA_InfiltratorScan ✓",
-        "蓝图：BP_TheManPlayerController InteractAction 填入 IA_Interact（E 键）✓",
-        "PIE 测试：以 Infiltrator 按 E → 全息 UI 展开附着相机前方；再按 E → 收缩销毁 ✓"
-      ],
-      "verification_evidence": "PIE 全流程验证通过（2026-06-08-session10）；BP_uiFrame Delay 参数调整后持久显示正常"
-    },
-    {
-      "id": "FEAT-015",
-      "name": "扫描材质控制系统",
-      "status": "done",
-      "description": "为球形扫描材质（SphereMask 双球差分方案）建立运行时控制。MPC_ScanEffect 三个参数：ScanTime（Scalar，0→1 驱动扩张进度）、ScanAlpha（Scalar，0/1 开关）、ScanOrigin（Vector，相机相对坐标，C++ Tick 每帧计算 WorldOrigin - CamPos）。材质用 Camera Relative WorldPosition 作为 A，ComponentMask(ScanOrigin, RGB) 作为 B，规避 UE5 SM6 LWC 类型冲突。UScanEffectComponent 封装 Tick 推进 + EaseOut 三次缓动 + RetractScan 即时隐藏逻辑。",
-      "archive_file": "archive/FEAT-015-scan-material-control.md",
-      "created": "2026-06-08",
-      "updated": "2026-06-08-session12",
-      "done_criteria": [
-        "MPC_ScanEffect 在编辑器创建（ScanTime Scalar / ScanAlpha Scalar / ScanOrigin Vector）✓",
-        "材质 SphereMask A：WorldPosition 节点 Shader Offsets 改为 Camera Relative World Position ✓",
-        "材质 SphereMask B：CollectionParameter(ScanOrigin) → ComponentMask(RGB) → SphereMask B ✓",
-        "材质 ScanAlpha：CollectionParameter(ScanAlpha) 控制效果开关（默认 0 不显示）✓",
-        "材质 ScanTime：CollectionParameter(ScanTime) → Frac → Multiply(半径) → SphereMask Radius ✓",
-        "C++ 编译无错误（UScanEffectComponent + GA_InfiltratorScan 含 GetScanEffect()）✓",
-        "蓝图：BP_FPSInfiltrator / BGA_InfiltratorScan → ScanMPC 赋值 MPC_ScanEffect ✓",
-        "PIE 测试：E 键 → 全息 UI 展开 + 扫描波从角色位置以 EaseOut 三次曲线 2s 膨胀；再按 E → 波形立即消失 ✓"
-      ],
-      "verification_evidence": "PIE 全流程验证通过（2026-06-08-session12）"
-    },
-    {
-      "id": "FEAT-018",
-      "name": "扫描高亮系统",
-      "status": "done",
-      "description": "扫描波经过时自动高亮场景中的可交互物体轮廓线。架构：IHighlightable 接口 + UHighlightComponent（SetRenderCustomDepth）+ AInteractableBase 基类（默认挂载组件）+ UScanEffectComponent 扫描检测（SphereOverlap + AlreadyHighlighted 去重）。高亮材质（M_Highlight）为后处理材质，Domain=Post Process，Blendable=Scene Color Before Bloom，通过 CustomDepth 绘制深度边缘轮廓线，挂在后处理体积。",
-      "archive_file": "archive/FEAT-018-scan-highlight.md",
-      "created": "2026-06-08",
-      "updated": "2026-06-08-session14",
-      "done_criteria": [
-        "C++ 编译无错误无警告（IHighlightable / UHighlightComponent / AInteractableBase / ScanEffectComponent 扩展）✓",
-        "Project Settings → Custom Depth-Stencil Pass = Enabled with Stencil ✓",
-        "M_Highlight：Domain=Post Process，Blendable=Scene Color Before Bloom，5个SampleSceneDepth Use Custom Depth=true，Color.A→Multiply→Lerp Alpha ✓",
-        "后处理体积 Array 添加 M_Highlight，Weight=1 ✓",
-        "在编辑器中基于 AInteractableBase 创建 BP_InteractableTest，拖入关卡 ✓",
-        "PIE 测试：E 键扫描波经过 BP_InteractableTest 时物体边缘出现发光轮廓线 ✓"
-      ],
-      "verification_evidence": "PIE 全流程验证通过（2026-06-08-session14）"
-    },
-    {
-      "id": "FEAT-019",
-      "name": "扫描音效",
-      "status": "done",
-      "description": "为 Infiltrator 扫描技能加入开/关两个独立音效。ScanActivateSound 在展开时播放，ScanDeactivateSound 在收起时播放，Volume/Pitch 倍率可在蓝图调节。",
-      "archive_file": "archive/FEAT-019-scan-sound.md",
-      "created": "2026-06-09",
-      "updated": "2026-06-09",
-      "done_criteria": [
-        "GA_InfiltratorScan 新增 ScanActivateSound / ScanDeactivateSound / Volume / Pitch UPROPERTY ✓",
-        "开/关两条路径分别调用 PlaySoundAtLocation ✓",
-        "BGA_InfiltratorScan 蓝图填入音效资产（蓝图操作）",
-        "PIE 测试：第一次按 E 播放激活音效，第二次按 E 播放收起音效"
-      ],
-      "verification_evidence": "C++ 完成（2026-06-09），蓝图配置待用户完成"
-    },
-    {
-      "id": "FEAT-020",
-      "name": "扫描材质 Multiply 从 MPC 读取",
-      "status": "planned",
-      "description": "将扫描波材质中 SphereMask Radius 的 Multiply 常量改为从 MPC_ScanEffect 读取，使视觉半径与 C++ MaxScanRadius 统一由一个地方控制，避免两处手动保持一致。",
-      "archive_file": "archive/FEAT-020-scan-radius-mpc.md",
-      "created": "2026-06-09",
-      "updated": "2026-06-09",
-      "done_criteria": [
-        "MPC_ScanEffect 新增 ScanMaxRadius（Scalar）参数",
-        "材质 Multiply 节点改为读 MPC ScanMaxRadius",
-        "C++ ScanEffectComponent 在 TriggerScan 时同步写入 MPC ScanMaxRadius = MaxScanRadius",
-        "PIE 测试：改 MaxScanRadius 蓝图属性，视觉波形和检测范围同步变化"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-021",
-      "name": "Locomotion Template ABP 重构",
-      "status": "done",
-      "description": "将 Locomotion 逻辑从骨骼绑定的 ABP 中解耦。新建 UBaseLocomotionAnimInstance C++ 基类（不依赖 AFPSCharacterBase），UFPSArmsAnimInstance 改继承基类。新建 ABP_BaseLocomotion Template ABP（不绑定骨骼），ABP_FPS_Arm_MainCharacter 改继承 Template。为后续敌人等不同骨骼角色复用 Locomotion 状态机做基础。",
-      "archive_file": "archive/FEAT-021-locomotion-template-abp.md",
-      "created": "2026-06-10",
-      "updated": "2026-06-10-session16",
-      "done_criteria": [
-        "UBaseLocomotionAnimInstance C++ 编译无错误无警告",
-        "UFPSArmsAnimInstance 改继承基类后编译无错误",
-        "ABP_BaseLocomotion Template ABP 编辑器编译通过",
-        "ABP_FPS_Arm_MainCharacter 改继承 ABP_BaseLocomotion 后编译通过",
-        "PIE 测试：移动/跳跃动画正常，武器层链接正常，与重构前行为一致"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-022",
-      "name": "回合系统（倒计时 + 怪物强度递增）",
-      "status": "in_progress",
-      "description": "全局回合驱动系统放在 ATheManGameStateBase。倒计时归零触发玩家死亡，每回合倒计时时长递减（有下限），怪物基础强度 = 回合数，回合内每隔固定秒数强度额外 +1。三个 BlueprintNativeEvent 供蓝图响应。",
-      "archive_file": "archive/FEAT-022-round-system.md",
-      "created": "2026-06-10",
-      "updated": "2026-06-10-session16",
-      "done_criteria": [
-        "ATheManGameStateBase C++ 编译无错误无警告",
-        "ATheManGameModeBase 指定 GameStateClass = ATheManGameStateBase",
-        "蓝图创建 BP_TheManGameState，覆写三个事件",
-        "PIE 测试：倒计时递减，归零触发 OnCountdownExpired，新回合倒计时缩短，强度递增"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-023",
-      "name": "敌人动画 C++ 基础层",
-      "status": "done",
-      "description": "为人形怪动画系统建立 C++ 驱动基础：EHumanoidEnemyAIState 枚举（Patrol/Combat/SearchRush/SearchScan/Dead）、AHumanoidEnemy AI 状态 + 转向接口、UHumanoidEnemyAnimInstance（继承 UBaseLocomotionAnimInstance）每帧轮询敌人状态。EnemyBase 新增 IsDead() getter。",
-      "archive_file": "archive/FEAT-023-humanoid-anim-cpp-foundation.md",
-      "created": "2026-06-11",
-      "updated": "2026-06-11",
-      "done_criteria": [
-        "C++ 编译无错误无警告（Development Editor / Win64）",
-        "UHumanoidEnemyAnimInstance 在编辑器 AnimBP 父类列表中可见",
-        "AIState / bIsTurning / TurnAngle / bIsDead 变量在蓝图调试器中可读"
-      ],
-      "verification_evidence": "用户确认编译及编辑器验证通过（2026-06-11）"
-    },
-    {
-      "id": "FEAT-024",
-      "name": "Patrol 状态机",
-      "status": "done",
-      "description": "在 ABP_HumanoidEnemy 中搭建巡逻层状态机：Idle / Patrol_Walk / Stopping（减速踏步）/ Turn_L90 / Turn_R90 / TurnAround。Turn 状态末尾 AnimNotify 回调 AHumanoidEnemy::OnTurnComplete()，通知 BehaviorTree 继续。",
-      "archive_file": "archive/FEAT-024-patrol-state-machine.md",
-      "created": "2026-06-11",
-      "updated": "2026-06-12-session24",
-      "done_criteria": [
-        "ABP_HumanoidEnemy 在编辑器编译无错误，Parent Class = UHumanoidEnemyAnimInstance ✓",
-        "Patrol 层四类状态（Idle / Walk / Stop / Turn）过渡条件正确 ✓",
-        "AnimNotify TurnComplete 正确回调 OnTurnComplete() ✓",
-        "PIE 测试：敌人巡逻走路、到端点停步、请求转身后播放转身动画并完成 ✓"
-      ],
-      "verification_evidence": "PIE 验证通过（2026-06-12）"
-    },
-    {
-      "id": "FEAT-025",
-      "name": "Combat 战斗移动",
-      "status": "planned",
-      "description": "创建 BS_HumanoidCombat 2D 混合空间（X 轴 Direction -180~180，Y 轴 Speed 0~400），覆盖 8 向走跑。在 ABP_HumanoidEnemy 添加 Combat 状态，AIState==Combat 时进入，AIState!=Combat 时退出。",
-      "archive_file": "archive/FEAT-025-combat-locomotion.md",
-      "created": "2026-06-11",
-      "updated": "2026-06-11",
-      "done_criteria": [
-        "BS_HumanoidCombat 2D 混合空间在编辑器创建，9 个核心采样点覆盖 8 向走跑",
-        "ABP_HumanoidEnemy Combat 状态机正确读取 Direction 和 Speed",
-        "Patrol ↔ Combat 过渡条件基于 AIState",
-        "PIE 测试：SetAIState(Combat) 后敌人可 8 向移动，走跑自动混合"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-026",
-      "name": "Search 搜索状态",
-      "status": "planned",
-      "description": "在 ABP_HumanoidEnemy 添加 SearchRush（冲向玩家消失点，复用 Combat 前向跑或独立动画）和 SearchScan（原地左右晃头循环）两个状态。过渡链：Combat → SearchRush → SearchScan → Patrol。",
-      "archive_file": "archive/FEAT-026-search-states.md",
-      "created": "2026-06-11",
-      "updated": "2026-06-11",
-      "done_criteria": [
-        "SearchRush 状态在 AIState==SearchRush 时进入，播放前向跑动画",
-        "SearchScan 状态在 AIState==SearchScan 时进入，播放晃头循环",
-        "Combat → SearchRush → SearchScan → Patrol 过渡链正确",
-        "PIE 测试：SetAIState 驱动完整搜索流程，各状态动画正常"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-027",
-      "name": "射击蒙太奇插槽",
-      "status": "planned",
-      "description": "在 ABP_HumanoidEnemy AnimGraph 输出链添加 UpperBody（上半身射击）和 FullBody（死亡/击退）两个 Slot 节点。骨骼 Slot Manager 注册插槽名。AEnemyBase 新增 PlayUpperBodyMontage() / PlayFullBodyMontage() 供 GAS Ability 调用。",
-      "archive_file": "archive/FEAT-027-shooting-montage-slots.md",
-      "created": "2026-06-11",
-      "updated": "2026-06-11",
-      "done_criteria": [
-        "骨骼 Slot Manager 注册 EnemyUpperBody / EnemyFullBody 插槽",
-        "ABP_HumanoidEnemy AnimGraph 输出链：状态机 → Slot(EnemyUpperBody) → Slot(EnemyFullBody)",
-        "AEnemyBase PlayUpperBodyMontage / PlayFullBodyMontage C++ 编译通过",
-        "PIE 测试：调用 PlayUpperBodyMontage 时上半身播放射击蒙太奇，腿部继续移动"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-028",
-      "name": "人形怪巡逻系统",
-      "status": "done",
-      "description": "APatrolPoint 路点 Actor（ArrowComponent 可视化 + WaitTime 属性）+ AHumanoidEnemy 路径跟随逻辑（PatrolPoints 数组 EditInstanceOnly，PossessedBy 绑定 OnRequestFinished，循环 MoveToActor）。Build.cs 补加 AIModule + NavigationSystem。",
-      "archive_file": "archive/FEAT-028-patrol-system.md",
-      "created": "2026-06-11",
-      "updated": "2026-06-12-session24",
-      "done_criteria": [
-        "C++ 编译无错误无警告（AIModule / NavigationSystem / APatrolPoint / AHumanoidEnemy 修改）✓",
-        "在编辑器放置若干 APatrolPoint，在 BP_Phantom 实例的 PatrolPoints 数组中填入 ✓",
-        "PIE 测试：敌人按顺序走完所有路点并循环，WaitTime > 0 时在路点等待后继续 ✓"
-      ],
-      "verification_evidence": "PIE 全流程验证通过（2026-06-12）"
-    },
-    {
-      "id": "FEAT-029",
-      "name": "Walk→Stop 过渡优化",
-      "status": "done",
-      "description": "修复人形怪巡逻行走到停步动画衔接不自然的问题。最终方案：虚拟减速（VirtualSpeed）+ Tick 接近降速。PathFollowing 停车时强制归零 CMC 速度，AnimInstance 检测到停步上升沿后启动虚拟减速，将 Speed 从 LastWalkSpeed 以 StopDecelerationRate 线性降到 0，让 blend space 看到平滑减速过程。ABP 移除 Stopping 状态，靠 Walk→Idle（Speed<10）过渡。AnimNotify_FootDown 已弃用（空壳保留）。",
-      "archive_file": "archive/FEAT-029-walk-stop-transition.md",
-      "created": "2026-06-13",
-      "updated": "2026-06-13-session28",
-      "done_criteria": [
-        "C++ 编译无错误无警告",
-        "ABP_HumanoidEnemy 移除 Stopping 状态，SA_CanTurn 只含 Idle + Patrol_Walk_Run",
-        "PIE 测试：Walk→Stop blend space 平滑减速，无瞬切；扫视正常进入；转身正常"
-      ],
-      "verification_evidence": "Session28 用户确认完成"
-    },
-    {
-      "id": "FEAT-030",
-      "name": "敌人左手武器 IK（Control Rig）",
-      "status": "done",
-      "description": "用 Control Rig Two-Bone IK 把人形怪左手固定在枪的前握把上，消除跑动时手臂脱离枪体的抖动。枪挂 hand_r，只解算左臂 IK 链。骨骼名通过 EditDefaultsOnly 变量配置，支持不同骨骼的敌人复用同一套方案。",
-      "archive_file": "archive/FEAT-030-enemy-hand-ik.md",
-      "created": "2026-06-13",
-      "updated": "2026-06-13-session34",
-      "done_criteria": [
-        "C++ 编译无错误无警告",
-        "骨骼 hand_r socket 和武器 grip_l socket 在编辑器建好",
-        "CR_HumanoidEnemy Control Rig 创建，Two-Bone IK 左臂链配置完成",
-        "ABP_HumanoidEnemy 接入 Control Rig 节点，变量连线正确",
-        "PIE 测试：跑动时左手贴合枪的前握把，无抖动脱离"
-      ],
-      "verification_evidence": "Session34 用户确认 BUG-030-001 屈肘问题修复（Joint Target Bone Space = lowerarm_l）"
-    },
-    {
-      "id": "FEAT-031",
-      "name": "敌人 BBBAimIK 瞄准系统",
-      "status": "done",
-      "description": "用 BBBAimIK 插件的 CCD Aim IK 节点驱动人形怪脊柱骨骼链（spine_01→spine_02→spine_03）朝向玩家。AimSourceBoneName=AimSocket（hand_r 子插槽，+X 朝枪管），AimAxis=(1,0,0)，AimTarget 每帧从 AIController 写入，bIsAiming 由 AIState==Aim 控制 Alpha。Session35 因 BUG-030-002 临时禁用，Session40 随 FEAT-032 启用感知一并恢复并验证通过。",
-      "archive_file": "archive/FEAT-031-enemy-bbbaim-ik.md",
-      "created": "2026-06-13",
-      "updated": "2026-06-18-session40",
-      "done_criteria": [
-        "HumanoidEnemy 新增 AimTargetWorld / bIsAiming，AIController 在 Aim 下每帧更新 ✓",
-        "HumanoidEnemyAnimInstance 新增 AimTargetComponentSpace / AimSourceLocalTransform / bHasValidAimTarget / bIsAiming，NativeUpdateAnimation 每帧转换坐标 ✓",
-        "ABP_HumanoidEnemy 状态机输出后插入 BBBAimIK 节点，BoneChain / 引脚全部连线 ✓",
-        "AimSourceLocalTransform 在第一帧武器有效时从 muzzle socket 计算一次 ✓",
-        "PIE 测试：AIState=Aim 时上半身跟随玩家旋转，Patrol 时 IK Alpha=0 还原 ✓"
-      ],
-      "verification_evidence": "用户确认 PIE 敌人上半身瞄准 IK 成功（2026-06-18-session40）。注：session40 AIController Tick 用 GetActorLocation 写 AimTargetWorld（非原设计的 GetActorEyesViewPoint），如需瞄得更高可改回 eyes。"
-    },
-    {
-      "id": "FEAT-032",
-      "name": "人形怪 AI 基础框架（行为树 + AIController + 黑板）",
-      "status": "in_progress",
-      "description": "AHumanoidAIController 配置视觉感知（UAIPerceptionComponent + UAISenseConfig_Sight），发现玩家时通过 SetAIState(Aim) + 黑板 TargetActor + SetFocus 切换战斗状态，丢失时回 Patrol 并重启 C++ 巡逻逻辑。BT 只负责高层状态：有目标时 MoveTo 追击 + BTTask_UseCombatSkill 放招 + Wait 控制节奏，无目标时 Wait 让 C++ 巡逻自驱。Session40 正式启用感知（解除 TEMP）+ Tick 在 Aim 下每帧更新 AimTargetWorld/bIsAiming + 接入技能集系统：AEnemyBase 新增 PhaseSkillSets（阶段×近/中/远 FEnemyPhaseSkillSet）+ UseRandomSkill（按当前阶段+距离档随机放招，virtual AimAtTarget 钩子）+ GrantAbilities；通用节点 BTTask_UseCombatSkill（Range 参数，不绑定具体技能）。",
-      "archive_file": "archive/FEAT-032-ai-behavior-tree.md",
-      "created": "2026-06-13",
-      "updated": "2026-06-18-session40",
-      "done_criteria": [
-        "C++ 编译无错误无警告：AHumanoidAIController 感知回调+Tick 瞄准 / AEnemyBase PhaseSkillSets+UseRandomSkill+GrantAbilities+AimAtTarget / BTTask_UseCombatSkill",
-        "编辑器：BB_HumanoidEnemy 含 TargetActor(Object/Actor) + LastKnownPlayerLocation(Vector)",
-        "编辑器：BT_HumanoidEnemy 战斗序列 = MoveTo(TargetActor) → BTTask_UseCombatSkill(Range 任一档) → Wait；Decorator Blackboard TargetActor IsSet, Abort Both",
-        "编辑器：BP_Phantom PhaseSkillSets[0] 对应距离档填入 BGA_EnemyShoot；AI Controller Class=BP_HumanoidAIController",
-        "PIE 测试：玩家进 1500cm 视野 → 敌人转向追击并随机放招扣血；离开 1800cm → 回巡逻"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-033",
-      "name": "测试枪（TestGun）装配 + 武器手臂骨架统一",
-      "status": "done",
-      "description": "把 ATestGun（继承 AFirearm 的空壳武器）配置成可用并挂到角色手上。已存在 BP_TestGun 与 ATestGun 仅有 include 的纯空壳，挂载靠蓝图配置 + 加入角色 InitialEquipmentClasses，C++ 无需改动。骨架问题最终用 Compatible Skeletons 解决（两套手臂同源 ref pose 相同）。",
-      "archive_file": "archive/FEAT-033-test-gun.md",
-      "created": "2026-06-15",
-      "updated": "2026-06-17-session38",
-      "done_criteria": [
-        "BP_TestGun 配置 SkeletalMesh + EquipSocketName=Grip_Point ✓",
-        "角色蓝图 InitialEquipmentClasses 含 BP_RepairGun + BP_TestGun，PIE 切换+显示验证 ✓",
-        "武器手臂骨架问题解决（Compatible Skeletons：SCF_Rifle_02 骨架加入 SCFP，零 retarget）✓",
-        "开火配置：PrimaryFireAbilityClass=GA_Shoot + FireMontage（DefaultSlot）✓",
-        "PIE 测试：装备 TestGun、切换、手臂动画、开火动画均正常 ✓"
-      ],
-      "verification_evidence": "用户确认（2026-06-17-session38）：拿枪、切换、开火动画全部正常。期间顺带修复 BUG-033-001（滚轮切枪 RoundToInt→0）+ GA_Shoot 开火反馈与子弹解耦，详见 archive。"
-    },
-    {
-      "id": "FEAT-034",
-      "name": "伤害弹（子弹伤害 GE）",
-      "status": "done",
-      "description": "为子弹建立伤害链路：复用现有 ABulletBase（自带 ProjectileMovement + 命中施加 HitEffectClass GE）。子弹新增 Damage 浮点字段，命中时通过 SetByCaller(Data.Damage) 把数值传入伤害 GE，GE 的 Health 修改器读取后扣血。AttributeSet 的 PostGameplayEffectExecute 已处理钳制与死亡触发。无需新写子弹 C++ 子类，伤害弹直接由 BP 继承 ABulletBase 配置。",
-      "archive_file": "archive/FEAT-034-damage-bullet.md",
-      "created": "2026-06-17",
-      "updated": "2026-06-17-session38",
-      "done_criteria": [
-        "C++ 编译无错误无警告（TAG_Data_Damage + ABulletBase::Damage + ProcessHit SetByCaller）✓",
-        "编辑器创建 GE_BulletDamage：Instant，Health 修改器 Add，Magnitude=SetByCaller(Data.Damage)✓",
-        "创建伤害弹 BP（继承 ABulletBase）：BulletMesh + HitEffectClass=GE_BulletDamage + Damage 数值 ✓",
-        "武器 BulletClass 指向伤害弹 BP ✓",
-        "PIE 测试：射击敌人按 Damage 扣血，屏幕橙色输出剩余血量 ✓"
-      ],
-      "verification_evidence": "用户确认 PIE 全流程成功（2026-06-17-session38）：射击敌人正常扣血，屏幕橙色打印剩余血量。注：敌人扣血调试输出（PostGameplayEffectExecute）仍在，正式上线前可删。"
-    },
-    {
-      "id": "FEAT-035",
-      "name": "人形怪射击技能（复用子弹管线）",
-      "status": "in_progress",
-      "description": "为人形怪新增射击能力，复用玩家现成的子弹+伤害管线（ABulletBase + GE_BulletDamage）。玩家的 UGA_Shoot 与 AFPSCharacterBase/相机/EquipmentManager/后坐力强耦合无法直接复用，故新建敌人专属 UGA_EnemyShoot 基类：算枪口/方向、生成子弹 InitBullet(enemy, 敌人ASC)、播蒙太奇/音效。射击配置（BulletClass/MuzzleSocket/蒙太奇/音效）作为技能 UPROPERTY——技能与子弹绑定。一种子弹 = 一个 UGA_EnemyShoot 的蓝图子类各填一种；同一敌人可同时授予多个子类（各绑不同子弹）。子弹『怎么发』不同（散射/连发/hitscan）时由 C++ 子类重写 virtual SpawnProjectiles 复用其余流程。不走 GameplayEvent（共享 tag 会同时激活所有同类技能），改由 AHumanoidEnemy::FireAbility(Target, AbilityClass) 写 AimTargetWorld 后 TryActivateAbilityByClass 按类独立触发。AEnemyBase 新增 DefaultAbilities 在 BeginPlay 授予。因 FEAT-032 AI 感知仍搁置，附带 bTestAutoFire + TestFireAbility 测试驱动（定时朝玩家开火，视线+射程检查）以便单独 PIE 验证。",
-      "archive_file": "archive/FEAT-035-enemy-shoot.md",
-      "created": "2026-06-18",
-      "updated": "2026-06-18-session40",
-      "done_criteria": [
-        "C++ 编译无错误无警告（UGA_EnemyShoot 基类+virtual SpawnProjectiles / AEnemyBase.DefaultAbilities / AHumanoidEnemy.FireAbility 按类激活 + 测试驱动 TestFireAbility）",
-        "编辑器：敌人武器 StaticMesh 添加 Muzzle socket",
-        "编辑器：创建 BGA_EnemyShoot 蓝图子类（父类 UGA_EnemyShoot），填 BulletClass=伤害弹 BP、MuzzleSocketName",
-        "编辑器：BP_Phantom DefaultAbilities 填入 BGA_EnemyShoot、TestFireAbility 选同一个、勾选 bTestAutoFire",
-        "PIE 测试：敌人在视线+射程内定时朝玩家开火，子弹命中玩家正常扣血",
-        "多技能验证：再建一个 BGA 子类填不同子弹，DefaultAbilities 同时授予两个，FireAbility 传不同类可分别打出两种子弹"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-036",
-      "name": "回合二阶段升级（半场切阶段 + 强度伤害系数）",
-      "status": "done",
-      "description": "在 FEAT-022 回合系统 + FEAT-032 技能集之上接通战斗升级链路。回合时长默认改 10s；倒计时进行到一半（Phase2TriggerRemainingFraction 默认 0.5）时 GameState 广播 OnCombatPhaseChanged(2)，敌人 SetCombatPhase(2) 切到二阶段技能集（PhaseSkillSets[1]）——阶段只换技能集不碰伤害。伤害递增与阶段解耦：复用 FEAT-022 既有 StrengthIncreaseInterval（回合内每隔 N 秒广播 OnMidRoundStrengthIncrease，设 150=2.5min），每波 AEnemyBase.HandleMidRoundStrengthIncrease 把 CurrentDamageMultiplier += StrengthDamageBonusPerWave（累加百分比，默认 0.2，倍率=1+系数×波数）。注入点 GA_EnemyShoot::SpawnProjectiles 乘到子弹 Damage。配套调试输出：屏幕剩余时间（key=1 原地刷新）、玩家扣血红色提示、每波伤害增强提示、二阶段切换提示、OnCountdownExpired 占位（不真死亡）。",
-      "archive_file": "archive/FEAT-036-round-phase2-escalation.md",
-      "created": "2026-06-20",
-      "updated": "2026-06-20-session41",
-      "done_criteria": [
-        "C++ 编译无错误无警告（GameStateBase 半场广播+剩余时间调试 / EnemyBase StrengthDamageBonusPerWave 每波递增+阶段订阅 / GA_EnemyShoot 伤害系数注入 / AttributeSet 玩家扣血调试）",
-        "编辑器：敌人蓝图 PhaseSkillSets[1] 填二阶段技能集，StrengthDamageBonusPerWave 配置；GameState StrengthIncreaseInterval 设为目标节奏（如 150=2.5min）",
-        "PIE：回合 10s，屏幕显示剩余时间；半场屏幕提示进入二阶段 + 敌人切阶段（仅换技能集）",
-        "PIE：每过 StrengthIncreaseInterval 一波，敌人伤害倍率累加，玩家扣血屏幕数值随波变大",
-        "PIE：倒计时归零输出占位调试信息（不真死亡）"
-      ],
-      "verification_evidence": "用户 session41 测试通过（'暂时感觉没什么问题'）。后续默认值定稿：BaseCountdownDuration=600(10min)、StrengthIncreaseInterval=150(2.5min)、StrengthDamageBonusPerWave=0.2；新增 DebugSkipTime 快进 + 剩余时间分:秒显示。注：倒计时归零的'占位不真死亡'已被 FEAT-037 改为真实死亡路由。session42 增补并验证：①伤害倍率逐回合携带（RoundCarriedWaves=RoundNumber-1，每新回合初始攻击力加成比上回合高一波）②新增 MaxDamageMultiplier 上限（默认 2.0 可调，BeginPlay+每波两处钳制）③CountdownReductionPerRound 默认改 150(2.5min/回合)。"
-    },
-    {
-      "id": "FEAT-037",
-      "name": "死亡 → 选角色关卡 → 重开下一回合",
-      "status": "done",
-      "description": "把原地复活死亡循环改成跨关卡选角色循环。玩家死亡（被打死 / 倒计时归零）→ 选角色关卡（3 按钮对应 Infiltrator/MaintenanceWorker/TheExecutive）→ 选完进测试地图开下一回合。新建 UTheManGameInstance 携带跨关卡数据：SelectedCharacterID（GameMode GetDefaultPawnClassForController 据此在花名册查类生成角色）+ CarriedRoundNumber（死亡写入，测试地图 GameState.BeginPlay 读取后 StartNewRound +1，延续 FEAT-036 敌人初始强度逐回合 +1；回合内波次增强不携带每回合重置）。死亡两源 funnel 到 GI.HandlePlayerDeath（bPendingTransition 防同帧重复）。AFPSCharacterBase::OnDeath 去掉原地复活改为死亡路由；GameState::OnCountdownExpired 从占位改为真实死亡路由。首启也从选角色关卡进入。",
-      "archive_file": "archive/FEAT-037-death-character-select.md",
-      "created": "2026-06-20",
-      "updated": "2026-06-20-session42",
-      "done_criteria": [
-        "C++ 编译无错误无警告（UTheManGameInstance / GameMode GetDefaultPawnClassForController+CharacterRosterTable / GameState BeginPlay 读回合数+OnCountdownExpired 死亡路由 / FPSCharacterBase OnDeath 死亡路由）",
-        "编辑器：BP_TheManGameInstance 设为 Project Settings Game Instance Class，配 CharacterSelectMapName/TestMapName",
-        "编辑器：新建选角色关卡（自己的 GameMode）+ WBP_CharacterSelect 3 按钮调 SelectCharacterAndStart",
-        "编辑器：测试地图 GameMode 的 CharacterRosterTable=DT_CharacterRoster；默认地图设为选角色关卡",
-        "PIE：首启进选角色 → 选角色进测试地图开回合 1",
-        "PIE：被打死/倒计时归零 → 回选角色 → 再选 → 测试地图回合 +1（敌人初始强度 +1）"
-      ],
-      "verification_evidence": "用户 session42 测试通过：首启选角色→回合1、死亡/倒计时归零→回大厅再选→回合+1（敌人初始强度逐回合+1）全链路正常。session42 增补并验证：回合时长逐回合 -150s（默认）、减到下限 150s(2:30) 以下时游戏结束——死亡瞬间 RoutePlayerDeath 预判直接回大厅显示\"游戏结束\"+ 禁用选角色按钮（跳过测试地图无闪烁）。"
-    },
-    {
-      "id": "FEAT-038",
-      "name": "第三人称全身骨架 + 三件套 Mesh 渲染分离",
-      "status": "in_progress",
-      "description": "把纯手臂第一人称角色升级为单套新全身骨架驱动三件套 mesh：ArmsMesh（Leader+动画宿主，只渲染手臂材质段，跟 capsule 俯仰，相机仍挂其 head 骨骼）+ ShadowBodyMesh（Follower，全身，OwnerNoSee+CastHiddenShadow 只投影）+ LegsMesh（Follower，只渲染腿材质段，OnlyOwnerSee 无影）。三者引用同一 Skeleton，Shadow/Legs 用 SetLeaderPoseComponent(ArmsMesh) 共享同一份姿势。俯仰方案 B：ArmsMesh 跟 capsule 整体俯仰不变，Shadow/Legs 挂在 BodyRoot(SceneComponent，绝对旋转，每帧只取 Yaw)下保持直立 → 投影不歪。几何分离用 HideMaterialSection（材质段），禁用 HideBoneByName（会破坏共享姿势）。骨骼名/材质段做成 EditDefaultsOnly 配置，换骨架只改蓝图。",
-      "archive_file": "archive/FEAT-038-thirdperson-body-meshes.md",
-      "created": "2026-06-24",
-      "updated": "2026-06-25-session47",
-      "done_criteria": [
-        "C++ 编译无错误无警告（FPSCharacterBase 新增 BodyRoot/ShadowBodyMesh/LegsMesh + Leader/Follower + 直立 Tick + HideMaterialSection + 显隐扩展）",
-        "编辑器：导入新全身骨架/身体 mesh（分材质段），各角色 BP 填三件套 mesh + LegsHiddenSections/ArmsHiddenSections",
-        "PIE：地上出现完整人形影子（含上半身）；低头看到自己的腿；手臂视角/俯仰与现在一致；切角色无异常、首帧不闪"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-039",
-      "name": "新主动画蓝图 + 上半身武器 Linked Layer（含 BBBAimIK）",
-      "status": "blocked",
-      "description": "【session51 取代说明】下半身 locomotion 状态机 + 全部停步 C++（strafe 8 向/StopAnimIndex/延迟停/保持原速滑行）已被 FEAT-042（GASP Motion Matching）取代作废；上半身武器层 + BBBAimIK 并入 FEAT-042 阶段3。本条仅保留历史记录，不再独立开工。—— 原描述：为 FEAT-038 新骨架建正式动画框架：全身主 ABP（locomotion，父类沿用 UFPSCharacterAnimInstance）+ 上半身武器 Linked Anim Layer（持枪/瞄准 pose，含 BBBAimIK 脊柱链）。主 ABP 挂 ArmsMesh(Leader)，Shadow/Legs 复制 → 手臂/影子/腿动画一致。AnimGraph 用 Layered blend per bone(spine 起)叠加 ALI_WeaponAnim 武器层插槽；武器层 ABP 父类 UFirearmAnimInstance。C++ 链路不动（Equip→LinkAnimClassLayers 走 ArmsMesh 现成逻辑）。session45：下半身 locomotion C++ 部分完成——strafe 8 向走跑（Direction×Speed 2D BS）+ 冲刺键（按住提速）+ 方向/脚相位/gait 驱动的停步选择（纯 C++ 读 foot_l/foot_r 骨骼 Z 判抬脚）。",
-      "archive_file": "archive/FEAT-039-body-anim-blueprint.md",
-      "created": "2026-06-24",
-      "updated": "2026-06-26-session49",
-      "done_criteria": [
-        "C++ 编译无错误无警告（UFPSCharacterAnimInstance locomotion 驱动变量 + 冲刺输入）✓ session45",
-        "编辑器：IA_Sprint 建好并绑 Shift，BP_TheManPlayerController.SprintAction 引用；角色 BP WalkSpeed/SprintSpeed/JogSpeedThreshold 配好",
-        "编辑器：BS_Locomotion(Direction×Speed 2D) + 全身主 ABP locomotion 状态机（Idle/Locomotion/Stop/Jump）+ 武器层 ABP 创建并编译通过；ArmsMesh 默认 AnimClass + 武器 BP EquipmentAnimClass/EquipmentAnimLayerClass 引用配好",
-        "PIE：移动时腿部 8 向走跑正确；松键按方向/脚相位/gait 播对应停步动画；按住 Shift 切跑；上半身持枪 aim pose；切武器时上半身层切换；影子姿势与手臂完全一致"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-040",
-      "name": "影子持枪 mesh + 身体瞄准 IK（低优先）",
-      "status": "planned",
-      "description": "收尾打磨：①影子手里握第三人称武器 mesh（SetOwnerNoSee+bCastHiddenShadow，与 FP 手上那把分开，FP 链路不动）；②身体上半身 BBBAimIK 朝相机视线，让影子枪口跟玩家瞄准方向（可选摆正）。用户明确优先级低：影子持枪算需求，瞄准 IK 精度/摆正做不做都行。参考 FEAT-031 敌人 AimTargetWorld 喂值范式。",
-      "archive_file": "archive/FEAT-040-shadow-weapon-aim-ik.md",
-      "created": "2026-06-24",
-      "updated": "2026-06-24",
-      "done_criteria": [
-        "C++ 编译无错误无警告（若有改动：影子武器 mesh 挂载/同步 + 身体 AimIK 目标喂值）",
-        "PIE：影子手里有枪；（可选）影子上半身随玩家视线俯仰，枪口跟瞄准方向"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-041",
-      "name": "删除弃用旧角色系统 + 玩家动画实例改名",
-      "status": "in_progress",
-      "description": "清理：①删除旧弃用 ATheManCharacterBase 系统共 10 个 C++ 文件（TheManCharacterBase / TheManAnimInstanceBase / Infiltrator / MaintenanceWorker / TheExecutive，grep 确认现役系统零引用）；②改名 UFPSArmsAnimInstance → UFPSCharacterAnimInstance（现驱动手臂/影子/腿三件套共享全身姿势，Arms 名不副实），+ DefaultEngine.ini CoreRedirect 保留旧 ABP 父类链接。保留 TheManCharacterDataAssetBase / TheManAttributeSetBase（现役在用）。删除前全部备份到 scratchpad/deprecated-char-backup-session43。",
-      "archive_file": "archive/FEAT-041-remove-deprecated-character-system.md",
-      "created": "2026-06-24",
-      "updated": "2026-06-24",
-      "done_criteria": [
-        "C++ 编译无错误无警告（删除+改名后，Development Editor/Win64）",
-        "编辑器：删除旧蓝图 BP_TheManCharacterBase/BP_Infiltrator/BP_MaintenanceWorker/BP_TheExecutive/ABP_MainCharacter/ABP_FirstPerson_MainCharacter，无父类丢失报错残留",
-        "编辑器：现役 ABP_FPSArms/ABP_FPS_Arm_MainCharacter 经 CoreRedirect 父类自动重链 UFPSCharacterAnimInstance 并编译通过"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-042",
-      "name": "GASP Motion Matching 集成（CMC 版，UEFN_Mannequin 全身骨架）",
-      "status": "needs_improvement",
-      "description": "【session63 方向变更】用户决定不再使用 Motion Matching / GASP。保留 FEAT-042 中独立 FP viewmodel 的有效 C++ 结构（HeadCamera -> ViewmodelRoot -> ArmsViewMesh），删除迁移进来的 GASP/MM 蓝图、UEFN_Mannequin/Echo/Paragon/MetaHumans 演示资产，并从 .uproject 移除 PoseSearch/Chooser/Mover/SmartObjects/MetaHuman 等插件。后续路线改为本项目原生 AFPSCharacterBase + 普通 AnimBP locomotion 状态机 + 独立 FP 手臂；需要在编辑器里把角色 BP / GameMode / DT_CharacterRoster 从 SandboxCharacter_CMC 切回项目自有 BP，并 Fix Up Redirectors + 编译蓝图 + PIE 验证。",
-      "archive_file": "archive/FEAT-042-gasp-motion-matching.md",
-      "created": "2026-06-27",
-      "updated": "2026-07-05-session72",
-      "done_criteria": [
-        "启 MM 相关插件（Motion Trajectory / Pose Search / Animation Locomotion Library / Chooser），编辑器无报错 ✓",
-        "Migrate CMC 版 GASP + UEFN_Mannequin 进 TheManTest，独立测试关卡 Manny 跑通 MM（走跑/起步/停步/转身/pivot 自然）✓ session52 用户确认手感完美",
-        "接进 AFPSCharacterBase（阶段2 全通）：C1 reparent→AFPSMaintenanceWorker + FP 相机 + MM 存活 ✓ session54；三件套 Shadow Follower ✓ + 输入合并 IMC_Default ✓ session55；GAS+装备（EquipSocketName 默认 Grip_Point + 武器投影开 C++；三字段 + Manny Grip_Point socket；两 anim 字段 None）✓ session57",
-        "上半身武器层叠在 MM 之上（持枪 aim pose + BBBAimIK），切武器切层正常（session57：宿主 ABP 结构✓——ALI_WeaponAnim 接口 + Layered blend per bone(spine_01) 叠 MM，WeaponAimOffset 默认层 RTG_W2_Stand_Aim_Idle 兜底，PIE 通过；剩 UpperBodySlot/BBBAimIK/per-weapon 武器 ABP）",
-        "（阶段4）角色自有 mesh 重绑 Manny 换上",
-        "清理 FEAT-039 停步 C++ + TEMP 调试",
-        "session63：已删除 GASP/MM 迁移资产并关闭相关插件；C++ Development Editor / Win64 编译通过；待编辑器内修复蓝图引用并改回普通 AnimBP；追加：已删除 FEAT-039 停步动画 C++ 变量/逻辑，改为普通 Idle/WalkRun 方案，编译待用户手动完成",
-        "session64：AFPSCharacterBase 新增 BodyVisualYaw 下半身视觉朝向滞后逻辑，UFPSCharacterAnimInstance 暴露 bIsTurningInPlace / TurnInPlaceAngle / TurnInPlaceIndex，C++ Development Editor / Win64 编译通过；待 ABP_BodyLocomotion 接 Turn_L45 / Turn_R45 状态",
-        "session65：BodyVisualYaw 视觉转身速度改为按 BodyTurnInPlaceAnimLockTime 同步分摊，避免 45 度 yaw 抢先转完导致 Turn 动画闪现后原地播放；C++ Development Editor / Win64 编译通过",
-        "session65：撤回 TurnInPlacePlayRate 方案；快速甩视角时不加速单段动画，而是在每个固定 45 度 step 完成后按剩余 yaw 差连续触发下一段 Turn 动画；C++ Development Editor / Win64 编译通过",
-        "session65：新增 BodyTurnInPlaceVisualStartDelay，Turn 请求先发给 ABP，BodyRoot 视觉 yaw 延迟一小段再开始，避免连续动作间隙里身体滑动旋转；C++ Development Editor / Win64 编译通过",
-        "session65：新增固定 BodyTurnInPlacePlayRate 并输出 TurnInPlacePlayRate 给 ABP；C++ step 时长和 Turn Sequence Player Play Rate 共用同一蓝图倍率；C++ Development Editor / Win64 编译通过",
-        "session66：Content/RTG 下两个 45 度转身资产使用 TurnRootYaw 曲线驱动 BodyVisualYaw；UFPSCharacterAnimInstance 读取曲线帧差并过滤左右方向，AFPSCharacterBase 应用曲线增量，不再用 C++ 手动估算视觉转身；C++ Development Editor / Win64 编译通过",
-        "session67：UFPSCharacterAnimInstance 新增 TurnRootYawPoseFixYaw / TurnRootYawPoseFixRotation，C++ 直接提供 Transform Modify Bone(root) 抵消资产自身 root yaw 所需的反向 Rotator；C++ Development Editor / Win64 编译通过",
-        "session68：按用户要求回到外层 BodyRoot/BodyVisualYaw 转身路线，但继续用 TurnRootYaw 烘焙曲线驱动转身节奏；删除无用 BodyTurnInPlaceInterpSpeed；恢复 TurnRootYawPoseFixRotation 供 LocomotionSM 外侧全局 root-bone 抵消，Turn 状态内部不得使用 Transform Modify Bone(root)；撤回 hold/serial 方案，改为触发 Turn 时锁定 PawnYaw 为最终落点，按实际 yaw 差缩放 TurnRootYaw 曲线增量，使 Turn 可正常回 Idle；C++ Development Editor / Win64 编译通过",
-        "session70：上半身武器动画 C++ 胶水完成：新增 UEquipmentAnimInstance 通用装备动画父类，UFirearmAnimInstance 继承它；最终方案改为 GetMesh 与 ArmsViewMesh 可共用主 ABP，EquipmentAnimLayerClass 同时链接到 ArmsViewMesh 和 GetMesh，AFirearm 向两边 linked UFirearmAnimInstance 写 MuzzleLocalTransform；Development Editor / Win64 编译通过",
-        "session71：用户验证 WeaponUpperBody 内 Layered Blend per Bone 正确配置为 Branch Filter spine_01 + Blend Depth 2；此前建议的 999 不生效；上半身武器动画决策改为只按 Speed 区分 Walk/Run，不再判断跑动方向"
-      ],
-      "verification_evidence": "2026-07-03-session63：删除 21 个 GASP/MM 资产目标，.uproject 仅保留 ModelingToolsEditorMode + GameplayAbilities；Development Editor / Win64 编译通过。追加清理：UFPSCharacterAnimInstance 停步变量/逻辑已删，仅保留 AccelDirection/bHasAcceleration；AFPSCharacterBase 的 OnMoveReleased/滑行字段已删；.uproject JSON 通过；命令行编译曾被 Live Coding active 拦截。2026-07-03-session64：新增 BodyVisualYaw 下半身视觉朝向滞后和玩家 45 度原地转身触发变量后，Development Editor / Win64 编译通过。2026-07-03-session65：修正 BodyVisualYaw 以动画锁时长同步完成视觉转身，改为连续固定 45 度 Turn step，新增 BodyTurnInPlaceVisualStartDelay 减少动作间隙滑动，并新增固定 BodyTurnInPlacePlayRate 统一 C++ 视觉旋转与 ABP Turn 动画播放速度；Development Editor / Win64 编译通过。2026-07-03-session66：改为读取 TurnRootYaw 动画曲线驱动 BodyVisualYaw，保留 BodyTurnInPlacePlayRate 同步 ABP Sequence Player 和 C++ 锁定时长；Development Editor / Win64 编译通过。2026-07-04-session67：新增 TurnRootYawPoseFixRotation 供 AnimGraph 直接抵消 turn 资产自身 root yaw；Development Editor / Win64 编译通过。2026-07-04-session68：保留 TurnRootYaw 曲线驱动外层 BodyRoot/BodyVisualYaw，同时恢复 TurnRootYawPoseFixRotation 供 LocomotionSM 外侧全局抵消资产 root-bone yaw；Development Editor / Win64 编译通过。2026-07-04-session70：新增 UEquipmentAnimInstance 通用装备动画父类；最终武器层改为 EquipmentAnimLayerClass 同时链接 ArmsViewMesh 和 GetMesh；Development Editor / Win64 编译通过，无新增警告。"
-    },
-    {
-      "id": "FEAT-043",
-      "name": "可驾驶机甲（GASP Walker，Mover pawn）",
-      "status": "planned",
-      "description": "把 Game Animation Sample（D:\\Unreal Projects\\GameAnimationSample）的 Walker 机甲作为独立可驾驶单位加入本游戏。机甲是自包含 Mover pawn（非 ACharacter），与玩家的 CMC 角色逐 pawn 并存、不需全项目改造。资产 Migrate：BP_Walker + BP_MovementMode_* + SKM_Mech/SK_Mech+材质 + ABP_Walker + CR_Walker/CR_Mech（Control Rig 程序化腿部 IK，机甲自动踩地）。启 Mover + NetworkPrediction 插件。工作量主要在接合胶水：①上/下机甲（PlayerController Possess 切换 AFPSCharacterBase↔BP_Walker）②输入 context ③相机（本游戏 FP，机甲第三人称，按需设）④可选 GAS——ASC 挂 ATheManPlayerState 跨 pawn 持久，机甲实现 IAbilitySystemInterface 指回 PlayerState ASC 即接上血量/技能。低优先、未开工。参考关卡 LocomotorLevel / GM_Locomotor / PC_Locomotor。",
-      "archive_file": "archive/FEAT-043-mech-walker.md",
-      "created": "2026-06-27",
-      "updated": "2026-06-27",
-      "done_criteria": [
-        "Migrate BP_Walker 及依赖进 TheManTest，启 Mover + NetworkPrediction 插件，编辑器无报错",
-        "玩家可触发上机甲（Possess BP_Walker）+ 下机甲（Possess 回角色），输入/相机正常",
-        "PIE：机甲移动 + Control Rig 腿部踩地正常；（可选）机甲走 PlayerState ASC 有血量/技能",
-        "Mover pawn 与现有 CMC 角色系统并存，互不影响"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-044",
-      "name": "扫描组件下沉到 Infiltrator 专属",
-      "status": "planned",
-      "description": "清理角色组件职责：当前 UScanEffectComponent 在 AFPSCharacterBase 构造函数中统一创建，导致 FPSMaintenanceWorker / TheExecutive 等非潜行者角色组件树里也出现 ScanEffect。功能上只有 AFPSInfiltrator 通过 DefaultAbilityClasses 授予 BGA_InfiltratorScan 才会响应 E 键扫描，但结构不够干净。后续将 ScanEffect 从基类移到 AFPSInfiltrator 专属组件/访问接口，GA_InfiltratorScan 改为只接受 Infiltrator 或通过接口获取扫描组件，确保非潜行者不再携带扫描组件。",
-      "archive_file": "archive/FEAT-044-infiltrator-scan-component-scope.md",
-      "created": "2026-07-03",
-      "updated": "2026-07-03-session64",
-      "done_criteria": [
-        "AFPSCharacterBase 不再创建/暴露 ScanEffect 组件，非潜行者 BP 组件树无 ScanEffect",
-        "AFPSInfiltrator 创建并暴露自己的 UScanEffectComponent，BP_FPSInfiltrator 可继续配置 MPC_ScanEffect",
-        "UGA_InfiltratorScan 只从 Infiltrator 专属路径获取扫描组件；非潜行者即使收到 Interact 事件也不会触发扫描",
-        "C++ Development Editor / Win64 编译无错误无新增警告",
-        "PIE：Infiltrator 按 E 扫描波/高亮/UI 正常；MaintenanceWorker/TheExecutive 按 E 不触发扫描且组件树干净"
-      ],
-      "verification_evidence": ""
-    },
-    {
-      "id": "FEAT-045",
-      "name": "新选角场景摄像机远近切换",
-      "status": "done",
-      "description": "新的角色选择场景不复用旧 LobbyMap 和旧 WBP_CharacterSelect。首个切片实现专用 GameMode/PlayerController + Enhanced Input 点击：点击屏幕非 UI 区域切到近景，再次点击切回远景；点击 UI 不切换。",
-      "archive_file": "archive/FEAT-045-character-select-camera-toggle.md",
-      "created": "2026-07-04",
-      "updated": "2026-07-05-session72",
-      "done_criteria": [
-        "C++ Development Editor / Win64 编译无错误无新增警告 ✓",
-        "新选角场景使用 ACharacterSelectGameMode / ACharacterSelectPlayerController",
-        "创建 IA_CharacterSelectClick + IMC_CharacterSelect，并在 Controller 上配置",
-        "新选角关卡中放置两个 CameraActor 并赋给 CharacterSelectCameraSwitcher 的 FarCamera / NearCamera",
-        "CharacterSelectCameraSwitcher 鼠标四方向视差平移 C++ 编译通过 ✓",
-        "CharacterSelectCameraSwitcher 按 Cine Camera CurrentFocalLength 缩放视差位移，C++ 编译通过 ✓",
-        "CharacterSelectCameraSwitcher 切镜头 overshoot 回弹偏移 C++ 编译通过 ✓",
-        "session72：简化 overshoot 方案无效后，改为内部运行时 ACineCameraActor Rig；远/近 Cine Camera 只作为目标点，Rig 用阻尼弹簧移动并复制当前目标 Cine Camera 镜头参数；C++ 编译通过 ✓",
-        "session72：调慢/放大 Camera Rig 默认弹簧参数以便看出过冲回弹；C++ 编译通过 ✓",
-        "session72：初始镜头直接对齐默认远/近景，不触发弹簧/过冲；后续点击切换才触发；C++ 编译通过 ✓",
-        "session72：过冲默认值改为 SwitchOvershootDistance=500、MaxSwitchOvershootDistance=1000；C++ 编译通过 ✓",
-        "PIE：初始为远景；点击非 UI 屏幕区域后平滑切到近景；再次点击非 UI 区域平滑切回远景；点击 UI 不切换",
-        "PIE：鼠标上下左右移动时当前相机轻微平移，且不会永久改变远景/近景基础摆位",
-        "PIE：切镜头时运行时 Camera Rig 先轻微过冲，再回到正确位置",
-        "不依赖旧 LobbyMap / 旧 WBP_CharacterSelect"
-      ],
-      "verification_evidence": "2026-07-04-session71：新增 ACharacterSelectCameraSwitcher / ACharacterSelectGameMode / ACharacterSelectPlayerController；使用 Enhanced Input + IMC 点击屏幕非 UI 区域切远近景；C++ Development Editor / Win64 编译通过，无新增警告。追加鼠标四方向视差平移：CharacterSelectCameraSwitcher Tick 读取鼠标位置并沿当前相机 Right/Up 轴平滑偏移；C++ Development Editor / Win64 编译通过，无新增警告。追加按 Cine Camera CurrentFocalLength 缩放视差位移，并新增 CinematicCamera 模块依赖；C++ Development Editor / Win64 编译通过，无新增警告。2026-07-05-session72：简化目标相机偏移 overshoot 无效后，改为内部运行时 ACineCameraActor Rig；远/近 Cine Camera 只作为目标点，Rig 用阻尼弹簧移动并复制当前目标 Cine Camera 镜头参数；C++ Development Editor / Win64 编译通过，无新增警告。session72 追加：调慢/放大默认弹簧参数（BlendTime=0, Strength=28, Damping=5, Overshoot=80/0.08/max180）；C++ Development Editor / Win64 编译通过，无新增警告。session72 追加2：初始镜头直接对齐默认目标并清零速度，不触发弹簧/过冲；C++ Development Editor / Win64 编译通过，无新增警告。session72 追加3：过冲默认值改为 500/max1000；C++ Development Editor / Win64 编译通过，无新增警告。用户确认新关卡 IA_CharacterSelectClick / IMC_CharacterSelect、GameMode/Controller、Far/Near Cine Camera 配置完成；PIE 验证初始远景、非 UI 点击远近切换、UI 点击不切换、鼠标四方向视差、Camera Rig 过冲回弹均通过。"
-    },
-    {
-      "id": "FEAT-046",
-      "name": "步枪上半身 1D BlendSpace 状态机",
-      "status": "needs_improvement",
-      "description": "步枪上半身 Linked Anim Layer 的旧尝试。2026-07-26 MCP 复核发现实际 SM_FirearmUpperBody 仍为 Idle <-> WalkRun，现有 BS_Rifle_UpperBody_IdleWalkRun 是 2D BlendSpace 且 0 samples，与原计划的 Locomotion + 1D BlendSpace 不一致；用户随后删除了一部分效果不佳的重定向动画资产，本功能暂停并由 FEAT-051 接管后续动画整理。",
-      "archive_file": "archive/FEAT-046-rifle-upperbody-start-end.md",
-      "created": "2026-07-05",
-      "updated": "2026-07-26-session89",
-      "done_criteria": [
-        "UEquipmentAnimInstance 仅保留通用装备动画层变量 Speed / Direction / Velocity_Z / bIsFalling；Start/End 状态机临时变量已删除",
-        "C++ Development Editor / Win64 编译无错误无新增警告",
-        "编辑器：ABP_Rifle_UpperBody 或其模板层的 WeaponUpperBody 内保留 SM_FirearmUpperBody，内部使用 Idle <-> Locomotion",
-        "编辑器：Locomotion 状态内放置 1D BlendSpace Player，使用共用资产 BS_Rifle_UpperBody_Locomotion，按 Speed 混合持枪 Idle/Walk/Run 循环",
-        "PIE：步枪装备后，站立、走循环、跑循环动画在 ArmsViewMesh 与 GetMesh 上半身层同步生效"
-      ],
-      "verification_evidence": "2026-07-05-session73~75：C++ 动画驱动清理和编译已完成。2026-07-26-session80：Unreal MCP 只读审计确认 TABP_Firearm_UpperBodyBase 的 WeaponUpperBody 包含 Layered Blend per Bone + SM_FirearmUpperBody，但状态机实际为 Idle <-> WalkRun；BS_Rifle_UpperBody_IdleWalkRun 被识别为 BlendSpace2D 且 numSamples=0。原 1D BlendSpace 目标未完成，状态改为 needs_improvement，后续由 FEAT-051 接管。"
-    },
-    {
-      "id": "FEAT-047",
-      "name": "RepairGun 球形子弹 Static Mesh",
-      "status": "done",
-      "description": "在 D 盘 Blender 专用目录创建直径 10 cm 的简单球形子弹，并导入 /Game/Weapons/RepairGun/Mesh；本功能不修改 RepairGun 子弹蓝图引用。",
-      "archive_file": "archive/FEAT-047-repairgun-bullet-mesh.md",
-      "created": "2026-07-26",
-      "updated": "2026-07-26-session76",
-      "done_criteria": [
-        "Blender 源工程和 FBX 保存在 D:\\Blender Projects\\SimpleSphere，不污染 Unreal 项目目录 ✓",
-        "Static Mesh 导入为 /Game/Weapons/RepairGun/Mesh/SM_RepairGun_Bullet ✓",
-        "蓝色材质导入为 /Game/Weapons/RepairGun/Mesh/M_RepairGun_Bullet ✓",
-        "Unreal 命令行重新加载验证为 StaticMesh、1 个材质槽、0 error / 0 warning ✓",
-        "未修改 RepairGun 子弹蓝图引用 ✓"
-      ],
-      "verification_evidence": "2026-07-26-session76：Blender 5.0 后台生成并导出直径 10 cm 的平滑 UV 球；UE 5.7 Interchange 成功构建并保存 SM_RepairGun_Bullet 与 M_RepairGun_Bullet。首次无界面导入在资产保存后触发 Slate Content Browser 断言；随后独立 Python commandlet 成功重新加载 Static Mesh，确认 1 个材质槽，命令以 0 error / 0 warning 退出。"
-    },
-    {
-      "id": "FEAT-048",
-      "name": "RepairGun 科技多面体泡沫子弹",
-      "status": "done",
-      "description": "将简单球形子弹替换为具有规则三角切面和结构化凸起的科技泡沫核心；保持中心枢轴、约 10 cm 初始尺寸和现有膨胀逻辑不变。",
-      "archive_file": "archive/FEAT-048-repairgun-tech-foam-bullet.md",
-      "created": "2026-07-26",
-      "updated": "2026-07-26-session77",
-      "done_criteria": [
-        "用户在导入前确认低曝光最终预览 ✓",
-        "模型为连续的科技多面体轮廓，162 顶点 / 320 三角面，最大尺寸 10 cm ✓",
-        "覆盖导入 /Game/Weapons/RepairGun/Mesh/SM_RepairGun_Bullet ✓",
-        "独立 Unreal 加载验证为 StaticMesh、1 个材质槽、0 error / 0 warning ✓",
-        "未修改 RepairGun 子弹蓝图和 C++ 膨胀逻辑 ✓"
-      ],
-      "verification_evidence": "2026-07-26-session77：用户确认科技多面体低曝光预览；Blender 源文件保存在 D:\\Blender Projects\\RepairGunBullet。UE 5.7 Interchange 构建并保存覆盖后的 SM_RepairGun_Bullet，未出现平滑组警告；保存后仍触发已知的无界面 Slate Content Browser 断言。随后独立 Python commandlet 成功加载为 StaticMesh，确认 1 个材质槽并以 0 error / 0 warning 退出。"
-    },
-    {
-      "id": "FEAT-049",
-      "name": "Git 与 Git LFS 项目基线",
-      "status": "done",
-      "description": "为现有 UE 5.7 项目初始化本地 Git main 分支和 Git LFS，建立 Unreal 忽略规则与首次可回滚基线；不配置远程、不上传数据。",
-      "archive_file": "archive/FEAT-049-git-lfs-baseline.md",
-      "created": "2026-07-26",
-      "updated": "2026-07-26-session78",
-      "done_criteria": [
-        "本地 Git 仓库 main 分支初始化完成 ✓",
-        "Unreal 生成目录和本机私有配置未纳入版本控制 ✓",
-        "Unreal 二进制资产由 Git LFS 管理 ✓",
-        "首次项目基线提交创建成功 ✓",
-        "Git/LFS 完整性检查通过且未配置远程 ✓"
-      ],
-      "verification_evidence": "2026-07-26-session78：创建基线提交 33c70d1，共 1653 个文件；1463 个二进制资产由 LFS 管理，89 个超过 10 MB 的暂存文件全部为受 LFS 管理的 .uasset；git lfs fsck 通过，无远程仓库。"
-    },
-    {
-      "id": "FEAT-050",
-      "name": "UE 5.7 Unreal MCP 隔离集成",
-      "status": "done",
-      "description": "在独立测试分支中以外部插件目录接入固定版本 Unreal MCP，仅监听本机回环地址；完成 UE 5.7.4 编译、编辑器启动和原生 HTTP MCP 握手验证，不修改游戏资产。",
-      "archive_file": "archive/FEAT-050-unreal-mcp-integration.md",
-      "created": "2026-07-26",
-      "updated": "2026-07-26-session82",
-      "done_criteria": [
-        "第三方插件固定为 ChiR24/Unreal_mcp v0.5.30，并保存在项目目录之外 ✓",
-        "测试分支 test/unreal-mcp-5.7 上启用插件，main 保持不变 ✓",
-        "UE 5.7.4 Development Editor / Win64 编译成功 ✓",
-        "编辑器启动后原生 MCP 仅监听 127.0.0.1:3000 ✓",
-        "MCP initialize 与 tools/list 成功，列出 23 个工具 ✓",
-        "Codex 用户配置已登记 unreal-engine，未执行资产写入工具 ✓"
-      ],
-      "verification_evidence": "2026-07-26-session79：McpAutomationBridge v0.5.30 在 UE 5.7.4 完成 25/25 编译并启动；日志确认 23 个自描述工具注册、Native MCP 位于 http://127.0.0.1:3000/mcp；initialize 协商 protocolVersion 2025-03-26，tools/list 返回 23 个工具。2026-07-26-session82：Rider 严格构建发现 LevelHandlers 的退休旧路径在无条件 return 后触发 C4702；外部插件本地分支 fix/ue57-c4702 提交 c9bee30 隔离该不可达块。TheManTestEditor Win64 Development 使用 -WarningsAsErrors 完整构建 40/40 成功。插件仓库位于 D:\\Unreal Plugins\\Unreal_mcp-v0.5.30；未上传远程。"
-    },
-    {
-      "id": "FEAT-051",
-      "name": "基于原始骨架重建角色与 Enemy 动画蓝图",
-      "status": "in_progress",
-      "description": "保留现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构；玩家继续让 GetMesh、ArmsViewMesh 与武器 Linked Anim Layer 共用玩家 Skeleton，下半身可使用效果合格的重定向动画；Enemy 优先使用动画原始 Skeleton，并从现有无骨架模板创建对应骨架的子 AnimBP。具体动画资产删除、选择与 Override 由用户在编辑器中手动完成。",
-      "archive_file": "archive/FEAT-051-original-skeleton-character-enemy-animation.md",
-      "created": "2026-07-26",
-      "updated": "2026-07-27-session103",
-      "done_criteria": [
-        "玩家 GetMesh / ArmsViewMesh / 武器 Linked Anim Layer 继续使用同一玩家 Skeleton",
-        "玩家下半身 locomotion 仅保留效果可接受的重定向动画",
-        "每种 Enemy 使用其动画原始 Skeleton，并基于无骨架 Template AnimBP 创建对应子 AnimBP",
-        "各 Enemy 子 AnimBP 的 Asset Override 使用与自身 Skeleton 兼容的 Idle/Walk/Run/Turn/Combat 动画",
-        "按各原始骨架检查 hand_r / hand_l / spine / AimSocket / IK 骨骼与 Socket，不假设骨骼命名完全一致",
-        "所有活动 AnimBP 编译无错误，且不存在指向用户已删除动画资产的失效引用",
-        "PIE：玩家 locomotion/武器层正常；各 Enemy 巡逻、转身、瞄准和攻击动画正常"
-      ],
-      "latest_verification_evidence": "2026-07-27-session103：切枪完整 Unequip/Equip 后使用 Montage 首帧桥接，当帧播放覆盖 Idle，next tick 从 0 稳定重启；旧技能先回收、新技能后授予。PIE 严格验证 Arms/Body 状态 true@0 → true@0 → true@0.3333334，首张评估图为下方起始姿势；快速切走旧 Montage inactive。结束后 Layer/hand_r 一致、无 T-Pose，W=250 与 Shadow Leader 回归通过。用户实机确认功能问题已修复，但切枪主观观感仍不如 BeginPlay 首次装备丝滑，保留为后续优化项。",
-      "verification_evidence": "2026-07-26-session80：MCP 复扫确认玩家 ABP_BodyLocomotion、ALI_WeaponAnim、TABP_Firearm_UpperBodyBase 仍存在；Enemy 侧无骨架模板 ABP_HumanoidEnemy 与 Phantom 子 AnimBP ABP_Phantom 仍存在。2026-07-26-session88：用户将玩家模板整理为 TABP_BodyLocomotion，创建并编译 ABP_MaintenanceWorker、BS_RunWalk_MaintenanceWorker、ABP_RepairGun_AnimLayer 与 BS_WalkRun_RepairGun；维修工临时统一使用手臂 Skeleton。AEquipmentBase 已删除 EquipmentAnimClass 整体替换路径，只保留 EquipmentAnimLayerClass；TheManTestEditor Win64 Development 完整构建 41/41 成功。2026-07-26-session89：暂停玩家原地转身，删除 BodyVisualYaw、固定 45 度转步及 TurnRootYaw 曲线驱动 C++ 链；BodyRoot 改为直接跟随 Actor yaw，TheManTestEditor 编译 7/7 成功。用户已清理 TABP_BodyLocomotion 的 Turn 节点；Game Animation Sample 转向系统完成只读调研。RepairGun 子弹根 CollisionSphere 的 Static Mobility 问题经 MCP 与 PIE 日志定位，恢复 Movable 后用户确认修复。2026-07-27-session90：修复 A/D 横移时 FP 手臂/枪口被侧移 pelvis 局部旋转带偏；在 TABP_Firearm_UpperBodyBase 的既有 spine_01 Layered Blend per Bone 开启 Mesh Space Rotation Blend。武器模板、RepairGun 子层、玩家模板与维修工子 AnimBP 均经 MCP 编译保存成功。PIE 中 A/D 各 5 组匹配动画相位的 ArmsViewMesh.hand_r 相对相机旋转逐项一致，而 spine_01 保留方向差异；CharacterMesh0/ArmsViewMesh 均运行 ABP_MaintenanceWorker_C，ShadowBodyMesh/LegsMesh 的 Leader Pose 均为 CharacterMesh0，证明持枪朝向修复且同步链未拆分。2026-07-27-session99：修复切入 RepairGun 前第一人称手臂/枪在最终 Idle 闪帧；Montage 准备阶段同步隐藏 ArmsViewMesh 与新装备，起始姿势评估后同帧显示。暂停 PIE 验证准备态 arms=false/weapon hidden=true，首个可见态 arms=true/weapon hidden=false/Montage=0.3333334；快速 4 连切、W=250 与 ShadowBodyMesh Leader=CharacterMesh0 回归通过。"
-    },
-    {
-      "id": "FEAT-052",
-      "name": "通用子弹与武器资产目录整理",
-      "status": "done",
-      "description": "创建可由多种枪械复用的科技感通用弹体，并将通用资源与 RepairGun 专属资源按 Mesh、Material、Textures 类型分层整理。",
-      "archive_file": "archive/FEAT-052-shared-bullet-asset-organization.md",
-      "created": "2026-07-26",
-      "updated": "2026-07-26-session83",
-      "done_criteria": [
-        "Blender 源工程和导出文件保存在 D:\\Blender Projects\\SharedBullet，不污染 Unreal 项目目录 ✓",
-        "通用弹体导入为 /Game/Weapons/_Shared/Mesh/SM_Shared_Bullet，尺寸为 8 × 2.5 × 2.5 cm ✓",
-        "通用弹体材质位于 /Game/Weapons/_Shared/Material，两个材质槽引用有效 ✓",
-        "RepairGun 子弹材质移动到 /Game/Weapons/RepairGun/Material，Static Mesh 引用自动更新 ✓",
-        "/Game/Weapons 下不存在 ObjectRedirector ✓"
-      ],
-      "verification_evidence": "2026-07-26-session83：Unreal MCP 验证 SM_Shared_Bullet bounds 为 8 × 2.5 × 2.5 cm，材质槽引用 M_Shared_Bullet 与 M_Shared_Bullet_Accent；SM_RepairGun_Bullet 依赖已更新至 /Game/Weapons/RepairGun/Material/M_RepairGun_Bullet；Asset Registry 递归扫描 /Game/Weapons 返回 CODEX_REDIRECTORS=NONE。"
-    },
-    {
-      "id": "FEAT-053",
-      "name": "Unreal MCP 操作经验手册",
-      "status": "done",
-      "description": "把 UE 5.7 MCP 的可靠操作流程、定向验证方式、超时处理、输出控制和已知兼容问题整理为可持续维护的 harness 指南。",
-      "archive_file": "archive/FEAT-053-unreal-mcp-workflow-guide.md",
-      "created": "2026-07-26",
-      "updated": "2026-07-26-session84",
-      "done_criteria": [
-        "建立 guides/unreal-mcp-workflow.md ✓",
-        "AGENTS.md 架构地图包含明确读取触发规则 ✓",
-        "记录资产移动、导入、Redirector、超时和输出控制流程 ✓",
-        "记录 UE 5.7 插件版本、C4702 修复与 Git/LFS 注意事项 ✓"
-      ],
-      "verification_evidence": "2026-07-26-session84：指南已建立并由 AGENTS.md 路由；feature_list.json JSON 解析与文档 diff 检查通过。"
-    },
-    {
-      "id": "FEAT-054",
-      "name": "InteractableBase 通用科技模型",
-      "status": "done",
-      "description": "使用 Blender 创建无符号装饰的 1 米通用科技交互箱体，导入 InteractableBase 专属目录并替换被删除的 SCI-FI 1M_Cube 默认引用。",
-      "archive_file": "archive/FEAT-054-interactable-base-default-mesh.md",
-      "created": "2026-07-26",
-      "updated": "2026-07-26-session86",
-      "done_criteria": [
-        "Blender 工程、FBX、脚本和预览位于 D:\\Blender Projects\\InteractableBase ✓",
-        "模型无加减号、圆点等符号装饰，尺寸为 100 × 100 × 100 cm ✓",
-        "Static Mesh 位于 /Game/Actors/Interable/InteractableBase/Mesh/SM_InteractableBase_Default ✓",
-        "两个材质位于 /Game/Actors/Interable/InteractableBase/Material ✓",
-        "BP_InteractableBase 已编译保存并引用新 Mesh，不再依赖 SCI_FI_WEAPON_PACK ✓",
-        "InteractableBase 目录不存在 ObjectRedirector ✓"
-      ],
-      "verification_evidence": "2026-07-26-session86：Unreal MCP 验证 Static Mesh bounds 为 100 × 100 × 100 cm；材质槽解析到 M_InteractableBase_Panel 与 M_InteractableBase_Default；BP_InteractableBase dependencies 仅有 /Script/TheManTest 和新本地 Mesh；递归扫描 InteractableBase 返回 CODEX_REDIRECTORS=NONE。"
-    },
-    {
-      "id": "FEAT-055",
-      "name": "维修工 UE4 Mannequin 下半身 Mesh",
-      "status": "done",
-      "description": "从迁入的完整 UE4 Mannequin 导出带蒙皮 FBX，在 Blender 中删除腰部以上与低位手部几何，保留完整标准骨架和下肢权重，并导回维修工专属目录。",
-      "archive_file": "archive/FEAT-055-maintenance-worker-lower-body-mesh.md",
-      "created": "2026-07-26",
-      "updated": "2026-07-26-session87",
-      "done_criteria": [
-        "Blender 工程、源 FBX、结果 FBX、脚本和预览位于 D:\\Blender Projects\\MaintenanceWorkerLowerBody ✓",
-        "下半身仅保留 pelvis/thigh/calf/foot/ball 主导几何，无手部残片 ✓",
-        "Skeletal Mesh 导入为 /Game/Characters/MaintenanceWorker/TempCharacterBody/Meshes/SKM_MaintenanceWorker_LowerBody ✓",
-        "绑定 /Game/Characters/MaintenanceWorker/TempCharacterBody/Meshes/SK_UE4Mannequin，不创建新 Skeleton ✓",
-        "Unreal bounds 为 48.50 × 29.88 × 104.91 cm，材质为 M_MannequinUE4_Body ✓"
-      ],
-      "verification_evidence": "2026-07-26-session87：Blender 最终模型 6450 顶点 / 11444 面、67 骨骼、1 材质槽；自动预览确认无手部残片。Unreal MCP 验证 Skeleton、48.50 × 29.88 × 104.91 cm bounds 和 M_MannequinUE4_Body 材质路径均正确。"
-    }
-
-  ],
-  "_说明": {
-    "status可选值": ["planned", "in_progress", "done", "blocked", "needs_improvement"],
-    "功能条目示例": {
-      "id": "FEAT-NNN",
-      "name": "功能短名称",
-      "status": "planned",
-      "description": "这个功能添加或修改了什么",
-      "archive_file": "archive/FEAT-NNN-short-name.md",
-      "created": "YYYY-MM-DD",
-      "updated": "YYYY-MM-DD",
-      "done_criteria": [
-        "C++ 编译无错误无警告",
-        "蓝图无编译错误（编辑器验证）",
-        "PIE 测试通过：<描述测试场景>"
-      ],
-      "verification_evidence": ""
-    }
-  }
+{
+    "schema_version":  "1.0",
+    "last_updated":  "2026-07-27-session103",
+    "active_feature":  "FEAT-051",
+    "archive_file":  "feature_archive.json",
+    "features":  [
+                     {
+                         "id":  "FEAT-003",
+                         "name":  "BBBAimIK 插件集成",
+                         "status":  "in_progress",
+                         "description":  "集成 BBBAimIK 插件实现上半身 CCD AimIK。架构：AimIK 放在 ABP_FirearmBase 的 WeaponAimOffset 层内，由 UFirearmAnimInstance 驱动，与主角色 AnimInstance 完全解耦。",
+                         "archive_file":  "archive/FEAT-003-bbbaim-ik-integration.md",
+                         "created":  "2026-06-06",
+                         "updated":  "2026-06-06",
+                         "done_criteria":  [
+                                               "Build.cs 添加 BBBAimIK 模块依赖，C++ 编译无错误",
+                                               "UFirearmAnimInstance 持有四个 AimIK 变量，NativeUpdateAnimation 每帧驱动射线检测",
+                                               "ABP_FirearmBase WeaponAimOffset 层内 AimIK 节点配置完成",
+                                               "AimSourceLocalTransform 在装备时由装备系统写入",
+                                               "PIE 测试：瞄准状态下上半身骨骼链跟随目标旋转"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-004",
+                         "name":  "武器动画层装配",
+                         "status":  "in_progress",
+                         "description":  "装备/切换武器时自动链接/解链武器专属 Linked Anim Layer（ABP_FirearmBase），并在装备时将 MuzzleLocalTransform 写入 UFirearmAnimInstance.AimSourceLocalTransform。",
+                         "archive_file":  "archive/FEAT-004-weapon-anim-layer-binding.md",
+                         "created":  "2026-06-06",
+                         "updated":  "2026-06-06",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告 ✓",
+                                               "AFirearm::Equip() 正确取到 UFirearmAnimInstance（调试打印绿色确认）✓",
+                                               "武器蓝图 EquipmentAnimLayerClass 设为 ABP_FirearmBase ✓",
+                                               "武器蓝图 MuzzleLocalTransform 填入枪口偏移值（待做）",
+                                               "PIE 测试：AimIK 偏移修正，枪口精确跟随视线（待验证）"
+                                           ],
+                         "verification_evidence":  "层链接 C++ 验证通过（2026-06-06），MuzzleLocalTransform 配置待做"
+                     },
+                     {
+                         "id":  "FEAT-006",
+                         "name":  "FPS 动画架构",
+                         "status":  "in_progress",
+                         "description":  "为纯第一人称手臂骨骼建立完整动画架构：C++ 驱动的 ABP_FPSArms 基础动画蓝图 + ALI_WeaponAnim Linked Anim Layer 武器层。基础层处理移动/跳跃通用逻辑，每种武器类型有独立的 Linked Layer AnimBP。同步修复 AFirearm::Equip() 改从 ArmsMesh 取 AnimInstance。",
+                         "archive_file":  "archive/FEAT-006-fps-anim-architecture.md",
+                         "created":  "2026-06-07",
+                         "updated":  "2026-06-07",
+                         "done_criteria":  [
+                                               "新建 UFPSArmsAnimInstance C++ 类，暴露 Speed / bIsFalling / AimPitch 变量，NativeUpdateAnimation 每帧从 AFPSCharacterBase 驱动",
+                                               "ABP_FPSArms 在编辑器中创建，使用 UFPSArmsAnimInstance，配置 ALI_WeaponAnim 武器层插槽",
+                                               "AFirearm::Equip() 改为从 AFPSCharacterBase::ArmsMesh 取 AnimInstance（不再用 GetMesh()）",
+                                               "至少一个武器 Linked Layer（ABP_RepairGun 或新建）实现 ALI_WeaponAnim，装备时正确链接",
+                                               "PIE 测试：基础移动动画正常，装备武器后武器层覆盖，卸下后恢复"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-007",
+                         "name":  "动画根骨骼位置修复",
+                         "status":  "planned",
+                         "description":  "ArmsMesh 使用的动画资产根骨骼不在原点，导致 HeadCamera 位置偏移。临时方案：在蓝图中手动调整 HeadCamera 的 Transform 偏移补偿。正式修复需要美术介入：修正动画资产的根骨骼位置，或在骨骼编辑器中将 root 骨骼 Translation Retargeting 设为 Skeleton 模式。",
+                         "archive_file":  "archive/FEAT-007-anim-root-bone-fix.md",
+                         "created":  "2026-06-07",
+                         "updated":  "2026-06-07",
+                         "done_criteria":  [
+                                               "动画资产根骨骼位置修正，或骨骼 Translation Retargeting 配置正确",
+                                               "HeadCamera 无需手动偏移，位置自动对齐",
+                                               "PIE 测试：相机视角位置正确"
+                                           ],
+                         "verification_evidence":  "临时方案：蓝图中手动调整 HeadCamera Transform（2026-06-07）"
+                     },
+                     {
+                         "id":  "FEAT-020",
+                         "name":  "扫描材质 Multiply 从 MPC 读取",
+                         "status":  "planned",
+                         "description":  "将扫描波材质中 SphereMask Radius 的 Multiply 常量改为从 MPC_ScanEffect 读取，使视觉半径与 C++ MaxScanRadius 统一由一个地方控制，避免两处手动保持一致。",
+                         "archive_file":  "archive/FEAT-020-scan-radius-mpc.md",
+                         "created":  "2026-06-09",
+                         "updated":  "2026-06-09",
+                         "done_criteria":  [
+                                               "MPC_ScanEffect 新增 ScanMaxRadius（Scalar）参数",
+                                               "材质 Multiply 节点改为读 MPC ScanMaxRadius",
+                                               "C++ ScanEffectComponent 在 TriggerScan 时同步写入 MPC ScanMaxRadius = MaxScanRadius",
+                                               "PIE 测试：改 MaxScanRadius 蓝图属性，视觉波形和检测范围同步变化"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-022",
+                         "name":  "回合系统（倒计时 + 怪物强度递增）",
+                         "status":  "in_progress",
+                         "description":  "全局回合驱动系统放在 ATheManGameStateBase。倒计时归零触发玩家死亡，每回合倒计时时长递减（有下限），怪物基础强度 = 回合数，回合内每隔固定秒数强度额外 +1。三个 BlueprintNativeEvent 供蓝图响应。",
+                         "archive_file":  "archive/FEAT-022-round-system.md",
+                         "created":  "2026-06-10",
+                         "updated":  "2026-06-10-session16",
+                         "done_criteria":  [
+                                               "ATheManGameStateBase C++ 编译无错误无警告",
+                                               "ATheManGameModeBase 指定 GameStateClass = ATheManGameStateBase",
+                                               "蓝图创建 BP_TheManGameState，覆写三个事件",
+                                               "PIE 测试：倒计时递减，归零触发 OnCountdownExpired，新回合倒计时缩短，强度递增"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-025",
+                         "name":  "Combat 战斗移动",
+                         "status":  "planned",
+                         "description":  "创建 BS_HumanoidCombat 2D 混合空间（X 轴 Direction -180~180，Y 轴 Speed 0~400），覆盖 8 向走跑。在 ABP_HumanoidEnemy 添加 Combat 状态，AIState==Combat 时进入，AIState!=Combat 时退出。",
+                         "archive_file":  "archive/FEAT-025-combat-locomotion.md",
+                         "created":  "2026-06-11",
+                         "updated":  "2026-06-11",
+                         "done_criteria":  [
+                                               "BS_HumanoidCombat 2D 混合空间在编辑器创建，9 个核心采样点覆盖 8 向走跑",
+                                               "ABP_HumanoidEnemy Combat 状态机正确读取 Direction 和 Speed",
+                                               "Patrol ↔ Combat 过渡条件基于 AIState",
+                                               "PIE 测试：SetAIState(Combat) 后敌人可 8 向移动，走跑自动混合"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-026",
+                         "name":  "Search 搜索状态",
+                         "status":  "planned",
+                         "description":  "在 ABP_HumanoidEnemy 添加 SearchRush（冲向玩家消失点，复用 Combat 前向跑或独立动画）和 SearchScan（原地左右晃头循环）两个状态。过渡链：Combat → SearchRush → SearchScan → Patrol。",
+                         "archive_file":  "archive/FEAT-026-search-states.md",
+                         "created":  "2026-06-11",
+                         "updated":  "2026-06-11",
+                         "done_criteria":  [
+                                               "SearchRush 状态在 AIState==SearchRush 时进入，播放前向跑动画",
+                                               "SearchScan 状态在 AIState==SearchScan 时进入，播放晃头循环",
+                                               "Combat → SearchRush → SearchScan → Patrol 过渡链正确",
+                                               "PIE 测试：SetAIState 驱动完整搜索流程，各状态动画正常"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-027",
+                         "name":  "射击蒙太奇插槽",
+                         "status":  "planned",
+                         "description":  "在 ABP_HumanoidEnemy AnimGraph 输出链添加 UpperBody（上半身射击）和 FullBody（死亡/击退）两个 Slot 节点。骨骼 Slot Manager 注册插槽名。AEnemyBase 新增 PlayUpperBodyMontage() / PlayFullBodyMontage() 供 GAS Ability 调用。",
+                         "archive_file":  "archive/FEAT-027-shooting-montage-slots.md",
+                         "created":  "2026-06-11",
+                         "updated":  "2026-06-11",
+                         "done_criteria":  [
+                                               "骨骼 Slot Manager 注册 EnemyUpperBody / EnemyFullBody 插槽",
+                                               "ABP_HumanoidEnemy AnimGraph 输出链：状态机 → Slot(EnemyUpperBody) → Slot(EnemyFullBody)",
+                                               "AEnemyBase PlayUpperBodyMontage / PlayFullBodyMontage C++ 编译通过",
+                                               "PIE 测试：调用 PlayUpperBodyMontage 时上半身播放射击蒙太奇，腿部继续移动"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-032",
+                         "name":  "人形怪 AI 基础框架（行为树 + AIController + 黑板）",
+                         "status":  "in_progress",
+                         "description":  "AHumanoidAIController 配置视觉感知（UAIPerceptionComponent + UAISenseConfig_Sight），发现玩家时通过 SetAIState(Aim) + 黑板 TargetActor + SetFocus 切换战斗状态，丢失时回 Patrol 并重启 C++ 巡逻逻辑。BT 只负责高层状态：有目标时 MoveTo 追击 + BTTask_UseCombatSkill 放招 + Wait 控制节奏，无目标时 Wait 让 C++ 巡逻自驱。Session40 正式启用感知（解除 TEMP）+ Tick 在 Aim 下每帧更新 AimTargetWorld/bIsAiming + 接入技能集系统：AEnemyBase 新增 PhaseSkillSets（阶段×近/中/远 FEnemyPhaseSkillSet）+ UseRandomSkill（按当前阶段+距离档随机放招，virtual AimAtTarget 钩子）+ GrantAbilities；通用节点 BTTask_UseCombatSkill（Range 参数，不绑定具体技能）。",
+                         "archive_file":  "archive/FEAT-032-ai-behavior-tree.md",
+                         "created":  "2026-06-13",
+                         "updated":  "2026-06-18-session40",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告：AHumanoidAIController 感知回调+Tick 瞄准 / AEnemyBase PhaseSkillSets+UseRandomSkill+GrantAbilities+AimAtTarget / BTTask_UseCombatSkill",
+                                               "编辑器：BB_HumanoidEnemy 含 TargetActor(Object/Actor) + LastKnownPlayerLocation(Vector)",
+                                               "编辑器：BT_HumanoidEnemy 战斗序列 = MoveTo(TargetActor) → BTTask_UseCombatSkill(Range 任一档) → Wait；Decorator Blackboard TargetActor IsSet, Abort Both",
+                                               "编辑器：BP_Phantom PhaseSkillSets[0] 对应距离档填入 BGA_EnemyShoot；AI Controller Class=BP_HumanoidAIController",
+                                               "PIE 测试：玩家进 1500cm 视野 → 敌人转向追击并随机放招扣血；离开 1800cm → 回巡逻"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-035",
+                         "name":  "人形怪射击技能（复用子弹管线）",
+                         "status":  "in_progress",
+                         "description":  "为人形怪新增射击能力，复用玩家现成的子弹+伤害管线（ABulletBase + GE_BulletDamage）。玩家的 UGA_Shoot 与 AFPSCharacterBase/相机/EquipmentManager/后坐力强耦合无法直接复用，故新建敌人专属 UGA_EnemyShoot 基类：算枪口/方向、生成子弹 InitBullet(enemy, 敌人ASC)、播蒙太奇/音效。射击配置（BulletClass/MuzzleSocket/蒙太奇/音效）作为技能 UPROPERTY——技能与子弹绑定。一种子弹 = 一个 UGA_EnemyShoot 的蓝图子类各填一种；同一敌人可同时授予多个子类（各绑不同子弹）。子弹『怎么发』不同（散射/连发/hitscan）时由 C++ 子类重写 virtual SpawnProjectiles 复用其余流程。不走 GameplayEvent（共享 tag 会同时激活所有同类技能），改由 AHumanoidEnemy::FireAbility(Target, AbilityClass) 写 AimTargetWorld 后 TryActivateAbilityByClass 按类独立触发。AEnemyBase 新增 DefaultAbilities 在 BeginPlay 授予。因 FEAT-032 AI 感知仍搁置，附带 bTestAutoFire + TestFireAbility 测试驱动（定时朝玩家开火，视线+射程检查）以便单独 PIE 验证。",
+                         "archive_file":  "archive/FEAT-035-enemy-shoot.md",
+                         "created":  "2026-06-18",
+                         "updated":  "2026-06-18-session40",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告（UGA_EnemyShoot 基类+virtual SpawnProjectiles / AEnemyBase.DefaultAbilities / AHumanoidEnemy.FireAbility 按类激活 + 测试驱动 TestFireAbility）",
+                                               "编辑器：敌人武器 StaticMesh 添加 Muzzle socket",
+                                               "编辑器：创建 BGA_EnemyShoot 蓝图子类（父类 UGA_EnemyShoot），填 BulletClass=伤害弹 BP、MuzzleSocketName",
+                                               "编辑器：BP_Phantom DefaultAbilities 填入 BGA_EnemyShoot、TestFireAbility 选同一个、勾选 bTestAutoFire",
+                                               "PIE 测试：敌人在视线+射程内定时朝玩家开火，子弹命中玩家正常扣血",
+                                               "多技能验证：再建一个 BGA 子类填不同子弹，DefaultAbilities 同时授予两个，FireAbility 传不同类可分别打出两种子弹"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-038",
+                         "name":  "第三人称全身骨架 + 三件套 Mesh 渲染分离",
+                         "status":  "in_progress",
+                         "description":  "把纯手臂第一人称角色升级为单套新全身骨架驱动三件套 mesh：ArmsMesh（Leader+动画宿主，只渲染手臂材质段，跟 capsule 俯仰，相机仍挂其 head 骨骼）+ ShadowBodyMesh（Follower，全身，OwnerNoSee+CastHiddenShadow 只投影）+ LegsMesh（Follower，只渲染腿材质段，OnlyOwnerSee 无影）。三者引用同一 Skeleton，Shadow/Legs 用 SetLeaderPoseComponent(ArmsMesh) 共享同一份姿势。俯仰方案 B：ArmsMesh 跟 capsule 整体俯仰不变，Shadow/Legs 挂在 BodyRoot(SceneComponent，绝对旋转，每帧只取 Yaw)下保持直立 → 投影不歪。几何分离用 HideMaterialSection（材质段），禁用 HideBoneByName（会破坏共享姿势）。骨骼名/材质段做成 EditDefaultsOnly 配置，换骨架只改蓝图。",
+                         "archive_file":  "archive/FEAT-038-thirdperson-body-meshes.md",
+                         "created":  "2026-06-24",
+                         "updated":  "2026-06-25-session47",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告（FPSCharacterBase 新增 BodyRoot/ShadowBodyMesh/LegsMesh + Leader/Follower + 直立 Tick + HideMaterialSection + 显隐扩展）",
+                                               "编辑器：导入新全身骨架/身体 mesh（分材质段），各角色 BP 填三件套 mesh + LegsHiddenSections/ArmsHiddenSections",
+                                               "PIE：地上出现完整人形影子（含上半身）；低头看到自己的腿；手臂视角/俯仰与现在一致；切角色无异常、首帧不闪"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-039",
+                         "name":  "新主动画蓝图 + 上半身武器 Linked Layer（含 BBBAimIK）",
+                         "status":  "blocked",
+                         "description":  "【session51 取代说明】下半身 locomotion 状态机 + 全部停步 C++（strafe 8 向/StopAnimIndex/延迟停/保持原速滑行）已被 FEAT-042（GASP Motion Matching）取代作废；上半身武器层 + BBBAimIK 并入 FEAT-042 阶段3。本条仅保留历史记录，不再独立开工。—— 原描述：为 FEAT-038 新骨架建正式动画框架：全身主 ABP（locomotion，父类沿用 UFPSCharacterAnimInstance）+ 上半身武器 Linked Anim Layer（持枪/瞄准 pose，含 BBBAimIK 脊柱链）。主 ABP 挂 ArmsMesh(Leader)，Shadow/Legs 复制 → 手臂/影子/腿动画一致。AnimGraph 用 Layered blend per bone(spine 起)叠加 ALI_WeaponAnim 武器层插槽；武器层 ABP 父类 UFirearmAnimInstance。C++ 链路不动（Equip→LinkAnimClassLayers 走 ArmsMesh 现成逻辑）。session45：下半身 locomotion C++ 部分完成——strafe 8 向走跑（Direction×Speed 2D BS）+ 冲刺键（按住提速）+ 方向/脚相位/gait 驱动的停步选择（纯 C++ 读 foot_l/foot_r 骨骼 Z 判抬脚）。",
+                         "archive_file":  "archive/FEAT-039-body-anim-blueprint.md",
+                         "created":  "2026-06-24",
+                         "updated":  "2026-06-26-session49",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告（UFPSCharacterAnimInstance locomotion 驱动变量 + 冲刺输入）✓ session45",
+                                               "编辑器：IA_Sprint 建好并绑 Shift，BP_TheManPlayerController.SprintAction 引用；角色 BP WalkSpeed/SprintSpeed/JogSpeedThreshold 配好",
+                                               "编辑器：BS_Locomotion(Direction×Speed 2D) + 全身主 ABP locomotion 状态机（Idle/Locomotion/Stop/Jump）+ 武器层 ABP 创建并编译通过；ArmsMesh 默认 AnimClass + 武器 BP EquipmentAnimClass/EquipmentAnimLayerClass 引用配好",
+                                               "PIE：移动时腿部 8 向走跑正确；松键按方向/脚相位/gait 播对应停步动画；按住 Shift 切跑；上半身持枪 aim pose；切武器时上半身层切换；影子姿势与手臂完全一致"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-040",
+                         "name":  "影子持枪 mesh + 身体瞄准 IK（低优先）",
+                         "status":  "planned",
+                         "description":  "收尾打磨：①影子手里握第三人称武器 mesh（SetOwnerNoSee+bCastHiddenShadow，与 FP 手上那把分开，FP 链路不动）；②身体上半身 BBBAimIK 朝相机视线，让影子枪口跟玩家瞄准方向（可选摆正）。用户明确优先级低：影子持枪算需求，瞄准 IK 精度/摆正做不做都行。参考 FEAT-031 敌人 AimTargetWorld 喂值范式。",
+                         "archive_file":  "archive/FEAT-040-shadow-weapon-aim-ik.md",
+                         "created":  "2026-06-24",
+                         "updated":  "2026-06-24",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告（若有改动：影子武器 mesh 挂载/同步 + 身体 AimIK 目标喂值）",
+                                               "PIE：影子手里有枪；（可选）影子上半身随玩家视线俯仰，枪口跟瞄准方向"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-041",
+                         "name":  "删除弃用旧角色系统 + 玩家动画实例改名",
+                         "status":  "in_progress",
+                         "description":  "清理：①删除旧弃用 ATheManCharacterBase 系统共 10 个 C++ 文件（TheManCharacterBase / TheManAnimInstanceBase / Infiltrator / MaintenanceWorker / TheExecutive，grep 确认现役系统零引用）；②改名 UFPSArmsAnimInstance → UFPSCharacterAnimInstance（现驱动手臂/影子/腿三件套共享全身姿势，Arms 名不副实），+ DefaultEngine.ini CoreRedirect 保留旧 ABP 父类链接。保留 TheManCharacterDataAssetBase / TheManAttributeSetBase（现役在用）。删除前全部备份到 scratchpad/deprecated-char-backup-session43。",
+                         "archive_file":  "archive/FEAT-041-remove-deprecated-character-system.md",
+                         "created":  "2026-06-24",
+                         "updated":  "2026-06-24",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告（删除+改名后，Development Editor/Win64）",
+                                               "编辑器：删除旧蓝图 BP_TheManCharacterBase/BP_Infiltrator/BP_MaintenanceWorker/BP_TheExecutive/ABP_MainCharacter/ABP_FirstPerson_MainCharacter，无父类丢失报错残留",
+                                               "编辑器：现役 ABP_FPSArms/ABP_FPS_Arm_MainCharacter 经 CoreRedirect 父类自动重链 UFPSCharacterAnimInstance 并编译通过"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-042",
+                         "name":  "GASP Motion Matching 集成（CMC 版，UEFN_Mannequin 全身骨架）",
+                         "status":  "needs_improvement",
+                         "description":  "【session63 方向变更】用户决定不再使用 Motion Matching / GASP。保留 FEAT-042 中独立 FP viewmodel 的有效 C++ 结构（HeadCamera -\u003e ViewmodelRoot -\u003e ArmsViewMesh），删除迁移进来的 GASP/MM 蓝图、UEFN_Mannequin/Echo/Paragon/MetaHumans 演示资产，并从 .uproject 移除 PoseSearch/Chooser/Mover/SmartObjects/MetaHuman 等插件。后续路线改为本项目原生 AFPSCharacterBase + 普通 AnimBP locomotion 状态机 + 独立 FP 手臂；需要在编辑器里把角色 BP / GameMode / DT_CharacterRoster 从 SandboxCharacter_CMC 切回项目自有 BP，并 Fix Up Redirectors + 编译蓝图 + PIE 验证。",
+                         "archive_file":  "archive/FEAT-042-gasp-motion-matching.md",
+                         "created":  "2026-06-27",
+                         "updated":  "2026-07-05-session72",
+                         "done_criteria":  [
+                                               "启 MM 相关插件（Motion Trajectory / Pose Search / Animation Locomotion Library / Chooser），编辑器无报错 ✓",
+                                               "Migrate CMC 版 GASP + UEFN_Mannequin 进 TheManTest，独立测试关卡 Manny 跑通 MM（走跑/起步/停步/转身/pivot 自然）✓ session52 用户确认手感完美",
+                                               "接进 AFPSCharacterBase（阶段2 全通）：C1 reparent→AFPSMaintenanceWorker + FP 相机 + MM 存活 ✓ session54；三件套 Shadow Follower ✓ + 输入合并 IMC_Default ✓ session55；GAS+装备（EquipSocketName 默认 Grip_Point + 武器投影开 C++；三字段 + Manny Grip_Point socket；两 anim 字段 None）✓ session57",
+                                               "上半身武器层叠在 MM 之上（持枪 aim pose + BBBAimIK），切武器切层正常（session57：宿主 ABP 结构✓——ALI_WeaponAnim 接口 + Layered blend per bone(spine_01) 叠 MM，WeaponAimOffset 默认层 RTG_W2_Stand_Aim_Idle 兜底，PIE 通过；剩 UpperBodySlot/BBBAimIK/per-weapon 武器 ABP）",
+                                               "（阶段4）角色自有 mesh 重绑 Manny 换上",
+                                               "清理 FEAT-039 停步 C++ + TEMP 调试",
+                                               "session63：已删除 GASP/MM 迁移资产并关闭相关插件；C++ Development Editor / Win64 编译通过；待编辑器内修复蓝图引用并改回普通 AnimBP；追加：已删除 FEAT-039 停步动画 C++ 变量/逻辑，改为普通 Idle/WalkRun 方案，编译待用户手动完成",
+                                               "session64：AFPSCharacterBase 新增 BodyVisualYaw 下半身视觉朝向滞后逻辑，UFPSCharacterAnimInstance 暴露 bIsTurningInPlace / TurnInPlaceAngle / TurnInPlaceIndex，C++ Development Editor / Win64 编译通过；待 ABP_BodyLocomotion 接 Turn_L45 / Turn_R45 状态",
+                                               "session65：BodyVisualYaw 视觉转身速度改为按 BodyTurnInPlaceAnimLockTime 同步分摊，避免 45 度 yaw 抢先转完导致 Turn 动画闪现后原地播放；C++ Development Editor / Win64 编译通过",
+                                               "session65：撤回 TurnInPlacePlayRate 方案；快速甩视角时不加速单段动画，而是在每个固定 45 度 step 完成后按剩余 yaw 差连续触发下一段 Turn 动画；C++ Development Editor / Win64 编译通过",
+                                               "session65：新增 BodyTurnInPlaceVisualStartDelay，Turn 请求先发给 ABP，BodyRoot 视觉 yaw 延迟一小段再开始，避免连续动作间隙里身体滑动旋转；C++ Development Editor / Win64 编译通过",
+                                               "session65：新增固定 BodyTurnInPlacePlayRate 并输出 TurnInPlacePlayRate 给 ABP；C++ step 时长和 Turn Sequence Player Play Rate 共用同一蓝图倍率；C++ Development Editor / Win64 编译通过",
+                                               "session66：Content/RTG 下两个 45 度转身资产使用 TurnRootYaw 曲线驱动 BodyVisualYaw；UFPSCharacterAnimInstance 读取曲线帧差并过滤左右方向，AFPSCharacterBase 应用曲线增量，不再用 C++ 手动估算视觉转身；C++ Development Editor / Win64 编译通过",
+                                               "session67：UFPSCharacterAnimInstance 新增 TurnRootYawPoseFixYaw / TurnRootYawPoseFixRotation，C++ 直接提供 Transform Modify Bone(root) 抵消资产自身 root yaw 所需的反向 Rotator；C++ Development Editor / Win64 编译通过",
+                                               "session68：按用户要求回到外层 BodyRoot/BodyVisualYaw 转身路线，但继续用 TurnRootYaw 烘焙曲线驱动转身节奏；删除无用 BodyTurnInPlaceInterpSpeed；恢复 TurnRootYawPoseFixRotation 供 LocomotionSM 外侧全局 root-bone 抵消，Turn 状态内部不得使用 Transform Modify Bone(root)；撤回 hold/serial 方案，改为触发 Turn 时锁定 PawnYaw 为最终落点，按实际 yaw 差缩放 TurnRootYaw 曲线增量，使 Turn 可正常回 Idle；C++ Development Editor / Win64 编译通过",
+                                               "session70：上半身武器动画 C++ 胶水完成：新增 UEquipmentAnimInstance 通用装备动画父类，UFirearmAnimInstance 继承它；最终方案改为 GetMesh 与 ArmsViewMesh 可共用主 ABP，EquipmentAnimLayerClass 同时链接到 ArmsViewMesh 和 GetMesh，AFirearm 向两边 linked UFirearmAnimInstance 写 MuzzleLocalTransform；Development Editor / Win64 编译通过",
+                                               "session71：用户验证 WeaponUpperBody 内 Layered Blend per Bone 正确配置为 Branch Filter spine_01 + Blend Depth 2；此前建议的 999 不生效；上半身武器动画决策改为只按 Speed 区分 Walk/Run，不再判断跑动方向"
+                                           ],
+                         "verification_evidence":  "2026-07-03-session63：删除 21 个 GASP/MM 资产目标，.uproject 仅保留 ModelingToolsEditorMode + GameplayAbilities；Development Editor / Win64 编译通过。追加清理：UFPSCharacterAnimInstance 停步变量/逻辑已删，仅保留 AccelDirection/bHasAcceleration；AFPSCharacterBase 的 OnMoveReleased/滑行字段已删；.uproject JSON 通过；命令行编译曾被 Live Coding active 拦截。2026-07-03-session64：新增 BodyVisualYaw 下半身视觉朝向滞后和玩家 45 度原地转身触发变量后，Development Editor / Win64 编译通过。2026-07-03-session65：修正 BodyVisualYaw 以动画锁时长同步完成视觉转身，改为连续固定 45 度 Turn step，新增 BodyTurnInPlaceVisualStartDelay 减少动作间隙滑动，并新增固定 BodyTurnInPlacePlayRate 统一 C++ 视觉旋转与 ABP Turn 动画播放速度；Development Editor / Win64 编译通过。2026-07-03-session66：改为读取 TurnRootYaw 动画曲线驱动 BodyVisualYaw，保留 BodyTurnInPlacePlayRate 同步 ABP Sequence Player 和 C++ 锁定时长；Development Editor / Win64 编译通过。2026-07-04-session67：新增 TurnRootYawPoseFixRotation 供 AnimGraph 直接抵消 turn 资产自身 root yaw；Development Editor / Win64 编译通过。2026-07-04-session68：保留 TurnRootYaw 曲线驱动外层 BodyRoot/BodyVisualYaw，同时恢复 TurnRootYawPoseFixRotation 供 LocomotionSM 外侧全局抵消资产 root-bone yaw；Development Editor / Win64 编译通过。2026-07-04-session70：新增 UEquipmentAnimInstance 通用装备动画父类；最终武器层改为 EquipmentAnimLayerClass 同时链接 ArmsViewMesh 和 GetMesh；Development Editor / Win64 编译通过，无新增警告。"
+                     },
+                     {
+                         "id":  "FEAT-043",
+                         "name":  "可驾驶机甲（GASP Walker，Mover pawn）",
+                         "status":  "planned",
+                         "description":  "把 Game Animation Sample（D:\\Unreal Projects\\GameAnimationSample）的 Walker 机甲作为独立可驾驶单位加入本游戏。机甲是自包含 Mover pawn（非 ACharacter），与玩家的 CMC 角色逐 pawn 并存、不需全项目改造。资产 Migrate：BP_Walker + BP_MovementMode_* + SKM_Mech/SK_Mech+材质 + ABP_Walker + CR_Walker/CR_Mech（Control Rig 程序化腿部 IK，机甲自动踩地）。启 Mover + NetworkPrediction 插件。工作量主要在接合胶水：①上/下机甲（PlayerController Possess 切换 AFPSCharacterBase↔BP_Walker）②输入 context ③相机（本游戏 FP，机甲第三人称，按需设）④可选 GAS——ASC 挂 ATheManPlayerState 跨 pawn 持久，机甲实现 IAbilitySystemInterface 指回 PlayerState ASC 即接上血量/技能。低优先、未开工。参考关卡 LocomotorLevel / GM_Locomotor / PC_Locomotor。",
+                         "archive_file":  "archive/FEAT-043-mech-walker.md",
+                         "created":  "2026-06-27",
+                         "updated":  "2026-06-27",
+                         "done_criteria":  [
+                                               "Migrate BP_Walker 及依赖进 TheManTest，启 Mover + NetworkPrediction 插件，编辑器无报错",
+                                               "玩家可触发上机甲（Possess BP_Walker）+ 下机甲（Possess 回角色），输入/相机正常",
+                                               "PIE：机甲移动 + Control Rig 腿部踩地正常；（可选）机甲走 PlayerState ASC 有血量/技能",
+                                               "Mover pawn 与现有 CMC 角色系统并存，互不影响"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-044",
+                         "name":  "扫描组件下沉到 Infiltrator 专属",
+                         "status":  "planned",
+                         "description":  "清理角色组件职责：当前 UScanEffectComponent 在 AFPSCharacterBase 构造函数中统一创建，导致 FPSMaintenanceWorker / TheExecutive 等非潜行者角色组件树里也出现 ScanEffect。功能上只有 AFPSInfiltrator 通过 DefaultAbilityClasses 授予 BGA_InfiltratorScan 才会响应 E 键扫描，但结构不够干净。后续将 ScanEffect 从基类移到 AFPSInfiltrator 专属组件/访问接口，GA_InfiltratorScan 改为只接受 Infiltrator 或通过接口获取扫描组件，确保非潜行者不再携带扫描组件。",
+                         "archive_file":  "archive/FEAT-044-infiltrator-scan-component-scope.md",
+                         "created":  "2026-07-03",
+                         "updated":  "2026-07-03-session64",
+                         "done_criteria":  [
+                                               "AFPSCharacterBase 不再创建/暴露 ScanEffect 组件，非潜行者 BP 组件树无 ScanEffect",
+                                               "AFPSInfiltrator 创建并暴露自己的 UScanEffectComponent，BP_FPSInfiltrator 可继续配置 MPC_ScanEffect",
+                                               "UGA_InfiltratorScan 只从 Infiltrator 专属路径获取扫描组件；非潜行者即使收到 Interact 事件也不会触发扫描",
+                                               "C++ Development Editor / Win64 编译无错误无新增警告",
+                                               "PIE：Infiltrator 按 E 扫描波/高亮/UI 正常；MaintenanceWorker/TheExecutive 按 E 不触发扫描且组件树干净"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-046",
+                         "name":  "步枪上半身 1D BlendSpace 状态机",
+                         "status":  "needs_improvement",
+                         "description":  "步枪上半身 Linked Anim Layer 的旧尝试。2026-07-26 MCP 复核发现实际 SM_FirearmUpperBody 仍为 Idle \u003c-\u003e WalkRun，现有 BS_Rifle_UpperBody_IdleWalkRun 是 2D BlendSpace 且 0 samples，与原计划的 Locomotion + 1D BlendSpace 不一致；用户随后删除了一部分效果不佳的重定向动画资产，本功能暂停并由 FEAT-051 接管后续动画整理。",
+                         "archive_file":  "archive/FEAT-046-rifle-upperbody-start-end.md",
+                         "created":  "2026-07-05",
+                         "updated":  "2026-07-26-session89",
+                         "done_criteria":  [
+                                               "UEquipmentAnimInstance 仅保留通用装备动画层变量 Speed / Direction / Velocity_Z / bIsFalling；Start/End 状态机临时变量已删除",
+                                               "C++ Development Editor / Win64 编译无错误无新增警告",
+                                               "编辑器：ABP_Rifle_UpperBody 或其模板层的 WeaponUpperBody 内保留 SM_FirearmUpperBody，内部使用 Idle \u003c-\u003e Locomotion",
+                                               "编辑器：Locomotion 状态内放置 1D BlendSpace Player，使用共用资产 BS_Rifle_UpperBody_Locomotion，按 Speed 混合持枪 Idle/Walk/Run 循环",
+                                               "PIE：步枪装备后，站立、走循环、跑循环动画在 ArmsViewMesh 与 GetMesh 上半身层同步生效"
+                                           ],
+                         "verification_evidence":  "2026-07-05-session73~75：C++ 动画驱动清理和编译已完成。2026-07-26-session80：Unreal MCP 只读审计确认 TABP_Firearm_UpperBodyBase 的 WeaponUpperBody 包含 Layered Blend per Bone + SM_FirearmUpperBody，但状态机实际为 Idle \u003c-\u003e WalkRun；BS_Rifle_UpperBody_IdleWalkRun 被识别为 BlendSpace2D 且 numSamples=0。原 1D BlendSpace 目标未完成，状态改为 needs_improvement，后续由 FEAT-051 接管。"
+                     },
+                     {
+                         "id":  "FEAT-051",
+                         "name":  "基于原始骨架重建角色与 Enemy 动画蓝图",
+                         "status":  "in_progress",
+                         "description":  "保留现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构；玩家继续让 GetMesh、ArmsViewMesh 与武器 Linked Anim Layer 共用玩家 Skeleton，下半身可使用效果合格的重定向动画；Enemy 优先使用动画原始 Skeleton，并从现有无骨架模板创建对应骨架的子 AnimBP。具体动画资产删除、选择与 Override 由用户在编辑器中手动完成。",
+                         "archive_file":  "archive/FEAT-051-original-skeleton-character-enemy-animation.md",
+                         "created":  "2026-07-26",
+                         "updated":  "2026-07-27-session103",
+                         "done_criteria":  [
+                                               "玩家 GetMesh / ArmsViewMesh / 武器 Linked Anim Layer 继续使用同一玩家 Skeleton",
+                                               "玩家下半身 locomotion 仅保留效果可接受的重定向动画",
+                                               "每种 Enemy 使用其动画原始 Skeleton，并基于无骨架 Template AnimBP 创建对应子 AnimBP",
+                                               "各 Enemy 子 AnimBP 的 Asset Override 使用与自身 Skeleton 兼容的 Idle/Walk/Run/Turn/Combat 动画",
+                                               "按各原始骨架检查 hand_r / hand_l / spine / AimSocket / IK 骨骼与 Socket，不假设骨骼命名完全一致",
+                                               "所有活动 AnimBP 编译无错误，且不存在指向用户已删除动画资产的失效引用",
+                                               "PIE：玩家 locomotion/武器层正常；各 Enemy 巡逻、转身、瞄准和攻击动画正常"
+                                           ],
+                         "latest_verification_evidence":  "2026-07-27-session103：切枪完整 Unequip/Equip 后使用 Montage 首帧桥接，当帧播放覆盖 Idle，next tick 从 0 稳定重启；旧技能先回收、新技能后授予。PIE 严格验证 Arms/Body 状态 true@0 → true@0 → true@0.3333334，首张评估图为下方起始姿势；快速切走旧 Montage inactive。结束后 Layer/hand_r 一致、无 T-Pose，W=250 与 Shadow Leader 回归通过。用户实机确认功能问题已修复，但切枪主观观感仍不如 BeginPlay 首次装备丝滑，保留为后续优化项。",
+                         "verification_evidence":  "2026-07-26-session80：MCP 复扫确认玩家 ABP_BodyLocomotion、ALI_WeaponAnim、TABP_Firearm_UpperBodyBase 仍存在；Enemy 侧无骨架模板 ABP_HumanoidEnemy 与 Phantom 子 AnimBP ABP_Phantom 仍存在。2026-07-26-session88：用户将玩家模板整理为 TABP_BodyLocomotion，创建并编译 ABP_MaintenanceWorker、BS_RunWalk_MaintenanceWorker、ABP_RepairGun_AnimLayer 与 BS_WalkRun_RepairGun；维修工临时统一使用手臂 Skeleton。AEquipmentBase 已删除 EquipmentAnimClass 整体替换路径，只保留 EquipmentAnimLayerClass；TheManTestEditor Win64 Development 完整构建 41/41 成功。2026-07-26-session89：暂停玩家原地转身，删除 BodyVisualYaw、固定 45 度转步及 TurnRootYaw 曲线驱动 C++ 链；BodyRoot 改为直接跟随 Actor yaw，TheManTestEditor 编译 7/7 成功。用户已清理 TABP_BodyLocomotion 的 Turn 节点；Game Animation Sample 转向系统完成只读调研。RepairGun 子弹根 CollisionSphere 的 Static Mobility 问题经 MCP 与 PIE 日志定位，恢复 Movable 后用户确认修复。2026-07-27-session90：修复 A/D 横移时 FP 手臂/枪口被侧移 pelvis 局部旋转带偏；在 TABP_Firearm_UpperBodyBase 的既有 spine_01 Layered Blend per Bone 开启 Mesh Space Rotation Blend。武器模板、RepairGun 子层、玩家模板与维修工子 AnimBP 均经 MCP 编译保存成功。PIE 中 A/D 各 5 组匹配动画相位的 ArmsViewMesh.hand_r 相对相机旋转逐项一致，而 spine_01 保留方向差异；CharacterMesh0/ArmsViewMesh 均运行 ABP_MaintenanceWorker_C，ShadowBodyMesh/LegsMesh 的 Leader Pose 均为 CharacterMesh0，证明持枪朝向修复且同步链未拆分。2026-07-27-session99：修复切入 RepairGun 前第一人称手臂/枪在最终 Idle 闪帧；Montage 准备阶段同步隐藏 ArmsViewMesh 与新装备，起始姿势评估后同帧显示。暂停 PIE 验证准备态 arms=false/weapon hidden=true，首个可见态 arms=true/weapon hidden=false/Montage=0.3333334；快速 4 连切、W=250 与 ShadowBodyMesh Leader=CharacterMesh0 回归通过。"
+                     }
+                 ],
+    "_说明":  "主索引仅保留未完成、受阻及待改进功能；已完成项移至 feature_archive.json。功能详细历史仍以 archive/FEAT-*.md 为准。"
 }
-

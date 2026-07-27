@@ -1,0 +1,597 @@
+{
+    "schema_version":  "1.0",
+    "last_updated":  "2026-07-27-session103",
+    "source_file":  "feature_list.json",
+    "status_scope":  "done",
+    "features":  [
+                     {
+                         "id":  "FEAT-001",
+                         "name":  "FirstPersonMesh 作为相机父级",
+                         "status":  "done",
+                         "description":  "将组件挂载层级从「HeadCamera → FirstPersonMesh」改为「FirstPersonMesh → HeadCamera」，FirstPersonMesh 挂到 GetMesh() 根节点与第三人称 Mesh 重叠，HeadCamera 挂在 FirstPersonMesh 的 head 插槽上。",
+                         "archive_file":  "archive/FEAT-001-firstpersonmesh-as-camera-root.md",
+                         "created":  "2026-06-06",
+                         "updated":  "2026-06-06",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告（Development Editor / Win64）",
+                                               "蓝图无编译错误（UE 编辑器验证）",
+                                               "PIE 测试：相机视角跟随正常，第一人称手臂网格位置正确，角色切换后视角不异常"
+                                           ],
+                         "verification_evidence":  "用户确认验证通过（2026-06-06）"
+                     },
+                     {
+                         "id":  "FEAT-002",
+                         "name":  "相机俯仰角限制",
+                         "status":  "done",
+                         "description":  "新增 PitchMin / PitchMax 两个 BlueprintReadWrite 变量，在 PossessedBy 时写入 PlayerCameraManager 限制相机俯仰范围，防止视角过低穿地。",
+                         "archive_file":  "archive/FEAT-002-camera-pitch-clamp.md",
+                         "created":  "2026-06-06",
+                         "updated":  "2026-06-06",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告",
+                                               "蓝图 Camera 分类下可见 PitchMin / PitchMax 两个变量",
+                                               "PIE 测试：向下看超过 PitchMax 时视角被锁住，向上看超过 PitchMin 时同样被锁住"
+                                           ],
+                         "verification_evidence":  "用户确认验证通过（2026-06-06）"
+                     },
+                     {
+                         "id":  "FEAT-005",
+                         "name":  "FPS 角色基类重构",
+                         "status":  "done",
+                         "description":  "新建 AFPSCharacterBase 平行基类（ArmsMesh→HeadCamera on head bone 架构），以及三个具体角色的 FPS 版本（AFPSInfiltrator / AFPSMaintenanceWorker / AFPSTheExecutive）。原有 ATheManCharacterBase 及其三个子类保留不动。",
+                         "archive_file":  "archive/FEAT-005-fps-character-base.md",
+                         "created":  "2026-06-07",
+                         "updated":  "2026-06-07",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告（Development Editor / Win64）",
+                                               "在编辑器中基于 AFPSMaintenanceWorker 创建 BP_FPSMaintenanceWorker，配置手臂骨骼",
+                                               "PIE 测试：相机随 SpringArm 正确俯仰，手臂网格跟随相机"
+                                           ],
+                         "verification_evidence":  "用户确认 PIE 测试通过（2026-06-07）"
+                     },
+                     {
+                         "id":  "FEAT-008",
+                         "name":  "武器摇摆（Weapon Sway）",
+                         "status":  "done",
+                         "description":  "纯 C++ 实现武器惯性摇摆。在 AFPSCharacterBase::Tick() 中用 FMath::RInterpTo 平滑插值鼠标 delta，以 SetRelativeRotation 叠加到 ArmsMesh 上。",
+                         "archive_file":  "archive/FEAT-008-weapon-sway.md",
+                         "created":  "2026-06-07",
+                         "updated":  "2026-06-07",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告",
+                                               "PIE 测试：鼠标移动时手臂轻微反向偏转，停止后平滑回正",
+                                               "SwayIntensity / SwayInterpSpeedX / SwayInterpSpeedY 在蓝图 Details 面板可调"
+                                           ],
+                         "verification_evidence":  "用户确认 PIE 测试通过（2026-06-07）"
+                     },
+                     {
+                         "id":  "FEAT-009",
+                         "name":  "GAS 射击系统",
+                         "status":  "done",
+                         "description":  "通过 GAS 实现枪械开火功能。LMB 路由到 AFPSCharacterBase::PrimaryFire()，向 ASC 发送 GameplayEvent，UGA_Shoot 监听触发。子弹从枪口生成，OnComponentHit 驱动命中逻辑。",
+                         "archive_file":  "archive/FEAT-009-gas-shooting.md",
+                         "created":  "2026-06-07",
+                         "updated":  "2026-06-08",
+                         "done_criteria":  [
+                                               "C++ 编译通过 ✓",
+                                               "子弹从枪口射出，OnComponentHit 触发膨胀 ✓",
+                                               "膨胀完成后可被新子弹命中并二次膨胀 ✓",
+                                               "蓝图配置（IA_PrimaryFire、GA_Shoot BP、RepairGun 武器设置）完成 ✓",
+                                               "切换武器后技能回收/授予 PIE 验证 ✓"
+                                           ],
+                         "verification_evidence":  "PIE 全流程验证通过（2026-06-08）"
+                     },
+                     {
+                         "id":  "FEAT-010",
+                         "name":  "子弹类 + 枪口射线",
+                         "status":  "done",
+                         "description":  "建立子弹类继承体系（ABulletBase → ARepairGunBullet），Firearm 加 BulletClass / MuzzleSocketName 配置，GA_Shoot 射线起点改为武器骨骼 Muzzle Socket。",
+                         "archive_file":  "archive/FEAT-010-bullet-class-muzzle-trace.md",
+                         "created":  "2026-06-07",
+                         "updated":  "2026-06-08",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告 ✓",
+                                               "武器骨骼添加 Muzzle Socket，名称与 MuzzleSocketName 一致 ✓",
+                                               "PIE 测试：调试射线从枪口位置出发，命中点与准星一致 ✓"
+                                           ],
+                         "verification_evidence":  "PIE 验证通过（2026-06-08）"
+                     },
+                     {
+                         "id":  "FEAT-011",
+                         "name":  "开火动画蒙太奇",
+                         "status":  "done",
+                         "description":  "按下 LMB 开火时，在 ArmsMesh 上播放武器专属的开火蒙太奇。FireMontage 配置在 AFirearm 上，由 GA_Shoot::ActivateAbility 在发射逻辑执行后调用。",
+                         "archive_file":  "archive/FEAT-011-fire-montage.md",
+                         "created":  "2026-06-07",
+                         "updated":  "2026-06-07",
+                         "done_criteria":  [
+                                               "AFirearm 新增 FireMontage UPROPERTY（EditDefaultsOnly）✓",
+                                               "GA_Shoot::ActivateAbility 在射击后取 ArmsMesh AnimInstance 播放蒙太奇 ✓",
+                                               "PIE 测试：按 LMB 手臂播放开火动画 ✓"
+                                           ],
+                         "verification_evidence":  "C++ 实现完成，用户确认蒙太奇播放正常（2026-06-07）"
+                     },
+                     {
+                         "id":  "FEAT-012",
+                         "name":  "武器后坐力系统",
+                         "status":  "done",
+                         "description":  "开火时向 AFPSCharacterBase 施加角速度，通过 FInterpTo 每帧衰减产生快起慢停的后坐力手感。不自动归位，玩家需手动压枪。参数配置在每把武器蓝图上。",
+                         "archive_file":  "archive/FEAT-012-recoil.md",
+                         "created":  "2026-06-07",
+                         "updated":  "2026-06-07",
+                         "done_criteria":  [
+                                               "AFirearm 新增 RecoilPitch / RecoilYawMin / RecoilYawMax / RecoilDamping ✓",
+                                               "AFPSCharacterBase::AddRecoil() 叠加角速度 ✓",
+                                               "Tick 中角速度积分驱动旋转 + FInterpTo 衰减 ✓",
+                                               "GA_Shoot 调用 AddRecoil ✓",
+                                               "PIE 测试：开火视角向上飘，停止后保持位置 ✓"
+                                           ],
+                         "verification_evidence":  "PIE 验证通过（2026-06-07）"
+                     },
+                     {
+                         "id":  "FEAT-013",
+                         "name":  "开火音效",
+                         "status":  "done",
+                         "description":  "开火时在枪口位置播放武器专属音效，支持音量/音调倍率调节。",
+                         "archive_file":  "archive/FEAT-013-fire-sound.md",
+                         "created":  "2026-06-07",
+                         "updated":  "2026-06-07",
+                         "done_criteria":  [
+                                               "AFirearm 新增 FireSound / FireSoundVolumeMultiplier / FireSoundPitchMultiplier ✓",
+                                               "GA_Shoot 在枪口位置播放音效 ✓",
+                                               "PIE 测试：开火有声音从枪口位置发出 ✓"
+                                           ],
+                         "verification_evidence":  "PIE 验证通过（2026-06-07）"
+                     },
+                     {
+                         "id":  "FEAT-014",
+                         "name":  "环境危险区系统（火焰）",
+                         "status":  "done",
+                         "description":  "基于接口的可扩展环境危险区系统。IEnvironmentHazard 伤害接口（留空）、IHazardSuppressor 标记接口、AEnvironmentHazardBase 抽象基类（Niagara 特效 + 伤害 tick + 压制/恢复逻辑）、AFlameHazard 具体类。RepairGun 泡泡进入危险区时暂停特效和伤害，泡泡销毁后自动恢复。",
+                         "archive_file":  "archive/FEAT-014-environment-hazard.md",
+                         "created":  "2026-06-07",
+                         "updated":  "2026-06-07",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告 ✓",
+                                               "在编辑器中基于 AFlameHazard 创建 BP_FlameHazard，配置 Niagara 资产",
+                                               "PIE 测试：RepairGun 泡泡接触 BP_FlameHazard，火焰特效关闭；泡泡销毁后火焰恢复"
+                                           ],
+                         "verification_evidence":  "C++ 编译通过，PIE 验证通过（2026-06-07）"
+                     },
+                     {
+                         "id":  "FEAT-016",
+                         "name":  "输入架构重构（Controller 纯注册表）",
+                         "status":  "done",
+                         "description":  "将输入绑定职责从 Controller 完全移入各 Character 的 SetupPlayerInputComponent。Controller 只持有 IA 资产 + AddMappingContext，通过公开 getter 供 Character 读取。每个 Character 类在 SetupPlayerInputComponent 中绑定自己需要响应的键，角色专属输入在子类 override 中追加。",
+                         "archive_file":  "archive/FEAT-016-input-architecture-refactor.md",
+                         "created":  "2026-06-08",
+                         "updated":  "2026-06-08",
+                         "done_criteria":  [
+                                               "Controller SetupInputComponent 只含 TestSwitchCharacterAction 绑定 ✓",
+                                               "FPSCharacterBase::SetupPlayerInputComponent 绑定所有通用输入 ✓",
+                                               "Move/Look/SwitchEquipment 签名改为 const FInputActionValue\u0026 ✓",
+                                               "FPSInfiltrator::SetupPlayerInputComponent override，额外绑定 ScanAction ✓",
+                                               "PIE 测试：Move/Look/Jump/Fire 正常，E 键在 Infiltrator 上触发扫描"
+                                           ],
+                         "verification_evidence":  "C++ 编译通过（待验证），PIE 待测试"
+                     },
+                     {
+                         "id":  "FEAT-017",
+                         "name":  "Infiltrator 扫描技能 GAS 框架",
+                         "status":  "done",
+                         "description":  "为 AFPSInfiltrator 建立扫描技能 GAS 完整链路。E 键 → TAG_Input_Character_Interact → UGA_InfiltratorScan Toggle 全息 UI（BP_uiFrame）附着相机正前方，Show/Hide 蓝图动画，再按销毁。",
+                         "archive_file":  "archive/FEAT-017-infiltrator-scan-ability.md",
+                         "created":  "2026-06-08",
+                         "updated":  "2026-06-08-session10",
+                         "done_criteria":  [
+                                               "编译无错误无警告 ✓",
+                                               "E 键触发链路 PIE 验证通过 ✓",
+                                               "蓝图：创建 BGA_InfiltratorScan，Hologram Actor Class 填入 BP_uiFrame ✓",
+                                               "蓝图：BP_FPSInfiltrator DefaultAbilityClasses 填入 BGA_InfiltratorScan ✓",
+                                               "蓝图：BP_TheManPlayerController InteractAction 填入 IA_Interact（E 键）✓",
+                                               "PIE 测试：以 Infiltrator 按 E → 全息 UI 展开附着相机前方；再按 E → 收缩销毁 ✓"
+                                           ],
+                         "verification_evidence":  "PIE 全流程验证通过（2026-06-08-session10）；BP_uiFrame Delay 参数调整后持久显示正常"
+                     },
+                     {
+                         "id":  "FEAT-015",
+                         "name":  "扫描材质控制系统",
+                         "status":  "done",
+                         "description":  "为球形扫描材质（SphereMask 双球差分方案）建立运行时控制。MPC_ScanEffect 三个参数：ScanTime（Scalar，0→1 驱动扩张进度）、ScanAlpha（Scalar，0/1 开关）、ScanOrigin（Vector，相机相对坐标，C++ Tick 每帧计算 WorldOrigin - CamPos）。材质用 Camera Relative WorldPosition 作为 A，ComponentMask(ScanOrigin, RGB) 作为 B，规避 UE5 SM6 LWC 类型冲突。UScanEffectComponent 封装 Tick 推进 + EaseOut 三次缓动 + RetractScan 即时隐藏逻辑。",
+                         "archive_file":  "archive/FEAT-015-scan-material-control.md",
+                         "created":  "2026-06-08",
+                         "updated":  "2026-06-08-session12",
+                         "done_criteria":  [
+                                               "MPC_ScanEffect 在编辑器创建（ScanTime Scalar / ScanAlpha Scalar / ScanOrigin Vector）✓",
+                                               "材质 SphereMask A：WorldPosition 节点 Shader Offsets 改为 Camera Relative World Position ✓",
+                                               "材质 SphereMask B：CollectionParameter(ScanOrigin) → ComponentMask(RGB) → SphereMask B ✓",
+                                               "材质 ScanAlpha：CollectionParameter(ScanAlpha) 控制效果开关（默认 0 不显示）✓",
+                                               "材质 ScanTime：CollectionParameter(ScanTime) → Frac → Multiply(半径) → SphereMask Radius ✓",
+                                               "C++ 编译无错误（UScanEffectComponent + GA_InfiltratorScan 含 GetScanEffect()）✓",
+                                               "蓝图：BP_FPSInfiltrator / BGA_InfiltratorScan → ScanMPC 赋值 MPC_ScanEffect ✓",
+                                               "PIE 测试：E 键 → 全息 UI 展开 + 扫描波从角色位置以 EaseOut 三次曲线 2s 膨胀；再按 E → 波形立即消失 ✓"
+                                           ],
+                         "verification_evidence":  "PIE 全流程验证通过（2026-06-08-session12）"
+                     },
+                     {
+                         "id":  "FEAT-018",
+                         "name":  "扫描高亮系统",
+                         "status":  "done",
+                         "description":  "扫描波经过时自动高亮场景中的可交互物体轮廓线。架构：IHighlightable 接口 + UHighlightComponent（SetRenderCustomDepth）+ AInteractableBase 基类（默认挂载组件）+ UScanEffectComponent 扫描检测（SphereOverlap + AlreadyHighlighted 去重）。高亮材质（M_Highlight）为后处理材质，Domain=Post Process，Blendable=Scene Color Before Bloom，通过 CustomDepth 绘制深度边缘轮廓线，挂在后处理体积。",
+                         "archive_file":  "archive/FEAT-018-scan-highlight.md",
+                         "created":  "2026-06-08",
+                         "updated":  "2026-06-08-session14",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告（IHighlightable / UHighlightComponent / AInteractableBase / ScanEffectComponent 扩展）✓",
+                                               "Project Settings → Custom Depth-Stencil Pass = Enabled with Stencil ✓",
+                                               "M_Highlight：Domain=Post Process，Blendable=Scene Color Before Bloom，5个SampleSceneDepth Use Custom Depth=true，Color.A→Multiply→Lerp Alpha ✓",
+                                               "后处理体积 Array 添加 M_Highlight，Weight=1 ✓",
+                                               "在编辑器中基于 AInteractableBase 创建 BP_InteractableTest，拖入关卡 ✓",
+                                               "PIE 测试：E 键扫描波经过 BP_InteractableTest 时物体边缘出现发光轮廓线 ✓"
+                                           ],
+                         "verification_evidence":  "PIE 全流程验证通过（2026-06-08-session14）"
+                     },
+                     {
+                         "id":  "FEAT-019",
+                         "name":  "扫描音效",
+                         "status":  "done",
+                         "description":  "为 Infiltrator 扫描技能加入开/关两个独立音效。ScanActivateSound 在展开时播放，ScanDeactivateSound 在收起时播放，Volume/Pitch 倍率可在蓝图调节。",
+                         "archive_file":  "archive/FEAT-019-scan-sound.md",
+                         "created":  "2026-06-09",
+                         "updated":  "2026-06-09",
+                         "done_criteria":  [
+                                               "GA_InfiltratorScan 新增 ScanActivateSound / ScanDeactivateSound / Volume / Pitch UPROPERTY ✓",
+                                               "开/关两条路径分别调用 PlaySoundAtLocation ✓",
+                                               "BGA_InfiltratorScan 蓝图填入音效资产（蓝图操作）",
+                                               "PIE 测试：第一次按 E 播放激活音效，第二次按 E 播放收起音效"
+                                           ],
+                         "verification_evidence":  "C++ 完成（2026-06-09），蓝图配置待用户完成"
+                     },
+                     {
+                         "id":  "FEAT-021",
+                         "name":  "Locomotion Template ABP 重构",
+                         "status":  "done",
+                         "description":  "将 Locomotion 逻辑从骨骼绑定的 ABP 中解耦。新建 UBaseLocomotionAnimInstance C++ 基类（不依赖 AFPSCharacterBase），UFPSArmsAnimInstance 改继承基类。新建 ABP_BaseLocomotion Template ABP（不绑定骨骼），ABP_FPS_Arm_MainCharacter 改继承 Template。为后续敌人等不同骨骼角色复用 Locomotion 状态机做基础。",
+                         "archive_file":  "archive/FEAT-021-locomotion-template-abp.md",
+                         "created":  "2026-06-10",
+                         "updated":  "2026-06-10-session16",
+                         "done_criteria":  [
+                                               "UBaseLocomotionAnimInstance C++ 编译无错误无警告",
+                                               "UFPSArmsAnimInstance 改继承基类后编译无错误",
+                                               "ABP_BaseLocomotion Template ABP 编辑器编译通过",
+                                               "ABP_FPS_Arm_MainCharacter 改继承 ABP_BaseLocomotion 后编译通过",
+                                               "PIE 测试：移动/跳跃动画正常，武器层链接正常，与重构前行为一致"
+                                           ],
+                         "verification_evidence":  ""
+                     },
+                     {
+                         "id":  "FEAT-023",
+                         "name":  "敌人动画 C++ 基础层",
+                         "status":  "done",
+                         "description":  "为人形怪动画系统建立 C++ 驱动基础：EHumanoidEnemyAIState 枚举（Patrol/Combat/SearchRush/SearchScan/Dead）、AHumanoidEnemy AI 状态 + 转向接口、UHumanoidEnemyAnimInstance（继承 UBaseLocomotionAnimInstance）每帧轮询敌人状态。EnemyBase 新增 IsDead() getter。",
+                         "archive_file":  "archive/FEAT-023-humanoid-anim-cpp-foundation.md",
+                         "created":  "2026-06-11",
+                         "updated":  "2026-06-11",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告（Development Editor / Win64）",
+                                               "UHumanoidEnemyAnimInstance 在编辑器 AnimBP 父类列表中可见",
+                                               "AIState / bIsTurning / TurnAngle / bIsDead 变量在蓝图调试器中可读"
+                                           ],
+                         "verification_evidence":  "用户确认编译及编辑器验证通过（2026-06-11）"
+                     },
+                     {
+                         "id":  "FEAT-024",
+                         "name":  "Patrol 状态机",
+                         "status":  "done",
+                         "description":  "在 ABP_HumanoidEnemy 中搭建巡逻层状态机：Idle / Patrol_Walk / Stopping（减速踏步）/ Turn_L90 / Turn_R90 / TurnAround。Turn 状态末尾 AnimNotify 回调 AHumanoidEnemy::OnTurnComplete()，通知 BehaviorTree 继续。",
+                         "archive_file":  "archive/FEAT-024-patrol-state-machine.md",
+                         "created":  "2026-06-11",
+                         "updated":  "2026-06-12-session24",
+                         "done_criteria":  [
+                                               "ABP_HumanoidEnemy 在编辑器编译无错误，Parent Class = UHumanoidEnemyAnimInstance ✓",
+                                               "Patrol 层四类状态（Idle / Walk / Stop / Turn）过渡条件正确 ✓",
+                                               "AnimNotify TurnComplete 正确回调 OnTurnComplete() ✓",
+                                               "PIE 测试：敌人巡逻走路、到端点停步、请求转身后播放转身动画并完成 ✓"
+                                           ],
+                         "verification_evidence":  "PIE 验证通过（2026-06-12）"
+                     },
+                     {
+                         "id":  "FEAT-028",
+                         "name":  "人形怪巡逻系统",
+                         "status":  "done",
+                         "description":  "APatrolPoint 路点 Actor（ArrowComponent 可视化 + WaitTime 属性）+ AHumanoidEnemy 路径跟随逻辑（PatrolPoints 数组 EditInstanceOnly，PossessedBy 绑定 OnRequestFinished，循环 MoveToActor）。Build.cs 补加 AIModule + NavigationSystem。",
+                         "archive_file":  "archive/FEAT-028-patrol-system.md",
+                         "created":  "2026-06-11",
+                         "updated":  "2026-06-12-session24",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告（AIModule / NavigationSystem / APatrolPoint / AHumanoidEnemy 修改）✓",
+                                               "在编辑器放置若干 APatrolPoint，在 BP_Phantom 实例的 PatrolPoints 数组中填入 ✓",
+                                               "PIE 测试：敌人按顺序走完所有路点并循环，WaitTime \u003e 0 时在路点等待后继续 ✓"
+                                           ],
+                         "verification_evidence":  "PIE 全流程验证通过（2026-06-12）"
+                     },
+                     {
+                         "id":  "FEAT-029",
+                         "name":  "Walk→Stop 过渡优化",
+                         "status":  "done",
+                         "description":  "修复人形怪巡逻行走到停步动画衔接不自然的问题。最终方案：虚拟减速（VirtualSpeed）+ Tick 接近降速。PathFollowing 停车时强制归零 CMC 速度，AnimInstance 检测到停步上升沿后启动虚拟减速，将 Speed 从 LastWalkSpeed 以 StopDecelerationRate 线性降到 0，让 blend space 看到平滑减速过程。ABP 移除 Stopping 状态，靠 Walk→Idle（Speed\u003c10）过渡。AnimNotify_FootDown 已弃用（空壳保留）。",
+                         "archive_file":  "archive/FEAT-029-walk-stop-transition.md",
+                         "created":  "2026-06-13",
+                         "updated":  "2026-06-13-session28",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告",
+                                               "ABP_HumanoidEnemy 移除 Stopping 状态，SA_CanTurn 只含 Idle + Patrol_Walk_Run",
+                                               "PIE 测试：Walk→Stop blend space 平滑减速，无瞬切；扫视正常进入；转身正常"
+                                           ],
+                         "verification_evidence":  "Session28 用户确认完成"
+                     },
+                     {
+                         "id":  "FEAT-030",
+                         "name":  "敌人左手武器 IK（Control Rig）",
+                         "status":  "done",
+                         "description":  "用 Control Rig Two-Bone IK 把人形怪左手固定在枪的前握把上，消除跑动时手臂脱离枪体的抖动。枪挂 hand_r，只解算左臂 IK 链。骨骼名通过 EditDefaultsOnly 变量配置，支持不同骨骼的敌人复用同一套方案。",
+                         "archive_file":  "archive/FEAT-030-enemy-hand-ik.md",
+                         "created":  "2026-06-13",
+                         "updated":  "2026-06-13-session34",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告",
+                                               "骨骼 hand_r socket 和武器 grip_l socket 在编辑器建好",
+                                               "CR_HumanoidEnemy Control Rig 创建，Two-Bone IK 左臂链配置完成",
+                                               "ABP_HumanoidEnemy 接入 Control Rig 节点，变量连线正确",
+                                               "PIE 测试：跑动时左手贴合枪的前握把，无抖动脱离"
+                                           ],
+                         "verification_evidence":  "Session34 用户确认 BUG-030-001 屈肘问题修复（Joint Target Bone Space = lowerarm_l）"
+                     },
+                     {
+                         "id":  "FEAT-031",
+                         "name":  "敌人 BBBAimIK 瞄准系统",
+                         "status":  "done",
+                         "description":  "用 BBBAimIK 插件的 CCD Aim IK 节点驱动人形怪脊柱骨骼链（spine_01→spine_02→spine_03）朝向玩家。AimSourceBoneName=AimSocket（hand_r 子插槽，+X 朝枪管），AimAxis=(1,0,0)，AimTarget 每帧从 AIController 写入，bIsAiming 由 AIState==Aim 控制 Alpha。Session35 因 BUG-030-002 临时禁用，Session40 随 FEAT-032 启用感知一并恢复并验证通过。",
+                         "archive_file":  "archive/FEAT-031-enemy-bbbaim-ik.md",
+                         "created":  "2026-06-13",
+                         "updated":  "2026-06-18-session40",
+                         "done_criteria":  [
+                                               "HumanoidEnemy 新增 AimTargetWorld / bIsAiming，AIController 在 Aim 下每帧更新 ✓",
+                                               "HumanoidEnemyAnimInstance 新增 AimTargetComponentSpace / AimSourceLocalTransform / bHasValidAimTarget / bIsAiming，NativeUpdateAnimation 每帧转换坐标 ✓",
+                                               "ABP_HumanoidEnemy 状态机输出后插入 BBBAimIK 节点，BoneChain / 引脚全部连线 ✓",
+                                               "AimSourceLocalTransform 在第一帧武器有效时从 muzzle socket 计算一次 ✓",
+                                               "PIE 测试：AIState=Aim 时上半身跟随玩家旋转，Patrol 时 IK Alpha=0 还原 ✓"
+                                           ],
+                         "verification_evidence":  "用户确认 PIE 敌人上半身瞄准 IK 成功（2026-06-18-session40）。注：session40 AIController Tick 用 GetActorLocation 写 AimTargetWorld（非原设计的 GetActorEyesViewPoint），如需瞄得更高可改回 eyes。"
+                     },
+                     {
+                         "id":  "FEAT-033",
+                         "name":  "测试枪（TestGun）装配 + 武器手臂骨架统一",
+                         "status":  "done",
+                         "description":  "把 ATestGun（继承 AFirearm 的空壳武器）配置成可用并挂到角色手上。已存在 BP_TestGun 与 ATestGun 仅有 include 的纯空壳，挂载靠蓝图配置 + 加入角色 InitialEquipmentClasses，C++ 无需改动。骨架问题最终用 Compatible Skeletons 解决（两套手臂同源 ref pose 相同）。",
+                         "archive_file":  "archive/FEAT-033-test-gun.md",
+                         "created":  "2026-06-15",
+                         "updated":  "2026-06-17-session38",
+                         "done_criteria":  [
+                                               "BP_TestGun 配置 SkeletalMesh + EquipSocketName=Grip_Point ✓",
+                                               "角色蓝图 InitialEquipmentClasses 含 BP_RepairGun + BP_TestGun，PIE 切换+显示验证 ✓",
+                                               "武器手臂骨架问题解决（Compatible Skeletons：SCF_Rifle_02 骨架加入 SCFP，零 retarget）✓",
+                                               "开火配置：PrimaryFireAbilityClass=GA_Shoot + FireMontage（DefaultSlot）✓",
+                                               "PIE 测试：装备 TestGun、切换、手臂动画、开火动画均正常 ✓"
+                                           ],
+                         "verification_evidence":  "用户确认（2026-06-17-session38）：拿枪、切换、开火动画全部正常。期间顺带修复 BUG-033-001（滚轮切枪 RoundToInt→0）+ GA_Shoot 开火反馈与子弹解耦，详见 archive。"
+                     },
+                     {
+                         "id":  "FEAT-034",
+                         "name":  "伤害弹（子弹伤害 GE）",
+                         "status":  "done",
+                         "description":  "为子弹建立伤害链路：复用现有 ABulletBase（自带 ProjectileMovement + 命中施加 HitEffectClass GE）。子弹新增 Damage 浮点字段，命中时通过 SetByCaller(Data.Damage) 把数值传入伤害 GE，GE 的 Health 修改器读取后扣血。AttributeSet 的 PostGameplayEffectExecute 已处理钳制与死亡触发。无需新写子弹 C++ 子类，伤害弹直接由 BP 继承 ABulletBase 配置。",
+                         "archive_file":  "archive/FEAT-034-damage-bullet.md",
+                         "created":  "2026-06-17",
+                         "updated":  "2026-06-17-session38",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告（TAG_Data_Damage + ABulletBase::Damage + ProcessHit SetByCaller）✓",
+                                               "编辑器创建 GE_BulletDamage：Instant，Health 修改器 Add，Magnitude=SetByCaller(Data.Damage)✓",
+                                               "创建伤害弹 BP（继承 ABulletBase）：BulletMesh + HitEffectClass=GE_BulletDamage + Damage 数值 ✓",
+                                               "武器 BulletClass 指向伤害弹 BP ✓",
+                                               "PIE 测试：射击敌人按 Damage 扣血，屏幕橙色输出剩余血量 ✓"
+                                           ],
+                         "verification_evidence":  "用户确认 PIE 全流程成功（2026-06-17-session38）：射击敌人正常扣血，屏幕橙色打印剩余血量。注：敌人扣血调试输出（PostGameplayEffectExecute）仍在，正式上线前可删。"
+                     },
+                     {
+                         "id":  "FEAT-036",
+                         "name":  "回合二阶段升级（半场切阶段 + 强度伤害系数）",
+                         "status":  "done",
+                         "description":  "在 FEAT-022 回合系统 + FEAT-032 技能集之上接通战斗升级链路。回合时长默认改 10s；倒计时进行到一半（Phase2TriggerRemainingFraction 默认 0.5）时 GameState 广播 OnCombatPhaseChanged(2)，敌人 SetCombatPhase(2) 切到二阶段技能集（PhaseSkillSets[1]）——阶段只换技能集不碰伤害。伤害递增与阶段解耦：复用 FEAT-022 既有 StrengthIncreaseInterval（回合内每隔 N 秒广播 OnMidRoundStrengthIncrease，设 150=2.5min），每波 AEnemyBase.HandleMidRoundStrengthIncrease 把 CurrentDamageMultiplier += StrengthDamageBonusPerWave（累加百分比，默认 0.2，倍率=1+系数×波数）。注入点 GA_EnemyShoot::SpawnProjectiles 乘到子弹 Damage。配套调试输出：屏幕剩余时间（key=1 原地刷新）、玩家扣血红色提示、每波伤害增强提示、二阶段切换提示、OnCountdownExpired 占位（不真死亡）。",
+                         "archive_file":  "archive/FEAT-036-round-phase2-escalation.md",
+                         "created":  "2026-06-20",
+                         "updated":  "2026-06-20-session41",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告（GameStateBase 半场广播+剩余时间调试 / EnemyBase StrengthDamageBonusPerWave 每波递增+阶段订阅 / GA_EnemyShoot 伤害系数注入 / AttributeSet 玩家扣血调试）",
+                                               "编辑器：敌人蓝图 PhaseSkillSets[1] 填二阶段技能集，StrengthDamageBonusPerWave 配置；GameState StrengthIncreaseInterval 设为目标节奏（如 150=2.5min）",
+                                               "PIE：回合 10s，屏幕显示剩余时间；半场屏幕提示进入二阶段 + 敌人切阶段（仅换技能集）",
+                                               "PIE：每过 StrengthIncreaseInterval 一波，敌人伤害倍率累加，玩家扣血屏幕数值随波变大",
+                                               "PIE：倒计时归零输出占位调试信息（不真死亡）"
+                                           ],
+                         "verification_evidence":  "用户 session41 测试通过（\u0027暂时感觉没什么问题\u0027）。后续默认值定稿：BaseCountdownDuration=600(10min)、StrengthIncreaseInterval=150(2.5min)、StrengthDamageBonusPerWave=0.2；新增 DebugSkipTime 快进 + 剩余时间分:秒显示。注：倒计时归零的\u0027占位不真死亡\u0027已被 FEAT-037 改为真实死亡路由。session42 增补并验证：①伤害倍率逐回合携带（RoundCarriedWaves=RoundNumber-1，每新回合初始攻击力加成比上回合高一波）②新增 MaxDamageMultiplier 上限（默认 2.0 可调，BeginPlay+每波两处钳制）③CountdownReductionPerRound 默认改 150(2.5min/回合)。"
+                     },
+                     {
+                         "id":  "FEAT-037",
+                         "name":  "死亡 → 选角色关卡 → 重开下一回合",
+                         "status":  "done",
+                         "description":  "把原地复活死亡循环改成跨关卡选角色循环。玩家死亡（被打死 / 倒计时归零）→ 选角色关卡（3 按钮对应 Infiltrator/MaintenanceWorker/TheExecutive）→ 选完进测试地图开下一回合。新建 UTheManGameInstance 携带跨关卡数据：SelectedCharacterID（GameMode GetDefaultPawnClassForController 据此在花名册查类生成角色）+ CarriedRoundNumber（死亡写入，测试地图 GameState.BeginPlay 读取后 StartNewRound +1，延续 FEAT-036 敌人初始强度逐回合 +1；回合内波次增强不携带每回合重置）。死亡两源 funnel 到 GI.HandlePlayerDeath（bPendingTransition 防同帧重复）。AFPSCharacterBase::OnDeath 去掉原地复活改为死亡路由；GameState::OnCountdownExpired 从占位改为真实死亡路由。首启也从选角色关卡进入。",
+                         "archive_file":  "archive/FEAT-037-death-character-select.md",
+                         "created":  "2026-06-20",
+                         "updated":  "2026-06-20-session42",
+                         "done_criteria":  [
+                                               "C++ 编译无错误无警告（UTheManGameInstance / GameMode GetDefaultPawnClassForController+CharacterRosterTable / GameState BeginPlay 读回合数+OnCountdownExpired 死亡路由 / FPSCharacterBase OnDeath 死亡路由）",
+                                               "编辑器：BP_TheManGameInstance 设为 Project Settings Game Instance Class，配 CharacterSelectMapName/TestMapName",
+                                               "编辑器：新建选角色关卡（自己的 GameMode）+ WBP_CharacterSelect 3 按钮调 SelectCharacterAndStart",
+                                               "编辑器：测试地图 GameMode 的 CharacterRosterTable=DT_CharacterRoster；默认地图设为选角色关卡",
+                                               "PIE：首启进选角色 → 选角色进测试地图开回合 1",
+                                               "PIE：被打死/倒计时归零 → 回选角色 → 再选 → 测试地图回合 +1（敌人初始强度 +1）"
+                                           ],
+                         "verification_evidence":  "用户 session42 测试通过：首启选角色→回合1、死亡/倒计时归零→回大厅再选→回合+1（敌人初始强度逐回合+1）全链路正常。session42 增补并验证：回合时长逐回合 -150s（默认）、减到下限 150s(2:30) 以下时游戏结束——死亡瞬间 RoutePlayerDeath 预判直接回大厅显示\"游戏结束\"+ 禁用选角色按钮（跳过测试地图无闪烁）。"
+                     },
+                     {
+                         "id":  "FEAT-045",
+                         "name":  "新选角场景摄像机远近切换",
+                         "status":  "done",
+                         "description":  "新的角色选择场景不复用旧 LobbyMap 和旧 WBP_CharacterSelect。首个切片实现专用 GameMode/PlayerController + Enhanced Input 点击：点击屏幕非 UI 区域切到近景，再次点击切回远景；点击 UI 不切换。",
+                         "archive_file":  "archive/FEAT-045-character-select-camera-toggle.md",
+                         "created":  "2026-07-04",
+                         "updated":  "2026-07-05-session72",
+                         "done_criteria":  [
+                                               "C++ Development Editor / Win64 编译无错误无新增警告 ✓",
+                                               "新选角场景使用 ACharacterSelectGameMode / ACharacterSelectPlayerController",
+                                               "创建 IA_CharacterSelectClick + IMC_CharacterSelect，并在 Controller 上配置",
+                                               "新选角关卡中放置两个 CameraActor 并赋给 CharacterSelectCameraSwitcher 的 FarCamera / NearCamera",
+                                               "CharacterSelectCameraSwitcher 鼠标四方向视差平移 C++ 编译通过 ✓",
+                                               "CharacterSelectCameraSwitcher 按 Cine Camera CurrentFocalLength 缩放视差位移，C++ 编译通过 ✓",
+                                               "CharacterSelectCameraSwitcher 切镜头 overshoot 回弹偏移 C++ 编译通过 ✓",
+                                               "session72：简化 overshoot 方案无效后，改为内部运行时 ACineCameraActor Rig；远/近 Cine Camera 只作为目标点，Rig 用阻尼弹簧移动并复制当前目标 Cine Camera 镜头参数；C++ 编译通过 ✓",
+                                               "session72：调慢/放大 Camera Rig 默认弹簧参数以便看出过冲回弹；C++ 编译通过 ✓",
+                                               "session72：初始镜头直接对齐默认远/近景，不触发弹簧/过冲；后续点击切换才触发；C++ 编译通过 ✓",
+                                               "session72：过冲默认值改为 SwitchOvershootDistance=500、MaxSwitchOvershootDistance=1000；C++ 编译通过 ✓",
+                                               "PIE：初始为远景；点击非 UI 屏幕区域后平滑切到近景；再次点击非 UI 区域平滑切回远景；点击 UI 不切换",
+                                               "PIE：鼠标上下左右移动时当前相机轻微平移，且不会永久改变远景/近景基础摆位",
+                                               "PIE：切镜头时运行时 Camera Rig 先轻微过冲，再回到正确位置",
+                                               "不依赖旧 LobbyMap / 旧 WBP_CharacterSelect"
+                                           ],
+                         "verification_evidence":  "2026-07-04-session71：新增 ACharacterSelectCameraSwitcher / ACharacterSelectGameMode / ACharacterSelectPlayerController；使用 Enhanced Input + IMC 点击屏幕非 UI 区域切远近景；C++ Development Editor / Win64 编译通过，无新增警告。追加鼠标四方向视差平移：CharacterSelectCameraSwitcher Tick 读取鼠标位置并沿当前相机 Right/Up 轴平滑偏移；C++ Development Editor / Win64 编译通过，无新增警告。追加按 Cine Camera CurrentFocalLength 缩放视差位移，并新增 CinematicCamera 模块依赖；C++ Development Editor / Win64 编译通过，无新增警告。2026-07-05-session72：简化目标相机偏移 overshoot 无效后，改为内部运行时 ACineCameraActor Rig；远/近 Cine Camera 只作为目标点，Rig 用阻尼弹簧移动并复制当前目标 Cine Camera 镜头参数；C++ Development Editor / Win64 编译通过，无新增警告。session72 追加：调慢/放大默认弹簧参数（BlendTime=0, Strength=28, Damping=5, Overshoot=80/0.08/max180）；C++ Development Editor / Win64 编译通过，无新增警告。session72 追加2：初始镜头直接对齐默认目标并清零速度，不触发弹簧/过冲；C++ Development Editor / Win64 编译通过，无新增警告。session72 追加3：过冲默认值改为 500/max1000；C++ Development Editor / Win64 编译通过，无新增警告。用户确认新关卡 IA_CharacterSelectClick / IMC_CharacterSelect、GameMode/Controller、Far/Near Cine Camera 配置完成；PIE 验证初始远景、非 UI 点击远近切换、UI 点击不切换、鼠标四方向视差、Camera Rig 过冲回弹均通过。"
+                     },
+                     {
+                         "id":  "FEAT-047",
+                         "name":  "RepairGun 球形子弹 Static Mesh",
+                         "status":  "done",
+                         "description":  "在 D 盘 Blender 专用目录创建直径 10 cm 的简单球形子弹，并导入 /Game/Weapons/RepairGun/Mesh；本功能不修改 RepairGun 子弹蓝图引用。",
+                         "archive_file":  "archive/FEAT-047-repairgun-bullet-mesh.md",
+                         "created":  "2026-07-26",
+                         "updated":  "2026-07-26-session76",
+                         "done_criteria":  [
+                                               "Blender 源工程和 FBX 保存在 D:\\Blender Projects\\SimpleSphere，不污染 Unreal 项目目录 ✓",
+                                               "Static Mesh 导入为 /Game/Weapons/RepairGun/Mesh/SM_RepairGun_Bullet ✓",
+                                               "蓝色材质导入为 /Game/Weapons/RepairGun/Mesh/M_RepairGun_Bullet ✓",
+                                               "Unreal 命令行重新加载验证为 StaticMesh、1 个材质槽、0 error / 0 warning ✓",
+                                               "未修改 RepairGun 子弹蓝图引用 ✓"
+                                           ],
+                         "verification_evidence":  "2026-07-26-session76：Blender 5.0 后台生成并导出直径 10 cm 的平滑 UV 球；UE 5.7 Interchange 成功构建并保存 SM_RepairGun_Bullet 与 M_RepairGun_Bullet。首次无界面导入在资产保存后触发 Slate Content Browser 断言；随后独立 Python commandlet 成功重新加载 Static Mesh，确认 1 个材质槽，命令以 0 error / 0 warning 退出。"
+                     },
+                     {
+                         "id":  "FEAT-048",
+                         "name":  "RepairGun 科技多面体泡沫子弹",
+                         "status":  "done",
+                         "description":  "将简单球形子弹替换为具有规则三角切面和结构化凸起的科技泡沫核心；保持中心枢轴、约 10 cm 初始尺寸和现有膨胀逻辑不变。",
+                         "archive_file":  "archive/FEAT-048-repairgun-tech-foam-bullet.md",
+                         "created":  "2026-07-26",
+                         "updated":  "2026-07-26-session77",
+                         "done_criteria":  [
+                                               "用户在导入前确认低曝光最终预览 ✓",
+                                               "模型为连续的科技多面体轮廓，162 顶点 / 320 三角面，最大尺寸 10 cm ✓",
+                                               "覆盖导入 /Game/Weapons/RepairGun/Mesh/SM_RepairGun_Bullet ✓",
+                                               "独立 Unreal 加载验证为 StaticMesh、1 个材质槽、0 error / 0 warning ✓",
+                                               "未修改 RepairGun 子弹蓝图和 C++ 膨胀逻辑 ✓"
+                                           ],
+                         "verification_evidence":  "2026-07-26-session77：用户确认科技多面体低曝光预览；Blender 源文件保存在 D:\\Blender Projects\\RepairGunBullet。UE 5.7 Interchange 构建并保存覆盖后的 SM_RepairGun_Bullet，未出现平滑组警告；保存后仍触发已知的无界面 Slate Content Browser 断言。随后独立 Python commandlet 成功加载为 StaticMesh，确认 1 个材质槽并以 0 error / 0 warning 退出。"
+                     },
+                     {
+                         "id":  "FEAT-049",
+                         "name":  "Git 与 Git LFS 项目基线",
+                         "status":  "done",
+                         "description":  "为现有 UE 5.7 项目初始化本地 Git main 分支和 Git LFS，建立 Unreal 忽略规则与首次可回滚基线；不配置远程、不上传数据。",
+                         "archive_file":  "archive/FEAT-049-git-lfs-baseline.md",
+                         "created":  "2026-07-26",
+                         "updated":  "2026-07-26-session78",
+                         "done_criteria":  [
+                                               "本地 Git 仓库 main 分支初始化完成 ✓",
+                                               "Unreal 生成目录和本机私有配置未纳入版本控制 ✓",
+                                               "Unreal 二进制资产由 Git LFS 管理 ✓",
+                                               "首次项目基线提交创建成功 ✓",
+                                               "Git/LFS 完整性检查通过且未配置远程 ✓"
+                                           ],
+                         "verification_evidence":  "2026-07-26-session78：创建基线提交 33c70d1，共 1653 个文件；1463 个二进制资产由 LFS 管理，89 个超过 10 MB 的暂存文件全部为受 LFS 管理的 .uasset；git lfs fsck 通过，无远程仓库。"
+                     },
+                     {
+                         "id":  "FEAT-050",
+                         "name":  "UE 5.7 Unreal MCP 隔离集成",
+                         "status":  "done",
+                         "description":  "在独立测试分支中以外部插件目录接入固定版本 Unreal MCP，仅监听本机回环地址；完成 UE 5.7.4 编译、编辑器启动和原生 HTTP MCP 握手验证，不修改游戏资产。",
+                         "archive_file":  "archive/FEAT-050-unreal-mcp-integration.md",
+                         "created":  "2026-07-26",
+                         "updated":  "2026-07-26-session82",
+                         "done_criteria":  [
+                                               "第三方插件固定为 ChiR24/Unreal_mcp v0.5.30，并保存在项目目录之外 ✓",
+                                               "测试分支 test/unreal-mcp-5.7 上启用插件，main 保持不变 ✓",
+                                               "UE 5.7.4 Development Editor / Win64 编译成功 ✓",
+                                               "编辑器启动后原生 MCP 仅监听 127.0.0.1:3000 ✓",
+                                               "MCP initialize 与 tools/list 成功，列出 23 个工具 ✓",
+                                               "Codex 用户配置已登记 unreal-engine，未执行资产写入工具 ✓"
+                                           ],
+                         "verification_evidence":  "2026-07-26-session79：McpAutomationBridge v0.5.30 在 UE 5.7.4 完成 25/25 编译并启动；日志确认 23 个自描述工具注册、Native MCP 位于 http://127.0.0.1:3000/mcp；initialize 协商 protocolVersion 2025-03-26，tools/list 返回 23 个工具。2026-07-26-session82：Rider 严格构建发现 LevelHandlers 的退休旧路径在无条件 return 后触发 C4702；外部插件本地分支 fix/ue57-c4702 提交 c9bee30 隔离该不可达块。TheManTestEditor Win64 Development 使用 -WarningsAsErrors 完整构建 40/40 成功。插件仓库位于 D:\\Unreal Plugins\\Unreal_mcp-v0.5.30；未上传远程。"
+                     },
+                     {
+                         "id":  "FEAT-052",
+                         "name":  "通用子弹与武器资产目录整理",
+                         "status":  "done",
+                         "description":  "创建可由多种枪械复用的科技感通用弹体，并将通用资源与 RepairGun 专属资源按 Mesh、Material、Textures 类型分层整理。",
+                         "archive_file":  "archive/FEAT-052-shared-bullet-asset-organization.md",
+                         "created":  "2026-07-26",
+                         "updated":  "2026-07-26-session83",
+                         "done_criteria":  [
+                                               "Blender 源工程和导出文件保存在 D:\\Blender Projects\\SharedBullet，不污染 Unreal 项目目录 ✓",
+                                               "通用弹体导入为 /Game/Weapons/_Shared/Mesh/SM_Shared_Bullet，尺寸为 8 × 2.5 × 2.5 cm ✓",
+                                               "通用弹体材质位于 /Game/Weapons/_Shared/Material，两个材质槽引用有效 ✓",
+                                               "RepairGun 子弹材质移动到 /Game/Weapons/RepairGun/Material，Static Mesh 引用自动更新 ✓",
+                                               "/Game/Weapons 下不存在 ObjectRedirector ✓"
+                                           ],
+                         "verification_evidence":  "2026-07-26-session83：Unreal MCP 验证 SM_Shared_Bullet bounds 为 8 × 2.5 × 2.5 cm，材质槽引用 M_Shared_Bullet 与 M_Shared_Bullet_Accent；SM_RepairGun_Bullet 依赖已更新至 /Game/Weapons/RepairGun/Material/M_RepairGun_Bullet；Asset Registry 递归扫描 /Game/Weapons 返回 CODEX_REDIRECTORS=NONE。"
+                     },
+                     {
+                         "id":  "FEAT-053",
+                         "name":  "Unreal MCP 操作经验手册",
+                         "status":  "done",
+                         "description":  "把 UE 5.7 MCP 的可靠操作流程、定向验证方式、超时处理、输出控制和已知兼容问题整理为可持续维护的 harness 指南。",
+                         "archive_file":  "archive/FEAT-053-unreal-mcp-workflow-guide.md",
+                         "created":  "2026-07-26",
+                         "updated":  "2026-07-26-session84",
+                         "done_criteria":  [
+                                               "建立 guides/unreal-mcp-workflow.md ✓",
+                                               "AGENTS.md 架构地图包含明确读取触发规则 ✓",
+                                               "记录资产移动、导入、Redirector、超时和输出控制流程 ✓",
+                                               "记录 UE 5.7 插件版本、C4702 修复与 Git/LFS 注意事项 ✓"
+                                           ],
+                         "verification_evidence":  "2026-07-26-session84：指南已建立并由 AGENTS.md 路由；feature_list.json JSON 解析与文档 diff 检查通过。"
+                     },
+                     {
+                         "id":  "FEAT-054",
+                         "name":  "InteractableBase 通用科技模型",
+                         "status":  "done",
+                         "description":  "使用 Blender 创建无符号装饰的 1 米通用科技交互箱体，导入 InteractableBase 专属目录并替换被删除的 SCI-FI 1M_Cube 默认引用。",
+                         "archive_file":  "archive/FEAT-054-interactable-base-default-mesh.md",
+                         "created":  "2026-07-26",
+                         "updated":  "2026-07-26-session86",
+                         "done_criteria":  [
+                                               "Blender 工程、FBX、脚本和预览位于 D:\\Blender Projects\\InteractableBase ✓",
+                                               "模型无加减号、圆点等符号装饰，尺寸为 100 × 100 × 100 cm ✓",
+                                               "Static Mesh 位于 /Game/Actors/Interable/InteractableBase/Mesh/SM_InteractableBase_Default ✓",
+                                               "两个材质位于 /Game/Actors/Interable/InteractableBase/Material ✓",
+                                               "BP_InteractableBase 已编译保存并引用新 Mesh，不再依赖 SCI_FI_WEAPON_PACK ✓",
+                                               "InteractableBase 目录不存在 ObjectRedirector ✓"
+                                           ],
+                         "verification_evidence":  "2026-07-26-session86：Unreal MCP 验证 Static Mesh bounds 为 100 × 100 × 100 cm；材质槽解析到 M_InteractableBase_Panel 与 M_InteractableBase_Default；BP_InteractableBase dependencies 仅有 /Script/TheManTest 和新本地 Mesh；递归扫描 InteractableBase 返回 CODEX_REDIRECTORS=NONE。"
+                     },
+                     {
+                         "id":  "FEAT-055",
+                         "name":  "维修工 UE4 Mannequin 下半身 Mesh",
+                         "status":  "done",
+                         "description":  "从迁入的完整 UE4 Mannequin 导出带蒙皮 FBX，在 Blender 中删除腰部以上与低位手部几何，保留完整标准骨架和下肢权重，并导回维修工专属目录。",
+                         "archive_file":  "archive/FEAT-055-maintenance-worker-lower-body-mesh.md",
+                         "created":  "2026-07-26",
+                         "updated":  "2026-07-26-session87",
+                         "done_criteria":  [
+                                               "Blender 工程、源 FBX、结果 FBX、脚本和预览位于 D:\\Blender Projects\\MaintenanceWorkerLowerBody ✓",
+                                               "下半身仅保留 pelvis/thigh/calf/foot/ball 主导几何，无手部残片 ✓",
+                                               "Skeletal Mesh 导入为 /Game/Characters/MaintenanceWorker/TempCharacterBody/Meshes/SKM_MaintenanceWorker_LowerBody ✓",
+                                               "绑定 /Game/Characters/MaintenanceWorker/TempCharacterBody/Meshes/SK_UE4Mannequin，不创建新 Skeleton ✓",
+                                               "Unreal bounds 为 48.50 × 29.88 × 104.91 cm，材质为 M_MannequinUE4_Body ✓"
+                                           ],
+                         "verification_evidence":  "2026-07-26-session87：Blender 最终模型 6450 顶点 / 11444 面、67 骨骼、1 材质槽；自动预览确认无手部残片。Unreal MCP 验证 Skeleton、48.50 × 29.88 × 104.91 cm bounds 和 M_MannequinUE4_Body 材质路径均正确。"
+                     }
+                 ],
+    "_说明":  "已完成功能的只读历史索引。通常无需在会话启动时读取；需要查询历史功能时按 ID 定向读取。"
+}

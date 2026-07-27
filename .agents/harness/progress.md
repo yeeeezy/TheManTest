@@ -109,3 +109,4 @@
 - 最终方案为首帧桥接：完整 Unequip/Equip 后当帧 `PlayEquipMontage()`，同时安排 next-tick 当前装备校验后再从 0 播放。快速切走时旧装备 active Montage 用 0.01 秒 Blend Out 结束；0 秒 Stop 经测试会阻止同 Montage 立即重播，已禁止。
 - 最终逐帧证据：正常切回 RepairGun 后 Arms/Body 均 `true@0 → true@0 → true@0.3333334`；第一张评估截图 `EquipBridge_FirstEvaluated.png` 显示枪位于视野下方起始姿势。快速切走后旧 Montage 立即 inactive，切回桥接仍成立。结束后 RepairGun 层有效、两 mesh hand_r 完全一致；截图 `EquipBridge_PostMontage.png`，W=250、Shadow Leader=`CharacterMesh0`。
 - 用户最终实机复测确认功能问题已消失，但主观观感仍不如游戏开始时首次装备丝滑；本轮到此暂停。后续优化应直接对比 BeginPlay 首次装备与切枪的动画评估时序，避免重新引入隐藏模型、T-Pose 或技能层重叠。
+- Harness 功能索引已拆分：`feature_list.json` 只保留 20 个非 done 条目，35 个完成项迁入 `feature_archive.json`；启动无需加载历史索引。迁移后 55 个功能 ID 全部唯一，`FEAT-051` 在主索引中唯一匹配。
