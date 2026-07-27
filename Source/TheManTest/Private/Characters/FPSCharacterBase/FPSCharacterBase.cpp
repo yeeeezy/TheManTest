@@ -164,6 +164,10 @@ void AFPSCharacterBase::BeginPlay()
 		GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	}
 
+	// 角色蓝图可能保存旧的可见性动画 Tick 配置并覆盖构造函数默认值。
+	// GetMesh() 是影子/腿的 Leader，即使对本地 Owner 不可见也必须刷新骨骼变换。
+	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+
 	if (EquipmentManager)
 	{
 		// FEAT-042：武器挂到独立 FP 手臂 ArmsViewMesh（相机子级 viewmodel），不再挂 MM 宿主 GetMesh()。

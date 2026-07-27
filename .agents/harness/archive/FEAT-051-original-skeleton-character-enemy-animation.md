@@ -74,6 +74,12 @@ The delay came from `AFPSCharacterBase::BeginPlay`: after synchronous equipment 
 
 Development Editor/Win64 compiled successfully and the final patch loaded through Live Coding. Runtime inspection confirmed `BP_MaintenanceWorker_C_0` as the immediate view target; its first-person arms, shadow body, legs, and RepairGun remain visible (the inherited `CharacterMesh0` is still intentionally OwnerNoSee). PIE visual regression confirmed the arms, RepairGun, and complete shadow after animation evaluation. MCP-driven tests can report a 3 FPS PIE max tick rate while the editor is unfocused, so a forced screenshot before the first world tick is not equivalent to a player-visible frame and was excluded from completion evidence.
 
+## Shadow Leader Bone Refresh Fix
+
+Session94 diagnosed the abnormal shadow animation seen after the initial-visibility cleanup. The Leader Pose topology and AnimClass were still correct (`ShadowBodyMesh -> CharacterMesh0`, both using `ABP_MaintenanceWorker_C`), but runtime inspection showed `CharacterMesh0` using `AlwaysTickPose` despite the C++ constructor assigning `AlwaysTickPoseAndRefreshBones`. `BP_MaintenanceWorker` had retained an older serialized component value that overrode the constructor default. Because `CharacterMesh0` is OwnerNoSee and does not render for the local player, pose evaluation without bone refresh can leave its shadow follower with stale transforms.
+
+`AFPSCharacterBase::BeginPlay` now reapplies `AlwaysTickPoseAndRefreshBones` to `GetMesh()` after Blueprint defaults have been instantiated, guaranteeing that the invisible animation host refreshes the bones consumed by `ShadowBodyMesh` and `LegsMesh`. Development Editor/Win64 and Live Coding both succeeded. During PIE W movement at 250 cm/s, five successive `thigh_l` component-space samples changed and every `CharacterMesh0` sample exactly matched `ShadowBodyMesh`; `ShadowRefresh_Fixed_Move.png` visually confirmed the animated armed shadow.
+
 ## Known Cleanup Item
 
 - Active `BP_Infiltrator` still has a hard dependency on `/Game/Characters/Infiltrator/Blueprint/BP_Infiltrator_Old`. The exact referring property/node has not yet been identified; do not delete or rewrite it automatically.
