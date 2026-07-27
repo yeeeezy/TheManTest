@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Characters/Components/EquipmentManagerComponent.h"
-#include "Characters/FPSCharacterBase/FPSCharacterBase.h"
 #include "Equipment/EquipmentBase/EquipmentBase.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Character.h"
@@ -128,12 +127,12 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
     ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner());
     if (!OwnerCharacter) return;
 
-    USkeletalMeshComponent* TargetMesh = AttachTargetMesh ? AttachTargetMesh : OwnerCharacter->GetMesh();
-    USkeletalMeshComponent* ViewmodelMesh = nullptr;
-    if (const AFPSCharacterBase* FPSCharacter = Cast<AFPSCharacterBase>(OwnerCharacter))
+    if (bEquipTransitionInProgress)
     {
-        ViewmodelMesh = FPSCharacter->GetArmsMesh();
+        return;
     }
+
+    USkeletalMeshComponent* TargetMesh = AttachTargetMesh ? AttachTargetMesh : OwnerCharacter->GetMesh();
 
     int32 OldEquipmentIndex = CurrentEquipmentIndex;
     int32 NewEquipmentIndex = (CurrentEquipmentIndex + Direction + Inventory.Num()) % Inventory.Num();
@@ -146,33 +145,38 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
 
     AEquipmentBase* OldEquipment = Inventory[OldEquipmentIndex];
     AEquipmentBase* NewEquipment = Inventory[NewEquipmentIndex];
+    const bool bHasEquipMontage = NewEquipment && NewEquipment->GetEquipMontage() != nullptr;
     CurrentEquipmentIndex = NewEquipmentIndex;
 
     if (OldEquipment)
     {
-        OldEquipment->Unequip(); 
+        // Montage 期间保留旧 Linked Layer 作为稳定底层，避免任何动画图重初始化。
+        if (bHasEquipMontage)
+        {
+            OldEquipment->UnequipWithoutAnimLayer();
+        }
+        else
+        {
+            OldEquipment->Unequip();
+        }
         OldEquipment->SetActorEnableCollision(false);
         OldEquipment->SetActorTickEnabled(false);
-
         FinalizeUnequippedEquipment(OldEquipment, TargetMesh);
     }
 
     if (NewEquipment)
     {
-        NewEquipment->Equip(OwnerCharacter); 
-        // 有拔枪 Montage 时先保持隐藏：Linked Layer 初始化完成并评估到动画首帧后再显示，
-        // 避免先露出持枪 Idle，再从上方向下混到拔枪起始姿势。
-        const bool bHasEquipMontage = NewEquipment->GetEquipMontage() != nullptr;
-        NewEquipment->SetActorHiddenInGame(bHasEquipMontage);
-        if (ViewmodelMesh)
+        if (bHasEquipMontage)
         {
-            // Linked Layer 会先评估一次最终持枪 Idle，Montage 下一帧才开始。
-            // 准备期间隐藏整套 FP viewmodel，避免手臂在最终位置闪帧。
-            ViewmodelMesh->SetVisibility(!bHasEquipMontage, false);
+            NewEquipment->EquipWithoutAnimLayer(OwnerCharacter);
         }
+        else
+        {
+            NewEquipment->Equip(OwnerCharacter);
+        }
+        NewEquipment->SetActorHiddenInGame(false);
         NewEquipment->SetActorEnableCollision(true);
         NewEquipment->SetActorTickEnabled(true);
-        
         NewEquipment->AttachToComponent(TargetMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, NewEquipment->GetEquipSocketName());
 
         if (!bHasEquipMontage)
@@ -180,36 +184,40 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
             return;
         }
 
-        // LinkAnimClassLayers 会在下一次动画更新时完成初始化；同帧播放 Montage 会被
-        // 该初始化清掉。延迟一帧，并确认快速滚轮后它仍是当前装备再播放。
-        const TWeakObjectPtr<AEquipmentBase> EquipmentToPlay = NewEquipment;
-        const TWeakObjectPtr<USkeletalMeshComponent> ViewmodelToReveal = ViewmodelMesh;
-        GetWorld()->GetTimerManager().SetTimerForNextTick(
-            FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToPlay, ViewmodelToReveal]()
-            {
-                if (EquipmentToPlay.IsValid() && GetCurrentEquipment() == EquipmentToPlay.Get())
-                {
-                    EquipmentToPlay->PlayEquipMontage();
+        // 此时动画图没有发生 Link/Unlink，直接播放 Montage 不会被下一帧初始化清掉。
+        // Montage 结束后才原子切换到新武器层的最终 Idle。
+        bEquipTransitionInProgress = true;
+        const float MontageDuration = NewEquipment->PlayEquipMontage();
+        const TWeakObjectPtr<AEquipmentBase> OutgoingEquipment = OldEquipment;
+        const TWeakObjectPtr<AEquipmentBase> IncomingEquipment = NewEquipment;
+        const TWeakObjectPtr<AActor> AnimOwner = OwnerCharacter;
 
-					// Timer 回调发生在本帧动画更新之后；再等一帧，让 Montage 的零混合
-					// 起始姿势先写入手臂/身体骨骼，然后才显示武器。
-					if (UWorld* World = GetWorld())
-					{
-						const TWeakObjectPtr<AEquipmentBase> EquipmentToReveal = EquipmentToPlay;
-						World->GetTimerManager().SetTimerForNextTick(
-							FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToReveal, ViewmodelToReveal]()
-							{
-								if (EquipmentToReveal.IsValid() && GetCurrentEquipment() == EquipmentToReveal.Get())
-								{
-									EquipmentToReveal->SetActorHiddenInGame(false);
-									if (ViewmodelToReveal.IsValid())
-									{
-										ViewmodelToReveal->SetVisibility(true, false);
-									}
-								}
-							}));
-					}
+        const auto CompleteTransition = [this, OutgoingEquipment, IncomingEquipment, AnimOwner]()
+        {
+            if (IncomingEquipment.IsValid() && AnimOwner.IsValid()
+                && GetCurrentEquipment() == IncomingEquipment.Get())
+            {
+                if (OutgoingEquipment.IsValid())
+                {
+                    OutgoingEquipment->UnlinkEquipmentAnimLayers(AnimOwner.Get());
                 }
-            }));
+                IncomingEquipment->LinkEquipmentAnimLayers(AnimOwner.Get());
+            }
+            bEquipTransitionInProgress = false;
+        };
+
+        if (MontageDuration > 0.f)
+        {
+            FTimerHandle TransitionTimer;
+            GetWorld()->GetTimerManager().SetTimer(
+                TransitionTimer,
+                FTimerDelegate::CreateWeakLambda(this, CompleteTransition),
+                MontageDuration,
+                false);
+        }
+        else
+        {
+            CompleteTransition();
+        }
     }
 }

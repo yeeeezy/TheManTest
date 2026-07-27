@@ -37,7 +37,17 @@ void AFirearm::Equip(AActor* NewOwner)
 	AFPSCharacterBase* FPSChar = Cast<AFPSCharacterBase>(NewOwner);
 	if (!FPSChar) { return; }
 
-	// FP viewmodel layer remains the original EquipmentAnimLayerClass path from AEquipmentBase::Equip().
+	// --- FEAT-009：装备时授予开火技能（PossessedBy 已运行则立即生效） ---
+	GrantAbilities(FPSChar->GetAbilitySystemComponent());
+}
+
+void AFirearm::LinkEquipmentAnimLayers(AActor* AnimOwner)
+{
+	Super::LinkEquipmentAnimLayers(AnimOwner);
+
+	AFPSCharacterBase* FPSChar = Cast<AFPSCharacterBase>(AnimOwner);
+	if (!FPSChar) { return; }
+
 	SetLinkedFirearmAimSource(FPSChar->GetArmsMesh(), EquipmentAnimLayerClass, MuzzleLocalTransform);
 	SetLinkedFirearmAimSource(FPSChar->GetMesh(), EquipmentAnimLayerClass, MuzzleLocalTransform);
 
@@ -46,9 +56,6 @@ void AFirearm::Equip(AActor* NewOwner)
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green,
 			TEXT("[Firearm] Weapon anim layer linked on arms/body."));
 	}
-
-	// --- FEAT-009：装备时授予开火技能（PossessedBy 已运行则立即生效） ---
-	GrantAbilities(FPSChar->GetAbilitySystemComponent());
 }
 
 void AFirearm::Unequip()

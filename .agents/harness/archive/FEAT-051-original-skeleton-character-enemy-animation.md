@@ -102,6 +102,12 @@ For Montage switches, `SwitchEquipment()` now finalizes the outgoing equipment i
 
 Paused PIE evidence was `ArmsViewMesh=false / RepairGun hidden=true` during preparation, then `ArmsViewMesh=true / RepairGun hidden=false / Montage position=0.3333334` on the first visible automated frame. `EquipViewmodel_FirstVisible.png` records that frame. Four rapid switches ended with RepairGun and arms visible; W movement remained 250 cm/s, and `ShadowBodyMesh` still reported `CharacterMesh0` as its Leader. Development Editor/Win64 and Live Coding both succeeded.
 
+Session100 replaced that visibility workaround after the user requested direct Montage playback. Equipment lifecycle and animation-layer lifetime are now independently controllable: `EquipWithoutAnimLayer()` / `UnequipWithoutAnimLayer()` still dispatch through the virtual Equip/Unequip chain, so Firearm ability grants and revokes remain correct, while `LinkEquipmentAnimLayers()` / `UnlinkEquipmentAnimLayers()` can be scheduled separately. Firearm AimSource initialization moved into its Link override so both immediate and delayed links initialize identically.
+
+During a Montage switch, the outgoing weapon's gameplay lifecycle ends immediately but its stable Linked Layer remains temporarily attached. The incoming weapon's gameplay lifecycle, attachment, and rendering begin immediately, but its layer is not linked yet. The Montage therefore starts directly on both existing main AnimInstances without any graph mutation that could cancel it. At the returned Montage duration, the manager unlinks the outgoing layer and links the incoming layer into its held Idle. Repeat switch input is ignored only while this transition is active. No first-person component or incoming weapon is hidden.
+
+Paused PIE showed the direct call state as `ArmsViewMesh=true`, `RepairGun hidden=false`, Montage active at `0`; the next animation step retained playback on both Arms and Body at `0.3338351`, proving it was not reset. After completion, Montage playback was false and `ABP_RepairGun_AnimLayer_C` was linked on the arms; a subsequent TestGun switch succeeded. `DirectEquipMontage_T0.png` records the visible equip motion. Development Editor/Win64 and Live Coding succeeded, W movement remained 250 cm/s, and `ShadowBodyMesh` retained `CharacterMesh0` as Leader.
+
 ## Known Cleanup Item
 
 - Active `BP_Infiltrator` still has a hard dependency on `/Game/Characters/Infiltrator/Blueprint/BP_Infiltrator_Old`. The exact referring property/node has not yet been identified; do not delete or rewrite it automatically.

@@ -77,64 +77,90 @@ void AEquipmentBase::Equip(AActor* NewOwner)
 {
     SetOwner(NewOwner);
 
-    if (!NewOwner) { return; }
+    if (NewOwner && !bDeferAnimLayerLink)
+    {
+        LinkEquipmentAnimLayers(NewOwner);
+    }
+}
+
+void AEquipmentBase::EquipWithoutAnimLayer(AActor* NewOwner)
+{
+    TGuardValue<bool> DeferLinkGuard(bDeferAnimLayerLink, true);
+    Equip(NewOwner);
+}
+
+void AEquipmentBase::UnequipWithoutAnimLayer()
+{
+    TGuardValue<bool> DeferUnlinkGuard(bDeferAnimLayerUnlink, true);
+    Unequip();
+}
+
+void AEquipmentBase::LinkEquipmentAnimLayers(AActor* AnimOwner)
+{
+    if (!EquipmentAnimLayerClass || !AnimOwner) { return; }
+
     TArray<USkeletalMeshComponent*> AnimMeshes;
-    GetAnimLayerMeshes(NewOwner, AnimMeshes);
-    if (AnimMeshes.IsEmpty()) { return; }
+    GetAnimLayerMeshes(AnimOwner, AnimMeshes);
 
     for (USkeletalMeshComponent* AnimMesh : AnimMeshes)
     {
         if (!AnimMesh) { continue; }
 
-        // 叠加装备专属层。蒙太奇不在此播放——由调用方在合适时机调用 PlayEquipMontage()，
-        // 避免初始化（BeginPlay）期间手臂姿势未就绪就开播导致武器起始位置错乱。
         if (UAnimInstance* AnimInst = AnimMesh->GetAnimInstance())
         {
-            if (EquipmentAnimLayerClass)
-            {
-                AnimInst->LinkAnimClassLayers(EquipmentAnimLayerClass);
-            }
+            AnimInst->LinkAnimClassLayers(EquipmentAnimLayerClass);
         }
     }
 }
 
-void AEquipmentBase::PlayEquipMontage()
+void AEquipmentBase::UnlinkEquipmentAnimLayers(AActor* AnimOwner)
 {
-    AActor* CurrentOwner = GetOwner();
-    if (!EquipMontage || !CurrentOwner) { return; }
+    if (!EquipmentAnimLayerClass || !AnimOwner) { return; }
 
-    // FPS 角色的 FP 手臂和隐藏身体宿主拥有独立 AnimInstance。两边从同一时间点
-    // 播放 Equip Montage，ShadowBodyMesh 再通过 Leader Pose 继承身体动作。
     TArray<USkeletalMeshComponent*> AnimMeshes;
-    GetAnimLayerMeshes(CurrentOwner, AnimMeshes);
+    GetAnimLayerMeshes(AnimOwner, AnimMeshes);
     for (USkeletalMeshComponent* AnimMesh : AnimMeshes)
     {
         if (AnimMesh)
         {
             if (UAnimInstance* AnimInst = AnimMesh->GetAnimInstance())
             {
-                AnimInst->Montage_Play(EquipMontage);
+                AnimInst->UnlinkAnimClassLayers(EquipmentAnimLayerClass);
             }
         }
     }
+}
+
+float AEquipmentBase::PlayEquipMontage()
+{
+    AActor* CurrentOwner = GetOwner();
+    if (!EquipMontage || !CurrentOwner) { return 0.f; }
+
+    // FPS 角色的 FP 手臂和隐藏身体宿主拥有独立 AnimInstance。两边从同一时间点
+    // 播放 Equip Montage，ShadowBodyMesh 再通过 Leader Pose 继承身体动作。
+    TArray<USkeletalMeshComponent*> AnimMeshes;
+    GetAnimLayerMeshes(CurrentOwner, AnimMeshes);
+    float MontageDuration = 0.f;
+    for (USkeletalMeshComponent* AnimMesh : AnimMeshes)
+    {
+        if (AnimMesh)
+        {
+            if (UAnimInstance* AnimInst = AnimMesh->GetAnimInstance())
+            {
+                MontageDuration = FMath::Max(MontageDuration, AnimInst->Montage_Play(EquipMontage));
+            }
+        }
+    }
+    return MontageDuration;
 }
 
 void AEquipmentBase::Unequip()
 {
     AActor* CurrentOwner = GetOwner();
 
-    if (EquipmentAnimLayerClass && CurrentOwner)
+    if (CurrentOwner && !bDeferAnimLayerUnlink)
     {
-        TArray<USkeletalMeshComponent*> AnimMeshes;
-        GetAnimLayerMeshes(CurrentOwner, AnimMeshes);
-        for (USkeletalMeshComponent* AnimMesh : AnimMeshes)
-        {
-            if (!AnimMesh) { continue; }
-            if (UAnimInstance* AnimInst = AnimMesh->GetAnimInstance())
-            {
-                AnimInst->UnlinkAnimClassLayers(EquipmentAnimLayerClass);
-            }
-        }
+        UnlinkEquipmentAnimLayers(CurrentOwner);
     }
 
     SetOwner(nullptr);

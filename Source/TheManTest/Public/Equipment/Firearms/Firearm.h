@@ -21,6 +21,7 @@ public:
 
 	virtual void Equip(AActor* NewOwner) override;
 	virtual void Unequip() override;
+	virtual void LinkEquipmentAnimLayers(AActor* AnimOwner) override;
 
 	void GrantAbilities(UAbilitySystemComponent* ASC);
 	void RevokeAbilities(UAbilitySystemComponent* ASC);

@@ -2,9 +2,9 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-27-session99
+**最后更新：** 2026-07-27-session100
 **当前功能：** **FEAT-051（基于原始骨架重建角色与 Enemy 动画蓝图）**
-**会话编号：** 99
+**会话编号：** 100
 
 用户已手动删除一部分效果不佳的重定向动画和动画蓝图。现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构继续保留。
 
@@ -29,7 +29,7 @@
 - [x] 修复切回 RepairGun 时 Equip Montage 在下一动画 Tick 被取消：切枪完成 Linked Layer/挂载后改为下一帧播放，并校验快速滚轮后目标仍是当前装备；`PlayEquipMontage()` 同步驱动 `ArmsViewMesh` 与 `CharacterMesh0`，影子经 Leader Pose 继承。PIE 两实例从 0 同步推进至 0.3333 秒，结束后 W locomotion/影子同步正常。
 - [x] 修复 RepairGun Equip Montage “正在播放但画面无动作”：原 Montage 仅有 `DefaultSlot`，其上半身输出被主 ABP 后续中央 `WeaponUpperBody` 完全覆盖；现加入同源动画的 `UpperBodySlot` 轨道。暂停 PIE 逐帧截图在 0/0.333/0.666 秒显示清晰拔枪姿势变化，第一人称与影子同步。
 - [x] 修复 RepairGun 切入时先从上方放下再拿起：源序列采样证明动画本身从下方向上抬，异常来自 Montage 默认 0.25 秒 Blend In 与武器提前显示。现 Blend In=0；切枪时有 Montage 的武器先隐藏，启动并评估一帧后再显示。PIE 首张可见图位于下方，后续只向上抬；移动速度 250、影子 Leader/腿骨同步正常。
-- [x] 修复切入 RepairGun 时手臂/枪在最终持枪位置闪帧：根因是 Linked Anim Layer 先评估到 Idle，而此前仅隐藏新枪、未隐藏 `ArmsViewMesh`。有 Montage 的切换现于准备阶段收起旧枪并隐藏整套第一人称 viewmodel，Montage 起始姿势完成动画评估后同帧显示手臂与新枪；`CharacterMesh0`/影子持续可见和更新。暂停 PIE 证据为准备态 `arms=false, weapon hidden=true`，首个可见态 `arms=true, weapon hidden=false, Montage=0.3333s`；快速 4 连切、W=250 与 Shadow Leader 回归通过。
+- [x] 从根源移除切枪显隐等待：有 Equip Montage 时，旧装备立即回收技能但暂留稳定 Linked Layer；新装备立即激活、挂载并显示，但延迟链接新层。在未重初始化的主 AnimInstance 上直接播放 Montage，结束后才解除旧层并链接新层进入 Idle。切回调用当帧即为 `arms=true / weapon hidden=false / playing=true / pos=0`，下一动画帧双实例同步到 `0.3338s`；结束后 RepairGun Layer 实例有效。过渡期间重复切换被忽略，W=250 与 Shadow Leader 回归通过。
 - [x] 删除无用 `EquipmentAnimClass` 整体替换路径；武器只通过 `EquipmentAnimLayerClass` 链接专属层。
 - [x] 暂停玩家原地转身：删除 `BodyVisualYaw`/45° Turn/曲线进度 C++ 链，`BodyRoot` 直接跟随 Actor yaw；ABP 转体节点待用户手动清理。
 - [x] 用户已清理 `TABP_BodyLocomotion` 的旧 Turn 节点；修改已保存到本地 WIP checkpoint `8e6a8e0`。
@@ -83,7 +83,7 @@
 
 # 会话交接
 
-## Session99 handoff - FEAT-051 active (2026-07-27)
+## Session100 handoff - FEAT-051 active (2026-07-27)
 
 - 当前 active feature 是 `FEAT-051`。
 - FEAT-046 已转为 `needs_improvement`；MCP 证实其实际状态和 BlendSpace 与旧记录不符。
@@ -104,6 +104,6 @@
 - RepairGun Equip Montage 切枪时序已修复：旧流程在 LinkAnimClassLayers 同帧立即播放，下一动画更新会把 Montage 清掉；现在下一帧确认当前装备后再播放，且手臂/身体 Leader 双实例同步。帧步进验证两边位置由 0 同步到 0.3333 秒；截图 `EquipMontage_Synced_0333.png`，结束后移动回归截图 `EquipMontage_PostMove.png`。TestGun 当前 `EquipMontage=None`，切入 TestGun 无动画属于资产尚未配置。
 - RepairGun Montage 的可视输出也已修复：原资产只有 `DefaultSlot`，被中央武器层从 `spine_01` 覆盖，所以运行时显示 playing 但动作不可见；现 Montage 有 `UpperBodySlot` 轨道（总计 2 slots、0 notifies、0.8667 秒）。逐帧截图 `EquipUpperSlot_T0.png` / `T0333.png` / `T0666.png` 显示枪与双臂明显下沉、展开、抬起，影子同步。
 - “先放下再拿起”并非源动画方向错误：`AS_Rifle_A_Equip` 的 hand_r/hand_l 原始姿势从 t=0 起持续向抬枪方向变化；问题是 Montage 0.25 秒 Hermite Blend In 从已显示的持枪 Idle 混回下方起点。现 Montage Blend In=0，切枪新武器在 Montage 启动时保持隐藏，下一动画帧评估完成才显示。帧步进状态为 `hidden=True/playing=True/pos=0` → `hidden=False/playing=True/pos=0.3333`；截图 `EquipRaise_FirstVisible.png` → `EquipRaise_Later.png` 只显示从下往上。
-- 用户澄清先前现象不是空手，而是 RepairGun 从底部抬起前，手臂和枪先在最终持枪位置闪几帧。根因是切换同帧链接的新武器层先输出最终 Idle，旧方案仅隐藏新枪，`ArmsViewMesh` 仍可见。
-- Montage 切换现在收起旧装备，并在准备阶段同时隐藏 `ArmsViewMesh` 与新装备；播放 Montage 后再等一次动画评估，在同一回调显示手臂和新枪。全身 `CharacterMesh0` 从不隐藏，因此影子仍连续播放装备动画。
-- 暂停 PIE 状态验证：切回准备态 `ArmsViewMesh=false`、Repair/Test 均 hidden；两次步进后的首个可见态 `ArmsViewMesh=true`、Repair hidden=false、Montage position=0.3333334。截图 `EquipViewmodel_FirstVisible.png`。快速 4 连切最终恢复 Repair 可见且手臂可见；W 移动速度 250，`ShadowBodyMesh` Leader 仍为 `CharacterMesh0`。
+- 用户不接受通过隐藏第一人称模型规避闪帧，现已改为直接 Montage 时序。`AEquipmentBase` 新增 deferred 生命周期和显式 Link/Unlink；`AFirearm` 的 AimSource 初始化随 `LinkEquipmentAnimLayers()` 执行。
+- Montage 切换不再修改动画图后等待播放：旧武器逻辑立即 Unequip 但旧层暂留，新武器逻辑立即 Equip 但新层暂缓；新枪/手臂全程可见并立即播放 Montage，结束后原子切层。过渡期间重复滚轮输入暂时忽略。
+- 暂停 PIE 证据：切回调用当帧 `arms=true, Repair hidden=false, playing=true, pos=0`；下一动画步进 Arms/Body 均为 `0.3338351`；完成后 Montage=false、`ABP_RepairGun_AnimLayer_C` 已链接，且随后可切到 TestGun。截图 `DirectEquipMontage_T0.png`。W 速度 250，`ShadowBodyMesh` Leader 仍为 `CharacterMesh0`。
