@@ -77,90 +77,61 @@ void AEquipmentBase::Equip(AActor* NewOwner)
 {
     SetOwner(NewOwner);
 
-    if (NewOwner && !bDeferAnimLayerLink)
-    {
-        LinkEquipmentAnimLayers(NewOwner);
-    }
-}
-
-void AEquipmentBase::EquipWithoutAnimLayer(AActor* NewOwner)
-{
-    TGuardValue<bool> DeferLinkGuard(bDeferAnimLayerLink, true);
-    Equip(NewOwner);
-}
-
-void AEquipmentBase::UnequipWithoutAnimLayer()
-{
-    TGuardValue<bool> DeferUnlinkGuard(bDeferAnimLayerUnlink, true);
-    Unequip();
-}
-
-void AEquipmentBase::LinkEquipmentAnimLayers(AActor* AnimOwner)
-{
-    if (!EquipmentAnimLayerClass || !AnimOwner) { return; }
-
+    if (!NewOwner) { return; }
     TArray<USkeletalMeshComponent*> AnimMeshes;
-    GetAnimLayerMeshes(AnimOwner, AnimMeshes);
+    GetAnimLayerMeshes(NewOwner, AnimMeshes);
 
     for (USkeletalMeshComponent* AnimMesh : AnimMeshes)
     {
         if (!AnimMesh) { continue; }
 
-        if (UAnimInstance* AnimInst = AnimMesh->GetAnimInstance())
-        {
-            AnimInst->LinkAnimClassLayers(EquipmentAnimLayerClass);
-        }
-    }
-}
-
-void AEquipmentBase::UnlinkEquipmentAnimLayers(AActor* AnimOwner)
-{
-    if (!EquipmentAnimLayerClass || !AnimOwner) { return; }
-
-    TArray<USkeletalMeshComponent*> AnimMeshes;
-    GetAnimLayerMeshes(AnimOwner, AnimMeshes);
-    for (USkeletalMeshComponent* AnimMesh : AnimMeshes)
-    {
-        if (AnimMesh)
+        if (EquipmentAnimLayerClass)
         {
             if (UAnimInstance* AnimInst = AnimMesh->GetAnimInstance())
             {
-                AnimInst->UnlinkAnimClassLayers(EquipmentAnimLayerClass);
+                AnimInst->LinkAnimClassLayers(EquipmentAnimLayerClass);
             }
         }
     }
 }
 
-float AEquipmentBase::PlayEquipMontage()
+void AEquipmentBase::PlayEquipMontage()
 {
     AActor* CurrentOwner = GetOwner();
-    if (!EquipMontage || !CurrentOwner) { return 0.f; }
+    if (!EquipMontage || !CurrentOwner) { return; }
 
     // FPS 角色的 FP 手臂和隐藏身体宿主拥有独立 AnimInstance。两边从同一时间点
     // 播放 Equip Montage，ShadowBodyMesh 再通过 Leader Pose 继承身体动作。
     TArray<USkeletalMeshComponent*> AnimMeshes;
     GetAnimLayerMeshes(CurrentOwner, AnimMeshes);
-    float MontageDuration = 0.f;
     for (USkeletalMeshComponent* AnimMesh : AnimMeshes)
     {
         if (AnimMesh)
         {
             if (UAnimInstance* AnimInst = AnimMesh->GetAnimInstance())
             {
-                MontageDuration = FMath::Max(MontageDuration, AnimInst->Montage_Play(EquipMontage));
+                AnimInst->Montage_Play(EquipMontage);
             }
         }
     }
-    return MontageDuration;
 }
 
 void AEquipmentBase::Unequip()
 {
     AActor* CurrentOwner = GetOwner();
 
-    if (CurrentOwner && !bDeferAnimLayerUnlink)
+    if (EquipmentAnimLayerClass && CurrentOwner)
     {
-        UnlinkEquipmentAnimLayers(CurrentOwner);
+        TArray<USkeletalMeshComponent*> AnimMeshes;
+        GetAnimLayerMeshes(CurrentOwner, AnimMeshes);
+        for (USkeletalMeshComponent* AnimMesh : AnimMeshes)
+        {
+            if (!AnimMesh) { continue; }
+            if (UAnimInstance* AnimInst = AnimMesh->GetAnimInstance())
+            {
+                AnimInst->UnlinkAnimClassLayers(EquipmentAnimLayerClass);
+            }
+        }
     }
 
     SetOwner(nullptr);

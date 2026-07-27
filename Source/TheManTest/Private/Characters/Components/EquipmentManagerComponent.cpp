@@ -127,11 +127,6 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
     ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner());
     if (!OwnerCharacter) return;
 
-    if (bEquipTransitionInProgress)
-    {
-        return;
-    }
-
     USkeletalMeshComponent* TargetMesh = AttachTargetMesh ? AttachTargetMesh : OwnerCharacter->GetMesh();
 
     int32 OldEquipmentIndex = CurrentEquipmentIndex;
@@ -145,20 +140,11 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
 
     AEquipmentBase* OldEquipment = Inventory[OldEquipmentIndex];
     AEquipmentBase* NewEquipment = Inventory[NewEquipmentIndex];
-    const bool bHasEquipMontage = NewEquipment && NewEquipment->GetEquipMontage() != nullptr;
     CurrentEquipmentIndex = NewEquipmentIndex;
 
     if (OldEquipment)
     {
-        // Montage 期间保留旧 Linked Layer 作为稳定底层，避免任何动画图重初始化。
-        if (bHasEquipMontage)
-        {
-            OldEquipment->UnequipWithoutAnimLayer();
-        }
-        else
-        {
-            OldEquipment->Unequip();
-        }
+        OldEquipment->Unequip();
         OldEquipment->SetActorEnableCollision(false);
         OldEquipment->SetActorTickEnabled(false);
         FinalizeUnequippedEquipment(OldEquipment, TargetMesh);
@@ -166,58 +152,27 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
 
     if (NewEquipment)
     {
-        if (bHasEquipMontage)
-        {
-            NewEquipment->EquipWithoutAnimLayer(OwnerCharacter);
-        }
-        else
-        {
-            NewEquipment->Equip(OwnerCharacter);
-        }
+        // 与 BeginPlay 初始装备使用同一顺序：先完整 Equip/链接动画层，
+        // 再在下一帧播放 Montage，确保 AnimInstance 已完成初始化。
+        NewEquipment->Equip(OwnerCharacter);
         NewEquipment->SetActorHiddenInGame(false);
         NewEquipment->SetActorEnableCollision(true);
         NewEquipment->SetActorTickEnabled(true);
         NewEquipment->AttachToComponent(TargetMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, NewEquipment->GetEquipSocketName());
 
-        if (!bHasEquipMontage)
+        if (!NewEquipment->GetEquipMontage())
         {
             return;
         }
 
-        // 此时动画图没有发生 Link/Unlink，直接播放 Montage 不会被下一帧初始化清掉。
-        // Montage 结束后才原子切换到新武器层的最终 Idle。
-        bEquipTransitionInProgress = true;
-        const float MontageDuration = NewEquipment->PlayEquipMontage();
-        const TWeakObjectPtr<AEquipmentBase> OutgoingEquipment = OldEquipment;
-        const TWeakObjectPtr<AEquipmentBase> IncomingEquipment = NewEquipment;
-        const TWeakObjectPtr<AActor> AnimOwner = OwnerCharacter;
-
-        const auto CompleteTransition = [this, OutgoingEquipment, IncomingEquipment, AnimOwner]()
-        {
-            if (IncomingEquipment.IsValid() && AnimOwner.IsValid()
-                && GetCurrentEquipment() == IncomingEquipment.Get())
+        const TWeakObjectPtr<AEquipmentBase> EquipmentToPlay = NewEquipment;
+        GetWorld()->GetTimerManager().SetTimerForNextTick(
+            FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToPlay]()
             {
-                if (OutgoingEquipment.IsValid())
+                if (EquipmentToPlay.IsValid() && GetCurrentEquipment() == EquipmentToPlay.Get())
                 {
-                    OutgoingEquipment->UnlinkEquipmentAnimLayers(AnimOwner.Get());
+                    EquipmentToPlay->PlayEquipMontage();
                 }
-                IncomingEquipment->LinkEquipmentAnimLayers(AnimOwner.Get());
-            }
-            bEquipTransitionInProgress = false;
-        };
-
-        if (MontageDuration > 0.f)
-        {
-            FTimerHandle TransitionTimer;
-            GetWorld()->GetTimerManager().SetTimer(
-                TransitionTimer,
-                FTimerDelegate::CreateWeakLambda(this, CompleteTransition),
-                MontageDuration,
-                false);
-        }
-        else
-        {
-            CompleteTransition();
-        }
+            }));
     }
 }

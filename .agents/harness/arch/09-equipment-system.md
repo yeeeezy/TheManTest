@@ -4,15 +4,15 @@
 
 | 文件 | 关键内容 |
 |---|---|
-| `Source/TheManTest/Public/Equipment/EquipmentBase/EquipmentBase.h` | `Equip()` / `Unequip()` / `EquipWithoutAnimLayer()` / `UnequipWithoutAnimLayer()`；`LinkEquipmentAnimLayers()` / `UnlinkEquipmentAnimLayers()`；`PlayEquipMontage()`；组件、插槽、EquipMontage 与 EquipmentAnimLayerClass |
-| `Source/TheManTest/Private/Equipment/EquipmentBase/EquipmentBase.cpp` | 组件构造（默认 `EquipSocketName="Grip_Point"`；武器 mesh 投影开启）；动画层目标同时包含 `ArmsViewMesh` 与 `GetMesh()`。普通 Equip/Unequip 同步链接/解链；deferred 变体只执行虚拟生命周期逻辑并由 EquipmentManager 稍后显式切层。`PlayEquipMontage()` 同步播放在 FP 手臂和隐藏身体宿主并返回播放时长，ShadowBodyMesh 经 Leader Pose 继承 |
+| `Source/TheManTest/Public/Equipment/EquipmentBase/EquipmentBase.h` | `Equip()` / `Unequip()` / `PlayEquipMontage()`；StaticMesh / SkeletalMesh / RectLight 组件；插槽名；EquipMontage；EquipmentAnimLayerClass |
+| `Source/TheManTest/Private/Equipment/EquipmentBase/EquipmentBase.cpp` | 动画层目标同时包含 `ArmsViewMesh` 与 `GetMesh()`；Equip 同步 Link、Unequip 同步 Unlink，且 Montage 不负责改变动画层。`PlayEquipMontage()` 同步播放在 FP 手臂和隐藏身体宿主，ShadowBodyMesh 经 Leader Pose 继承 |
 
 装备 Montage 必须包含 `UpperBodySlot` 轨道：主 `TABP_BodyLocomotion` 的中央 `WeaponUpperBody` 会在 `DefaultSlot` 之后从 `spine_01` 覆盖上半身，所以只放 `DefaultSlot` 虽然 Montage 计时正常，动作仍会被最终武器层遮掉。`UpperBodySlot` 位于中央混合之后，适合 Equip/开火/换弹等需要进入最终上半身输出的动作。
 
-拔枪 Montage 建议 `Blend In = 0`。EquipmentManager 在播放期间暂留旧 Linked Layer 作为稳定底层，新武器和手臂始终可见；Montage 结束后才切换到新层的 Idle。若保留默认 0.25 秒 Blend In，底层持枪姿势仍会混入动画下方起始姿势，视觉上变成先放下再拿起。
+拔枪 Montage 建议 `Blend In = 0`。初始装备与切枪都先完整链接当前武器层，再于下一帧播放 Montage；结束后保持该层不变。若保留默认 0.25 秒 Blend In，持枪姿势会混入动画下方起始姿势，视觉上变成先放下再拿起。
 | `Source/TheManTest/Public/Equipment/WeaponBase/WeaponBase.h` | 武器基类（继承 EquipmentBase，当前为空壳） |
 | `Source/TheManTest/Public/Equipment/Firearms/Firearm.h` | 射击参数：`bIsHitscan` / `HitscanRange` / `FireRate` / `BulletClass` / `MuzzleSocketName`；开火反馈：`FireMontage` / `FireSound` / 后坐力；技能：`PrimaryFireAbilityClass` / `SecondaryFireAbilityClass`；`GrantAbilities()` / `RevokeAbilities()`；**`GrantedASC`(TWeakObjectPtr 缓存，切角色回收技能用)** |
-| `Source/TheManTest/Private/Equipment/Firearms/Firearm.cpp` | `Equip()` 负责 GrantAbilities；`Unequip()` 负责 RevokeAbilities；动画层链接移入可延迟调用的 `LinkEquipmentAnimLayers()`，链接后给 Arms/Body 的 `UFirearmAnimInstance` 写入 `MuzzleLocalTransform` |
+| `Source/TheManTest/Private/Equipment/Firearms/Firearm.cpp` | `Equip()` 在基类链接层后写入 Arms/Body AimSource 并 GrantAbilities；`Unequip()` 先 RevokeAbilities 再由基类解链 |
 | `Source/TheManTest/Public/Equipment/Firearms/Bullets/BulletBase.h` | CollisionSphere(QueryOnly) + BulletMesh + ProjectileMovement；`Damage`(SetByCaller 传入 HitEffectClass) / `HitEffectClass` / `bDestroyOnHit`；`InitBullet(发射者, SourceASC)`(忽略发射者防自撞) / `ProcessHit()` BlueprintNativeEvent |
 | `Source/TheManTest/Public/Equipment/Firearms/Bullets/RepairGunBullet.h` | 指数膨胀（e^(Rate×t)）；膨胀到 MaxExpansionScale 后锁定，LifetimeAfterExpansion 秒后销毁 |
 
@@ -38,6 +38,6 @@
 
 - `EquipmentAnimLayerClass` 保持原职责：由 `AEquipmentBase::Equip()` 链接到 `AFPSCharacterBase::GetArmsMesh()`，也就是独立 FP viewmodel `ArmsViewMesh`。
 - session70 最终方案：`EquipmentAnimLayerClass` 会同时链接到 FPS 角色的 `ArmsViewMesh` 和 `GetMesh()`。两个 mesh 可以使用同一个主 ABP（如 `ABP_BodyLocomotion`），各自拥有独立 AnimInstance，并各自执行武器层/AimIK。
-- `AFirearm::LinkEquipmentAnimLayers()` 在基类完成 Link 后，给 `ArmsViewMesh` 和 `GetMesh()` 上已链接的 `UFirearmAnimInstance` 都写入 `MuzzleLocalTransform`；因此普通 Equip 与 Montage 结束后的延迟 Link 使用同一初始化路径。
+- `AFirearm::Equip()` 在基类完成 Link 后，给 `ArmsViewMesh` 和 `GetMesh()` 上已链接的 `UFirearmAnimInstance` 都写入 `MuzzleLocalTransform`。
 - `ShadowBodyMesh` / `LegsMesh` 仍跟随 `GetMesh()`，因此身体武器层和 AimIK 会自然进入影子/腿共享姿势。
 - 不使用 Copy Pose From Mesh；武器切换仍靠同一个 `EquipmentAnimLayerClass`。

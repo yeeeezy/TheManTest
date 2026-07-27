@@ -1,6 +1,6 @@
 ﻿{
   "schema_version": "1.0",
-  "last_updated": "2026-07-27-session100",
+  "last_updated": "2026-07-27-session101",
   "active_feature": "FEAT-051",
   "features": [
     {
@@ -850,7 +850,7 @@
       "description": "保留现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构；玩家继续让 GetMesh、ArmsViewMesh 与武器 Linked Anim Layer 共用玩家 Skeleton，下半身可使用效果合格的重定向动画；Enemy 优先使用动画原始 Skeleton，并从现有无骨架模板创建对应骨架的子 AnimBP。具体动画资产删除、选择与 Override 由用户在编辑器中手动完成。",
       "archive_file": "archive/FEAT-051-original-skeleton-character-enemy-animation.md",
       "created": "2026-07-26",
-      "updated": "2026-07-27-session100",
+      "updated": "2026-07-27-session101",
       "done_criteria": [
         "玩家 GetMesh / ArmsViewMesh / 武器 Linked Anim Layer 继续使用同一玩家 Skeleton",
         "玩家下半身 locomotion 仅保留效果可接受的重定向动画",
@@ -860,7 +860,7 @@
         "所有活动 AnimBP 编译无错误，且不存在指向用户已删除动画资产的失效引用",
         "PIE：玩家 locomotion/武器层正常；各 Enemy 巡逻、转身、瞄准和攻击动画正常"
       ],
-      "latest_verification_evidence": "2026-07-27-session100：移除隐藏第一人称模型的过渡方案；装备逻辑生命周期与 Linked Layer 生命周期拆分，旧层在 Montage 期间保持稳定，新枪/手臂全程可见并直接播放 Montage，结束后才链接 RepairGun 层。暂停 PIE 验证调用当帧 arms=true/weapon hidden=false/playing=true/pos=0，下一步 Arms/Body 均推进到 0.3338351，完成后 RepairGun Layer 有效；W=250 与 ShadowBodyMesh Leader=CharacterMesh0 回归通过。",
+      "latest_verification_evidence": "2026-07-27-session101：切枪复用开局顺序，完整 Unequip/Equip 后下一帧播放 Montage；旧技能先回收、新技能后授予。PIE 验证切换当帧 RepairGun Layer 已链接，下一帧 Arms/Body 均从 pos=0 播放；结束后同一 Layer 实例仍有效、hand_r 变换一致，无 T-Pose。W=250 与 ShadowBodyMesh Leader=CharacterMesh0 回归通过。",
       "verification_evidence": "2026-07-26-session80：MCP 复扫确认玩家 ABP_BodyLocomotion、ALI_WeaponAnim、TABP_Firearm_UpperBodyBase 仍存在；Enemy 侧无骨架模板 ABP_HumanoidEnemy 与 Phantom 子 AnimBP ABP_Phantom 仍存在。2026-07-26-session88：用户将玩家模板整理为 TABP_BodyLocomotion，创建并编译 ABP_MaintenanceWorker、BS_RunWalk_MaintenanceWorker、ABP_RepairGun_AnimLayer 与 BS_WalkRun_RepairGun；维修工临时统一使用手臂 Skeleton。AEquipmentBase 已删除 EquipmentAnimClass 整体替换路径，只保留 EquipmentAnimLayerClass；TheManTestEditor Win64 Development 完整构建 41/41 成功。2026-07-26-session89：暂停玩家原地转身，删除 BodyVisualYaw、固定 45 度转步及 TurnRootYaw 曲线驱动 C++ 链；BodyRoot 改为直接跟随 Actor yaw，TheManTestEditor 编译 7/7 成功。用户已清理 TABP_BodyLocomotion 的 Turn 节点；Game Animation Sample 转向系统完成只读调研。RepairGun 子弹根 CollisionSphere 的 Static Mobility 问题经 MCP 与 PIE 日志定位，恢复 Movable 后用户确认修复。2026-07-27-session90：修复 A/D 横移时 FP 手臂/枪口被侧移 pelvis 局部旋转带偏；在 TABP_Firearm_UpperBodyBase 的既有 spine_01 Layered Blend per Bone 开启 Mesh Space Rotation Blend。武器模板、RepairGun 子层、玩家模板与维修工子 AnimBP 均经 MCP 编译保存成功。PIE 中 A/D 各 5 组匹配动画相位的 ArmsViewMesh.hand_r 相对相机旋转逐项一致，而 spine_01 保留方向差异；CharacterMesh0/ArmsViewMesh 均运行 ABP_MaintenanceWorker_C，ShadowBodyMesh/LegsMesh 的 Leader Pose 均为 CharacterMesh0，证明持枪朝向修复且同步链未拆分。2026-07-27-session99：修复切入 RepairGun 前第一人称手臂/枪在最终 Idle 闪帧；Montage 准备阶段同步隐藏 ArmsViewMesh 与新装备，起始姿势评估后同帧显示。暂停 PIE 验证准备态 arms=false/weapon hidden=true，首个可见态 arms=true/weapon hidden=false/Montage=0.3333334；快速 4 连切、W=250 与 ShadowBodyMesh Leader=CharacterMesh0 回归通过。"
     },
     {

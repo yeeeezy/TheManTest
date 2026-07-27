@@ -56,6 +56,4 @@ protected:
 	// 当前装备在数组中的下标
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Equipment|State")
 	int32 CurrentEquipmentIndex = 0;
-
-	bool bEquipTransitionInProgress = false;
 };

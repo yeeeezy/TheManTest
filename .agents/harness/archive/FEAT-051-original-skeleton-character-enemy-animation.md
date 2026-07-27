@@ -108,6 +108,12 @@ During a Montage switch, the outgoing weapon's gameplay lifecycle ends immediate
 
 Paused PIE showed the direct call state as `ArmsViewMesh=true`, `RepairGun hidden=false`, Montage active at `0`; the next animation step retained playback on both Arms and Body at `0.3338351`, proving it was not reset. After completion, Montage playback was false and `ABP_RepairGun_AnimLayer_C` was linked on the arms; a subsequent TestGun switch succeeded. `DirectEquipMontage_T0.png` records the visible equip motion. Development Editor/Win64 and Live Coding succeeded, W movement remained 250 cm/s, and `ShadowBodyMesh` retained `CharacterMesh0` as Leader.
 
+Session101 removed the deferred-layer experiment after the user observed a T-pose at the end of the switch. That reference-pose gap was caused by ending the Montage first and only then rebuilding the graph to replace the outgoing layer with the incoming layer. The known-smooth initial equip path never performs a layer change after Montage playback begins.
+
+Switching now exactly mirrors initial equip initialization: the outgoing equipment completes `Unequip()` (including ability revocation and layer unlink), the incoming equipment completes `Equip()` (including layer link, AimSource initialization, and ability grant), the actor is attached and visible, and a next-tick callback plays its Montage only if it is still current. The deferred Equip/Unequip APIs, explicit delayed layer methods, transition timer, and Montage-duration lock were deleted. This also guarantees that old weapon abilities are removed before new weapon abilities are granted.
+
+Paused PIE confirmed that the RepairGun Linked Layer already existed on the switch frame. On the next tick both Arms and Body Montage instances were active at position `0`. After playback ended, both meshes retained the same `ABP_RepairGun_AnimLayer_C_1` instances and identical component-space `hand_r` positions; no end-of-Montage Link/Unlink remained that could emit a reference pose. `UnifiedEquip_PostMontage.png` visually confirms the held pose. Development Editor/Win64 and Live Coding succeeded; W movement remained 250 cm/s and Shadow Leader remained `CharacterMesh0`.
+
 ## Known Cleanup Item
 
 - Active `BP_Infiltrator` still has a hard dependency on `/Game/Characters/Infiltrator/Blueprint/BP_Infiltrator_Old`. The exact referring property/node has not yet been identified; do not delete or rewrite it automatically.

@@ -43,25 +43,15 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Equipment|Action")
     virtual void Unequip();
 
-    // 切枪 Montage 期间只切换游戏逻辑，暂时保留稳定的旧动画层。
-    void EquipWithoutAnimLayer(AActor* NewOwner);
-    void UnequipWithoutAnimLayer();
-
-    virtual void LinkEquipmentAnimLayers(AActor* AnimOwner);
-    virtual void UnlinkEquipmentAnimLayers(AActor* AnimOwner);
-
     // 播放拔枪/装备蒙太奇。与 Equip() 解耦：滚轮切枪时立即调用；
     // 切换角色初次装备时推迟到手臂姿势就绪的下一帧再调用，避免起始位置错乱、音效误触发。
     UFUNCTION(BlueprintCallable, Category = "Equipment|Action")
-    float PlayEquipMontage();
+    void PlayEquipMontage();
 
     /* ==========================================
      * 🎒 物理表现与组件
      * ========================================== */
 protected:
-    bool bDeferAnimLayerLink = false;
-    bool bDeferAnimLayerUnlink = false;
-
     // 虚拟根组件，用于在蓝图中随意调整 Mesh 的偏移和旋转以对齐手部
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Equipment|Components")
     USceneComponent* RootSceneComponent;
