@@ -5,7 +5,7 @@
 | 文件 | 关键内容 |
 |---|---|
 | `Source/TheManTest/Public/Equipment/EquipmentBase/EquipmentBase.h` | `Equip()` / `Unequip()` / `PlayEquipMontage()`；StaticMesh / SkeletalMesh / RectLight 组件；插槽名；EquipMontage；EquipmentAnimLayerClass |
-| `Source/TheManTest/Private/Equipment/EquipmentBase/EquipmentBase.cpp` | 组件构造（默认 `EquipSocketName="Grip_Point"`；武器 mesh `CastShadow=true`/`bCastDynamicShadow=true`——FEAT-042 让地上影子手里有枪，配合 FEAT-038 ShadowBodyMesh）；FPS 角色的动画层目标包含独立 `ArmsViewMesh`，并按 session70 方案同时链接 `ArmsViewMesh` 与 `GetMesh()`；**Equip 只做 LinkAnimClassLayers，不替换角色基础 AnimInstance，也不播蒙太奇**；蒙太奇拆到 `PlayEquipMontage()` 由调用方决定时机（切角色初次装备推迟到姿势就绪的下一帧播，避免起始位置错乱/音效误触发） |
+| `Source/TheManTest/Private/Equipment/EquipmentBase/EquipmentBase.cpp` | 组件构造（默认 `EquipSocketName="Grip_Point"`；武器 mesh `CastShadow=true`/`bCastDynamicShadow=true`——FEAT-042 让地上影子手里有枪，配合 FEAT-038 ShadowBodyMesh）；FPS 角色的动画层目标包含独立 `ArmsViewMesh`，并按 session70 方案同时链接 `ArmsViewMesh` 与 `GetMesh()`；**Equip 只做 LinkAnimClassLayers，不替换角色基础 AnimInstance，也不播蒙太奇**；`PlayEquipMontage()` 同步在 FP 手臂与隐藏身体宿主播放，ShadowBodyMesh 通过 Leader Pose 继承；初始装备及切枪均在链接层后的下一帧安全播放，避免 Linked Layer 初始化清掉同帧 Montage |
 | `Source/TheManTest/Public/Equipment/WeaponBase/WeaponBase.h` | 武器基类（继承 EquipmentBase，当前为空壳） |
 | `Source/TheManTest/Public/Equipment/Firearms/Firearm.h` | 射击参数：`bIsHitscan` / `HitscanRange` / `FireRate` / `BulletClass` / `MuzzleSocketName`；开火反馈：`FireMontage` / `FireSound` / 后坐力；技能：`PrimaryFireAbilityClass` / `SecondaryFireAbilityClass`；`GrantAbilities()` / `RevokeAbilities()`；**`GrantedASC`(TWeakObjectPtr 缓存，切角色回收技能用)** |
 | `Source/TheManTest/Private/Equipment/Firearms/Firearm.cpp` | `Equip()`：链接 ArmsMesh AnimLayer + GrantAbilities(缓存 GrantedASC)；`Unequip()`：RevokeAbilities(ASC 为 null 时回退 GrantedASC) + 解链 AnimLayer |

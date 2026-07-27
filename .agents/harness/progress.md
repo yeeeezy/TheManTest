@@ -26,6 +26,7 @@
 - [x] 修复中央混合首次重接造成的 locomotion 回归：Pose 输出不能一对多，连接 `WeaponUpperBody.UpperBodyInPose` 时曾顶掉中央混合的 `BasePose`；现恢复 `DefaultSlot.Pose -> LayeredBlend.BasePose`，纯武器层不读取接口输入。PIE W 移动连续 5 次腿骨采样均变化，A/D 截图也显示移动动画恢复。
 - [x] 修复 TestMap 进入 PIE 后角色延迟显示：移除 `AFPSCharacterBase::BeginPlay` 对身体、第一人称手臂、影子、腿和当前武器的整套隐藏/下一帧显示流程；装备仍同步初始化并保持可见，仅将可选拔枪 Montage 留到下一帧。Development Editor/Win64 与 Live Coding 均成功，PIE 确认默认 `BP_MaintenanceWorker` 同步生成且首个正常动画 Tick 后手臂、武器、影子完整显示。
 - [x] 修复即时显示调整后暴露的影子动画刷新问题：`BP_MaintenanceWorker` 的旧序列化值曾把不可见动画宿主 `CharacterMesh0` 覆盖为 `AlwaysTickPose`；现由 `AFPSCharacterBase::BeginPlay` 强制恢复 `AlwaysTickPoseAndRefreshBones`。PIE W 移动 5 组 `thigh_l` 样本持续变化，Leader 与 `ShadowBodyMesh` 坐标逐组完全一致。
+- [x] 修复切回 RepairGun 时 Equip Montage 在下一动画 Tick 被取消：切枪完成 Linked Layer/挂载后改为下一帧播放，并校验快速滚轮后目标仍是当前装备；`PlayEquipMontage()` 同步驱动 `ArmsViewMesh` 与 `CharacterMesh0`，影子经 Leader Pose 继承。PIE 两实例从 0 同步推进至 0.3333 秒，结束后 W locomotion/影子同步正常。
 - [x] 删除无用 `EquipmentAnimClass` 整体替换路径；武器只通过 `EquipmentAnimLayerClass` 链接专属层。
 - [x] 暂停玩家原地转身：删除 `BodyVisualYaw`/45° Turn/曲线进度 C++ 链，`BodyRoot` 直接跟随 Actor yaw；ABP 转体节点待用户手动清理。
 - [x] 用户已清理 `TABP_BodyLocomotion` 的旧 Turn 节点；修改已保存到本地 WIP checkpoint `8e6a8e0`。
@@ -79,7 +80,7 @@
 
 # 会话交接
 
-## Session94 handoff - FEAT-051 active (2026-07-27)
+## Session95 handoff - FEAT-051 active (2026-07-27)
 
 - 当前 active feature 是 `FEAT-051`。
 - FEAT-046 已转为 `needs_improvement`；MCP 证实其实际状态和 BlendSpace 与旧记录不符。
@@ -97,3 +98,4 @@
 - TestMap 的默认角色没有异步加载问题；`BP_TheManGamemodeBase` 在未选择角色时同步回退到 `BP_MaintenanceWorker`。此前的可见延迟来自 `AFPSCharacterBase::BeginPlay` 主动隐藏全部角色渲染组件与武器，再用 next-tick 回调显示；该隐藏流程已删除，下一帧回调现在只负责播放可选 Equip Montage。
 - MCP 自动化失焦时日志显示 PIE 会被编辑器节流到 3 FPS，因此“强制零 Tick 截图”只显示影子参考姿势，不能用作玩家首帧判断；约 1200ms（已有正常 Tick）截图确认第一人称手臂、RepairGun 和影子均正常。正常前台 60 FPS 下动画首 Tick 约为 16.7ms。
 - 影子动画刷新回归已修复：运行时审计发现 `CharacterMesh0` 被角色 BP 旧值覆盖成 `AlwaysTickPose`，而它作为 OwnerNoSee 的 Leader 不会稳定刷新骨骼；BeginPlay 现强制 `AlwaysTickPoseAndRefreshBones`。W 移动时角色速度 250，5 组 Leader/Shadow `thigh_l` 组件空间位置完全一致，截图 `ShadowRefresh_Fixed_Move.png` 显示正常持枪移动影子。
+- RepairGun Equip Montage 切枪时序已修复：旧流程在 LinkAnimClassLayers 同帧立即播放，下一动画更新会把 Montage 清掉；现在下一帧确认当前装备后再播放，且手臂/身体 Leader 双实例同步。帧步进验证两边位置由 0 同步到 0.3333 秒；截图 `EquipMontage_Synced_0333.png`，结束后移动回归截图 `EquipMontage_PostMove.png`。TestGun 当前 `EquipMontage=None`，切入 TestGun 无动画属于资产尚未配置。

@@ -4,6 +4,7 @@
 #include "Equipment/EquipmentBase/EquipmentBase.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Character.h"
+#include "TimerManager.h"
 
 UEquipmentManagerComponent::UEquipmentManagerComponent()
 {
@@ -144,7 +145,16 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
         
         NewEquipment->AttachToComponent(TargetMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, NewEquipment->GetEquipSocketName());
 
-        // 滚轮切枪：角色已就绪，立即播放拔枪动画
-        NewEquipment->PlayEquipMontage();
+        // LinkAnimClassLayers 会在下一次动画更新时完成初始化；同帧播放 Montage 会被
+        // 该初始化清掉。延迟一帧，并确认快速滚轮后它仍是当前装备再播放。
+        const TWeakObjectPtr<AEquipmentBase> EquipmentToPlay = NewEquipment;
+        GetWorld()->GetTimerManager().SetTimerForNextTick(
+            FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToPlay]()
+            {
+                if (EquipmentToPlay.IsValid() && GetCurrentEquipment() == EquipmentToPlay.Get())
+                {
+                    EquipmentToPlay->PlayEquipMontage();
+                }
+            }));
     }
 }

@@ -73,19 +73,6 @@ static void GetAnimLayerMeshes(AActor* Owner, TArray<USkeletalMeshComponent*>& O
     }
 }
 
-static USkeletalMeshComponent* GetMontageMesh(AActor* Owner)
-{
-    if (AFPSCharacterBase* FPSChar = Cast<AFPSCharacterBase>(Owner))
-    {
-        return FPSChar->GetArmsMesh();
-    }
-    if (ACharacter* Char = Cast<ACharacter>(Owner))
-    {
-        return Char->GetMesh();
-    }
-    return nullptr;
-}
-
 void AEquipmentBase::Equip(AActor* NewOwner)
 {
     SetOwner(NewOwner);
@@ -116,11 +103,18 @@ void AEquipmentBase::PlayEquipMontage()
     AActor* CurrentOwner = GetOwner();
     if (!EquipMontage || !CurrentOwner) { return; }
 
-    if (USkeletalMeshComponent* AnimMesh = GetMontageMesh(CurrentOwner))
+    // FPS 角色的 FP 手臂和隐藏身体宿主拥有独立 AnimInstance。两边从同一时间点
+    // 播放 Equip Montage，ShadowBodyMesh 再通过 Leader Pose 继承身体动作。
+    TArray<USkeletalMeshComponent*> AnimMeshes;
+    GetAnimLayerMeshes(CurrentOwner, AnimMeshes);
+    for (USkeletalMeshComponent* AnimMesh : AnimMeshes)
     {
-        if (UAnimInstance* AnimInst = AnimMesh->GetAnimInstance())
+        if (AnimMesh)
         {
-            AnimInst->Montage_Play(EquipMontage);
+            if (UAnimInstance* AnimInst = AnimMesh->GetAnimInstance())
+            {
+                AnimInst->Montage_Play(EquipMontage);
+            }
         }
     }
 }

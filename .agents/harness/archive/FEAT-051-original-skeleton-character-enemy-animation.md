@@ -80,6 +80,12 @@ Session94 diagnosed the abnormal shadow animation seen after the initial-visibil
 
 `AFPSCharacterBase::BeginPlay` now reapplies `AlwaysTickPoseAndRefreshBones` to `GetMesh()` after Blueprint defaults have been instantiated, guaranteeing that the invisible animation host refreshes the bones consumed by `ShadowBodyMesh` and `LegsMesh`. Development Editor/Win64 and Live Coding both succeeded. During PIE W movement at 250 cm/s, five successive `thigh_l` component-space samples changed and every `CharacterMesh0` sample exactly matched `ShadowBodyMesh`; `ShadowRefresh_Fixed_Move.png` visually confirmed the animated armed shadow.
 
+## Synchronized Equip Montage Timing
+
+Session95 diagnosed why the configured RepairGun Equip Montage worked on initial entry but appeared absent when switching back from TestGun. `SwitchEquipment()` linked the weapon Anim Layer and called `PlayEquipMontage()` in the same frame. Runtime inspection showed the Montage become active at position 0, then disappear at the next animation update because Linked Anim Layer initialization reset the just-started Montage. Initial entry did not fail because its playback was already deferred by one tick. TestGun itself currently has no Equip Montage, so switching from RepairGun into TestGun intentionally has no equip animation.
+
+The switch path now defers playback to the next tick and verifies that rapid scrolling has not changed the current equipment before playing. `AEquipmentBase::PlayEquipMontage()` now starts the same Montage on both independent FPS AnimInstances (`ArmsViewMesh` and `CharacterMesh0`); `ShadowBodyMesh` inherits the latter through Leader Pose. Development Editor/Win64 and Live Coding succeeded. Deterministic paused-PIE frame stepping showed both instances active at 0 and then both at 0.3333334 seconds after the next frame. After completion, W movement remained 250 cm/s, neither Montage remained active, and the body/shadow `thigh_l` transforms matched. Evidence: `EquipMontage_Synced_0333.png` and `EquipMontage_PostMove.png`.
+
 ## Known Cleanup Item
 
 - Active `BP_Infiltrator` still has a hard dependency on `/Game/Characters/Infiltrator/Blueprint/BP_Infiltrator_Old`. The exact referring property/node has not yet been identified; do not delete or rewrite it automatically.
