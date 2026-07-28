@@ -2,9 +2,9 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-27-session102
+**最后更新：** 2026-07-28-session108
 **当前功能：** **FEAT-051（基于原始骨架重建角色与 Enemy 动画蓝图）**
-**会话编号：** 102
+**会话编号：** 108
 
 用户已手动删除一部分效果不佳的重定向动画和动画蓝图。现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构继续保留。
 
@@ -13,6 +13,10 @@
 ---
 
 ## 当前完成项
+
+- [x] 新增动画重定向项目边界：`TheManTest` 只接收最终动画；所有 IK Rig/IK Retargeter/批量重定向操作必须在 `D:\Unreal Projects\TMIIR` 或 `D:\Unreal Projects\FPSShooter1` 等外部资源项目完成，主项目不得保留源骨架、源 Mesh 或重定向中间目录。
+- [x] 删除未采用的 GASP 落地动画及主项目中的 `Animations/Retargeting`、迁入的 UE4/UEFN 源资源；恢复旧 Land 覆盖后再安全删除，无断引用。
+- [x] 用户在 `FPSShooter1:/Game/CodexRetargeting` 手动生成有效的 `RTG_MM_Jump`、`RTG_MM_Fall_Loop`、`RTG_MM_Land`。先前自动生成的 Shooter Rifle 产物实为 T-Pose，已解除引用并删除。手动产物迁入暂存后通过目标 `SKM_UE4Mannequin` 的 `AnimationLibrary.get_bone_poses_for_time` 在 0/25/50/75/99% 五个时间点验收：三段均有 5 个唯一姿势，综合关键骨骼变化量分别约 44.8/3.5/22.7。随后用 Consolidate 更新引用并原位替换维修工 `AnimationSequenceBody` 同名资源，清理暂存目录，重编译父子 AnimBP。PIE 起跳画面非 T-Pose；落地后 Arms/Shadow/Legs 可见，CharacterMesh0 的不可见为第一人称 OwnerNoSee 预期行为。
 
 - [x] Unreal MCP 复扫用户删除后的 Player / Enemy / Weapon 动画资产。
 - [x] 玩家模板已整理为 `TABP_BodyLocomotion`；维修工子 AnimBP `ABP_MaintenanceWorker` 及 `BS_RunWalk_MaintenanceWorker` 已创建并由用户编译通过。
@@ -30,6 +34,9 @@
 - [x] 修复 RepairGun Equip Montage “正在播放但画面无动作”：原 Montage 仅有 `DefaultSlot`，其上半身输出被主 ABP 后续中央 `WeaponUpperBody` 完全覆盖；现加入同源动画的 `UpperBodySlot` 轨道。暂停 PIE 逐帧截图在 0/0.333/0.666 秒显示清晰拔枪姿势变化，第一人称与影子同步。
 - [x] 修复 RepairGun 切入时先从上方放下再拿起：源序列采样证明动画本身从下方向上抬，异常来自 Montage 默认 0.25 秒 Blend In 与武器提前显示。现 Blend In=0；切枪时有 Montage 的武器先隐藏，启动并评估一帧后再显示。PIE 首张可见图位于下方，后续只向上抬；移动速度 250、影子 Leader/腿骨同步正常。
 - [x] 修复切枪 Montage 前最终持枪位置闪帧：保留完整 Unequip/Equip 技能与层生命周期，在切换调用当帧立即播放 Montage 覆盖 Idle，再于 next tick 从 0 稳定重启，桥接 Linked Layer 初始化窗口；起始姿势只多保持一帧。快速切走用 0.01 秒 Blend Out 停止旧 Montage。PIE 状态严格为 Arms/Body `playing@0 → playing@0 → playing@0.3333`，首个评估截图位于下方起始姿势；结束后同层/hand_r 一致、无 T-Pose，W=250 与影子同步通过。
+- [x] 优化切枪顺滑度：用 UE 5.7 原生 Linked Anim Graph Blending 替换上述重复 Montage 桥接。`WeaponAimOffset` / `WeaponUpperBody` 设 0.1 秒 Blend In/Out，主 `TABP_BodyLocomotion` 在 `FullBodySlot` 后新增 Inertialization；切枪现仅于 next tick 从 0 播放一次 Montage。PIE 严格序列为 `inactive → active@0 → active@0.3333`，Arms/Body `hand_r` 逐帧一致；结束后 RepairGun 层有效、W=250、Shadow Leader/腿骨同步通过。待用户前台正常帧率实机确认主观丝滑度。
+- [x] 用户确认 next-tick-only 版本手感仍未改善后，进一步消除切枪调用帧的新武器 Idle 窗口：当帧立即起播，next tick 按真实已流逝时间恢复，不再重回 0。节流 PIE 严格序列为 Arms/Body `active@0 → active@0.3333`，对应前台 60 FPS 约 `0 → 0.0167`，hand_r 一致；Live Coding 与 Development Editor 完整构建均通过。待用户再次实机确认。
+- [x] 完成开局首次装备与后续切回的同 PIE 逐帧对比：旧 TestGun 到首个可见 RepairGun Equip 姿势曾产生约 32.7cm 跳变。现由 Arms/Body AnimInstance 在解链前保存 `WeaponTransitionPose`，主 AnimBP 末端以 `WeaponTransitionAlpha` 从旧 Pose 直接桥接到暂停的 Montage 0 秒低位姿势，随后才恢复 1x 播放。60 FPS 轨迹在桥接阶段 Z 连续为 `111.68→114.81→118.61→122.90→127.46→131.13`，Montage 随后 `0→0.0167→0.0333` 单调推进，没有先放下再拿起；连续画面检查未见旧枪残影，原子换枪帧通过 Camera Cut 清除 TAA/TSR 历史。Arms/Body 同步、可见性互斥、无 T-Pose。Live Coding 通过，待用户前台手感确认后执行最终完整构建。
 - [x] 删除无用 `EquipmentAnimClass` 整体替换路径；武器只通过 `EquipmentAnimLayerClass` 链接专属层。
 - [x] 暂停玩家原地转身：删除 `BodyVisualYaw`/45° Turn/曲线进度 C++ 链，`BodyRoot` 直接跟随 Actor yaw；ABP 转体节点待用户手动清理。
 - [x] 用户已清理 `TABP_BodyLocomotion` 的旧 Turn 节点；修改已保存到本地 WIP checkpoint `8e6a8e0`。
@@ -44,6 +51,7 @@
 - [x] FEAT-053：建立 `guides/unreal-mcp-workflow.md`，沉淀 UE 5.7 MCP 操作与排错经验。
 - [x] FEAT-054：创建并导入 1 米 `SM_InteractableBase_Default`，替换 `BP_InteractableBase` 的 SCI-FI 默认方块引用。
 - [x] FEAT-055：从 UE4 Mannequin 完整身体拆出维修工下半身 `SKM_MaintenanceWorker_LowerBody`，保留蒙皮并绑定迁入 Skeleton。
+- [x] 修复维修工落地时全身短暂消失：`RTG_MM_Land` 从 Local Space Additive 恢复为 No Additive；60 FPS PIE 连续 2 次跳跃逐帧审计均无骨骼归零。
 
 ---
 
@@ -83,9 +91,10 @@
 
 # 会话交接
 
-## Session102 handoff - FEAT-051 active (2026-07-27)
+## Session104 handoff - FEAT-051 active (2026-07-28)
 
 - 当前 active feature 是 `FEAT-051`。
+- 切枪顺滑度方案已改为原生 Graph Blending + 末端 Inertialization；Montage 只在 Link 稳定后单次播放。编译与 PIE 定量验证通过，下一步是用户正常前台帧率实机手感确认。
 - FEAT-046 已转为 `needs_improvement`；MCP 证实其实际状态和 BlendSpace 与旧记录不符。
 - 玩家继续统一 Skeleton 和武器层；下半身允许使用效果合格的重定向动画。
 - Enemy 使用动画原始 Skeleton，从现有无骨架 Template AnimBP 派生对应子 AnimBP，C++/状态机架构不变。
@@ -110,3 +119,11 @@
 - 最终逐帧证据：正常切回 RepairGun 后 Arms/Body 均 `true@0 → true@0 → true@0.3333334`；第一张评估截图 `EquipBridge_FirstEvaluated.png` 显示枪位于视野下方起始姿势。快速切走后旧 Montage 立即 inactive，切回桥接仍成立。结束后 RepairGun 层有效、两 mesh hand_r 完全一致；截图 `EquipBridge_PostMontage.png`，W=250、Shadow Leader=`CharacterMesh0`。
 - 用户最终实机复测确认功能问题已消失，但主观观感仍不如游戏开始时首次装备丝滑；本轮到此暂停。后续优化应直接对比 BeginPlay 首次装备与切枪的动画评估时序，避免重新引入隐藏模型、T-Pose 或技能层重叠。
 - Harness 功能索引已拆分：`feature_list.json` 只保留 20 个非 done 条目，35 个完成项迁入 `feature_archive.json`；启动无需加载历史索引。迁移后 55 个功能 ID 全部唯一，`FEAT-051` 在主索引中唯一匹配。
+
+## Session108 handoff - 落地消失回归修复（2026-07-28）
+
+- 用户暂停切枪丝滑度调整，转而排查跳跃落地时人物消失；现有切枪 WIP 未继续改动。
+- 修复前 60 FPS PIE 逐帧审计确认 Actor 和 `ArmsViewMesh` / `ShadowBodyMesh` / `LegsMesh` 始终可见且未 Hidden，但落地第 82 帧后各 Mesh 的 `hand_r` 依次归零，约到第 130 帧才恢复，说明是动画姿势塌缩而非渲染隐藏。
+- 根因是 `/Game/Characters/MaintenanceWorker/Animations/AnimationSequenceBody/RTG_MM_Land` 被重新设置成 `AAT_LOCAL_SPACE_BASE`；`LocomotionSM.Jump_End` 将该加性差值当完整姿势播放，复现了 BUG-039-002。
+- 已将该资产恢复为 `AAT_NONE` / `ABPT_NONE` 并保存；Jump 和 Fall Loop 原本即为 No Additive，无需修改状态机或 C++。
+- 修复后同一次 60 FPS PIE 自动连续跳跃两次，落地帧为 82 / 222；四套 SkeletalMesh 从空中、落地到恢复 Idle 全程骨骼坐标有效，`zero_frames=[]`、脚本异常为空，可见性也未变化。

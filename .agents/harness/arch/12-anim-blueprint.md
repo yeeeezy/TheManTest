@@ -52,7 +52,7 @@ Jump_End ─(Speed<3 && Land 剩余<0.3)─> Idle ；─(Speed>3)─> Run/Walk
 - **不再使用 Stop 状态**：删除 `StopAnimIndex`、`bShouldStop`、`bShouldMove`、`bLeftFootUp`、`StopDirectionIndex` 等变量节点和过渡。
 - ⚠️ **状态机直接播的 clip 必须 No Additive**（被当差值叠加 → 塌进地里，见 BUG-039-002，最初 Land 动画踩过）。
 - **根运动**：普通 Idle/WalkRun 方案建议 `Root Motion from Montages Only`，地面移动交给 CharacterMovement。原地 locomotion clip 的 Enable Root Motion 应关闭。
-- AnimGraph 输出链：LocomotionSM → DefaultSlot → 主 ABP 唯一的 Layered Blend per Bone.BasePose；`WeaponUpperBody` Linked Layer 只产出纯武器 Pose并接 BlendPose（当前纯武器实现不读取 `UpperBodyInPose`）→ WeaponAimOffset → UpperBodySlot → FullBodySlot → Output。分层策略由主 ABP 统一拥有，武器层不得重复混合全身 locomotion。注意 AnimGraph 的 Pose 输出不能一对多，不能把 `DefaultSlot.Pose` 同时直接接给 BasePose 与 Linked Layer 输入，否则后一次连接会顶掉前一条。
+- AnimGraph 输出链：LocomotionSM → DefaultSlot → 主 ABP 唯一的 Layered Blend per Bone.BasePose；`WeaponUpperBody` Linked Layer 只产出纯武器 Pose并接 BlendPose（当前纯武器实现不读取 `UpperBodyInPose`）→ WeaponAimOffset → UpperBodySlot → FullBodySlot → `Two Way Blend(A=Pose Snapshot "WeaponTransitionPose", B=FullBodySlot, Alpha=WeaponTransitionAlpha)` → Output。武器层图 `WeaponAimOffset` / `WeaponUpperBody` 的 Graph Blend 保持默认关闭；末端不使用 Inertialization。分层与切枪 Pose 事务由主 ABP 统一拥有，武器层不得重复混合全身 locomotion。注意 AnimGraph 的 Pose 输出不能一对多，不能把 `DefaultSlot.Pose` 同时直接接给 BasePose 与 Linked Layer 输入，否则后一次连接会顶掉前一条。
 
 ---
 
@@ -320,6 +320,16 @@ Any State → Dead : bIsDead
 - **新增具体人形怪**：继承 `ABP_HumanoidEnemy`，Asset Override 覆盖动画，Class Defaults 设扫视数量，无需重搭状态机。
 - **Search 状态（FEAT-026）**：状态机加新大状态，过渡基于 `AIState`，新变量在 AnimInstance 追加。
 - **射击蒙太奇插槽（FEAT-027）**：AnimGraph 输出链末尾插 Slot 节点（`EnemyUpperBody` / `EnemyFullBody`），骨骼 Slot Manager 注册同名。
+
+---
+
+## 动画重定向项目边界
+
+- 主项目 `TheManTest` 只保存已经完成重定向并验收的最终动画资源。
+- 禁止在主项目中创建或执行 IK Retargeter、批量重定向、源骨架/源 Mesh 导入等操作，也不得保留重定向中间目录。
+- 重定向必须在资源来源项目中完成，验证后仅将最终动画迁移至主项目。
+- 外部资源项目：`D:\Unreal Projects\TMIIR`、`D:\Unreal Projects\FPSShooter1`。
+- Shooter 动画必须在 `FPSShooter1` 内完成所需重定向，再迁移最终产物。
 
 ---
 

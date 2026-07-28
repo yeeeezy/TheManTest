@@ -45,8 +45,8 @@ public:
 
     // 播放拔枪/装备蒙太奇。与 Equip() 解耦：滚轮切枪时立即调用；
     // 切换角色初次装备时推迟到手臂姿势就绪的下一帧再调用，避免起始位置错乱、音效误触发。
-    UFUNCTION(BlueprintCallable, Category = "Equipment|Action")
-    void PlayEquipMontage();
+	UFUNCTION(BlueprintCallable, Category = "Equipment|Action")
+	void PlayEquipMontage();
 
     /* ==========================================
      * 🎒 物理表现与组件
