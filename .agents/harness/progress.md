@@ -127,3 +127,11 @@
 - 根因是 `/Game/Characters/MaintenanceWorker/Animations/AnimationSequenceBody/RTG_MM_Land` 被重新设置成 `AAT_LOCAL_SPACE_BASE`；`LocomotionSM.Jump_End` 将该加性差值当完整姿势播放，复现了 BUG-039-002。
 - 已将该资产恢复为 `AAT_NONE` / `ABPT_NONE` 并保存；Jump 和 Fall Loop 原本即为 No Additive，无需修改状态机或 C++。
 - 修复后同一次 60 FPS PIE 自动连续跳跃两次，落地帧为 82 / 222；四套 SkeletalMesh 从空中、落地到恢复 Idle 全程骨骼坐标有效，`zero_frames=[]`、脚本异常为空，可见性也未变化。
+
+## Session109 handoff - Shooter 落地混合对齐（2026-07-28）
+
+- 只读检查 `FPSShooter1` 证实官方 Rifle/Pistol ABP 实际引用 Unarmed `MM_Jump` / `MM_Fall_Loop` / `MM_Land`；当前迁入动画与官方来源相同，问题不在 Rifle 文件夹素材。
+- 官方 Rifle 跳跃状态机为 Linear 混合，最短跳跃过渡 0.1 秒；当前 `To Land -> Jump_End` 是 0.2 秒 Hermite，会在物理接地后继续缓慢混合，造成落地拖软。
+- 已仅把 `TABP_BodyLocomotion.LocomotionSM.AnimStateTransitionNode_10` 改为 `Linear / 0.1s`；Jump_End 到 Idle/Run 的 0.2 秒恢复保持不变。
+- 父模板与 `ABP_MaintenanceWorker` 均由现有编辑器 MCP 编译保存并成功回读参数；PIE 连续触发两次跳跃，结束后角色、手臂、武器和影子正常，无消失或蓝图错误。截图：`Saved/Screenshots/WindowsEditor/JumpBlend_ShooterAligned_AfterTwoJumps.png`。
+- 下一步只需用户在前台正常帧率确认落地触感；如果仍不一致，下一轮应抓接地前后逐帧 Pose/状态权重，而不是继续替换动画。
