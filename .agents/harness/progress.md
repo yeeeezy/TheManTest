@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-29-session112
-**当前功能：** **FEAT-056（RepairGun 子弹与潜伏者扫描特效材质）**
-**会话编号：** 112
+**最后更新：** 2026-07-29-session118
+**当前功能：** **FEAT-051（原始骨架角色与 Enemy 动画蓝图，当前穿插扫描测试）**
+**会话编号：** 118
 
-FEAT-051 暂停并保留现状。本轮从 TMIIR 迁入两套特效材质，按正式项目目录规则整理：RepairGun 子弹使用 Icosahedron 特效；潜伏者扫描期间为地形叠加 Cube 特效，不替换地形原始材质。
+用户重新要求临时测试扫描能力。`DefaultAbilityClasses` 已从潜行者专属类上移到 `AFPSCharacterBase`，所有玩家角色蓝图共享同一角色默认技能数组及授予流程；完整 Development Editor 构建和 Live Coding 均通过。重启后潜行者原扫描配置保留，维修工继承字段正常；维修工已临时配置扫描技能、`MPC_ScanEffect` 与地形材质。PIE 已看到绿色扫描环/全场轮廓效果，并通过 W 移动与连续两次跳跃回归。下一步由用户前台按 E 验证实际手感与视觉。
 
 用户已手动删除一部分效果不佳的重定向动画和动画蓝图。现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构继续保留。
 
@@ -15,6 +15,8 @@ FEAT-051 暂停并保留现状。本轮从 TMIIR 迁入两套特效材质，按�
 ---
 
 ## 当前完成项
+
+- [x] 将玩家角色默认技能数组与授予逻辑上移到 `AFPSCharacterBase`；潜行者和维修工蓝图编译通过，维修工临时获得扫描技能。恢复 9 个扫描专用材质依赖，运行时 Decal 正式纳入 Actor 组件生命周期；截图 `ScanTerrain_MaintenanceWorker_Working.png` 验证绿色扫描环与轮廓效果。W 移动和连续两次跳跃均正常落地。
 
 - [x] 新增动画重定向项目边界：`TheManTest` 只接收最终动画；所有 IK Rig/IK Retargeter/批量重定向操作必须在 `D:\Unreal Projects\TMIIR` 或 `D:\Unreal Projects\FPSShooter1` 等外部资源项目完成，主项目不得保留源骨架、源 Mesh 或重定向中间目录。
 - [x] 删除未采用的 GASP 落地动画及主项目中的 `Animations/Retargeting`、迁入的 UE4/UEFN 源资源；恢复旧 Land 覆盖后再安全删除，无断引用。

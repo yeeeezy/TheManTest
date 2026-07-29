@@ -38,7 +38,11 @@ void UScanEffectComponent::TriggerScan(FVector Origin)
 		if (!TerrainOverlayDecal)
 		{
 			TerrainOverlayDecal = NewObject<UDecalComponent>(GetOwner(), TEXT("ScanTerrainOverlayDecal"));
-			TerrainOverlayDecal->RegisterComponent();
+			// Make the runtime decal an owned instance component before registration.
+			// Registering an unattached UObject alone can leave it outside the actor's
+			// component lifecycle, which made the scan execute without a rendered decal.
+			GetOwner()->AddInstanceComponent(TerrainOverlayDecal);
+			TerrainOverlayDecal->RegisterComponentWithWorld(World);
 			TerrainOverlayDecal->SetSortOrder(10);
 			TerrainOverlayDecal->FadeScreenSize = 0.f;
 		}

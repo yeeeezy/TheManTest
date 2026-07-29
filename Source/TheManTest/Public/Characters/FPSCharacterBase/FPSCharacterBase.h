@@ -12,6 +12,7 @@ class UEquipmentManagerComponent;
 class UScanEffectComponent;
 class UTheManCharacterDataAssetBase;
 class UGameplayEffect;
+class UGameplayAbility;
 class UAbilitySystemComponent;
 class AEquipmentBase;
 
@@ -148,6 +149,11 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS")
 	TSubclassOf<UGameplayEffect> InitGEClass;
+
+	// Character-owned abilities granted after the shared ASC is initialized.
+	// Concrete character Blueprints configure active, passive, or event-driven abilities here.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Abilities")
+	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilityClasses;
 
 private:
 	void EnsureViewmodelAttachment();

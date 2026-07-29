@@ -11,6 +11,7 @@
 #include "Core/TheManPlayerController.h"
 #include "Core/TheManPlayerState.h"
 #include "AbilitySystemComponent.h"
+#include "Abilities/GameplayAbility.h"
 #include "GameplayEffect.h"
 #include "GameplayTagContainer.h"
 #include "Characters/BaseCharacter/Data/TheManCharacterDataAssetBase.h"
@@ -229,6 +230,16 @@ void AFPSCharacterBase::PossessedBy(AController* NewController)
 	if (!ASC) { return; }
 
 	ASC->InitAbilityActorInfo(PS, this);
+
+	// Every concrete player character owns the same configurable default-ability list.
+	// Individual Blueprints decide which active, passive, or event-driven abilities to grant.
+	for (const TSubclassOf<UGameplayAbility>& AbilityClass : DefaultAbilityClasses)
+	{
+		if (AbilityClass)
+		{
+			ASC->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1));
+		}
+	}
 
 	if (CharacterData && InitGEClass)
 	{
