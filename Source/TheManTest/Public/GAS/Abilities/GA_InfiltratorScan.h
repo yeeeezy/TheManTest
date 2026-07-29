@@ -7,9 +7,8 @@
 
 /**
  * UGA_InfiltratorScan
- * Infiltrator 扫描技能。监听 Input.Infiltrator.Scan 事件。
- * 当前为框架占位：打印调试信息确认链路通畅。
- * 后续与 FEAT-015（扫描材质控制系统）对接，调用 TriggerScan(Origin)。
+ * 玩家扫描技能。监听 Input.Character.Interact 事件并切换扫描效果。
+ * 全息 UI 为可选展示，不参与扫描状态或材质触发。
  */
 UCLASS()
 class THEMANTEST_API UGA_InfiltratorScan : public UGameplayAbility
@@ -49,6 +48,10 @@ protected:
 	float ScanSoundPitch = 1.f;
 
 private:
+	// Scan state is independent from the optional hologram UI. The hologram asset
+	// may be absent while the MPC wave and terrain overlay still toggle normally.
+	bool bScanActive = false;
+
 	// 当前已生成的全息 Actor（弱引用，Actor 被外部销毁时自动失效）
 	TWeakObjectPtr<AActor> SpawnedHologram;
 };

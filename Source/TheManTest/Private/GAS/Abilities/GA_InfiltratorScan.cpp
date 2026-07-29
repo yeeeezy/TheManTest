@@ -33,18 +33,23 @@ void UGA_InfiltratorScan::ActivateAbility(
 		return;
 	}
 
-	// Toggle：已存在则播放 Hide 动画后延迟销毁
-	if (SpawnedHologram.IsValid())
+	// Scan toggling is authoritative. The hologram is an optional presentation
+	// layer and must never gate the MPC wave or terrain overlay.
+	if (bScanActive)
 	{
-		AActor* Hologram = SpawnedHologram.Get();
-		SpawnedHologram = nullptr;
-
-		if (UFunction* HideFunc = Hologram->FindFunction(FName("Hide")))
+		bScanActive = false;
+		if (SpawnedHologram.IsValid())
 		{
-			Hologram->ProcessEvent(HideFunc, nullptr);
+			AActor* Hologram = SpawnedHologram.Get();
+			SpawnedHologram = nullptr;
+
+			if (UFunction* HideFunc = Hologram->FindFunction(FName("Hide")))
+			{
+				Hologram->ProcessEvent(HideFunc, nullptr);
+			}
+			// Hide 动画约 1.5s（与蓝图 Delay 一致），播完后自动销毁
+			Hologram->SetLifeSpan(2.5f);
 		}
-		// Hide 动画约 1.5s（与蓝图 Delay 一致），播完后自动销毁
-		Hologram->SetLifeSpan(2.5f);
 
 		// 扫描波从当前位置向内回缩
 		if (UScanEffectComponent* ScanComp = Character->GetScanEffect())
@@ -62,7 +67,8 @@ void UGA_InfiltratorScan::ActivateAbility(
 		return;
 	}
 
-	// 不存在则生成、Attach、播放 Show 动画
+	// Optional hologram presentation. The scan remains functional when the UI
+	// class is intentionally unset or when spawning the UI actor fails.
 	if (HologramActorClass)
 	{
 		UCameraComponent* Cam = Character->GetHeadCamera();
@@ -80,20 +86,22 @@ void UGA_InfiltratorScan::ActivateAbility(
 			SpawnedHologram = Hologram;
 			// BP_uiFrame 的 BeginPlay（Autoplay=false）会自动调用 Show，不需要再手动触发
 
-			// 触发一次球形扫描波，从角色脚底向外膨胀
-			if (UScanEffectComponent* ScanComp = Character->GetScanEffect())
-			{
-				const float HalfHeight = Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-				const FVector FeetOrigin = Character->GetActorLocation() - FVector(0.f, 0.f, HalfHeight);
-				ScanComp->TriggerScan(FeetOrigin);
-			}
-
-			if (ScanActivateSound)
-			{
-				UGameplayStatics::PlaySoundAtLocation(Character, ScanActivateSound,
-					Character->GetActorLocation(), ScanSoundVolume, ScanSoundPitch);
-			}
 		}
+	}
+
+	// Always trigger gameplay scan visuals, even when the hologram UI was removed.
+	if (UScanEffectComponent* ScanComp = Character->GetScanEffect())
+	{
+		const float HalfHeight = Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+		const FVector FeetOrigin = Character->GetActorLocation() - FVector(0.f, 0.f, HalfHeight);
+		ScanComp->TriggerScan(FeetOrigin);
+		bScanActive = true;
+	}
+
+	if (ScanActivateSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(Character, ScanActivateSound,
+			Character->GetActorLocation(), ScanSoundVolume, ScanSoundPitch);
 	}
 
 	EndAbility(Handle, ActorInfo, ActivationInfo, true, false);

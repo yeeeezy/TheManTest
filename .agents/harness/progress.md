@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-29-session118
+**最后更新：** 2026-07-29-session119
 **当前功能：** **FEAT-051（原始骨架角色与 Enemy 动画蓝图，当前穿插扫描测试）**
-**会话编号：** 118
+**会话编号：** 119
 
-用户重新要求临时测试扫描能力。`DefaultAbilityClasses` 已从潜行者专属类上移到 `AFPSCharacterBase`，所有玩家角色蓝图共享同一角色默认技能数组及授予流程；完整 Development Editor 构建和 Live Coding 均通过。重启后潜行者原扫描配置保留，维修工继承字段正常；维修工已临时配置扫描技能、`MPC_ScanEffect` 与地形材质。PIE 已看到绿色扫描环/全场轮廓效果，并通过 W 移动与连续两次跳跃回归。下一步由用户前台按 E 验证实际手感与视觉。
+用户重新要求临时测试扫描能力。`DefaultAbilityClasses` 已从潜行者专属类上移到 `AFPSCharacterBase`，维修工已临时配置扫描技能、`MPC_ScanEffect` 与地形材质。用户已删除效果不佳的全息 UI；扫描技能现以独立 `bScanActive` 切换，不再依赖 UI 类。真实 E 输入验证第一次显示原红色轮廓/扫描与新增地形效果，第二次关闭；无全息 Actor。完整 Development Editor 构建和 Live Coding 均通过，移动与连续两次跳跃回归正常。下一步由用户前台确认视觉。
 
 用户已手动删除一部分效果不佳的重定向动画和动画蓝图。现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构继续保留。
 

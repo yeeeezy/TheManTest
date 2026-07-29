@@ -8,7 +8,7 @@
 | `Source/TheManTest/Private/GAS/TheManGameplayTags.cpp` | Tag 定义（字符串绑定），新增 Tag 在此添加 `UE_DEFINE_GAMEPLAY_TAG` |
 | `Source/TheManTest/Public/GAS/Abilities/GA_Shoot.h` | 玩家射击技能；CDO 中 `AbilityTriggers` 监听 `Input.Weapon.PrimaryFire` |
 | `Source/TheManTest/Private/GAS/Abilities/GA_Shoot.cpp` | `ActivateAbility()`：从 `AFPSCharacterBase` 取当前 `AFirearm` → 从枪口生成 `Firearm->BulletClass` 子弹(`InitBullet`)，命中由子弹施加 `HitEffectClass`(GE_BulletDamage)；与开火反馈(蒙太奇/音效/后坐力)解耦，空枪也播反馈 |
-| `Source/TheManTest/Public/GAS/Abilities/GA_InfiltratorScan.h` | Infiltrator 扫描技能；Toggle 全息 UI；调用 UScanEffectComponent |
+| `Source/TheManTest/Public/GAS/Abilities/GA_InfiltratorScan.h` | 玩家扫描技能；`bScanActive` 独立控制开关并调用 `UScanEffectComponent`；全息 UI 为可选展示，类为空或生成失败都不能阻断扫描材质 |
 | `Source/TheManTest/Public/GAS/Abilities/GA_EnemyShoot.h` | **敌人射击技能基类**；复用子弹管线；配置(BulletClass/Muzzle/蒙太奇/音效)作技能 UPROPERTY(技能=子弹绑定)；`virtual SpawnProjectiles()` 扩展点(散射/连发由子类重写)；**不注册 GameplayEvent 触发器**(由 UseRandomSkill 按类激活) |
 | `Source/TheManTest/Private/GAS/Abilities/GA_EnemyShoot.cpp` | `ActivateAbility()`：`Cast<AHumanoidEnemy>` → 武器 Muzzle socket 取枪口 → 朝 `AimTargetWorld` → `SpawnProjectiles` 生成子弹 `InitBullet(Enemy, 敌人ASC)` |
 | `Source/TheManTest/Public/Characters/Enemy/BTTask_UseCombatSkill.h` | **通用敌人战斗放招 BT 节点**；UPROPERTY `Range`(近/中/远)+`TargetActorKey`；读黑板目标 → `AEnemyBase::UseRandomSkill`；不绑定具体技能 |
