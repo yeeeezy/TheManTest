@@ -1,7 +1,7 @@
 # [FEAT-056] Gameplay Effect Materials
 
 **Created:** 2026-07-29  
-**Status:** in_progress
+**Status:** superseded
 
 ## Scope
 
@@ -29,6 +29,8 @@
 - [ ] PIE validates RepairGun projectile visuals and Infiltrator terrain scan visuals without regressions.
 
 ## Log
+
+- Session114: the user withdrew both original gameplay assignments after the movement-regression investigation. RepairGun and Infiltrator changes were restored to checkpoint `fb48d59`; FEAT-056 must not reapply those effects. The user then explicitly reassigned only the Icosahedron effect to `BP_InteractableBase`; that result is recorded under FEAT-054.
 
 - Session112: feature created and external-asset directory rules added. Existing FEAT-051 work is paused without changing its implementation state.
 - Session112 migration audit confirmed both requested assets are `MaterialInstanceConstant` instances sharing `/Game/ShapesFX_Pack/Materials/SHAPESFX/M_ShapesFx`. Shared dependencies include the MatCap projection function, mask/gradient textures, and a default MatCap; Icosahedron and Cube each have their own MatCap and outline textures.

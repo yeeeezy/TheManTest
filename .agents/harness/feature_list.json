@@ -1,7 +1,7 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-07-29-session112",
-    "active_feature":  "FEAT-056",
+    "last_updated":  "2026-07-29-session117",
+    "active_feature":  "FEAT-051",
     "archive_file":  "feature_archive.json",
     "features":  [
                      {
@@ -346,12 +346,12 @@
                      },
                      {
                          "id":  "FEAT-056",
-                         "name":  "RepairGun 子弹与潜伏者扫描特效材质",
-                         "status":  "in_progress",
-                         "description":  "从 TMIIR 迁入 Icosahedron 与 Cube 特效材质及依赖，按项目功能归属和资产类型整理并按用途重命名；Icosahedron 应用于 RepairGun 子弹，Cube 在潜伏者扫描时作为地形叠加效果，不替换地形原始材质。",
+                         "name":  "RepairGun 子弹与潜伏者扫描特效材质（已撤销）",
+                         "status":  "needs_improvement",
+                         "description":  "原 RepairGun 子弹与潜伏者扫描特效方案已由用户撤销并完整回退，不得重新应用。Icosahedron 特效随后按用户要求改用于 BP_InteractableBase 默认 Mesh，结果记录于 FEAT-054。",
                          "archive_file":  "archive/FEAT-056-gameplay-effect-materials.md",
                          "created":  "2026-07-29",
-                         "updated":  "2026-07-29-session112",
+                         "updated":  "2026-07-29-session114",
                          "done_criteria":  [
                                                "外部材质及依赖迁入项目语义目录，不保留 ShapesFX_Pack 正式路径",
                                                "BP_RepairGunBullet 使用迁入的 Icosahedron 特效，飞行、膨胀、命中和伤害行为正常",

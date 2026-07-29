@@ -95,6 +95,38 @@ FEAT-056 主动暂停，等待用户回来继续。当前不是技术阻塞。
 
 # 会话交接
 
+## Session117 handoff - 直接使用原版 Cube Mesh（2026-07-29）
+
+- 按用户最终要求，从 TMIIR 直接迁入原始 `SM_Geo_Cube`，正式路径为 `/Game/Actors/Interable/InteractableBase/Mesh/SM_InteractableBase_OriginalCube`。
+- `BP_InteractableBase.StaticMesh` 已改用原版 Mesh、原版 DemoMap 的 `0.5` 缩放和现有 Cube_03 材质实例；原 Mesh bounds 为 ±261.25 cm，最终显示尺寸 261.25 cm。
+- 实际 Unreal 截图：`Saved/Screenshots/Cube03_OriginalMesh_Final.png`。临时 Actor 已销毁，TestMap 未保存。
+- 无引用的自制 `SM_InteractableBase_EffectCube` 已在定向引用检查后删除；Blender 源文件仅保留在外部 Blender 工程供历史参考。
+
+## Session116 handoff - Cube_03 实机截图验证修复（2026-07-29）
+
+- 用户截图证明首版低面 Cube 只显示少量金色纵条；实际材质已赋值，但 Mesh 数据不兼容。
+- 对比原项目 `SM_Geo_Cube`：原版 1088 顶点 / 5832 面、UV `-1..1`；首版自制 Cube 仅 96 顶点 / 98 面、普通 `0..1` UV。Cube_03 的 Mask、NormalPush 与 Shrink 效果依赖原版规则拓扑/UV。
+- 最终 Blender 版本保留原版拓扑、法线和 UV，只把尺寸归一为 100 cm 并将枢轴修正到底面中心；Unreal Bounds 仍为 `(-50,-50,0)` 至 `(50,50,100)`。
+- Unreal 实际视口截图 `Saved/Screenshots/Cube03_Unreal_Verification_Compatible.png` 与近景 `Cube03_Unreal_Verification_Close.png` 已确认完整白金高密度格纹出现，不再是纵条。
+- 临时 `TEMP_Cube03_Verify` Actor 已立即销毁，TestMap 未保存。
+
+## Session115 handoff - 简约 Cube + 原版 Cube_03 特效（2026-07-29）
+
+- Blender 新建 `SM_InteractableBase_EffectCube`：100 × 100 × 100 cm、底面中心原点、1.8 cm 三段倒角、Cube UV、单材质槽；源文件、FBX、脚本和预览均位于 `D:\Blender Projects\InteractableBase`，预览已自动打开。
+- 从获批资源项目 `D:\Unreal Projects\TMIIR` 迁入原版 `MI_ShapesFx_Cube_03` 及真实依赖；参数审计确认白色正面、暖金轮廓、`T_Mask_09`、动画速度约 0.45。
+- 正式材质为 `/Game/Actors/Interable/InteractableBase/Effects/Materials/MI_InteractableCubeEffect`；`BP_InteractableBase` 已切换到新 Mesh 和唯一材质槽，编译保存成功。
+- Unreal Bounds 回读为 min `(-50,-50,0)` / max `(50,50,100)`，确认坐标与底部枢轴正确。
+- 旧 Icosahedron 实例及其专属 MatCap09/OutlineIcosahedron 在零引用确认后已删除；RepairGun 未修改，TestMap 未保存测试 Actor。
+- 迁移过程中重新出现的 6 个 `/Game/ShapesFX_Pack` 暂存副本均无项目外引用，已按供应商目录清理规则删除；正式资产只保留在 InteractableBase 语义目录。
+
+## Session114 handoff - InteractableBase 默认 Mesh 特效（2026-07-29）
+
+- 用户确认撤回 FEAT-056 的 RepairGun 子弹与 Infiltrator 扫描特效；相关代码、蓝图和材质目录已恢复到 `fb48d59`，RepairGun 不再使用 ShapesFX。
+- 用户随后明确要求把原 Icosahedron 特效用于 `BP_InteractableBase` 默认 Mesh。9 个实际依赖已通过 AssetTools 迁入 `/Game/Actors/Interable/InteractableBase/Effects` 并语义化命名。
+- `BP_InteractableBase.StaticMesh` 保留槽 0 面板材质，槽 1 使用 `MI_InteractableDefaultEffect`；蓝图已编译保存并确认依赖。
+- `BP_RepairGunBullet.BulletMesh` 仍使用 `M_RepairGun_Bullet`，`/Game/Weapons/RepairGun/Effects` 无资产；没有向 TestMap 保存测试 Actor。
+- 写入前本地安全检查点：`8a99766`。当前 active feature 恢复为 FEAT-051；FEAT-056 原方案已撤销，禁止重新应用。
+
 ## Session112 handoff - FEAT-056 暂停（2026-07-29）
 
 - 当前 active feature 已切换为 `FEAT-056`；`FEAT-051` 仅暂停，现状不变。
