@@ -135,3 +135,18 @@
 - 已仅把 `TABP_BodyLocomotion.LocomotionSM.AnimStateTransitionNode_10` 改为 `Linear / 0.1s`；Jump_End 到 Idle/Run 的 0.2 秒恢复保持不变。
 - 父模板与 `ABP_MaintenanceWorker` 均由现有编辑器 MCP 编译保存并成功回读参数；PIE 连续触发两次跳跃，结束后角色、手臂、武器和影子正常，无消失或蓝图错误。截图：`Saved/Screenshots/WindowsEditor/JumpBlend_ShooterAligned_AfterTwoJumps.png`。
 - 下一步只需用户在前台正常帧率确认落地触感；如果仍不一致，下一轮应抓接地前后逐帧 Pose/状态权重，而不是继续替换动画。
+
+## Session110 handoff - 默认相机 FOV 110（2026-07-28）
+
+- `AFPSCharacterBase.HeadCamera` 的统一默认 FOV 已设为 110；构造函数写默认值，BeginPlay 再写一次以覆盖角色 BP 可能保留的旧序列化组件值。
+- 复用现有 Unreal 编辑器执行 Live Coding，日志确认 `Live coding succeeded`。
+- PIE 运行时读取 `BP_MaintenanceWorker_C_0.HeadCamera.FieldOfView=110.0`，随后正常停止 PIE。
+- 完整 Development Editor 构建尝试被当前启用的 Live Coding 拦截，属于编辑器运行状态限制而非编译错误；未关闭或重启用户现有编辑器。
+
+## Session111 handoff - 相机偏移方案待明日继续（2026-07-29）
+
+- 今天不再修改相机结构或蓝图；FOV 继续保持 110。
+- 明天继续时不添加 SpringArm，保留 `Capsule -> HeadCamera -> ViewmodelRoot -> ArmsViewMesh`：在 `HeadCamera.RelativeLocation` 调真实视点，在 `ViewmodelRoot.RelativeTransform` 做反向补偿和最终手臂/武器构图。
+- 手臂仍完整继承 HeadCamera 旋转；`ArmsViewMesh.RelativeTransform` 只用于模型导入轴向/骨架原点校正，不用来做日常画面构图。
+- 当前工作区中的 `BP_MaintenanceWorker.uasset` 为脏状态，可能包含用户在编辑器内的调整；下次操作前先只读检查，不得盲目覆盖或纳入自动 checkpoint。
+- 本轮未执行 Git 提交，所有 FOV、文档与可能的用户蓝图改动仍保留在工作区。

@@ -66,6 +66,7 @@ AFPSCharacterBase::AFPSCharacterBase()
 	HeadCamera->SetupAttachment(RootComponent);
 	HeadCamera->SetRelativeLocation(FVector(0.f, 0.f, 77.f));
 	HeadCamera->SetRelativeRotation(FRotator::ZeroRotator);
+	HeadCamera->SetFieldOfView(110.0f);
 	HeadCamera->bUsePawnControlRotation = true;
 
 	// FEAT-042：第一人称 viewmodel 根挂在相机下。相机是 gameplay 权威，手臂作为子级天然跟随相机旋转；
@@ -158,6 +159,12 @@ void AFPSCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 	EnsureViewmodelAttachment();
+	// Character Blueprints may retain an older serialized camera value. Keep the
+	// shared first-person gameplay FOV authoritative across every player class.
+	if (HeadCamera)
+	{
+		HeadCamera->SetFieldOfView(110.0f);
+	}
 
 	if (GetCharacterMovement())
 	{
