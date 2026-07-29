@@ -1,0 +1,38 @@
+# [FEAT-056] Gameplay Effect Materials
+
+**Created:** 2026-07-29  
+**Status:** in_progress
+
+## Scope
+
+- Migrate the TMIIR Icosahedron effect material and dependencies into the RepairGun-owned `Effects` hierarchy, rename by gameplay purpose, and apply it to `BP_RepairGunBullet.BulletMesh`.
+- Migrate the TMIIR high-detail Cube effect material and dependencies into the Infiltrator scan-owned `Effects` hierarchy, rename by gameplay purpose, and display it as a terrain overlay during scanning without replacing the terrain's base material.
+- Add the external-asset directory rule to the project harness: feature ownership first, asset type second, no vendor/package directory retained in production paths.
+
+## Target Layout
+
+- `/Game/Weapons/RepairGun/Effects/Materials`
+- `/Game/Weapons/RepairGun/Effects/Textures`
+- `/Game/Weapons/RepairGun/Effects/Functions`
+- `/Game/Characters/Infiltrator/Effects/Scan/Materials`
+- `/Game/Characters/Infiltrator/Effects/Scan/Textures`
+- `/Game/Characters/Infiltrator/Effects/Scan/Functions`
+- Shared dependencies only when genuinely reused: `/Game/Effects/_Shared/<AssetType>`
+
+## Verification
+
+- [ ] Migrated assets and all dependencies load from project-semantic paths; no production reference remains under `/Game/ShapesFX_Pack`.
+- [ ] `BP_RepairGunBullet` uses the migrated Icosahedron effect and retains projectile movement, expansion, hit, and damage behavior.
+- [ ] Infiltrator scan displays the Cube terrain effect as an overlay and restores the original terrain appearance when inactive.
+- [ ] Scan origin/radius/alpha remain synchronized through the existing scan material parameter pipeline.
+- [ ] Related Blueprints/materials compile and save; scoped Redirector and reference audits pass.
+- [ ] PIE validates RepairGun projectile visuals and Infiltrator terrain scan visuals without regressions.
+
+## Log
+
+- Session112: feature created and external-asset directory rules added. Existing FEAT-051 work is paused without changing its implementation state.
+- Session112 migration audit confirmed both requested assets are `MaterialInstanceConstant` instances sharing `/Game/ShapesFX_Pack/Materials/SHAPESFX/M_ShapesFx`. Shared dependencies include the MatCap projection function, mask/gradient textures, and a default MatCap; Icosahedron and Cube each have their own MatCap and outline textures.
+- Unreal AssetTools successfully migrated the two instances and dependencies from TMIIR into the main project's temporary `/Game/ShapesFX_Pack` path. This is an intermediate staging path only; no production Blueprint currently references it.
+- The follow-up AssetTools organization/application command was interrupted by the user before completion. Read-only filesystem and Git checks show no assets under the intended `/Game/Effects`, RepairGun `Effects`, or Infiltrator `Effects` destinations; all 11 migrated assets remain under the staging path. `BP_RepairGunBullet` is not dirty, so its material assignment did not land.
+- A main-project commandlet audit loaded the materials successfully: the shared parent is an opaque, unlit Surface material. Loading `TestMap` in commandlet mode failed on the unrelated invalid-skeleton asset `/Game/Weapons/TestGun/Animation/Sequence/A_HandFire`; therefore terrain actor type and runtime overlay compatibility remain unverified. Do not treat this as a FEAT-056 implementation failure or silently repair that unrelated asset.
+- Pause requested by user. On resume, first confirm the editor/process is idle and re-check Git/asset paths. Then run the prepared Unreal AssetTools organization step once, verify destinations/references before applying either gameplay use, and do not delete the staging folder or fix Redirectors without fresh confirmation.

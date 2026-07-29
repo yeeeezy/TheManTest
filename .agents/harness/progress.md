@@ -2,9 +2,11 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-28-session108
-**当前功能：** **FEAT-051（基于原始骨架重建角色与 Enemy 动画蓝图）**
-**会话编号：** 108
+**最后更新：** 2026-07-29-session112
+**当前功能：** **FEAT-056（RepairGun 子弹与潜伏者扫描特效材质）**
+**会话编号：** 112
+
+FEAT-051 暂停并保留现状。本轮从 TMIIR 迁入两套特效材质，按正式项目目录规则整理：RepairGun 子弹使用 Icosahedron 特效；潜伏者扫描期间为地形叠加 Cube 特效，不替换地形原始材质。
 
 用户已手动删除一部分效果不佳的重定向动画和动画蓝图。现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构继续保留。
 
@@ -71,7 +73,9 @@
 
 ## 当前阻塞
 
-当前无阻塞。A/D 横移的第一人称持枪朝向与影子同步链已完成运行时验证。
+FEAT-056 主动暂停，等待用户回来继续。当前不是技术阻塞。
+
+迁入资产已暂存在 `/Game/ShapesFX_Pack`，尚未整理到正式目录，也尚未应用到 RepairGun 子弹或潜伏者扫描。主项目命令行加载 `TestMap` 时被既有的 `A_HandFire` 无有效 Skeleton 问题中断，因此地形类型仍需在现有编辑器/MCP 中只读确认；不得借本功能范围自动修复该无关动画。
 
 ---
 
@@ -90,6 +94,18 @@
 ---
 
 # 会话交接
+
+## Session112 handoff - FEAT-056 暂停（2026-07-29）
+
+- 当前 active feature 已切换为 `FEAT-056`；`FEAT-051` 仅暂停，现状不变。
+- 已在 harness 增加正式规则：外部资产迁入后去除供应商/素材包目录，按“功能归属优先、资产类型次之”整理，专属资源归所属角色/武器，共享资源才进 `/Game/Effects/_Shared`。
+- 写入前安全检查点为 commit `481198e`，包含此前 FOV 110 与 FEAT-051 文档；用户的 `BP_MaintenanceWorker.uasset` 明确排除，仍是未提交脏资产。
+- TMIIR 两个请求材质及完整依赖已通过 Unreal AssetTools 迁入主项目，目前 11 个资产全部只在临时 `/Game/ShapesFX_Pack` 下。没有资产进入目标 `Effects` 目录。
+- 目标正式目录：共享母材质/函数/通用纹理放 `/Game/Effects/_Shared/{Materials,Functions,Textures}`；Icosahedron 实例及专属纹理放 `/Game/Weapons/RepairGun/Effects/{Materials,Textures}`；Cube 实例及专属纹理放 `/Game/Characters/Infiltrator/Effects/Scan/{Materials,Textures}`。
+- 资产整理并应用到 `BP_RepairGunBullet` 的命令被用户中断。核对后 `BP_RepairGunBullet` 未变脏，说明材质赋值尚未落地；恢复时不要重新迁移，只从临时路径执行一次 AssetTools move/rename，再验证结果。
+- 共享母材质已核对为 Opaque + Unlit Surface。Cube 实例能否直接作为地形叠加尚未验证，不得直接替换地形主材质。
+- commandlet 加载 `TestMap` 时被无关旧资产 `/Game/Weapons/TestGun/Animation/Sequence/A_HandFire` 的 Invalid Skeleton 错误中断；保持范围，不自动修复。用户回来后优先利用已打开的编辑器/MCP确认实际地形 Actor/材质槽，再决定 Landscape overlay、静态地面材质叠加或项目包装材质。
+- 本轮不删除 staging 资产、不 Fix Up Redirectors、不提交结果。恢复前先检查是否仍有 UnrealEditor/UnrealEditor-Cmd 进程和当前 Git 状态。
 
 ## Session104 handoff - FEAT-051 active (2026-07-28)
 

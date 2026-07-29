@@ -1,7 +1,7 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-07-29-session111",
-    "active_feature":  "FEAT-051",
+    "last_updated":  "2026-07-29-session112",
+    "active_feature":  "FEAT-056",
     "archive_file":  "feature_archive.json",
     "features":  [
                      {
@@ -343,6 +343,24 @@
                                            ],
                          "latest_verification_evidence":  "2026-07-28-session109：只读核对 FPSShooter1 证实官方 Rifle/Pistol 实际同样引用 Unarmed MM_Jump/MM_Fall_Loop/MM_Land，素材来源不是差异。官方 Rifle 状态机使用 Linear，最短跳跃过渡为 0.1 秒；本项目 To Land→Jump_End 曾统一成 0.2 秒 Hermite，造成接地后落地 Pose 被拖软。现仅将 AnimStateTransitionNode_10 对齐为 Linear/0.1 秒，保留 Jump_End 到地面 locomotion 的 0.2 秒恢复。TABP_BodyLocomotion 与 ABP_MaintenanceWorker 编译保存并回读参数成功；PIE 连续两次跳跃后正常回到持枪地面姿势，无消失或编译/加载错误。待用户前台确认主观落地节奏。",
                          "verification_evidence":  "2026-07-26-session80：MCP 复扫确认玩家 ABP_BodyLocomotion、ALI_WeaponAnim、TABP_Firearm_UpperBodyBase 仍存在；Enemy 侧无骨架模板 ABP_HumanoidEnemy 与 Phantom 子 AnimBP ABP_Phantom 仍存在。2026-07-26-session88：用户将玩家模板整理为 TABP_BodyLocomotion，创建并编译 ABP_MaintenanceWorker、BS_RunWalk_MaintenanceWorker、ABP_RepairGun_AnimLayer 与 BS_WalkRun_RepairGun；维修工临时统一使用手臂 Skeleton。AEquipmentBase 已删除 EquipmentAnimClass 整体替换路径，只保留 EquipmentAnimLayerClass；TheManTestEditor Win64 Development 完整构建 41/41 成功。2026-07-26-session89：暂停玩家原地转身，删除 BodyVisualYaw、固定 45 度转步及 TurnRootYaw 曲线驱动 C++ 链；BodyRoot 改为直接跟随 Actor yaw，TheManTestEditor 编译 7/7 成功。用户已清理 TABP_BodyLocomotion 的 Turn 节点；Game Animation Sample 转向系统完成只读调研。RepairGun 子弹根 CollisionSphere 的 Static Mobility 问题经 MCP 与 PIE 日志定位，恢复 Movable 后用户确认修复。2026-07-27-session90：修复 A/D 横移时 FP 手臂/枪口被侧移 pelvis 局部旋转带偏；在 TABP_Firearm_UpperBodyBase 的既有 spine_01 Layered Blend per Bone 开启 Mesh Space Rotation Blend。武器模板、RepairGun 子层、玩家模板与维修工子 AnimBP 均经 MCP 编译保存成功。PIE 中 A/D 各 5 组匹配动画相位的 ArmsViewMesh.hand_r 相对相机旋转逐项一致，而 spine_01 保留方向差异；CharacterMesh0/ArmsViewMesh 均运行 ABP_MaintenanceWorker_C，ShadowBodyMesh/LegsMesh 的 Leader Pose 均为 CharacterMesh0，证明持枪朝向修复且同步链未拆分。2026-07-27-session99：修复切入 RepairGun 前第一人称手臂/枪在最终 Idle 闪帧；Montage 准备阶段同步隐藏 ArmsViewMesh 与新装备，起始姿势评估后同帧显示。暂停 PIE 验证准备态 arms=false/weapon hidden=true，首个可见态 arms=true/weapon hidden=false/Montage=0.3333334；快速 4 连切、W=250 与 ShadowBodyMesh Leader=CharacterMesh0 回归通过。"
+                     },
+                     {
+                         "id":  "FEAT-056",
+                         "name":  "RepairGun 子弹与潜伏者扫描特效材质",
+                         "status":  "in_progress",
+                         "description":  "从 TMIIR 迁入 Icosahedron 与 Cube 特效材质及依赖，按项目功能归属和资产类型整理并按用途重命名；Icosahedron 应用于 RepairGun 子弹，Cube 在潜伏者扫描时作为地形叠加效果，不替换地形原始材质。",
+                         "archive_file":  "archive/FEAT-056-gameplay-effect-materials.md",
+                         "created":  "2026-07-29",
+                         "updated":  "2026-07-29-session112",
+                         "done_criteria":  [
+                                               "外部材质及依赖迁入项目语义目录，不保留 ShapesFX_Pack 正式路径",
+                                               "BP_RepairGunBullet 使用迁入的 Icosahedron 特效，飞行、膨胀、命中和伤害行为正常",
+                                               "潜伏者扫描期间地形显示 Cube 叠加特效，结束后恢复原地形视觉",
+                                               "扫描叠加继续由现有 ScanOrigin / ScanTime / ScanAlpha 参数链驱动",
+                                               "相关材质和蓝图编译保存成功，引用与定向 Redirector 检查通过",
+                                               "PIE 同时验证 RepairGun 子弹与潜伏者扫描效果无回归"
+                                           ],
+                         "verification_evidence":  "2026-07-29-session112：TMIIR 两个材质实例及 9 个依赖已通过 Unreal AssetTools 迁入主项目临时 /Game/ShapesFX_Pack，共 11 个资产；只读核对母材质为 Opaque/Unlit Surface。正式目录整理、RepairGun 蓝图赋材质、扫描地形叠加和 PIE 均尚未完成。整理命令被用户中断后核对确认目标 Effects 目录不存在且 BP_RepairGunBullet 未变脏；恢复时不得重复迁移。"
                      }
                  ],
     "_说明":  "主索引仅保留未完成、受阻及待改进功能；已完成项移至 feature_archive.json。功能详细历史仍以 archive/FEAT-*.md 为准。"
