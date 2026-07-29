@@ -5,6 +5,8 @@
 #include "ScanEffectComponent.generated.h"
 
 class UMaterialParameterCollection;
+class UMaterialInterface;
+class UDecalComponent;
 
 /**
  * UScanEffectComponent
@@ -35,6 +37,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Scan")
 	UMaterialParameterCollection* ScanMPC;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Scan|Terrain Overlay")
+	UMaterialInterface* TerrainOverlayMaterial = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Scan|Terrain Overlay", meta = (ClampMin = "100.0"))
+	float TerrainOverlayDepth = 5000.f;
+
 	// 扫描波从 0 扩张到最大的总时长（秒）
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Scan")
 	float ScanDuration = 2.0f;
@@ -52,6 +60,9 @@ private:
 	bool    bRetracting   = false;
 	float   ScanProgress  = 0.0f;
 	FVector WorldSpaceOrigin = FVector::ZeroVector;
+
+	UPROPERTY(Transient)
+	UDecalComponent* TerrainOverlayDecal = nullptr;
 
 	// 本次扫描已触发高亮的 Actor，防止重复触发
 	TArray<TWeakObjectPtr<AActor>> AlreadyHighlighted;

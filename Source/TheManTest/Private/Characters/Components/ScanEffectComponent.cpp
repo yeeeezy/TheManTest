@@ -1,5 +1,6 @@
 #include "Characters/Components/ScanEffectComponent.h"
 #include "Characters/Components/HighlightComponent.h"
+#include "Components/DecalComponent.h"
 #include "Kismet/KismetMaterialLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Materials/MaterialParameterCollection.h"
@@ -31,6 +32,23 @@ void UScanEffectComponent::TriggerScan(FVector Origin)
 	bScanning     = true;
 	bRetracting   = false;
 	AlreadyHighlighted.Empty();
+
+	if (TerrainOverlayMaterial)
+	{
+		if (!TerrainOverlayDecal)
+		{
+			TerrainOverlayDecal = NewObject<UDecalComponent>(GetOwner(), TEXT("ScanTerrainOverlayDecal"));
+			TerrainOverlayDecal->RegisterComponent();
+			TerrainOverlayDecal->SetSortOrder(10);
+			TerrainOverlayDecal->FadeScreenSize = 0.f;
+		}
+
+		TerrainOverlayDecal->SetDecalMaterial(TerrainOverlayMaterial);
+		TerrainOverlayDecal->DecalSize = FVector(TerrainOverlayDepth, MaxScanRadius, MaxScanRadius);
+		TerrainOverlayDecal->SetWorldLocation(Origin + FVector(0.f, 0.f, TerrainOverlayDepth * 0.5f));
+		TerrainOverlayDecal->SetWorldRotation(FRotator(-90.f, 0.f, 0.f));
+		TerrainOverlayDecal->SetVisibility(true);
+	}
 	SetComponentTickEnabled(true);
 }
 
@@ -44,6 +62,10 @@ void UScanEffectComponent::RetractScan()
 	SetComponentTickEnabled(false);
 	UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScanMPC, ParamAlphaName, 0.f);
 	UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScanMPC, ParamTimeName, 0.f);
+	if (TerrainOverlayDecal)
+	{
+		TerrainOverlayDecal->SetVisibility(false);
+	}
 }
 
 void UScanEffectComponent::TickComponent(float DeltaTime, ELevelTick TickType,
