@@ -591,6 +591,23 @@
                                                "Unreal bounds 为 48.50 × 29.88 × 104.91 cm，材质为 M_MannequinUE4_Body ✓"
                                            ],
                          "verification_evidence":  "2026-07-26-session87：Blender 最终模型 6450 顶点 / 11444 面、67 骨骼、1 材质槽；自动预览确认无手部残片。Unreal MCP 验证 Skeleton、48.50 × 29.88 × 104.91 cm bounds 和 M_MannequinUE4_Body 材质路径均正确。"
+                     },
+                     {
+                         "id": "FEAT-057",
+                         "name": "Phantom 原始 Rifle_01 小白人动画重建",
+                         "status": "done",
+                         "description": "直接使用 TMIIR /Game/Rifle_01 的原始 Mesh、Skeleton 与原动画重建 Phantom；巡逻只使用 Relaxed 动画，发现目标后才进入 Aim 动画集。",
+                         "archive_file": "archive/FEAT-057-phantom-original-rifle-animation.md",
+                         "created": "2026-07-30",
+                         "updated": "2026-07-30-session122-feat057-complete",
+                         "done_criteria": [
+                             "迁入并使用 Rifle_01 原始 Mesh/Skeleton 和必要最终动画，不迁入重定向中间资产 ✓",
+                             "Phantom AnimBP 使用原始 Skeleton 且可编译 ✓",
+                             "巡逻 Idle/Walk/Run/环视全部为 Relaxed；战斗状态才使用 Aim ✓",
+                             "随机环视支持 W2_Stand_Relaxed_Fgt_v1_IP 等多个变体 ✓",
+                             "Development Editor 构建与基础 PIE 动画切换通过 ✓"
+                         ],
+                         "verification_evidence": "TMIIR 只读审计确认原 Mesh 与动画共用 UE4_Mannequin_Skeleton。AssetTools 迁入并整理 51 个正式资产到 /Game/Enemy/Phantom/OriginalRifle，无 IK Rig、IK Retargeter 或源 FBX。ABP_Phantom_OriginalRifle、Relaxed/Aim 两套 BlendSpace 编译保存且零 Cyber01 依赖；BP_Phantom 已使用原 SK_Mannequin、AnimBP 和 M4。临时 PIE 验证角色可见落地、运行时 Mesh/AnimInstance/Patrol 状态正确，临时 Actor 已销毁且 TestMap 未保存。关闭相关编辑器后 TheManTestEditor Win64 Development 完整构建 40/40 actions，Result: Succeeded。"
                      }
                  ],
     "_说明":  "已完成功能的只读历史索引。通常无需在会话启动时读取；需要查询历史功能时按 ID 定向读取。"

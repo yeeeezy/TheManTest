@@ -1,7 +1,7 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-07-29-session121",
-    "active_feature":  "FEAT-051",
+    "last_updated":  "2026-07-30-session122",
+    "active_feature":  "FEAT-058",
     "archive_file":  "feature_archive.json",
     "features":  [
                      {
@@ -327,11 +327,11 @@
                      {
                          "id":  "FEAT-051",
                          "name":  "基于原始骨架重建角色与 Enemy 动画蓝图",
-                         "status":  "in_progress",
-                         "description":  "保留现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构；玩家继续让 GetMesh、ArmsViewMesh 与武器 Linked Anim Layer 共用玩家 Skeleton，下半身可使用效果合格的重定向动画；Enemy 优先使用动画原始 Skeleton，并从现有无骨架模板创建对应骨架的子 AnimBP。具体动画资产删除、选择与 Override 由用户在编辑器中手动完成。",
+                         "status":  "needs_improvement",
+                         "description":  "保留现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构；Enemy 原始骨架方向继续有效。2026-07-30 起 Phantom 的具体重建与战斗扩展拆分为 FEAT-057 至 FEAT-063，FEAT-051 不再作为 active feature。",
                          "archive_file":  "archive/FEAT-051-original-skeleton-character-enemy-animation.md",
                          "created":  "2026-07-26",
-                         "updated":  "2026-07-29-session111",
+                         "updated":  "2026-07-30-session122",
                          "done_criteria":  [
                                                "玩家 GetMesh / ArmsViewMesh / 武器 Linked Anim Layer 继续使用同一玩家 Skeleton",
                                                "玩家下半身 locomotion 仅保留效果可接受的重定向动画",
@@ -361,6 +361,42 @@
                                                "PIE 同时验证 RepairGun 子弹与潜伏者扫描效果无回归"
                                            ],
                          "verification_evidence":  "2026-07-29-session112：TMIIR 两个材质实例及 9 个依赖已通过 Unreal AssetTools 迁入主项目临时 /Game/ShapesFX_Pack，共 11 个资产；只读核对母材质为 Opaque/Unlit Surface。正式目录整理、RepairGun 蓝图赋材质、扫描地形叠加和 PIE 均尚未完成。整理命令被用户中断后核对确认目标 Effects 目录不存在且 BP_RepairGunBullet 未变脏；恢复时不得重复迁移。"
+                     },
+                     {
+                         "id": "FEAT-058", "name": "通用人形 Enemy 巡逻感知与丢失目标搜索", "status": "in_progress",
+                         "description": "把路点巡逻、到点随机环视、发现目标、丢失目标后冲刺到 LastKnownLocation 并随机环视的状态流做成人形 Enemy 公共能力。",
+                         "archive_file": "archive/FEAT-058-humanoid-patrol-perception-search.md", "created": "2026-07-30", "updated": "2026-07-30-session122-feat058-started",
+                         "done_criteria": ["通用状态流可被多个 Humanoid Enemy 复用", "丢失目标依次进入 SearchRush 和 SearchScan", "搜索结束后恢复最近巡逻路径", "行为树、黑板与 PIE 验证通过"], "verification_evidence": ""
+                     },
+                     {
+                         "id": "FEAT-059", "name": "通用掩体系统与测试掩体资产", "status": "planned",
+                         "description": "建立可查询的掩体 Actor/接口与候选点选择；在外部 Blender 工程生成测试掩体模型和贴图，仅迁入最终资产。",
+                         "archive_file": "archive/FEAT-059-humanoid-cover-system.md", "created": "2026-07-30", "updated": "2026-07-30-session122",
+                         "done_criteria": ["掩体类可被不同人形 Enemy 查询", "可按目标方向、距离和遮挡筛选掩体", "Blender 源文件留在 D:/Blender Projects，最终资产按项目语义导入", "PIE 遮挡验证通过"], "verification_evidence": ""
+                     },
+                     {
+                         "id": "FEAT-060", "name": "通用敌人弹匣三连发持续扫射与换弹", "status": "planned",
+                         "description": "实现可复用的敌人普通射击弹匣组件/数据：默认20发，只由普通射击消耗；支持三连发、持续扫射、空匣换弹和可替换子弹类。",
+                         "archive_file": "archive/FEAT-060-enemy-magazine-fire-modes.md", "created": "2026-07-30", "updated": "2026-07-30-session122",
+                         "done_criteria": ["默认20发弹匣仅普通射击消耗", "三连发和持续扫射可复用且可配置", "弹空后换弹并恢复射击", "GAS 能力可被其他 Enemy 数据化复用"], "verification_evidence": ""
+                     },
+                     {
+                         "id": "FEAT-061", "name": "Phantom 翻滚找掩体与战斗决策", "status": "planned",
+                         "description": "在通用掩体和射击模块之上实现 Phantom 翻滚到掩体、射击与换弹的战斗决策；缺失动画允许显式空槽。",
+                         "archive_file": "archive/FEAT-061-phantom-cover-roll-combat.md", "created": "2026-07-30", "updated": "2026-07-30-session122",
+                         "done_criteria": ["Phantom 可选择有效掩体并翻滚接近", "射击、换弹与移动互斥正确", "缺失动画/特效以可配置空槽记录", "战斗行为树不硬编码 Phantom 技能类"], "verification_evidence": ""
+                     },
+                     {
+                         "id": "FEAT-062", "name": "Phantom 二阶段透明穿透与范围轰炸", "status": "planned",
+                         "description": "二阶段保留一阶段全部能力，新增透明且玩家攻击穿透的相位能力，并把额外攻击扩展为范围轰炸。",
+                         "archive_file": "archive/FEAT-062-phantom-phase2-cloak-barrage.md", "created": "2026-07-30", "updated": "2026-07-30-session122",
+                         "done_criteria": ["二阶段继续可用翻滚、掩体、普通射击和换弹", "透明期间玩家攻击不命中且视觉状态可恢复", "范围轰炸有独立 GAS 能力和可替换弹体/特效槽", "阶段切换与伤害/碰撞 PIE 验证通过"], "verification_evidence": ""
+                     },
+                     {
+                         "id": "FEAT-063", "name": "Phantom 行为树整合与完整验收", "status": "planned",
+                         "description": "整合通用行为树/可选子树、Phantom 技能数据、测试掩体和两阶段流程，完成最终回归。",
+                         "archive_file": "archive/FEAT-063-phantom-integration-verification.md", "created": "2026-07-30", "updated": "2026-07-30-session122",
+                         "done_criteria": ["公共行为树可供其他 Humanoid Enemy 复用", "Phantom 专属能力通过数据/任务或可选子树注入", "全蓝图编译和引用审计通过", "PIE 完整验证巡逻、发现、丢失、掩体、射击、换弹和二阶段"], "verification_evidence": ""
                      }
                  ],
     "_说明":  "主索引仅保留未完成、受阻及待改进功能；已完成项移至 feature_archive.json。功能详细历史仍以 archive/FEAT-*.md 为准。"

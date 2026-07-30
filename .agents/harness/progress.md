@@ -2,11 +2,17 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-29-session121
-**当前功能：** **FEAT-051（原始骨架角色与 Enemy 动画蓝图，当前穿插扫描测试）**
-**会话编号：** 121
+**最后更新：** 2026-07-30-session122-feat058-started
+**当前功能：** **FEAT-058（通用人形 Enemy 巡逻感知与丢失目标搜索）**
+**会话编号：** 122
 
-用户重新要求临时测试扫描能力。`DefaultAbilityClasses` 已上移到 `AFPSCharacterBase`，维修工临时持有扫描技能；全息 UI 已删除且不再参与逻辑。当前工作版为世界空间白金双层扫描环，真实 E 开关、Development/DebugGame 构建、移动与双跳均已验证。用户暂停今日迭代，并明确最终目标不是白金静态近似，而是 TMIIR 原版那种绿色、动感、科技感效果。下次必须先在 TMIIR DemoMap 只读运行并录制原效果完整循环，拆解 Panner、Mask、正反面、格栅描边、MatCap、Normal Push、Shrink 与消散节奏，再重做场景适配版；不得只凭静态截图推断。
+用户要求将 Phantom 重做为直接使用 TMIIR `/Game/Rifle_01` 原始小白人 Mesh、Skeleton 和原动画，不再走重定向。整套工作已拆为 FEAT-057 至 FEAT-063，一次只激活一个；FEAT-057 已完成并归档，当前推进通用巡逻、感知与丢失目标搜索。
+
+FEAT-057 的动画语义已锁定：未发现玩家与丢失后搜索只允许 Relaxed 动画；巡逻点与搜索点从多个 `W2_Stand_Relaxed_Fgt_v*_IP` 随机环视；发现玩家后才切换 Aim 动画集。TheManTest 禁止创建任何 Retargeter 或重定向中间资产，只接收与原始 Skeleton 兼容的最终资产。
+
+FEAT-057 已完成原资产迁入、正式目录整理、Relaxed Patrol/Aim BlendSpace、新原骨架 AnimBP、全部 Cyber 动画覆盖、BP_Phantom Mesh/AnimClass/M4 切换、资产校验和基础 PIE。临时 PIE 确认 Phantom 运行时使用 `SK_Mannequin + ABP_Phantom_OriginalRifle_C`，Patrol 状态正常并落地；临时 Actor 已销毁，TestMap 未保存。关闭相关 Unreal Editor/Live Coding 进程后，`TheManTestEditor Win64 Development` 完整构建 40/40 actions 成功。
+
+FEAT-058 将在公共 `AHumanoidEnemy` / `AHumanoidAIController` 层补齐 `Combat → SearchRush → SearchScan → Patrol`，复用 LastKnownPlayerLocation、最近巡逻点恢复和 Relaxed 随机环视，不写 Phantom 专属硬编码。
 
 用户已手动删除一部分效果不佳的重定向动画和动画蓝图。现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构继续保留。
 
