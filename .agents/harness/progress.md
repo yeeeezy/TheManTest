@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-29-session119
+**最后更新：** 2026-07-29-session121
 **当前功能：** **FEAT-051（原始骨架角色与 Enemy 动画蓝图，当前穿插扫描测试）**
-**会话编号：** 119
+**会话编号：** 121
 
-用户重新要求临时测试扫描能力。`DefaultAbilityClasses` 已从潜行者专属类上移到 `AFPSCharacterBase`，维修工已临时配置扫描技能、`MPC_ScanEffect` 与地形材质。用户已删除效果不佳的全息 UI；扫描技能现以独立 `bScanActive` 切换，不再依赖 UI 类。真实 E 输入验证第一次显示原红色轮廓/扫描与新增地形效果，第二次关闭；无全息 Actor。完整 Development Editor 构建和 Live Coding 均通过，移动与连续两次跳跃回归正常。下一步由用户前台确认视觉。
+用户重新要求临时测试扫描能力。`DefaultAbilityClasses` 已上移到 `AFPSCharacterBase`，维修工临时持有扫描技能；全息 UI 已删除且不再参与逻辑。当前工作版为世界空间白金双层扫描环，真实 E 开关、Development/DebugGame 构建、移动与双跳均已验证。用户暂停今日迭代，并明确最终目标不是白金静态近似，而是 TMIIR 原版那种绿色、动感、科技感效果。下次必须先在 TMIIR DemoMap 只读运行并录制原效果完整循环，拆解 Panner、Mask、正反面、格栅描边、MatCap、Normal Push、Shrink 与消散节奏，再重做场景适配版；不得只凭静态截图推断。
 
 用户已手动删除一部分效果不佳的重定向动画和动画蓝图。现有 C++ AnimInstance、无骨架 Template AnimBP 和状态机驱动架构继续保留。
 

@@ -6,6 +6,7 @@
 
 class UMaterialParameterCollection;
 class UMaterialInterface;
+class UMaterialInstanceDynamic;
 class UDecalComponent;
 
 /**
@@ -64,6 +65,9 @@ private:
 	UPROPERTY(Transient)
 	UDecalComponent* TerrainOverlayDecal = nullptr;
 
+	UPROPERTY(Transient)
+	UMaterialInstanceDynamic* TerrainOverlayMID = nullptr;
+
 	// 本次扫描已触发高亮的 Actor，防止重复触发
 	TArray<TWeakObjectPtr<AActor>> AlreadyHighlighted;
 
@@ -73,4 +77,7 @@ private:
 	static const FName ParamTimeName;
 	static const FName ParamOriginName;
 	static const FName ParamAlphaName;
+	static const FName TerrainOriginParamName;
+	static const FName TerrainRadiusParamName;
+	static const FName TerrainOpacityParamName;
 };
