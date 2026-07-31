@@ -74,7 +74,6 @@ void AHumanoidEnemy::SetAIState(EHumanoidEnemyAIState NewState)
 		GetWorldTimerManager().ClearTimer(SearchScanTimer);
 		bIsPatrolScanning  = false;
 		bIsStoppingAtPoint = false;
-		bUseDirectMoveFallback = false;
 		// 战斗朝向由 AIController Focus 驱动，关闭速度方向自动旋转
 		GetCharacterMovement()->bOrientRotationToMovement = false;
 		bUseControllerRotationYaw                         = true;
@@ -97,7 +96,6 @@ void AHumanoidEnemy::SetAIState(EHumanoidEnemyAIState NewState)
 	}
 	else if (NewState == EHumanoidEnemyAIState::SearchScan)
 	{
-		bUseDirectMoveFallback = false;
 		GetCharacterMovement()->StopMovementImmediately();
 		GetCharacterMovement()->MaxWalkSpeed = 0.f;
 		bIsStoppingAtPoint = true;
@@ -130,28 +128,10 @@ void AHumanoidEnemy::StartLostTargetSearch(const FVector& LastKnownLocation)
 	{
 		const EPathFollowingRequestResult::Type Result = AIC->MoveToLocation(
 			SearchDestination, SearchAcceptanceRadius, true, true, true, false);
-		if (Result == EPathFollowingRequestResult::Failed)
-		{
-			BeginDirectMoveFallback(SearchDestination);
-		}
-		else if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
+		if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
 		{
 			HandleSearchArrival();
 		}
-	}
-}
-
-void AHumanoidEnemy::SetPatrolPoints(const TArray<APatrolPoint*>& InPatrolPoints)
-{
-	PatrolPoints.Reset(InPatrolPoints.Num());
-	for (APatrolPoint* Point : InPatrolPoints)
-	{
-		if (IsValid(Point)) PatrolPoints.Add(Point);
-	}
-	CurrentPatrolIndex = FindNearestPatrolPointIndex();
-	if (AIState == EHumanoidEnemyAIState::Patrol && !PatrolPoints.IsEmpty())
-	{
-		MoveToNextPatrolPoint();
 	}
 }
 
@@ -170,23 +150,6 @@ void AHumanoidEnemy::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (bUseDirectMoveFallback &&
-		(AIState == EHumanoidEnemyAIState::Patrol || AIState == EHumanoidEnemyAIState::SearchRush))
-	{
-		const float Acceptance = AIState == EHumanoidEnemyAIState::SearchRush ? SearchAcceptanceRadius : 50.f;
-		if (FVector::Dist2D(GetActorLocation(), DirectMoveDestination) <= Acceptance)
-		{
-			bUseDirectMoveFallback = false;
-			GetCharacterMovement()->StopMovementImmediately();
-			if (AIState == EHumanoidEnemyAIState::SearchRush) HandleSearchArrival();
-			else HandlePatrolArrival();
-		}
-		else
-		{
-			AddMovementInput((DirectMoveDestination - GetActorLocation()).GetSafeNormal2D(), 1.f);
-		}
-	}
-
 	if (bPendingTurn)
 	{
 		FRotator Current = GetActorRotation();
@@ -195,7 +158,6 @@ void AHumanoidEnemy::Tick(float DeltaSeconds)
 	}
 
 	// 切换动作方案（已注释）
-	// if (bIsStoppingAtPoint && ...) { RequestDirectMove(...); }
 
 	// 摩擦力方案：接近路点时提前线性降速，让 AI 停车时角色已处于低速，blend space 有减速过程可播
 	if (!bIsStoppingAtPoint && !bPendingTurn && PatrolPoints.IsValidIndex(CurrentPatrolIndex))
@@ -241,23 +203,12 @@ void AHumanoidEnemy::MoveToNextPatrolPoint()
 
 	GetCharacterMovement()->MaxWalkSpeed = PatrolWalkSpeed;
 
-	const FVector Destination = PatrolPoints[CurrentPatrolIndex]->GetActorLocation();
 	const EPathFollowingRequestResult::Type Result = AIC->MoveToLocation(
-		Destination, 50.f, true, true, true, false);
-	if (Result == EPathFollowingRequestResult::Failed)
-	{
-		BeginDirectMoveFallback(Destination);
-	}
-	else if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
+		PatrolPoints[CurrentPatrolIndex]->GetActorLocation(), 50.f, true, true, true, false);
+	if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
 	{
 		HandlePatrolArrival();
 	}
-}
-
-void AHumanoidEnemy::BeginDirectMoveFallback(const FVector& Destination)
-{
-	DirectMoveDestination = Destination;
-	bUseDirectMoveFallback = true;
 }
 
 void AHumanoidEnemy::TryTurnOrMove()
@@ -371,7 +322,8 @@ void AHumanoidEnemy::OnPatrolMoveCompleted(FAIRequestID RequestID, const FPathFo
 		}
 		else
 		{
-			BeginDirectMoveFallback(SearchDestination);
+			SetAIState(EHumanoidEnemyAIState::Patrol);
+			ResumeNearestPatrol();
 		}
 		return;
 	}
@@ -380,9 +332,5 @@ void AHumanoidEnemy::OnPatrolMoveCompleted(FAIRequestID RequestID, const FPathFo
 	if (Result.IsSuccess())
 	{
 		HandlePatrolArrival();
-	}
-	else if (PatrolPoints.IsValidIndex(CurrentPatrolIndex))
-	{
-		BeginDirectMoveFallback(PatrolPoints[CurrentPatrolIndex]->GetActorLocation());
 	}
 }

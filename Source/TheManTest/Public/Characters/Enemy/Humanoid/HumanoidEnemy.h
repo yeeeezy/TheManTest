@@ -47,10 +47,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Enemy|Patrol")
 	void ResumeNearestPatrol();
 
-	// 支持关卡实例与运行时生成的敌人复用同一巡逻逻辑；设置后会从最近路点启动。
-	UFUNCTION(BlueprintCallable, Category = "Enemy|Patrol")
-	void SetPatrolPoints(const TArray<APatrolPoint*>& InPatrolPoints);
-
 	// 丢失目标后的公共搜索入口：冲向最后已知位置，到达后原地随机环视，再恢复最近巡逻点。
 	UFUNCTION(BlueprintCallable, Category = "Enemy|Search")
 	void StartLostTargetSearch(const FVector& LastKnownLocation);
@@ -155,11 +151,8 @@ private:
 	FTimerHandle ScanDelayTimer;
 	FTimerHandle SearchScanTimer;
 	FVector SearchDestination = FVector::ZeroVector;
-	FVector DirectMoveDestination = FVector::ZeroVector;
-	bool bUseDirectMoveFallback = false;
 
 	void MoveToNextPatrolPoint();
-	void BeginDirectMoveFallback(const FVector& Destination);
 	void HandlePatrolArrival();
 	void HandleSearchArrival();
 	void TryTurnOrMove();

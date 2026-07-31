@@ -10,12 +10,13 @@
 #include "Equipment/EquipmentBase/EquipmentBase.h"
 #include "Characters/Enemy/Humanoid/Phantom/Phantom.h"
 #include "Characters/Enemy/Cover/EnemyCoverPoint.h"
-#include "Actors/PatrolPoint.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Blueprint.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "Tests/AutomationEditorCommon.h"
 #include "Tests/AutomationCommon.h"
 #include "Editor.h"
@@ -24,12 +25,17 @@
 #include "ImageUtils.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Camera/CameraComponent.h"
-#include "Perception/AIPerceptionComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Animation/AnimBlueprint.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/BlendSpace.h"
+#include "Animation/PoseSnapshot.h"
+#include "Animation/AnimSequence.h"
+#include "Animation/AnimClassInterface.h"
+#include "UObject/UnrealType.h"
+#include "Animation/AnimNode_StateMachine.h"
+#include "Animation/AnimNode_AssetPlayerBase.h"
+#include "AnimNodes/AnimNode_BlendSpacePlayer.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomAnimationOverridesTest,
 	"TheManTest.Enemy.Phantom.AnimationOverrides",
@@ -52,6 +58,37 @@ bool FPhantomAnimationOverridesTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Relaxed idle override"), HasOverride(TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/W2_Stand_Relaxed_Idle_IP.W2_Stand_Relaxed_Idle_IP")));
 	TestTrue(TEXT("Patrol directional BlendSpace override"), HasOverride(TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_RelaxedPatrol2D.BS_Phantom_RelaxedPatrol2D")));
 	TestTrue(TEXT("Aim directional BlendSpace override"), HasOverride(TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_AimLocomotion.BS_Phantom_AimLocomotion")));
+	if (UBlendSpace* Patrol = LoadObject<UBlendSpace>(nullptr,
+		TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_RelaxedPatrol2D.BS_Phantom_RelaxedPatrol2D")))
+	{
+		TestEqual(TEXT("Patrol BlendSpace X axis is Speed"), Patrol->GetBlendParameter(0).DisplayName, FString(TEXT("Speed")));
+		TestEqual(TEXT("Patrol BlendSpace Y axis is Direction"), Patrol->GetBlendParameter(1).DisplayName, FString(TEXT("Direction")));
+		TArray<FBlendSampleData> RuntimeSamples;
+		int32 TriangulationIndex = INDEX_NONE;
+		TestTrue(TEXT("Patrol BlendSpace resolves runtime samples at walk speed"),
+			Patrol->GetSamplesFromBlendInput(FVector(150.f, 0.f, 0.f), RuntimeSamples, TriangulationIndex, true)
+			&& !RuntimeSamples.IsEmpty());
+		for (const FBlendSample& Sample : Patrol->GetBlendSamples())
+		{
+			TestNotNull(TEXT("Every patrol BlendSpace sample has animation data"), Sample.Animation.Get());
+		}
+	}
+	if (UAnimSequence* Idle = LoadObject<UAnimSequence>(nullptr,
+		TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/W2_Stand_Relaxed_Idle_IP.W2_Stand_Relaxed_Idle_IP")))
+	{
+		const USkeleton* Skeleton = Idle->GetSkeleton();
+		const int32 UpperArmIndex = Skeleton ? Skeleton->GetReferenceSkeleton().FindBoneIndex(TEXT("upperarm_l")) : INDEX_NONE;
+		FTransform Sample = FTransform::Identity;
+		if (UpperArmIndex != INDEX_NONE)
+		{
+			Idle->GetBoneTransform(Sample, FSkeletonPoseBoneIndex(UpperArmIndex), FAnimExtractContext(0.5), true);
+		}
+		const FTransform Reference = UpperArmIndex != INDEX_NONE
+			? Skeleton->GetReferenceSkeleton().GetRefBonePose()[UpperArmIndex] : FTransform::Identity;
+		const float IdleDelta = Sample.GetRotation().AngularDistance(Reference.GetRotation());
+		AddInfo(FString::Printf(TEXT("PHANTOM_IDLE_SOURCE pose_delta=%.3f length=%.3f"), IdleDelta, Idle->GetPlayLength()));
+		TestTrue(TEXT("Relaxed idle source contains a non-reference upper-arm pose"), IdleDelta > 0.1f);
+	}
 	for (int32 Index = 1; Index <= 4; ++Index)
 	{
 		TestTrue(*FString::Printf(TEXT("Patrol scan variant %d override"), Index),
@@ -61,7 +98,7 @@ bool FPhantomAnimationOverridesTest::RunTest(const FString& Parameters)
 	UBlendSpace* Aim = LoadObject<UBlendSpace>(nullptr,
 		TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_AimLocomotion.BS_Phantom_AimLocomotion"));
 	TestNotNull(TEXT("Aim 2D BlendSpace"), Aim);
-	if (const UBlendSpace* AimBlendSpace = Cast<UBlendSpace>(Aim))
+	if (UBlendSpace* AimBlendSpace = Cast<UBlendSpace>(Aim))
 	{
 		const TArray<FBlendSample>& Samples = AimBlendSpace->GetBlendSamples();
 		bool bHasNegativeDirection = false;
@@ -80,6 +117,11 @@ bool FPhantomAnimationOverridesTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("Aim BlendSpace covers positive direction"), bHasPositiveDirection);
 		TestTrue(TEXT("Aim BlendSpace has moving samples"), bHasMovingSample);
 		TestTrue(TEXT("Aim BlendSpace has idle center"), bHasIdleCenter);
+		TArray<FBlendSampleData> RuntimeSamples;
+		int32 TriangulationIndex = INDEX_NONE;
+		TestTrue(TEXT("Aim BlendSpace resolves runtime directional samples"),
+			AimBlendSpace->GetSamplesFromBlendInput(FVector(45.f, 300.f, 0.f), RuntimeSamples, TriangulationIndex, true)
+			&& !RuntimeSamples.IsEmpty());
 		AddInfo(FString::Printf(TEXT("PHANTOM_AIM_BLENDSPACE samples=%d"), Samples.Num()));
 	}
 	return !HasAnyErrors();
@@ -198,7 +240,7 @@ bool FValidatePhantomPIECommand::Update()
 			Phantom->GetMagazineComponent()->GetCurrentAmmo(), 20);
 		Phantom->SetAIState(EHumanoidEnemyAIState::Aim);
 		Phantom->StartLostTargetSearch(Phantom->GetActorLocation() + FVector(200.f, 0.f, 0.f));
-		Test->TestNotEqual(TEXT("PIE lost target exits combat even when TestMap has no NavMesh"),
+		Test->TestNotEqual(TEXT("PIE lost target exits combat and begins the NavMesh search flow"),
 			Phantom->GetAIState(), EHumanoidEnemyAIState::Aim);
 		Phantom->SetCombatPhase(2);
 		Test->TestTrue(TEXT("PIE phase two cloak"), Phantom->IsCloaked());
@@ -294,123 +336,103 @@ private:
 	int32 RangeMode = 0;
 };
 
-class FValidateNoNavPatrolPIECommand final : public IAutomationLatentCommand
+class FAuditPlacedPhantomAnimationPIECommand final : public IAutomationLatentCommand
 {
 public:
-	explicit FValidateNoNavPatrolPIECommand(FAutomationTestBase* InTest) : Test(InTest) {}
+	explicit FAuditPlacedPhantomAnimationPIECommand(FAutomationTestBase* InTest) : Test(InTest) {}
 	virtual bool Update() override
 	{
 		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
 		if (!World) return false;
-		if (!Phantom.IsValid())
+		if (StartTime <= 0.f)
 		{
-			APawn* Player = World->GetFirstPlayerController() ? World->GetFirstPlayerController()->GetPawn() : nullptr;
-			if (!Player) return false;
-			const FVector Origin = Player->GetActorLocation() + FVector(0.f, 500.f, 0.f);
-			APatrolPoint* Point = World->SpawnActor<APatrolPoint>(Origin + FVector(180.f, 0.f, 0.f), FRotator::ZeroRotator);
-			Point->WaitTime = 3.f;
-			UClass* PhantomClass = LoadClass<APhantom>(nullptr,
-				TEXT("/Game/Enemy/Phantom/Blueprint/BP_Phantom.BP_Phantom_C"));
-			APhantom* Spawned = World->SpawnActor<APhantom>(PhantomClass, Origin, FRotator::ZeroRotator);
-			Test->TestNotNull(TEXT("No-nav patrol Phantom spawned"), Spawned);
-			Test->TestNotNull(TEXT("No-nav patrol point spawned"), Point);
-			if (!Spawned || !Point) return true;
-			Phantom = Spawned;
-			PatrolPoint = Point;
-			StartLocation = Origin;
-			return false;
-		}
-		if (!bConfigured)
-		{
-			if (!Phantom->GetController()) return false;
-			if (AAIController* Controller = Cast<AAIController>(Phantom->GetController()))
-			{
-				if (Controller->GetPerceptionComponent()) Controller->GetPerceptionComponent()->Deactivate();
-				Controller->ClearFocus(EAIFocusPriority::Gameplay);
-			}
-			Phantom->SetPatrolPoints({PatrolPoint.Get()});
 			StartTime = World->GetTimeSeconds();
-			bConfigured = true;
 			return false;
 		}
-		if (World->GetTimeSeconds() - StartTime < 1.7f) return false;
-		APhantom* Enemy = Phantom.Get();
-		Test->AddInfo(FString::Printf(TEXT("NO_NAV_PATROL displacement=%.1f mode=%d state=%d scanning=%d"),
-			FVector::Dist2D(StartLocation, Enemy->GetActorLocation()),
-			static_cast<int32>(Enemy->GetCharacterMovement()->MovementMode),
-			static_cast<int32>(Enemy->GetAIState()), static_cast<int32>(Enemy->IsPatrolScanning())));
-		Test->TestTrue(TEXT("No-nav patrol fallback moves toward configured point"),
-			FVector::Dist2D(StartLocation, Enemy->GetActorLocation()) > 30.f);
-		Test->TestTrue(TEXT("No-nav patrol reaches point and enters Relaxed scan wait"), Enemy->IsPatrolScanning());
-		Test->TestEqual(TEXT("No-nav patrol remains in Patrol state"),
-			Enemy->GetAIState(), EHumanoidEnemyAIState::Patrol);
-		Enemy->Destroy();
-		if (PatrolPoint.IsValid()) PatrolPoint->Destroy();
-		return true;
-	}
-private:
-	FAutomationTestBase* Test = nullptr;
-	TWeakObjectPtr<APhantom> Phantom;
-	TWeakObjectPtr<APatrolPoint> PatrolPoint;
-	FVector StartLocation = FVector::ZeroVector;
-	float StartTime = 0.f;
-	bool bConfigured = false;
-};
+		if (World->GetTimeSeconds() - StartTime < 1.f) return false;
 
-class FValidateNoNavSearchPIECommand final : public IAutomationLatentCommand
-{
-public:
-	explicit FValidateNoNavSearchPIECommand(FAutomationTestBase* InTest) : Test(InTest) {}
-	virtual bool Update() override
-	{
-		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
-		if (!World) return false;
-		if (!Phantom.IsValid())
+		int32 PlacedCount = 0;
+		for (TActorIterator<APhantom> It(World); It; ++It)
 		{
-			APawn* Player = World->GetFirstPlayerController() ? World->GetFirstPlayerController()->GetPawn() : nullptr;
-			if (!Player) return false;
-			StartLocation = Player->GetActorLocation() + FVector(0.f, -500.f, 0.f);
-			UClass* PhantomClass = LoadClass<APhantom>(nullptr,
-				TEXT("/Game/Enemy/Phantom/Blueprint/BP_Phantom.BP_Phantom_C"));
-			APhantom* Spawned = World->SpawnActor<APhantom>(PhantomClass, StartLocation, FRotator::ZeroRotator);
-			Test->TestNotNull(TEXT("No-nav search Phantom spawned"), Spawned);
-			if (!Spawned) return true;
-			Phantom = Spawned;
-			return false;
-		}
-		if (!bSearchStarted)
-		{
-			if (!Phantom->GetController()) return false;
-			if (AAIController* Controller = Cast<AAIController>(Phantom->GetController()))
+			APhantom* Phantom = *It;
+			if (!IsValid(Phantom)) continue;
+			++PlacedCount;
+			USkeletalMeshComponent* Mesh = Phantom->GetMesh();
+			UHumanoidEnemyAnimInstance* Anim = Mesh ? Cast<UHumanoidEnemyAnimInstance>(Mesh->GetAnimInstance()) : nullptr;
+			Test->TestTrue(TEXT("Placed Phantom uses a valid humanoid AnimInstance"), IsValid(Anim));
+			if (!Mesh || !IsValid(Anim)) continue;
+
+			const FString AnimClassPath = Anim->GetClass()->GetPathName();
+			const FString MeshPath = GetPathNameSafe(Mesh->GetSkeletalMeshAsset());
+			const FString SkeletonPath = Mesh->GetSkeletalMeshAsset()
+				? GetPathNameSafe(Mesh->GetSkeletalMeshAsset()->GetSkeleton()) : TEXT("None");
+			FPoseSnapshot Snapshot;
+			Mesh->SnapshotPose(Snapshot);
+			FString MachineDebug = TEXT("none");
+			FString PlayerDebug;
+			if (const IAnimClassInterface* RuntimeClass = IAnimClassInterface::GetFromClass(Anim->GetClass()))
 			{
-				if (Controller->GetPerceptionComponent()) Controller->GetPerceptionComponent()->Deactivate();
-				Controller->ClearFocus(EAIFocusPriority::Gameplay);
+				for (const FStructProperty* NodeProperty : RuntimeClass->GetAnimNodeProperties())
+				{
+					void* NodeMemory = NodeProperty->ContainerPtrToValuePtr<void>(Anim);
+					if (NodeProperty->Struct == FAnimNode_StateMachine::StaticStruct())
+					{
+						const FAnimNode_StateMachine* Machine = static_cast<const FAnimNode_StateMachine*>(NodeMemory);
+						MachineDebug = FString::Printf(TEXT("%d@%.3f"), Machine->GetCurrentState(), Machine->GetCurrentStateElapsedTime());
+					}
+					else if (NodeProperty->Struct->IsChildOf(FAnimNode_AssetPlayerBase::StaticStruct()))
+					{
+						const FAnimNode_AssetPlayerBase* Player = static_cast<const FAnimNode_AssetPlayerBase*>(NodeMemory);
+						if (Player->GetCachedBlendWeight() > KINDA_SMALL_NUMBER)
+						{
+							PlayerDebug += FString::Printf(TEXT("%s[w=%.2f,t=%.3f] "), *NodeProperty->GetName(),
+								Player->GetCachedBlendWeight(), Player->GetAccumulatedTime());
+							PlayerDebug += FString::Printf(TEXT("group=%s role=%d method=%d asset=%s "),
+								*Player->GetGroupName().ToString(), static_cast<int32>(Player->GetGroupRole()),
+								static_cast<int32>(Player->GetGroupMethod()), *GetPathNameSafe(Player->GetAnimAsset()));
+							if (NodeProperty->Struct->IsChildOf(FAnimNode_BlendSpacePlayerBase::StaticStruct()))
+							{
+								const FAnimNode_BlendSpacePlayerBase* BlendPlayer = static_cast<const FAnimNode_BlendSpacePlayerBase*>(NodeMemory);
+								PlayerDebug += FString::Printf(TEXT("pos=%s asset=%s playrate=%.2f loop=%d start=%.2f "),
+									*BlendPlayer->GetPosition().ToString(), *GetPathNameSafe(BlendPlayer->GetBlendSpace()),
+									BlendPlayer->GetPlayRate(), BlendPlayer->IsLooping(), BlendPlayer->GetStartPosition());
+							}
+						}
+					}
+				}
 			}
-			StartTime = World->GetTimeSeconds();
-			Phantom->StartLostTargetSearch(StartLocation + FVector(300.f, 0.f, 0.f));
-			bSearchStarted = true;
-			return false;
+			float MaxPoseAngularDelta = 0.f;
+			for (const FName BoneName : {FName(TEXT("upperarm_l")), FName(TEXT("upperarm_r")), FName(TEXT("spine_03"))})
+			{
+				const int32 BoneIndex = Mesh->GetBoneIndex(BoneName);
+				if (BoneIndex == INDEX_NONE) continue;
+				const int32 SnapshotIndex = Snapshot.BoneNames.IndexOfByKey(BoneName);
+				if (!Snapshot.LocalTransforms.IsValidIndex(SnapshotIndex)) continue;
+				const FTransform& Current = Snapshot.LocalTransforms[SnapshotIndex];
+				const FTransform& Reference = Mesh->GetSkeletalMeshAsset()->GetRefSkeleton().GetRefBonePose()[BoneIndex];
+				MaxPoseAngularDelta = FMath::Max(MaxPoseAngularDelta,
+					Current.GetRotation().AngularDistance(Reference.GetRotation()));
+			}
+
+			Test->AddInfo(FString::Printf(
+				TEXT("PLACED_PHANTOM actor=%s mesh=%s skeleton=%s anim=%s mode=%d ai=%d pose_delta=%.3f velocity=%.1f tick=%d pause=%d rate=%.2f recent=%d visibility_tick=%d machine=%s players=%s"),
+				*Phantom->GetName(), *MeshPath, *SkeletonPath, *AnimClassPath,
+				static_cast<int32>(Mesh->GetAnimationMode()), static_cast<int32>(Phantom->GetAIState()),
+				MaxPoseAngularDelta, Phantom->GetVelocity().Size2D(), Mesh->IsComponentTickEnabled(), Mesh->bPauseAnims,
+				Mesh->GlobalAnimRateScale, Mesh->WasRecentlyRendered(), static_cast<int32>(Mesh->VisibilityBasedAnimTickOption),
+				*MachineDebug, *PlayerDebug));
+			Test->TestTrue(TEXT("Placed Phantom uses original Rifle child AnimBP"),
+				AnimClassPath.Contains(TEXT("ABP_Phantom_OriginalRifle_C")));
+			Test->TestEqual(TEXT("Placed Phantom mesh runs Animation Blueprint mode"),
+				Mesh->GetAnimationMode(), EAnimationMode::AnimationBlueprint);
+			Test->TestTrue(TEXT("Placed Phantom pose is not reference pose"), MaxPoseAngularDelta > 0.1f);
 		}
-		if (World->GetTimeSeconds() - StartTime < 1.5f) return false;
-		APhantom* Enemy = Phantom.Get();
-		Test->AddInfo(FString::Printf(TEXT("NO_NAV_SEARCH displacement=%.1f mode=%d state=%d scanning=%d"),
-			FVector::Dist2D(StartLocation, Enemy->GetActorLocation()),
-			static_cast<int32>(Enemy->GetCharacterMovement()->MovementMode),
-			static_cast<int32>(Enemy->GetAIState()), static_cast<int32>(Enemy->IsPatrolScanning())));
-		Test->TestTrue(TEXT("No-nav SearchRush advances toward last-known point"),
-			FVector::Dist2D(StartLocation, Enemy->GetActorLocation()) > 150.f);
-		Test->TestEqual(TEXT("No-nav SearchRush reaches point and enters SearchScan"),
-			Enemy->GetAIState(), EHumanoidEnemyAIState::SearchScan);
-		Test->TestTrue(TEXT("No-nav SearchScan drives Relaxed scan animation"), Enemy->IsPatrolScanning());
-		Enemy->Destroy();
+		Test->TestTrue(TEXT("TestMap contains a placed Phantom"), PlacedCount > 0);
 		return true;
 	}
 private:
 	FAutomationTestBase* Test = nullptr;
-	TWeakObjectPtr<APhantom> Phantom;
-	FVector StartLocation = FVector::ZeroVector;
 	float StartTime = 0.f;
-	bool bSearchStarted = false;
 };
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomPIESmokeTest,
@@ -424,6 +446,19 @@ bool FPhantomPIESmokeTest::RunTest(const FString& Parameters)
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidatePhantomPIECommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidateTacticalMovementPIECommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPlacedPhantomAnimationPIETest,
+	"TheManTest.Enemy.Phantom.PIEPlacedAnimation",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FPlacedPhantomAnimationPIETest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FAuditPlacedPhantomAnimationPIECommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }
@@ -452,34 +487,6 @@ bool FPhantomTacticalApproachPIETest::RunTest(const FString& Parameters)
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidateTacticalMovementPIECommand(this, 1200.f, 1));
-	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomNoNavPatrolPIETest,
-	"TheManTest.Enemy.Phantom.PIENoNavPatrol",
-	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
-
-bool FPhantomNoNavPatrolPIETest::RunTest(const FString& Parameters)
-{
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
-	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
-	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
-	ADD_LATENT_AUTOMATION_COMMAND(FValidateNoNavPatrolPIECommand(this));
-	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomNoNavSearchPIETest,
-	"TheManTest.Enemy.Phantom.PIENoNavSearch",
-	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
-
-bool FPhantomNoNavSearchPIETest::RunTest(const FString& Parameters)
-{
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
-	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
-	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
-	ADD_LATENT_AUTOMATION_COMMAND(FValidateNoNavSearchPIECommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }
@@ -530,9 +537,9 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 	Test->TestEqual(TEXT("ArmsViewMesh is attached to ViewmodelRoot"),
 		Player->GetArmsMesh()->GetAttachParent(), Player->GetViewmodelRoot());
 	Test->TestTrue(TEXT("Final viewmodel location matches approved framing"),
-		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector(0.f, 0.f, -7.f), 0.01f));
+		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector(-30.f, 3.f, -4.f), 0.01f));
 	Test->TestTrue(TEXT("Final viewmodel rotation preserves imported pose orientation"),
-		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
+		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator(0.f, -12.f, 0.f), 0.01f));
 
 	UEquipmentManagerComponent* EquipmentManager = Player->GetEquipmentManager();
 	AEquipmentBase* Equipment = EquipmentManager ? EquipmentManager->GetCurrentEquipment() : nullptr;

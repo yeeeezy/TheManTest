@@ -116,27 +116,18 @@ void AHumanoidAIController::UpdateCombatMovement(AHumanoidEnemy& Enemy, AActor& 
 {
 	UWorld* World = GetWorld();
 	if (!World) return;
-	if (bUseDirectCombatMovement && !CurrentCombatDestination.IsNearlyZero())
-	{
-		Enemy.AddMovementInput((CurrentCombatDestination - Enemy.GetActorLocation()).GetSafeNormal2D(), 1.f);
-	}
 	if (World->GetTimeSeconds() < NextCombatMoveDecisionTime) return;
 
 	// 以短时连续侧移为主，偶尔换向，避免每个决策周期机械左右抖动。
 	if (FMath::FRand() < 0.35f) CurrentStrafeSign *= -1.f;
 	const FVector RawDestination = CalculateCombatMoveDestination(
 		Enemy.GetActorLocation(), Target.GetActorLocation(), CurrentStrafeSign);
-	CurrentCombatDestination = RawDestination;
-	bUseDirectCombatMovement = true;
-
 	FNavLocation Projected;
 	if (UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(World))
 	{
 		if (NavSystem->ProjectPointToNavigation(RawDestination, Projected, FVector(150.f, 150.f, 250.f)))
 		{
-			CurrentCombatDestination = Projected.Location;
-			bUseDirectCombatMovement = MoveToLocation(Projected.Location, CombatMoveAcceptanceRadius,
-				true, true, true, false) == EPathFollowingRequestResult::Failed;
+			MoveToLocation(Projected.Location, CombatMoveAcceptanceRadius, true, true, true, false);
 		}
 	}
 
@@ -172,8 +163,6 @@ void AHumanoidAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
 			BB->ClearValue(BB_TargetActor);
 		}
 		ClearFocus(EAIFocusPriority::Gameplay);
-		bUseDirectCombatMovement = false;
-		CurrentCombatDestination = FVector::ZeroVector;
 		Enemy->StartLostTargetSearch(Stimulus.StimulusLocation);
 	}
 }

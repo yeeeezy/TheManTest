@@ -2,47 +2,32 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-31-session126-phantom-and-player-framing-complete
-**当前功能：** 无（FEAT-057～FEAT-065 已完成归档）
-**会话编号：** 126
+**最后更新：** 2026-07-31-session127-complete
+**当前功能：** FEAT-066 — 玩家持枪姿势与 Enemy 移动动画纠偏
+**状态：** completed（`feature_list.json` 当前无法解析，主索引状态未安全改写）
 
-Phantom 原始 Rifle_01 动画体系、公共巡逻/感知/丢失搜索、八方向战术移动、掩体、20 发弹匣、三连发/扫射/换弹、二阶段透明穿透与范围轰炸已完成。玩家初始持枪构图也已按参考截图通过 ViewmodelRoot 调整并建立确定性截图回归。
+## 完成内容
 
-## 最近关键完成项
-
-- Phantom 使用 `/Game/Enemy/Phantom/OriginalRifle` 原 `SK_Mannequin + UE4_Mannequin_Skeleton`；Patrol/Search 仅 Relaxed，Aim 后才使用 15-sample 二维 Aim BlendSpace。
-- 公共状态链：`Patrol → Aim → SearchRush → SearchScan → Patrol`；丢失目标先冲向 LastKnown，再随机播放 Relaxed Fgt v1～v4 环视并恢复最近巡逻点。
-- Aim 战术移动公共化：700±150cm 距离环；过近后撤+侧移、过远斜进+侧移、环带内绕行；BT Actor MoveTo 不再覆盖战术移动；无 NavMesh 时使用安全直移回退。
-- 公共战斗模块：`UEnemyMagazineComponent`、`AEnemyCoverPoint`、Burst、SuppressiveFire、Reload、TakeCover、AreaBarrage。
-- Phantom Phase 1：TakeCover/Burst/SuppressiveFire/Reload；Phase 2 保留一期能力并新增 Cloak projectile pass-through 与 AreaBarrage。
-- 玩家构图：`Capsule → HeadCamera(110°) → ViewmodelRoot(Location 0,0,-7; Rotation 0) → ArmsViewMesh`；装备继续挂 ArmsViewMesh Socket，未移动 gameplay 相机或改骨架基础旋转。
-- 玩家 1920×1080 自动截图在稳定 Idle 帧捕获，并同时验证 FOV、层级、Transform、装备与 Socket。
+- 玩家初始 Viewmodel 固定为 16:9、FOV 110 下校准结果：Location `(-30, 3, -4)`，Rotation `(0, -12, 0)`；枪口和主体构图按用户 09:29 目标截图反复截图对齐。
+- 删除 Patrol、SearchRush、Aim 的全部无 NavMesh / 寻路失败直线移动回退；Enemy 不再调用 `AddMovementInput`，只使用导航系统投射与 `MoveToLocation`。
+- 删除两项无 NavMesh 直移自动化测试，避免继续把错误策略当作验收条件。
+- 定位 Enemy 无动画根因：两个程序生成的 Phantom BlendSpace 只有 SampleData，缺少可运行采样数据；Patrol 的输入约定还与模板接线相反。已将 Patrol 统一为 X=Speed、Y=Direction，并重新生成/保存 Patrol 与 Aim BlendSpace 运行数据。
+- 重新编译保存公共 Humanoid AnimBP 与 `ABP_Phantom_OriginalRifle`，保留原 Rifle_01 Mesh/Skeleton，不做重定向。
+- 新增实际 TestMap 摆放 Phantom 的 PIE 审计：检查真实 Mesh/Skeleton/AnimClass、动画蓝图模式和最终骨骼姿势；移动时参考姿势差值必须大于阈值。
 
 ## 最终验证
 
-- `TheManTestEditor Win64 Development`：Succeeded（UE 5.7）。
-- `Saved/Logs/PhantomFullRegressionFinal3.log`：7/7 Success：
-  - `TheManTest.Enemy.Phantom.AnimationOverrides`
-  - `TheManTest.Enemy.Phantom.PIENoNavPatrol`
-  - `TheManTest.Enemy.Phantom.PIENoNavSearch`
-  - `TheManTest.Enemy.Phantom.PIESmoke`
-  - `TheManTest.Enemy.Phantom.PIETacticalApproach`
-  - `TheManTest.Enemy.Phantom.PIETacticalRetreat`
-  - `TheManTest.Enemy.Phantom.ReusableCombatModules`
-- 战术距离 PIE 证据：环带侧移、1200cm 斜进、300cm 后撤均产生横向移动并朝期望距离变化；详见 FEAT-064 归档。
-- 无导航实测：Patrol 位移 94.3cm 后 `scanning=true`；SearchRush 位移 189.6cm 后进入 SearchScan 且 `scanning=true`。
-- `Saved/Logs/PlayerViewmodelRegressionFinal.log`：`TheManTest.Player.Viewmodel.FramingCapture` 1/1 Success。
-- 最终截图：`Saved/Screenshots/PlayerFramingCurrent.png`（1920×1080）。
-- `feature_list.json` 与 `feature_archive.json` 均通过 PowerShell `ConvertFrom-Json`；归档末项 FEAT-065，active feature 为 null。
-
-## 已知旧问题
-
-- 启动日志仍有项目既存 TestGun `A_HandFire` 无 Skeleton、`FCharacterType::CharacterIcon` 未初始化；这些发生在测试发现阶段，但目标测试仍被执行并报告 Success。
-- 原公共 AimIK 模板把 `AimSocket` 当骨索引，在 Rifle 原骨架上输出初始化警告并安全失效；本系列没有重定向或创建 IK 中间资产。
-- TestMap 运行时未发现 RecastNavMesh；Patrol、SearchRush 与 Aim 战术移动现均有无导航直移回退并通过 PIE。地图中的 NavMesh External Actor 状态属于用户/未知工作区改动，未擅自保存或覆盖。
+- `TheManTestEditor Win64 Development`：Succeeded。
+- `TheManTest.Enemy.Phantom + TheManTest.Player.Viewmodel.FramingCapture`：7/7 Success。
+- 实际摆放 Phantom：`velocity=88.3`、`pose_delta=1.284`、Patrol BlendSpace 权重 `1.00`、播放时间推进到 `0.488`，不再 T-Pose/滑行。
+- TacticalApproach、TacticalRetreat、PIESmoke、AnimationOverrides、ReusableCombatModules、FramingCapture 全部 Success。
+- 源码检索确认 Enemy 范围无 `AddMovementInput`、NoNav、DirectMove 回退。
+- 最终截图：`Saved/Screenshots/PlayerFramingCurrent.png`。
+- 最终日志：`Saved/Logs/FEAT066FinalRegression3.log`；最新 Viewmodel `X=-30` 已包含在本轮构建、截图和 7/7 回归中。
 
 ## 工作区边界
 
-- 用户/未知改动保持未纳入：`BP_MaintenanceWorker.uasset`、TestMap External Actor `D/YN/...`、未跟踪 `0/GS/` 与 `0/X7/`。
-- 本系列没有在 TheManTest 内执行 IK Retargeter、批量重定向或留下源骨架/源项目工作目录。
-- 安全 checkpoint：`a3e7e83`（AnimBP 修复前）、`b8121b9`（AnimBP 修复后）。本轮 FEAT-064/065 结果保留在工作区，未创建用户未要求的正式提交。
+- 安全 checkpoint：`b38d549`。
+- 未改写/未纳入用户资产：`BP_MaintenanceWorker.uasset`、TestMap External Actor `D/YN/...`、未跟踪 `0/GS/` 与 `0/X7/`。
+- 未在 TheManTest 内执行动画重定向或创建 IK Retargeter。
+- 已发现 `.agents/harness/feature_list.json` 无法通过 `ConvertFrom-Json`；按 AGENTS.md 要求已报告，未擅自重构整个索引。

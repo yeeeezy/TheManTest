@@ -66,6 +66,4 @@ private:
 
 	float NextCombatMoveDecisionTime = 0.f;
 	float CurrentStrafeSign = 1.f;
-	FVector CurrentCombatDestination = FVector::ZeroVector;
-	bool bUseDirectCombatMovement = false;
 };
