@@ -686,9 +686,9 @@
                      {
                          "id": "FEAT-066", "name": "玩家持枪姿势精确对齐与 Enemy 移动动画纠偏", "status": "done",
                          "description": "整枪姿态对齐；修复 Enemy BlendSpace 运行数据、两点巡逻转身卡死；仅 NavMesh 移动，并加入可复用渐进散射。",
-                         "archive_file": "archive/FEAT-066-player-pose-and-enemy-animation-correction.md", "created": "2026-07-31", "updated": "2026-07-31-session128-complete",
-                         "done_criteria": ["整枪五锚点构图对齐 ✓", "移动动画正常 ✓", "NavMesh-only ✓", "两点巡逻转身无 Notify 也续行 ✓", "渐进散射可复用 ✓", "构建与 8/8 回归 ✓"],
-                         "verification_evidence": "Development Editor Succeeded；FEAT067FinalRegression4.log 8/8 Success；两点 NavMesh 巡逻 11.58 秒内 5 次到点/移动 1201.8cm；散射锥 1.5~5 度；最终截图已生成。"
+                         "archive_file": "archive/FEAT-066-player-pose-and-enemy-animation-correction.md", "created": "2026-07-31", "updated": "2026-07-31-session129-complete",
+                         "done_criteria": ["整枪五锚点构图对齐 ✓", "移动动画正常 ✓", "NavMesh-only ✓", "实际 TestMap 四点巡逻完整闭环 ✓", "渐进散射可复用 ✓", "构建与 8/8 回归 ✓"],
+                         "verification_evidence": "Development Editor Succeeded；FEAT066PhantomFullFinal.log 8/8 Success；生产 HumanoidAIController 驱动 TestMap 实际 4 点路线，50.38 秒内依次到点 1→2→3→4→1、累计移动 4501.9cm；散射锥 1.5~5 度；最终截图已生成。"
                      },
                      {
                          "id": "FEAT-067", "name": "RepairGun 与人形 Enemy 枪口特效", "status": "done",

@@ -41,6 +41,14 @@
 - 真实两点 NavMesh 巡逻：11.58 秒内到点 5 次、累计移动 1201.8 cm，超过两次完整反转且未卡住。
 - Development Editor 构建成功；`Saved/Logs/FEAT067FinalRegression4.log` 为 8/8 Success。
 
+## session129 实际 TestMap 四点闭环复验
+
+- 对 TestMap 中实际放置的 Phantom 和 4 个已配置巡逻点进行 PIE 验证，不再用临时两点路线代替最终验收。
+- 保留生产用 `AHumanoidAIController`、行为树及 PathFollowing；仅在巡逻回归中关闭自动生成玩家 Pawn 的视觉感知，避免测试被战斗状态打断。
+- 实际到点序列连续达到 1、2、3、4、1：用时分别为 1.21、12.84、24.25、38.46、50.38 秒，累计 NavMesh 移动 4501.9 cm，证明已越过第二点并完成完整循环。
+- `TheManTest.Enemy.Phantom` 全套自动化 8/8 Success；最终日志：`Saved/Logs/FEAT066PhantomFullFinal.log`。
+- Development Editor / Win64 最终构建成功。
+
 ## 已知 harness 问题
 
 `.agents/harness/feature_list.json` 当前不可解析；遵循项目指令已先报告，并从可读 archive/progress 完成交接，未擅自修复整个主索引。

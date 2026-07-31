@@ -229,6 +229,17 @@ void AHumanoidEnemy::ConfigurePatrolPoints(const TArray<APatrolPoint*>& InPatrol
 	}
 }
 
+float AHumanoidEnemy::GetPatrolWaitRemaining() const
+{
+	return GetWorld() ? GetWorld()->GetTimerManager().GetTimerRemaining(PatrolWaitTimer) : -1.f;
+}
+
+FVector AHumanoidEnemy::GetCurrentPatrolTargetLocation() const
+{
+	return PatrolPoints.IsValidIndex(CurrentPatrolIndex) && IsValid(PatrolPoints[CurrentPatrolIndex])
+		? PatrolPoints[CurrentPatrolIndex]->GetActorLocation() : FVector::ZeroVector;
+}
+
 void AHumanoidEnemy::MoveToNextPatrolPoint()
 {
 	if (AIState != EHumanoidEnemyAIState::Patrol) return;

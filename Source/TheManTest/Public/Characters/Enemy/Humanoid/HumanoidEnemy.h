@@ -55,6 +55,18 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Enemy|Patrol")
 	FORCEINLINE int32 GetPatrolArrivalCount() const { return PatrolArrivalCount; }
 
+	UFUNCTION(BlueprintPure, Category = "Enemy|Patrol")
+	FORCEINLINE int32 GetCurrentPatrolIndex() const { return CurrentPatrolIndex; }
+
+	UFUNCTION(BlueprintPure, Category = "Enemy|Patrol")
+	FORCEINLINE int32 GetPatrolPointCount() const { return PatrolPoints.Num(); }
+
+	UFUNCTION(BlueprintPure, Category = "Enemy|Patrol")
+	float GetPatrolWaitRemaining() const;
+
+	UFUNCTION(BlueprintPure, Category = "Enemy|Patrol")
+	FVector GetCurrentPatrolTargetLocation() const;
+
 	// 丢失目标后的公共搜索入口：冲向最后已知位置，到达后原地随机环视，再恢复最近巡逻点。
 	UFUNCTION(BlueprintCallable, Category = "Enemy|Search")
 	void StartLostTargetSearch(const FVector& LastKnownLocation);

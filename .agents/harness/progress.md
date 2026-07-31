@@ -2,11 +2,14 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-31-session128-complete
+**最后更新：** 2026-07-31-session129-complete
 **当前功能：** 无 active feature
 **状态：** FEAT-066、FEAT-067 已完成并归档
 
 ## 本轮完成
+
+- 复验 TestMap 实际 Phantom 四点巡逻闭环：到点序列 1→2→3→4→1，50.38 秒内 5 次到点、累计移动 4501.9 cm，确认不再卡在第二点。
+- 最终使用生产 `AHumanoidAIController` 与真实地图路点验证；`TheManTest.Enemy.Phantom` 8/8 Success，日志 `Saved/Logs/FEAT066PhantomFullFinal.log`。
 
 - 修复两点巡逻的 180° 转身死锁：动画 Notify 与到角容差双完成路径，不改变 NavMesh-only 移动约束。
 - 人形 Enemy 公共射击加入基础散布、连射扩散、移动惩罚、最大散布和停火恢复。

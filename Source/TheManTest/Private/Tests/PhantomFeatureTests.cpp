@@ -16,6 +16,7 @@
 #include "NiagaraSystem.h"
 #include "NavigationSystem.h"
 #include "Perception/AIPerceptionComponent.h"
+#include "Perception/AISense_Sight.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Blueprint.h"
@@ -557,6 +558,69 @@ private:
 	FVector PreviousLocation = FVector::ZeroVector;
 };
 
+class FAuditPlacedPatrolProgressPIECommand final : public IAutomationLatentCommand
+{
+public:
+	explicit FAuditPlacedPatrolProgressPIECommand(FAutomationTestBase* InTest) : Test(InTest) {}
+	virtual bool Update() override
+	{
+		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+		if (!World) return false;
+		if (!Enemy.IsValid())
+		{
+			for (TActorIterator<APhantom> It(World); It; ++It)
+			{
+				Enemy = *It;
+				break;
+			}
+			Test->TestTrue(TEXT("Placed-patrol audit found the TestMap Phantom"), Enemy.IsValid());
+			if (!Enemy.IsValid()) return true;
+			Test->TestEqual(TEXT("TestMap Phantom keeps its four authored patrol points"), Enemy->GetPatrolPointCount(), 4);
+			AHumanoidAIController* RealController = Cast<AHumanoidAIController>(Enemy->GetController());
+			Test->TestNotNull(TEXT("Placed Phantom keeps its production humanoid AI controller"), RealController);
+			if (!RealController) return true;
+			// Keep the production controller/path-following/behavior-tree stack, while preventing
+			// the automation player pawn from turning this patrol-only regression into combat.
+			if (UAIPerceptionComponent* Perception = RealController->GetPerceptionComponent())
+			{
+				Perception->SetSenseEnabled(UAISense_Sight::StaticClass(), false);
+				Perception->ForgetAll();
+			}
+			Enemy->SetAIState(EHumanoidEnemyAIState::Patrol);
+			StartTime = World->GetTimeSeconds();
+			PreviousLocation = Enemy->GetActorLocation();
+			LastArrivalCount = Enemy->GetPatrolArrivalCount();
+			return false;
+		}
+
+		Travel += FVector::Dist2D(PreviousLocation, Enemy->GetActorLocation());
+		PreviousLocation = Enemy->GetActorLocation();
+		const int32 Arrivals = Enemy->GetPatrolArrivalCount();
+		if (Arrivals != LastArrivalCount)
+		{
+			Test->AddInfo(FString::Printf(TEXT("PLACED_PATROL arrival=%d next_index=%d elapsed=%.2f"),
+				Arrivals, Enemy->GetCurrentPatrolIndex(), World->GetTimeSeconds() - StartTime));
+			LastArrivalCount = Arrivals;
+		}
+		if (Arrivals < 5 && World->GetTimeSeconds() - StartTime < 75.f) return false;
+
+		Test->TestTrue(TEXT("Placed TestMap Phantom completes all four points and starts another loop"), Arrivals >= 5);
+		Test->AddInfo(FString::Printf(
+			TEXT("PLACED_PATROL_FINAL arrivals=%d index=%d state=%d pending=%d scanning=%d wait=%.2f travel=%.1f velocity=%.1f loc=%s target=%s"),
+			Arrivals, Enemy->GetCurrentPatrolIndex(), static_cast<int32>(Enemy->GetAIState()), Enemy->IsPendingTurn(),
+			Enemy->IsPatrolScanning(), Enemy->GetPatrolWaitRemaining(), Travel, Enemy->GetVelocity().Size2D(),
+			*Enemy->GetActorLocation().ToString(), *Enemy->GetCurrentPatrolTargetLocation().ToString()));
+		return true;
+	}
+private:
+	FAutomationTestBase* Test = nullptr;
+	TWeakObjectPtr<APhantom> Enemy;
+	FVector PreviousLocation = FVector::ZeroVector;
+	float StartTime = 0.f;
+	float Travel = 0.f;
+	int32 LastArrivalCount = 0;
+};
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomPIESmokeTest,
 	"TheManTest.Enemy.Phantom.PIESmoke",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -595,6 +659,20 @@ bool FPhantomPatrolLoopPIETest::RunTest(const FString& Parameters)
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidateTwoPointPatrolLoopPIECommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPlacedPhantomPatrolProgressPIETest,
+	"TheManTest.Enemy.Phantom.PIEPlacedPatrolProgress",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FPlacedPhantomPatrolProgressPIETest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FAuditPlacedPatrolProgressPIECommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }
