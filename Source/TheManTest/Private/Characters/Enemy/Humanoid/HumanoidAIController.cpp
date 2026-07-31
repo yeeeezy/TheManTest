@@ -6,6 +6,8 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "NavigationSystem.h"
+#include "Navigation/PathFollowingComponent.h"
 
 const FName AHumanoidAIController::BB_TargetActor              = "TargetActor";
 const FName AHumanoidAIController::BB_LastKnownPlayerLocation  = "LastKnownPlayerLocation";
@@ -24,6 +26,29 @@ AHumanoidAIController::AHumanoidAIController()
 	PerceptionComp->ConfigureSense(*SightConfig);
 	PerceptionComp->SetDominantSense(SightConfig->GetSenseImplementation());
 	SetPerceptionComponent(*PerceptionComp);
+}
+
+FVector AHumanoidAIController::CalculateCombatMoveDestination(const FVector& EnemyLocation,
+	const FVector& TargetLocation, float StrafeSign) const
+{
+	const FVector TargetToEnemy = (EnemyLocation - TargetLocation).GetSafeNormal2D();
+	if (TargetToEnemy.IsNearlyZero()) return EnemyLocation;
+
+	const float Distance = FVector::Dist2D(EnemyLocation, TargetLocation);
+	const float MinDistance = FMath::Max(0.f, PreferredCombatDistance - CombatDistanceTolerance);
+	const float MaxDistance = PreferredCombatDistance + CombatDistanceTolerance;
+	float DesiredDistance = PreferredCombatDistance;
+	if (Distance < MinDistance) DesiredDistance = MinDistance;
+	else if (Distance > MaxDistance) DesiredDistance = MaxDistance;
+	else DesiredDistance = Distance;
+
+	// 正值表示当前过远，需要朝目标收拢；负值表示过近，需要后撤。
+	const float RadialCorrection = FMath::Clamp(Distance - DesiredDistance,
+		-CombatStrafeDistance, CombatStrafeDistance);
+	const FVector Tangent(-TargetToEnemy.Y, TargetToEnemy.X, 0.f);
+	const float SideScale = Distance < MinDistance ? 0.55f : (Distance > MaxDistance ? 0.65f : 1.f);
+	return EnemyLocation - TargetToEnemy * RadialCorrection
+		+ Tangent * FMath::Sign(StrafeSign) * CombatStrafeDistance * SideScale;
 }
 
 void AHumanoidAIController::OnPossess(APawn* InPawn)
@@ -46,6 +71,24 @@ void AHumanoidAIController::OnUnPossess()
 	Super::OnUnPossess();
 }
 
+FPathFollowingRequestResult AHumanoidAIController::MoveTo(const FAIMoveRequest& MoveRequest,
+	FNavPathSharedPtr* OutPath)
+{
+	// 公共 BT 的 MoveTo(TargetActor) 只作为进入技能序列的门槛。Aim 时真正的移动
+	// 由距离环带战术落点控制，否则两套请求会互相覆盖并退化成直线追击。
+	if (MoveRequest.IsMoveToActorRequest())
+	{
+		if (const AHumanoidEnemy* Enemy = Cast<AHumanoidEnemy>(GetPawn());
+			Enemy && Enemy->GetAIState() == EHumanoidEnemyAIState::Aim)
+		{
+			FPathFollowingRequestResult Result;
+			Result.Code = EPathFollowingRequestResult::AlreadyAtGoal;
+			return Result;
+		}
+	}
+	return Super::MoveTo(MoveRequest, OutPath);
+}
+
 void AHumanoidAIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -60,12 +103,46 @@ void AHumanoidAIController::Tick(float DeltaSeconds)
 		{
 			Enemy->AimTargetWorld = Player->GetActorLocation();
 			Enemy->bIsAiming      = true;
+			UpdateCombatMovement(*Enemy, *Player);
 		}
 	}
 	else
 	{
 		Enemy->bIsAiming = false;
 	}
+}
+
+void AHumanoidAIController::UpdateCombatMovement(AHumanoidEnemy& Enemy, AActor& Target)
+{
+	UWorld* World = GetWorld();
+	if (!World) return;
+	if (bUseDirectCombatMovement && !CurrentCombatDestination.IsNearlyZero())
+	{
+		Enemy.AddMovementInput((CurrentCombatDestination - Enemy.GetActorLocation()).GetSafeNormal2D(), 1.f);
+	}
+	if (World->GetTimeSeconds() < NextCombatMoveDecisionTime) return;
+
+	// 以短时连续侧移为主，偶尔换向，避免每个决策周期机械左右抖动。
+	if (FMath::FRand() < 0.35f) CurrentStrafeSign *= -1.f;
+	const FVector RawDestination = CalculateCombatMoveDestination(
+		Enemy.GetActorLocation(), Target.GetActorLocation(), CurrentStrafeSign);
+	CurrentCombatDestination = RawDestination;
+	bUseDirectCombatMovement = true;
+
+	FNavLocation Projected;
+	if (UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(World))
+	{
+		if (NavSystem->ProjectPointToNavigation(RawDestination, Projected, FVector(150.f, 150.f, 250.f)))
+		{
+			CurrentCombatDestination = Projected.Location;
+			bUseDirectCombatMovement = MoveToLocation(Projected.Location, CombatMoveAcceptanceRadius,
+				true, true, true, false) == EPathFollowingRequestResult::Failed;
+		}
+	}
+
+	const float MinInterval = FMath::Min(CombatMoveDecisionMinInterval, CombatMoveDecisionMaxInterval);
+	const float MaxInterval = FMath::Max(CombatMoveDecisionMinInterval, CombatMoveDecisionMaxInterval);
+	NextCombatMoveDecisionTime = World->GetTimeSeconds() + FMath::FRandRange(MinInterval, MaxInterval);
 }
 
 void AHumanoidAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
@@ -83,6 +160,7 @@ void AHumanoidAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
 		// 发现玩家：写黑板目标 + Focus 锁定朝向 + 切战斗（SetAIState(Aim) 内已停巡逻、转 Focus 朝向）
 		if (BB) { BB->SetValueAsObject(BB_TargetActor, Actor); }
 		SetFocus(Actor);
+		NextCombatMoveDecisionTime = 0.f;
 		Enemy->SetAIState(EHumanoidEnemyAIState::Aim);
 	}
 	else
@@ -94,6 +172,8 @@ void AHumanoidAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
 			BB->ClearValue(BB_TargetActor);
 		}
 		ClearFocus(EAIFocusPriority::Gameplay);
+		bUseDirectCombatMovement = false;
+		CurrentCombatDestination = FVector::ZeroVector;
 		Enemy->StartLostTargetSearch(Stimulus.StimulusLocation);
 	}
 }

@@ -3,8 +3,14 @@
 #include "Misc/AutomationTest.h"
 #include "Characters/Enemy/Components/EnemyMagazineComponent.h"
 #include "Characters/Enemy/Humanoid/HumanoidEnemy.h"
+#include "Characters/Enemy/Humanoid/HumanoidAIController.h"
+#include "Characters/Enemy/Humanoid/HumanoidEnemyAnimInstance.h"
+#include "Characters/FPSCharacterBase/FPSCharacterBase.h"
+#include "Characters/Components/EquipmentManagerComponent.h"
+#include "Equipment/EquipmentBase/EquipmentBase.h"
 #include "Characters/Enemy/Humanoid/Phantom/Phantom.h"
 #include "Characters/Enemy/Cover/EnemyCoverPoint.h"
+#include "Actors/PatrolPoint.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Blueprint.h"
@@ -13,7 +19,16 @@
 #include "Tests/AutomationEditorCommon.h"
 #include "Tests/AutomationCommon.h"
 #include "Editor.h"
+#include "Misc/Paths.h"
+#include "Misc/FileHelper.h"
+#include "ImageUtils.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Camera/CameraComponent.h"
+#include "Perception/AIPerceptionComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Engine/TextureRenderTarget2D.h"
 #include "Animation/AnimBlueprint.h"
+#include "Animation/AnimInstance.h"
 #include "Animation/BlendSpace.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomAnimationOverridesTest,
@@ -76,6 +91,19 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomReusableCombatTest,
 
 bool FPhantomReusableCombatTest::RunTest(const FString& Parameters)
 {
+	AHumanoidAIController* TacticalController = NewObject<AHumanoidAIController>();
+	const FVector Target = FVector::ZeroVector;
+	const FVector TooClose(300.f, 0.f, 0.f);
+	const FVector TooFar(1200.f, 0.f, 0.f);
+	const FVector CloseMove = TacticalController->CalculateCombatMoveDestination(TooClose, Target, 1.f);
+	const FVector FarMove = TacticalController->CalculateCombatMoveDestination(TooFar, Target, 1.f);
+	const FVector LeftMove = TacticalController->CalculateCombatMoveDestination(FVector(700.f, 0.f, 0.f), Target, 1.f);
+	const FVector RightMove = TacticalController->CalculateCombatMoveDestination(FVector(700.f, 0.f, 0.f), Target, -1.f);
+	TestTrue(TEXT("Too-close tactical move retreats from target"), CloseMove.Size2D() > TooClose.Size2D());
+	TestTrue(TEXT("Too-far tactical move closes distance"), FarMove.Size2D() < TooFar.Size2D());
+	TestTrue(TEXT("Combat movement adds lateral displacement"), FMath::Abs(LeftMove.Y) > 1.f);
+	TestTrue(TEXT("Strafe direction can alternate"), LeftMove.Y * RightMove.Y < 0.f);
+
 	UEnemyMagazineComponent* Magazine = NewObject<UEnemyMagazineComponent>();
 	TestEqual(TEXT("Default magazine capacity"), Magazine->GetCapacity(), 20);
 	for (int32 Index = 0; Index < 20; ++Index) TestTrue(TEXT("Configured round can be consumed"), Magazine->ConsumeRound());
@@ -181,6 +209,210 @@ bool FValidatePhantomPIECommand::Update()
 	return true;
 }
 
+class FValidateTacticalMovementPIECommand final : public IAutomationLatentCommand
+{
+public:
+	explicit FValidateTacticalMovementPIECommand(FAutomationTestBase* InTest,
+		float InStartDistance = 700.f, int32 InRangeMode = 0)
+		: Test(InTest), StartDistance(InStartDistance), RangeMode(InRangeMode) {}
+
+	virtual bool Update() override
+	{
+		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+		if (!World) return false;
+		if (!Phantom.IsValid())
+		{
+			APawn* Player = World->GetFirstPlayerController() ? World->GetFirstPlayerController()->GetPawn() : nullptr;
+			if (!Player) return false;
+			TargetLocation = Player->GetActorLocation();
+			UClass* PhantomClass = LoadClass<APhantom>(nullptr,
+				TEXT("/Game/Enemy/Phantom/Blueprint/BP_Phantom.BP_Phantom_C"));
+			FActorSpawnParameters Params;
+			Params.ObjectFlags = RF_Transient;
+			APhantom* Spawned = World->SpawnActor<APhantom>(PhantomClass,
+				TargetLocation + FVector(StartDistance, 0.f, 0.f), FRotator(0.f, 180.f, 0.f), Params);
+			Test->TestNotNull(TEXT("Tactical PIE Phantom spawned"), Spawned);
+			if (!Spawned) return true;
+			Phantom = Spawned;
+			StartLocation = Spawned->GetActorLocation();
+			PreviousLocation = StartLocation;
+			StartTime = World->GetTimeSeconds();
+			Spawned->SetAIState(EHumanoidEnemyAIState::Aim);
+			if (AAIController* Controller = Cast<AAIController>(Spawned->GetController())) Controller->SetFocus(Player);
+			return false;
+		}
+
+		APhantom* Enemy = Phantom.Get();
+		AccumulatedTravel += FVector::Dist2D(PreviousLocation, Enemy->GetActorLocation());
+		PreviousLocation = Enemy->GetActorLocation();
+		const FVector Radial = (Enemy->GetActorLocation() - TargetLocation).GetSafeNormal2D();
+		const FVector Tangent(-Radial.Y, Radial.X, 0.f);
+		MaxLateralSpeed = FMath::Max(MaxLateralSpeed,
+			FMath::Abs(FVector::DotProduct(Enemy->GetVelocity(), Tangent)));
+		MinDistance = FMath::Min(MinDistance, FVector::Dist2D(Enemy->GetActorLocation(), TargetLocation));
+		MaxDistance = FMath::Max(MaxDistance, FVector::Dist2D(Enemy->GetActorLocation(), TargetLocation));
+		if (World->GetTimeSeconds() - StartTime < 1.1f) return false;
+
+		Test->TestTrue(TEXT("Tactical PIE moved for a sustained interval"), AccumulatedTravel > 80.f);
+		Test->TestTrue(TEXT("Tactical PIE produced lateral strafe speed"), MaxLateralSpeed > 80.f);
+		Test->TestTrue(TEXT("Tactical PIE stayed in a human-like distance envelope"),
+			MinDistance > 150.f && MaxDistance < 1400.f);
+		const float FinalDistance = FVector::Dist2D(Enemy->GetActorLocation(), TargetLocation);
+		if (RangeMode < 0)
+		{
+			Test->TestTrue(TEXT("Too-close tactical PIE retreats from the player"),
+				FinalDistance > StartDistance + 30.f);
+		}
+		else if (RangeMode > 0)
+		{
+			Test->TestTrue(TEXT("Too-far tactical PIE closes distance diagonally"),
+				FinalDistance < StartDistance - 30.f);
+		}
+		Test->TestTrue(TEXT("Tactical PIE remained in Aim"), Enemy->GetAIState() == EHumanoidEnemyAIState::Aim);
+		Test->TestTrue(TEXT("Tactical PIE kept aiming"), Enemy->bIsAiming);
+		Test->TestNotNull(TEXT("Tactical PIE uses humanoid AnimInstance"),
+			Cast<UHumanoidEnemyAnimInstance>(Enemy->GetMesh()->GetAnimInstance()));
+		Test->AddInfo(FString::Printf(TEXT("TACTICAL_PIE travel=%.1f displacement=%.1f lateral_max=%.1f distance=[%.1f,%.1f]"),
+			AccumulatedTravel, FVector::Dist2D(StartLocation, Enemy->GetActorLocation()),
+			MaxLateralSpeed, MinDistance, MaxDistance));
+		Enemy->Destroy();
+		return true;
+	}
+
+private:
+	FAutomationTestBase* Test = nullptr;
+	TWeakObjectPtr<APhantom> Phantom;
+	FVector StartLocation = FVector::ZeroVector;
+	FVector PreviousLocation = FVector::ZeroVector;
+	FVector TargetLocation = FVector::ZeroVector;
+	float StartTime = 0.f;
+	float MaxLateralSpeed = 0.f;
+	float MinDistance = TNumericLimits<float>::Max();
+	float MaxDistance = 0.f;
+	float AccumulatedTravel = 0.f;
+	float StartDistance = 700.f;
+	int32 RangeMode = 0;
+};
+
+class FValidateNoNavPatrolPIECommand final : public IAutomationLatentCommand
+{
+public:
+	explicit FValidateNoNavPatrolPIECommand(FAutomationTestBase* InTest) : Test(InTest) {}
+	virtual bool Update() override
+	{
+		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+		if (!World) return false;
+		if (!Phantom.IsValid())
+		{
+			APawn* Player = World->GetFirstPlayerController() ? World->GetFirstPlayerController()->GetPawn() : nullptr;
+			if (!Player) return false;
+			const FVector Origin = Player->GetActorLocation() + FVector(0.f, 500.f, 0.f);
+			APatrolPoint* Point = World->SpawnActor<APatrolPoint>(Origin + FVector(180.f, 0.f, 0.f), FRotator::ZeroRotator);
+			Point->WaitTime = 3.f;
+			UClass* PhantomClass = LoadClass<APhantom>(nullptr,
+				TEXT("/Game/Enemy/Phantom/Blueprint/BP_Phantom.BP_Phantom_C"));
+			APhantom* Spawned = World->SpawnActor<APhantom>(PhantomClass, Origin, FRotator::ZeroRotator);
+			Test->TestNotNull(TEXT("No-nav patrol Phantom spawned"), Spawned);
+			Test->TestNotNull(TEXT("No-nav patrol point spawned"), Point);
+			if (!Spawned || !Point) return true;
+			Phantom = Spawned;
+			PatrolPoint = Point;
+			StartLocation = Origin;
+			return false;
+		}
+		if (!bConfigured)
+		{
+			if (!Phantom->GetController()) return false;
+			if (AAIController* Controller = Cast<AAIController>(Phantom->GetController()))
+			{
+				if (Controller->GetPerceptionComponent()) Controller->GetPerceptionComponent()->Deactivate();
+				Controller->ClearFocus(EAIFocusPriority::Gameplay);
+			}
+			Phantom->SetPatrolPoints({PatrolPoint.Get()});
+			StartTime = World->GetTimeSeconds();
+			bConfigured = true;
+			return false;
+		}
+		if (World->GetTimeSeconds() - StartTime < 1.7f) return false;
+		APhantom* Enemy = Phantom.Get();
+		Test->AddInfo(FString::Printf(TEXT("NO_NAV_PATROL displacement=%.1f mode=%d state=%d scanning=%d"),
+			FVector::Dist2D(StartLocation, Enemy->GetActorLocation()),
+			static_cast<int32>(Enemy->GetCharacterMovement()->MovementMode),
+			static_cast<int32>(Enemy->GetAIState()), static_cast<int32>(Enemy->IsPatrolScanning())));
+		Test->TestTrue(TEXT("No-nav patrol fallback moves toward configured point"),
+			FVector::Dist2D(StartLocation, Enemy->GetActorLocation()) > 30.f);
+		Test->TestTrue(TEXT("No-nav patrol reaches point and enters Relaxed scan wait"), Enemy->IsPatrolScanning());
+		Test->TestEqual(TEXT("No-nav patrol remains in Patrol state"),
+			Enemy->GetAIState(), EHumanoidEnemyAIState::Patrol);
+		Enemy->Destroy();
+		if (PatrolPoint.IsValid()) PatrolPoint->Destroy();
+		return true;
+	}
+private:
+	FAutomationTestBase* Test = nullptr;
+	TWeakObjectPtr<APhantom> Phantom;
+	TWeakObjectPtr<APatrolPoint> PatrolPoint;
+	FVector StartLocation = FVector::ZeroVector;
+	float StartTime = 0.f;
+	bool bConfigured = false;
+};
+
+class FValidateNoNavSearchPIECommand final : public IAutomationLatentCommand
+{
+public:
+	explicit FValidateNoNavSearchPIECommand(FAutomationTestBase* InTest) : Test(InTest) {}
+	virtual bool Update() override
+	{
+		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+		if (!World) return false;
+		if (!Phantom.IsValid())
+		{
+			APawn* Player = World->GetFirstPlayerController() ? World->GetFirstPlayerController()->GetPawn() : nullptr;
+			if (!Player) return false;
+			StartLocation = Player->GetActorLocation() + FVector(0.f, -500.f, 0.f);
+			UClass* PhantomClass = LoadClass<APhantom>(nullptr,
+				TEXT("/Game/Enemy/Phantom/Blueprint/BP_Phantom.BP_Phantom_C"));
+			APhantom* Spawned = World->SpawnActor<APhantom>(PhantomClass, StartLocation, FRotator::ZeroRotator);
+			Test->TestNotNull(TEXT("No-nav search Phantom spawned"), Spawned);
+			if (!Spawned) return true;
+			Phantom = Spawned;
+			return false;
+		}
+		if (!bSearchStarted)
+		{
+			if (!Phantom->GetController()) return false;
+			if (AAIController* Controller = Cast<AAIController>(Phantom->GetController()))
+			{
+				if (Controller->GetPerceptionComponent()) Controller->GetPerceptionComponent()->Deactivate();
+				Controller->ClearFocus(EAIFocusPriority::Gameplay);
+			}
+			StartTime = World->GetTimeSeconds();
+			Phantom->StartLostTargetSearch(StartLocation + FVector(300.f, 0.f, 0.f));
+			bSearchStarted = true;
+			return false;
+		}
+		if (World->GetTimeSeconds() - StartTime < 1.5f) return false;
+		APhantom* Enemy = Phantom.Get();
+		Test->AddInfo(FString::Printf(TEXT("NO_NAV_SEARCH displacement=%.1f mode=%d state=%d scanning=%d"),
+			FVector::Dist2D(StartLocation, Enemy->GetActorLocation()),
+			static_cast<int32>(Enemy->GetCharacterMovement()->MovementMode),
+			static_cast<int32>(Enemy->GetAIState()), static_cast<int32>(Enemy->IsPatrolScanning())));
+		Test->TestTrue(TEXT("No-nav SearchRush advances toward last-known point"),
+			FVector::Dist2D(StartLocation, Enemy->GetActorLocation()) > 150.f);
+		Test->TestEqual(TEXT("No-nav SearchRush reaches point and enters SearchScan"),
+			Enemy->GetAIState(), EHumanoidEnemyAIState::SearchScan);
+		Test->TestTrue(TEXT("No-nav SearchScan drives Relaxed scan animation"), Enemy->IsPatrolScanning());
+		Enemy->Destroy();
+		return true;
+	}
+private:
+	FAutomationTestBase* Test = nullptr;
+	TWeakObjectPtr<APhantom> Phantom;
+	FVector StartLocation = FVector::ZeroVector;
+	float StartTime = 0.f;
+	bool bSearchStarted = false;
+};
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomPIESmokeTest,
 	"TheManTest.Enemy.Phantom.PIESmoke",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -189,8 +421,158 @@ bool FPhantomPIESmokeTest::RunTest(const FString& Parameters)
 {
 	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
-	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidatePhantomPIECommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FValidateTacticalMovementPIECommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomTacticalRetreatPIETest,
+	"TheManTest.Enemy.Phantom.PIETacticalRetreat",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FPhantomTacticalRetreatPIETest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FValidateTacticalMovementPIECommand(this, 300.f, -1));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomTacticalApproachPIETest,
+	"TheManTest.Enemy.Phantom.PIETacticalApproach",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FPhantomTacticalApproachPIETest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FValidateTacticalMovementPIECommand(this, 1200.f, 1));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomNoNavPatrolPIETest,
+	"TheManTest.Enemy.Phantom.PIENoNavPatrol",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FPhantomNoNavPatrolPIETest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FValidateNoNavPatrolPIECommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomNoNavSearchPIETest,
+	"TheManTest.Enemy.Phantom.PIENoNavSearch",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FPhantomNoNavSearchPIETest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FValidateNoNavSearchPIECommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND(FPlayerFramingScreenshotCommand);
+bool FPlayerFramingScreenshotCommand::Update()
+{
+	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+	AFPSCharacterBase* Player = World ? Cast<AFPSCharacterBase>(World->GetFirstPlayerController()->GetPawn()) : nullptr;
+	if (!Player || !Player->GetHeadCamera()) return false;
+	UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>();
+	RenderTarget->RenderTargetFormat = RTF_RGBA8;
+	RenderTarget->InitAutoFormat(1920, 1080);
+	RenderTarget->UpdateResourceImmediate(true);
+	USceneCaptureComponent2D* Capture = NewObject<USceneCaptureComponent2D>(Player);
+	Capture->RegisterComponentWithWorld(World);
+	Capture->AttachToComponent(Player->GetHeadCamera(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	Capture->FOVAngle = 110.f;
+	Capture->CaptureSource = SCS_FinalColorLDR;
+	Capture->TextureTarget = RenderTarget;
+	Capture->bCaptureEveryFrame = false;
+	Capture->bCaptureOnMovement = false;
+	Capture->CaptureScene();
+	TArray<FColor> Pixels;
+	if (!RenderTarget->GameThread_GetRenderTargetResource()->ReadPixels(Pixels)) return false;
+	const FIntPoint Size(1920, 1080);
+	TArray64<uint8> PNGData;
+	FImageUtils::PNGCompressImageArray(Size.X, Size.Y, Pixels, PNGData);
+	const FString ScreenshotPath = FPaths::Combine(FPaths::ProjectSavedDir(),
+		TEXT("Screenshots/PlayerFramingCurrent.png"));
+	const bool bSaved = FFileHelper::SaveArrayToFile(PNGData, *ScreenshotPath);
+	Capture->DestroyComponent();
+	return bSaved;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FValidatePlayerViewmodelPIECommand, FAutomationTestBase*, Test);
+bool FValidatePlayerViewmodelPIECommand::Update()
+{
+	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	AFPSCharacterBase* Player = PC ? Cast<AFPSCharacterBase>(PC->GetPawn()) : nullptr;
+	if (!Player || !Player->GetHeadCamera() || !Player->GetViewmodelRoot() || !Player->GetArmsMesh()) return false;
+
+	Test->TestTrue(TEXT("Gameplay camera remains 110 degree FOV"),
+		FMath::IsNearlyEqual(Player->GetHeadCamera()->FieldOfView, 110.f));
+	Test->TestEqual(TEXT("ViewmodelRoot is attached directly to HeadCamera"),
+		Player->GetViewmodelRoot()->GetAttachParent(), static_cast<USceneComponent*>(Player->GetHeadCamera()));
+	Test->TestEqual(TEXT("ArmsViewMesh is attached to ViewmodelRoot"),
+		Player->GetArmsMesh()->GetAttachParent(), Player->GetViewmodelRoot());
+	Test->TestTrue(TEXT("Final viewmodel location matches approved framing"),
+		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector(0.f, 0.f, -7.f), 0.01f));
+	Test->TestTrue(TEXT("Final viewmodel rotation preserves imported pose orientation"),
+		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
+
+	UEquipmentManagerComponent* EquipmentManager = Player->GetEquipmentManager();
+	AEquipmentBase* Equipment = EquipmentManager ? EquipmentManager->GetCurrentEquipment() : nullptr;
+	Test->TestNotNull(TEXT("Player has initial equipment"), Equipment);
+	if (Equipment)
+	{
+		Test->TestEqual(TEXT("Current equipment follows ArmsViewMesh socket"),
+			Equipment->GetRootComponent()->GetAttachParent(), static_cast<USceneComponent*>(Player->GetArmsMesh()));
+		Test->TestEqual(TEXT("Current equipment uses declared equip socket"),
+			Equipment->GetRootComponent()->GetAttachSocketName(), Equipment->GetEquipSocketName());
+	}
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND(FStabilizePlayerViewmodelCommand);
+bool FStabilizePlayerViewmodelCommand::Update()
+{
+	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+	AFPSCharacterBase* Player = World && World->GetFirstPlayerController()
+		? Cast<AFPSCharacterBase>(World->GetFirstPlayerController()->GetPawn()) : nullptr;
+	if (!Player || !Player->GetArmsMesh() || !Player->GetArmsMesh()->GetAnimInstance()) return false;
+	Player->GetArmsMesh()->GetAnimInstance()->Montage_Stop(0.f);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPlayerFramingCaptureTest,
+	"TheManTest.Player.Viewmodel.FramingCapture",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FPlayerFramingCaptureTest::RunTest(const FString& Parameters)
+{
+	if (GEngine) GEngine->Exec(nullptr, TEXT("r.MotionBlurQuality 0"));
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.8f));
+	ADD_LATENT_AUTOMATION_COMMAND(FValidatePlayerViewmodelPIECommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FStabilizePlayerViewmodelCommand());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FPlayerFramingScreenshotCommand());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }

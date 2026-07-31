@@ -74,8 +74,8 @@ AFPSCharacterBase::AFPSCharacterBase()
 	// 后续 ADS / bob / sway / movement lag 只叠到 ViewmodelRoot 或 ArmsViewMesh，不污染相机。
 	ViewmodelRoot = CreateDefaultSubobject<USceneComponent>(TEXT("ViewmodelRoot"));
 	ViewmodelRoot->SetupAttachment(HeadCamera);
-	ViewmodelRoot->SetRelativeLocation(FVector::ZeroVector);
-	ViewmodelRoot->SetRelativeRotation(FRotator::ZeroRotator);
+	ViewmodelRoot->SetRelativeLocation(ViewmodelOffsetLocation);
+	ViewmodelRoot->SetRelativeRotation(ViewmodelOffsetRotation);
 
 	// FEAT-042：独立 FP 手臂 mesh。挂 ViewmodelRoot 下，跑自己的武器 ABP（持枪 pose），
 	// 只给自己看、不投影、始终评估姿势。骨架/相对 Transform/AnimClass 在 BP 配。
@@ -137,10 +137,20 @@ void AFPSCharacterBase::EnsureViewmodelAttachment()
 	}
 }
 
+void AFPSCharacterBase::ApplyViewmodelFraming()
+{
+	if (ViewmodelRoot)
+	{
+		ViewmodelRoot->SetRelativeLocation(ViewmodelOffsetLocation);
+		ViewmodelRoot->SetRelativeRotation(ViewmodelOffsetRotation);
+	}
+}
+
 void AFPSCharacterBase::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 	EnsureViewmodelAttachment();
+	ApplyViewmodelFraming();
 }
 
 // FEAT-038：隐藏指定材质槽对应的 section（只影响渲染，不改骨骼姿势 → Leader/Follower 共享姿势安全）。
@@ -160,6 +170,7 @@ void AFPSCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 	EnsureViewmodelAttachment();
+	ApplyViewmodelFraming();
 	// Character Blueprints may retain an older serialized camera value. Keep the
 	// shared first-person gameplay FOV authoritative across every player class.
 	if (HeadCamera)
