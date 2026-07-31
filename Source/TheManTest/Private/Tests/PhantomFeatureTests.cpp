@@ -13,6 +13,62 @@
 #include "Tests/AutomationEditorCommon.h"
 #include "Tests/AutomationCommon.h"
 #include "Editor.h"
+#include "Animation/AnimBlueprint.h"
+#include "Animation/BlendSpace.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomAnimationOverridesTest,
+	"TheManTest.Enemy.Phantom.AnimationOverrides",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FPhantomAnimationOverridesTest::RunTest(const FString& Parameters)
+{
+	UAnimBlueprint* Child = LoadObject<UAnimBlueprint>(nullptr,
+		TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/Logic/ABP_Phantom_OriginalRifle.ABP_Phantom_OriginalRifle"));
+	TestNotNull(TEXT("Phantom child AnimBP"), Child);
+	if (!Child) return false;
+
+	TSet<FString> OverridePaths;
+	for (const FAnimParentNodeAssetOverride& Override : Child->ParentAssetOverrides)
+	{
+		TestNotNull(TEXT("Every stored Phantom override has an asset"), Override.NewAsset.Get());
+		if (Override.NewAsset) OverridePaths.Add(Override.NewAsset->GetPathName());
+	}
+	auto HasOverride = [&OverridePaths](const TCHAR* Path) { return OverridePaths.Contains(Path); };
+	TestTrue(TEXT("Relaxed idle override"), HasOverride(TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/W2_Stand_Relaxed_Idle_IP.W2_Stand_Relaxed_Idle_IP")));
+	TestTrue(TEXT("Patrol directional BlendSpace override"), HasOverride(TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_RelaxedPatrol2D.BS_Phantom_RelaxedPatrol2D")));
+	TestTrue(TEXT("Aim directional BlendSpace override"), HasOverride(TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_AimLocomotion.BS_Phantom_AimLocomotion")));
+	for (int32 Index = 1; Index <= 4; ++Index)
+	{
+		TestTrue(*FString::Printf(TEXT("Patrol scan variant %d override"), Index),
+			HasOverride(*FString::Printf(TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/W2_Stand_Relaxed_Fgt_v%d_IP.W2_Stand_Relaxed_Fgt_v%d_IP"), Index, Index)));
+	}
+
+	UBlendSpace* Aim = LoadObject<UBlendSpace>(nullptr,
+		TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_AimLocomotion.BS_Phantom_AimLocomotion"));
+	TestNotNull(TEXT("Aim 2D BlendSpace"), Aim);
+	if (const UBlendSpace* AimBlendSpace = Cast<UBlendSpace>(Aim))
+	{
+		const TArray<FBlendSample>& Samples = AimBlendSpace->GetBlendSamples();
+		bool bHasNegativeDirection = false;
+		bool bHasPositiveDirection = false;
+		bool bHasMovingSample = false;
+		bool bHasIdleCenter = false;
+		for (const FBlendSample& Sample : Samples)
+		{
+			bHasNegativeDirection |= Sample.SampleValue.X < -KINDA_SMALL_NUMBER || Sample.SampleValue.Y < -KINDA_SMALL_NUMBER;
+			bHasPositiveDirection |= Sample.SampleValue.X > KINDA_SMALL_NUMBER || Sample.SampleValue.Y > KINDA_SMALL_NUMBER;
+			bHasMovingSample |= !Sample.SampleValue.IsNearlyZero();
+			bHasIdleCenter |= Sample.SampleValue.IsNearlyZero();
+		}
+		TestTrue(TEXT("Aim BlendSpace has enough samples for directional interpolation"), Samples.Num() >= 9);
+		TestTrue(TEXT("Aim BlendSpace covers negative direction"), bHasNegativeDirection);
+		TestTrue(TEXT("Aim BlendSpace covers positive direction"), bHasPositiveDirection);
+		TestTrue(TEXT("Aim BlendSpace has moving samples"), bHasMovingSample);
+		TestTrue(TEXT("Aim BlendSpace has idle center"), bHasIdleCenter);
+		AddInfo(FString::Printf(TEXT("PHANTOM_AIM_BLENDSPACE samples=%d"), Samples.Num()));
+	}
+	return !HasAnyErrors();
+}
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomReusableCombatTest,
 	"TheManTest.Enemy.Phantom.ReusableCombatModules",

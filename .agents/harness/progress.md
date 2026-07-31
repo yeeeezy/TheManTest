@@ -2,11 +2,13 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-30-session122-phantom-complete
+**最后更新：** 2026-07-31-session123-phantom-animation-overrides-fixed
 **当前功能：** 无（FEAT-057～FEAT-063 已完成归档）
-**会话编号：** 122
+**会话编号：** 123
 
 Phantom 原始 Rifle_01 小白人动画、公共巡逻/感知/丢失搜索、掩体、20 发弹匣、三连发/扫射/换弹、找掩体、二阶段透明穿透与范围轰炸已完成。
+
+Session123 修正 FEAT-057 漏验：`ABP_Phantom_OriginalRifle` 的 Idle、Patrol、Aim 和 PatrolScan 资产覆盖已真实保存；Aim 为 15-sample 二维方向移动 BlendSpace，而非单一动画。
 
 ## 最近关键完成项
 
@@ -19,6 +21,7 @@ Phantom 原始 Rifle_01 小白人动画、公共巡逻/感知/丢失搜索、掩
 ## 验证
 
 - `TheManTestEditor Win64 Development`：Succeeded。
+- `TheManTest.Enemy.Phantom.AnimationOverrides`：Success；`PHANTOM_AIM_BLENDSPACE samples=15`。
 - 资产审计：`CODEX_PHANTOM_VALIDATION_SUCCESS animations=3 abilities=5 phases=2 scan_variants=4 cover=1`。
 - 自动化：`TheManTest.Enemy.Phantom.ReusableCombatModules` = Success。
 - 真实 PIE：`TheManTest.Enemy.Phantom.PIESmoke` = Success；验证原 Mesh/AnimInstance、20 发弹匣、丢失后退出 Aim、Phase 2 透明与弹体通道穿透。
@@ -32,4 +35,4 @@ Phantom 原始 Rifle_01 小白人动画、公共巡逻/感知/丢失搜索、掩
 
 ## 最新会话交接
 
-FEAT-057～063 已全部完成并移入 `feature_archive.json`，详细实现与已知限制见各自 archive。工作区保留本轮结果改动，尚未执行结果提交；仅安全 checkpoint `1402f52` 覆盖 FEAT-057。若继续新需求，先从 `feature_list.json` 选择新的唯一 active feature。
+Session123 已修复用户前台发现的 Phantom AnimBP 空覆盖问题，并新增只读回归测试防止再次漏验。结果尚未执行正式提交；安全 checkpoint `a3e7e83` 覆盖修复前的 FEAT-057～063，当前修正保留在工作区。用户/未知的 `BP_MaintenanceWorker` 与 TestMap External Actor 改动未纳入本修复。

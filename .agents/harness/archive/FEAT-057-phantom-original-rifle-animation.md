@@ -44,3 +44,11 @@ Phantom 不再使用重定向到 Cyber01 的动画表现。直接采用 `D:\Unre
 
 - 第二批转身动画迁移的依赖 Consolidate 曾把已加载的 MaintenanceWorker 动画标脏；这些文件本轮开始前干净，已立即逐一 `git restore`。预存脏资产 `BP_MaintenanceWorker.uasset` 未触碰。
 - TestMap 原有未跟踪 External Actor 保持不变；临时 Phantom External Actor 已删除。
+
+## Session123 验收修正（2026-07-31）
+
+- 用户前台检查发现 `ABP_Phantom_OriginalRifle` 实际只保存了转身覆盖，Idle、Patrol、Aim 与 PatrolScan 仍为空；session122 的完成记录与资产实际状态不符。
+- 已补齐 Relaxed Idle、`BS_Phantom_RelaxedPatrol2D`、`BS_Phantom_AimLocomotion` 以及 Fgt v1～v4。父模板 `ABP_HumanoidEnemy` 继续保持无骨架/空资产设计。
+- Aim 使用二维方向移动 BlendSpace，不使用单一 Aim Idle：当前共 15 个采样，前后左右 Walk/Jog 驱动，斜向由二维插值形成八方向移动，速度为零时回中心 Idle。
+- 新增只读自动化 `TheManTest.Enemy.Phantom.AnimationOverrides`，逐项检查关键 Parent Asset Override 非空、四种扫描变体齐全、Aim BlendSpace 至少 9 个采样且覆盖正负方向/移动/中心 Idle。
+- 修正后 `TheManTestEditor Win64 Development` 构建成功；`AnimationOverrides` 自动化 Success，日志证据：`PHANTOM_AIM_BLENDSPACE samples=15`。

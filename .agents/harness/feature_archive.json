@@ -599,7 +599,7 @@
                          "description": "直接使用 TMIIR /Game/Rifle_01 的原始 Mesh、Skeleton 与原动画重建 Phantom；巡逻只使用 Relaxed 动画，发现目标后才进入 Aim 动画集。",
                          "archive_file": "archive/FEAT-057-phantom-original-rifle-animation.md",
                          "created": "2026-07-30",
-                         "updated": "2026-07-30-session122-feat057-complete",
+                         "updated": "2026-07-31-session123-animation-overrides-fixed",
                          "done_criteria": [
                              "迁入并使用 Rifle_01 原始 Mesh/Skeleton 和必要最终动画，不迁入重定向中间资产 ✓",
                              "Phantom AnimBP 使用原始 Skeleton 且可编译 ✓",
@@ -607,7 +607,7 @@
                              "随机环视支持 W2_Stand_Relaxed_Fgt_v1_IP 等多个变体 ✓",
                              "Development Editor 构建与基础 PIE 动画切换通过 ✓"
                          ],
-                         "verification_evidence": "TMIIR 只读审计确认原 Mesh 与动画共用 UE4_Mannequin_Skeleton。AssetTools 迁入并整理 51 个正式资产到 /Game/Enemy/Phantom/OriginalRifle，无 IK Rig、IK Retargeter 或源 FBX。ABP_Phantom_OriginalRifle、Relaxed/Aim 两套 BlendSpace 编译保存且零 Cyber01 依赖；BP_Phantom 已使用原 SK_Mannequin、AnimBP 和 M4。临时 PIE 验证角色可见落地、运行时 Mesh/AnimInstance/Patrol 状态正确，临时 Actor 已销毁且 TestMap 未保存。关闭相关编辑器后 TheManTestEditor Win64 Development 完整构建 40/40 actions，Result: Succeeded。"
+                         "verification_evidence": "2026-07-31 session123 修正 session122 漏验：ABP_Phantom_OriginalRifle 已实际保存 Relaxed Idle、Patrol 2D BlendSpace、Aim 2D BlendSpace 与 Fgt v1～v4；Aim BlendSpace 为 15 samples，前后左右动画经二维插值覆盖八方向移动。TheManTest.Enemy.Phantom.AnimationOverrides = Success；TheManTestEditor Win64 Development = Succeeded。此前 Mesh/Skeleton/资产迁移与 PIE 证据仍见 archive。"
                      },
                      {
                          "id": "FEAT-058", "name": "通用人形 Enemy 巡逻感知与丢失目标搜索", "status": "done",
