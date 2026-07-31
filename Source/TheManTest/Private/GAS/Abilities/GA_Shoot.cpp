@@ -8,6 +8,8 @@
 #include "AbilitySystemComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
 UGA_Shoot::UGA_Shoot()
 {
@@ -100,6 +102,17 @@ void UGA_Shoot::ActivateAbility(
 	}
 
 	// 播放开火蒙太奇（与子弹解耦：空枪/未配子弹也能播）
+	if (Firearm->MuzzleEffect && WeaponMesh)
+	{
+		if (UNiagaraComponent* Effect = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			Firearm->MuzzleEffect, WeaponMesh, MuzzleSocket, FVector::ZeroVector,
+			Firearm->MuzzleEffectRotation, EAttachLocation::SnapToTarget,
+			true, true, ENCPoolMethod::AutoRelease, true))
+		{
+			Effect->SetRelativeScale3D(Firearm->MuzzleEffectScale);
+		}
+	}
+
 	if (Firearm->FireMontage)
 	{
 		if (UAnimInstance* ArmsAnimInst = Character->GetArmsMesh()->GetAnimInstance())

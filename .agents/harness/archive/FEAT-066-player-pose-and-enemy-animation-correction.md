@@ -31,6 +31,16 @@
 - Enemy 源码范围检索：无 `AddMovementInput`、NoNav、DirectMove 回退。
 - 受控 1920×1080 / FOV 110 截图：`Saved/Screenshots/PlayerFramingCurrent.png`。
 
+## session128 复开修正
+
+- 两点巡逻卡住根因是 180° 转身只依赖动画 `AnimNotify_TurnComplete`。现在 Notify 仍可用，同时 Tick 在实际 Yaw 到达目标容差时调用同一完成路径，缺失 Notify 不再永久锁住 `bPendingTurn`。
+- 新增 `ConfigurePatrolPoints` 与到点计数，运行时生成的人形怪继续复用同一 NavMesh-only 巡逻实现。
+- 通用 Enemy 射击基类加入基础散布、逐发扩散、最大散布、移动惩罚和按时间恢复；三连发、扫射及未来人形怪自动复用。
+- 整枪构图按枪口、前/后准星、机匣、双手五组锚点重新迭代，最终 Viewmodel Location `(-25,2,-6)`、Rotation `(0,-10,0)`。
+- `AlreadyAtGoal` 到点处理改为下一 Tick，避免重复/重叠路点形成同步递归；巡逻与搜索分别记录当前导航 RequestID，只接受属于本状态的完成回调。
+- 真实两点 NavMesh 巡逻：11.58 秒内到点 5 次、累计移动 1201.8 cm，超过两次完整反转且未卡住。
+- Development Editor 构建成功；`Saved/Logs/FEAT067FinalRegression4.log` 为 8/8 Success。
+
 ## 已知 harness 问题
 
 `.agents/harness/feature_list.json` 当前不可解析；遵循项目指令已先报告，并从可读 archive/progress 完成交接，未擅自修复整个主索引。

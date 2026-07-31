@@ -101,10 +101,10 @@ public:
 
 	// 第一人称最终构图只作用于相机子级 ViewmodelRoot，不改变 gameplay 相机或骨架基础校正。
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Framing")
-	FVector ViewmodelOffsetLocation = FVector(-30.f, 3.f, -4.f);
+	FVector ViewmodelOffsetLocation = FVector(-25.f, 2.f, -6.f);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Framing")
-	FRotator ViewmodelOffsetRotation = FRotator(0.f, -12.f, 0.f);
+	FRotator ViewmodelOffsetRotation = FRotator(0.f, -10.f, 0.f);
 
 protected:
 	virtual void BeginPlay() override;

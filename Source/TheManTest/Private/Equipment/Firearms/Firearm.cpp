@@ -7,9 +7,18 @@
 #include "Animation/AnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Engine.h"
+#include "NiagaraSystem.h"
+#include "UObject/ConstructorHelpers.h"
 
 AFirearm::AFirearm()
 {
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> DefaultPlayerMuzzle(
+		TEXT("/Game/Effects/_Shared/Muzzle/Systems/NS_RepairGun_Muzzle.NS_RepairGun_Muzzle"));
+	if (DefaultPlayerMuzzle.Succeeded())
+	{
+		MuzzleEffect = DefaultPlayerMuzzle.Object;
+		MuzzleEffectScale = FVector(0.45f);
+	}
 }
 
 static void SetLinkedFirearmAimSource(USkeletalMeshComponent* Mesh, TSubclassOf<UAnimInstance> AnimLayerClass, const FTransform& AimSourceLocalTransform)

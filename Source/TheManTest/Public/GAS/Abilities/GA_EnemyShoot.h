@@ -9,6 +9,7 @@ class UAnimMontage;
 class UAnimSequenceBase;
 class USoundBase;
 class AHumanoidEnemy;
+class UNiagaraSystem;
 
 /**
  * UGA_EnemyShoot
@@ -35,6 +36,16 @@ public:
 		const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo,
 		const FGameplayEventData* TriggerEventData) override;
+
+	UFUNCTION(BlueprintPure, Category = "EnemyShoot|Accuracy")
+	float GetCurrentSpreadDegrees() const { return CurrentSpreadDegrees; }
+
+	UFUNCTION(BlueprintPure, Category = "EnemyShoot|VFX")
+	UNiagaraSystem* GetMuzzleEffect() const { return MuzzleEffect; }
+
+	// Shared accuracy entry point for automatic-fire variants and future humanoid weapons.
+	UFUNCTION(BlueprintCallable, Category = "EnemyShoot|Accuracy")
+	FVector CalculateShotDirection(AHumanoidEnemy* Enemy, const FVector& FireDir);
 
 protected:
 	// 执行一发完整射击表现；供三连发/持续扫射子类按节奏复用。
@@ -74,4 +85,37 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "EnemyShoot", meta = (ClampMin = "0.0"))
 	float FireSoundPitchMultiplier = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnemyShoot|VFX")
+	TObjectPtr<UNiagaraSystem> MuzzleEffect;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnemyShoot|VFX")
+	FRotator MuzzleEffectRotation = FRotator::ZeroRotator;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnemyShoot|VFX")
+	FVector MuzzleEffectScale = FVector::OneVector;
+
+	// Reusable humanoid accuracy model: first shots are controlled, sustained fire blooms,
+	// and movement adds a separate penalty. Values are overridable per ability Blueprint.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnemyShoot|Accuracy", meta = (ClampMin = "0.0", ClampMax = "20.0"))
+	float BaseSpreadDegrees = 1.5f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnemyShoot|Accuracy", meta = (ClampMin = "0.0", ClampMax = "20.0"))
+	float SpreadPerShotDegrees = 0.45f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnemyShoot|Accuracy", meta = (ClampMin = "0.0", ClampMax = "30.0"))
+	float MaxSpreadDegrees = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnemyShoot|Accuracy", meta = (ClampMin = "0.0"))
+	float SpreadRecoveryDegreesPerSecond = 3.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnemyShoot|Accuracy", meta = (ClampMin = "0.0", ClampMax = "10.0"))
+	float MovingSpreadPenaltyDegrees = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnemyShoot|Accuracy", meta = (ClampMin = "1.0"))
+	float MovingSpeedThreshold = 25.f;
+
+private:
+	float CurrentSpreadDegrees = 0.f;
+	double LastShotTimeSeconds = -1.0;
 };

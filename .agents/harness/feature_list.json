@@ -361,23 +361,6 @@
                                                "PIE 同时验证 RepairGun 子弹与潜伏者扫描效果无回归"
                                            ],
                          "verification_evidence":  "2026-07-29-session112：TMIIR 两个材质实例及 9 个依赖已通过 Unreal AssetTools 迁入主项目临时 /Game/ShapesFX_Pack，共 11 个资产；只读核对母材质为 Opaque/Unlit Surface。正式目录整理、RepairGun 蓝图赋材质、扫描地形叠加和 PIE 均尚未完成。整理命令被用户中断后核对确认目标 Effects 目录不存在且 BP_RepairGunBullet 未变脏；恢复时不得重复迁移。"
-                     },
-                     {
-                         "id": "FEAT-066",
-                         "name": "玩家持枪姿势精确对齐与 Enemy 移动动画纠偏",
-                         "status": "in_progress",
-                         "description": "按用户最新截图纠正 FEAT-065 的玩家构图偏差，修复实际 Enemy T-Pose/移动无动画，并删除所有无 NavMesh 直接移动回退，只保留标准导航寻路。",
-                         "archive_file": "archive/FEAT-066-player-pose-and-enemy-animation-correction.md",
-                         "created": "2026-07-31",
-                         "updated": "2026-07-31-session127",
-                         "done_criteria": [
-                             "玩家初始持枪姿势与 09:29 目标截图在相同宽高比下完全对齐",
-                             "关卡实际 Phantom 使用正确原始 Rifle_01 Mesh/Skeleton/AnimClass，移动不再 T-Pose/滑行",
-                             "Patrol/SearchRush/Aim 只使用 NavMesh 标准寻路，不存在 AddMovementInput 直移回退",
-                             "Relaxed 巡逻和 Aim 八向 BlendSpace 的 Speed/Direction/AIState 与视觉动画均通过 PIE",
-                             "Development Editor 构建、自动化、截图和前台 PIE 反复验收通过"
-                         ],
-                         "verification_evidence": ""
                      }
                  ],
     "_说明":  "主索引仅保留未完成、受阻及待改进功能；已完成项移至 feature_archive.json。功能详细历史仍以 archive/FEAT-*.md 为准。"

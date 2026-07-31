@@ -10,6 +10,12 @@
 #include "Equipment/EquipmentBase/EquipmentBase.h"
 #include "Characters/Enemy/Humanoid/Phantom/Phantom.h"
 #include "Characters/Enemy/Cover/EnemyCoverPoint.h"
+#include "Actors/PatrolPoint.h"
+#include "GAS/Abilities/GA_EnemyShoot.h"
+#include "Equipment/Firearms/Firearm.h"
+#include "NiagaraSystem.h"
+#include "NavigationSystem.h"
+#include "Perception/AIPerceptionComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Blueprint.h"
@@ -133,6 +139,19 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomReusableCombatTest,
 
 bool FPhantomReusableCombatTest::RunTest(const FString& Parameters)
 {
+	UGA_EnemyShoot* AccuracyProbe = NewObject<UGA_EnemyShoot>();
+	const FVector IdealDirection = FVector::ForwardVector;
+	float MaxAngularError = 0.f;
+	for (int32 Shot = 0; Shot < 12; ++Shot)
+	{
+		const FVector ShotDirection = AccuracyProbe->CalculateShotDirection(nullptr, IdealDirection);
+		MaxAngularError = FMath::Max(MaxAngularError,
+			FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(FVector::DotProduct(IdealDirection, ShotDirection), -1.f, 1.f))));
+	}
+	TestTrue(TEXT("Reusable enemy accuracy accumulates sustained-fire bloom"), AccuracyProbe->GetCurrentSpreadDegrees() > 0.f);
+	TestTrue(TEXT("Reusable enemy accuracy produces non-perfect shot directions"), MaxAngularError > 0.1f);
+	TestTrue(TEXT("Reusable enemy accuracy remains inside its configured maximum cone"), MaxAngularError <= 5.01f);
+
 	AHumanoidAIController* TacticalController = NewObject<AHumanoidAIController>();
 	const FVector Target = FVector::ZeroVector;
 	const FVector TooClose(300.f, 0.f, 0.f);
@@ -168,6 +187,24 @@ bool FPhantomReusableCombatTest::RunTest(const FString& Parameters)
 		TEXT("/Game/Enemy/Phantom/GAS/GameplayAbility/BGA_PhantomTakeCover.BGA_PhantomTakeCover")));
 	TestNotNull(TEXT("Barrage ability"), LoadObject<UBlueprint>(nullptr,
 		TEXT("/Game/Enemy/Phantom/GAS/GameplayAbility/BGA_PhantomAreaBarrage.BGA_PhantomAreaBarrage")));
+	UNiagaraSystem* RepairMuzzle = LoadObject<UNiagaraSystem>(nullptr,
+		TEXT("/Game/Effects/_Shared/Muzzle/Systems/NS_RepairGun_Muzzle.NS_RepairGun_Muzzle"));
+	UNiagaraSystem* HumanoidMuzzle = LoadObject<UNiagaraSystem>(nullptr,
+		TEXT("/Game/Effects/_Shared/Muzzle/Systems/NS_HumanoidRifle_Muzzle.NS_HumanoidRifle_Muzzle"));
+	TestNotNull(TEXT("RepairGun semantic muzzle system"), RepairMuzzle);
+	TestNotNull(TEXT("Humanoid rifle semantic muzzle system"), HumanoidMuzzle);
+	if (UClass* RepairClass = LoadClass<AFirearm>(nullptr,
+		TEXT("/Game/Weapons/RepairGun/Blueprint/BP_RepairGun.BP_RepairGun_C")))
+	{
+		const AFirearm* RepairCDO = RepairClass->GetDefaultObject<AFirearm>();
+		TestEqual(TEXT("RepairGun inherits the shared energy muzzle default"), RepairCDO->MuzzleEffect.Get(), RepairMuzzle);
+	}
+	if (UClass* BurstClass = LoadClass<UGA_EnemyShoot>(nullptr,
+		TEXT("/Game/Enemy/Phantom/GAS/GameplayAbility/BGA_PhantomBurst.BGA_PhantomBurst_C")))
+	{
+		const UGA_EnemyShoot* BurstCDO = BurstClass->GetDefaultObject<UGA_EnemyShoot>();
+		TestEqual(TEXT("Humanoid burst inherits the shared physical muzzle default"), BurstCDO->GetMuzzleEffect(), HumanoidMuzzle);
+	}
 
 	UWorld* World = LoadObject<UWorld>(nullptr, TEXT("/Game/Maps/TestMap.TestMap"));
 	TestNotNull(TEXT("Runtime test map"), World);
@@ -180,6 +217,12 @@ bool FPhantomReusableCombatTest::RunTest(const FString& Parameters)
 		TestNotNull(TEXT("Reusable humanoid spawned"), Humanoid);
 		if (Humanoid)
 		{
+			Humanoid->RequestTurn(180.f);
+			TestTrue(TEXT("Patrol turn starts pending without requiring an animation notify"), Humanoid->IsPendingTurn());
+			Humanoid->Tick(1.f);
+			TestFalse(TEXT("Patrol turn completes from reached yaw when animation notify is absent"), Humanoid->IsPendingTurn());
+			TestTrue(TEXT("Patrol turn reaches the requested reverse heading"),
+				FMath::Abs(FMath::FindDeltaAngleDegrees(Humanoid->GetActorRotation().Yaw, 180.f)) <= 1.f);
 			Humanoid->SetAIState(EHumanoidEnemyAIState::Aim);
 			Humanoid->StartLostTargetSearch(FVector(500.f, 0.f, 0.f));
 			TestEqual(TEXT("Lost target enters SearchRush"), Humanoid->GetAIState(), EHumanoidEnemyAIState::SearchRush);
@@ -435,6 +478,85 @@ private:
 	float StartTime = 0.f;
 };
 
+class FValidateTwoPointPatrolLoopPIECommand final : public IAutomationLatentCommand
+{
+public:
+	explicit FValidateTwoPointPatrolLoopPIECommand(FAutomationTestBase* InTest) : Test(InTest) {}
+	virtual bool Update() override
+	{
+		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+		if (!World) return false;
+		if (!Enemy.IsValid())
+		{
+			UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+			APawn* Player = World->GetFirstPlayerController() ? World->GetFirstPlayerController()->GetPawn() : nullptr;
+			if (!Nav || !Player) return false;
+			FNavLocation PointALocation;
+			FNavLocation PointBLocation;
+			const FVector Center = Player->GetActorLocation() + FVector(500.f, 500.f, 0.f);
+			if (!Nav->ProjectPointToNavigation(Center + FVector(0.f, -250.f, 0.f), PointALocation)
+				|| !Nav->ProjectPointToNavigation(Center + FVector(0.f, 250.f, 0.f), PointBLocation)
+				|| FVector::Dist2D(PointALocation.Location, PointBLocation.Location) < 300.f)
+			{
+				Test->AddError(TEXT("Two-point patrol test could not project both points to the existing NavMesh"));
+				return true;
+			}
+			FActorSpawnParameters Params;
+			Params.ObjectFlags = RF_Transient;
+			Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			PointA = World->SpawnActor<APatrolPoint>(APatrolPoint::StaticClass(), PointALocation.Location, FRotator::ZeroRotator, Params);
+			PointB = World->SpawnActor<APatrolPoint>(APatrolPoint::StaticClass(), PointBLocation.Location, FRotator::ZeroRotator, Params);
+			AHumanoidEnemy* Spawned = World->SpawnActor<AHumanoidEnemy>(AHumanoidEnemy::StaticClass(), PointALocation.Location,
+				FRotator::ZeroRotator, Params);
+			Test->TestNotNull(TEXT("Two-point patrol humanoid probe spawned"), Spawned);
+			if (!Spawned || !PointA.IsValid() || !PointB.IsValid()) return true;
+			Enemy = Spawned;
+			PreviousLocation = Spawned->GetActorLocation();
+			if (AHumanoidAIController* Controller = Cast<AHumanoidAIController>(Spawned->GetController()))
+			{
+				Controller->UnPossess();
+				Controller->Destroy();
+			}
+			AAIController* PatrolOnlyController = World->SpawnActor<AAIController>(AAIController::StaticClass(),
+				Spawned->GetActorLocation(), FRotator::ZeroRotator, Params);
+			Test->TestNotNull(TEXT("Two-point patrol uses an isolated navigation-only controller"), PatrolOnlyController);
+			if (!PatrolOnlyController) return true;
+			PatrolOnlyController->Possess(Spawned);
+			Spawned->SetAIState(EHumanoidEnemyAIState::Patrol);
+			TArray<APatrolPoint*> Points{PointA.Get(), PointB.Get()};
+			Spawned->ConfigurePatrolPoints(Points, true);
+			StartTime = World->GetTimeSeconds();
+			return false;
+		}
+
+		Travel += FVector::Dist2D(PreviousLocation, Enemy->GetActorLocation());
+		PreviousLocation = Enemy->GetActorLocation();
+		const int32 Arrivals = Enemy->GetPatrolArrivalCount();
+		if ((Arrivals < 5 || Travel < 1200.f) && World->GetTimeSeconds() - StartTime < 25.f) return false;
+		Test->TestTrue(TEXT("Two-point NavMesh patrol completes more than two full reversals"), Arrivals >= 5);
+		Test->TestTrue(TEXT("Two-point NavMesh patrol physically traverses the route repeatedly"), Travel >= 1200.f);
+		Test->TestFalse(TEXT("Two-point NavMesh patrol is not stuck pending a turn"), Enemy->IsPendingTurn());
+		Test->AddInfo(FString::Printf(TEXT("PATROL_LOOP arrivals=%d travel=%.1f elapsed=%.2f"),
+			Arrivals, Travel, World->GetTimeSeconds() - StartTime));
+		Test->AddInfo(FString::Printf(TEXT("PATROL_LOOP_POS enemy=%s A=%s B=%s distA=%.1f distB=%.1f velocity=%.1f"),
+			*Enemy->GetActorLocation().ToString(), *PointA->GetActorLocation().ToString(), *PointB->GetActorLocation().ToString(),
+			FVector::Dist2D(Enemy->GetActorLocation(), PointA->GetActorLocation()),
+			FVector::Dist2D(Enemy->GetActorLocation(), PointB->GetActorLocation()), Enemy->GetVelocity().Size2D()));
+		Enemy->Destroy();
+		if (PointA.IsValid()) PointA->Destroy();
+		if (PointB.IsValid()) PointB->Destroy();
+		return true;
+	}
+private:
+	FAutomationTestBase* Test = nullptr;
+	TWeakObjectPtr<AHumanoidEnemy> Enemy;
+	TWeakObjectPtr<APatrolPoint> PointA;
+	TWeakObjectPtr<APatrolPoint> PointB;
+	float StartTime = 0.f;
+	float Travel = 0.f;
+	FVector PreviousLocation = FVector::ZeroVector;
+};
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomPIESmokeTest,
 	"TheManTest.Enemy.Phantom.PIESmoke",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -459,6 +581,20 @@ bool FPlacedPhantomAnimationPIETest::RunTest(const FString& Parameters)
 	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FAuditPlacedPhantomAnimationPIECommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomPatrolLoopPIETest,
+	"TheManTest.Enemy.Phantom.PIEPatrolLoop",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FPhantomPatrolLoopPIETest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FValidateTwoPointPatrolLoopPIECommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }
@@ -537,9 +673,9 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 	Test->TestEqual(TEXT("ArmsViewMesh is attached to ViewmodelRoot"),
 		Player->GetArmsMesh()->GetAttachParent(), Player->GetViewmodelRoot());
 	Test->TestTrue(TEXT("Final viewmodel location matches approved framing"),
-		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector(-30.f, 3.f, -4.f), 0.01f));
+		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector(-25.f, 2.f, -6.f), 0.01f));
 	Test->TestTrue(TEXT("Final viewmodel rotation preserves imported pose orientation"),
-		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator(0.f, -12.f, 0.f), 0.01f));
+		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator(0.f, -10.f, 0.f), 0.01f));
 
 	UEquipmentManagerComponent* EquipmentManager = Player->GetEquipmentManager();
 	AEquipmentBase* Equipment = EquipmentManager ? EquipmentManager->GetCurrentEquipment() : nullptr;

@@ -6,6 +6,10 @@
 #include "Animation/AnimInstance.h"
 #include "AbilitySystemComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
+#include "NiagaraSystem.h"
+#include "UObject/ConstructorHelpers.h"
 
 UGA_EnemyShoot::UGA_EnemyShoot()
 {
@@ -14,6 +18,13 @@ UGA_EnemyShoot::UGA_EnemyShoot()
 
 	// 不注册 GameplayEvent 触发器：由 AEnemyBase::UseRandomSkill 按类激活，
 	// 这样一个敌人可拥有多个本类的子类技能（各绑不同子弹），分别独立触发。
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> DefaultHumanoidMuzzle(
+		TEXT("/Game/Effects/_Shared/Muzzle/Systems/NS_HumanoidRifle_Muzzle.NS_HumanoidRifle_Muzzle"));
+	if (DefaultHumanoidMuzzle.Succeeded())
+	{
+		MuzzleEffect = DefaultHumanoidMuzzle.Object;
+		MuzzleEffectScale = FVector(0.35f);
+	}
 }
 
 void UGA_EnemyShoot::ActivateAbility(
@@ -62,8 +73,19 @@ bool UGA_EnemyShoot::FireSingleRound(AHumanoidEnemy* Enemy)
 		FireDir = Enemy->GetActorForwardVector();
 	}
 
-	// 子弹生成（可被子类重写为散射/连发/hitscan）
-	SpawnProjectiles(Enemy, MuzzleLocation, FireDir);
+	// 子弹生成（可被子类重写为散射/连发/hitscan）。散布在公共基类统一处理，
+	// 因此三连发、扫射和后续人形怪无需各自复制命中误差逻辑。
+	SpawnProjectiles(Enemy, MuzzleLocation, CalculateShotDirection(Enemy, FireDir));
+	if (MuzzleEffect && WeaponMesh)
+	{
+		if (UNiagaraComponent* Effect = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			MuzzleEffect, WeaponMesh, MuzzleSocketName, FVector::ZeroVector,
+			MuzzleEffectRotation, EAttachLocation::SnapToTarget,
+			true, true, ENCPoolMethod::AutoRelease, true))
+		{
+			Effect->SetRelativeScale3D(MuzzleEffectScale);
+		}
+	}
 
 	// 开火蒙太奇（可选）
 	if (FireMontage)
@@ -90,6 +112,28 @@ bool UGA_EnemyShoot::FireSingleRound(AHumanoidEnemy* Enemy)
 			FireSoundVolumeMultiplier, FireSoundPitchMultiplier);
 	}
 	return BulletClass != nullptr;
+}
+
+FVector UGA_EnemyShoot::CalculateShotDirection(AHumanoidEnemy* Enemy, const FVector& FireDir)
+{
+	const UWorld* World = GetWorld();
+	const double Now = World ? World->GetTimeSeconds() : 0.0;
+	if (LastShotTimeSeconds >= 0.0)
+	{
+		const float Recovered = static_cast<float>(Now - LastShotTimeSeconds) * SpreadRecoveryDegreesPerSecond;
+		CurrentSpreadDegrees = FMath::Max(0.f, CurrentSpreadDegrees - Recovered);
+	}
+
+	const bool bMoving = Enemy && Enemy->GetVelocity().Size2D() >= MovingSpeedThreshold;
+	const float ShotSpread = FMath::Clamp(BaseSpreadDegrees + CurrentSpreadDegrees
+		+ (bMoving ? MovingSpreadPenaltyDegrees : 0.f), 0.f, MaxSpreadDegrees);
+	CurrentSpreadDegrees = FMath::Min(MaxSpreadDegrees - BaseSpreadDegrees,
+		CurrentSpreadDegrees + SpreadPerShotDegrees);
+	LastShotTimeSeconds = Now;
+
+	return ShotSpread > KINDA_SMALL_NUMBER
+		? FMath::VRandCone(FireDir.GetSafeNormal(), FMath::DegreesToRadians(ShotSpread))
+		: FireDir.GetSafeNormal();
 }
 
 void UGA_EnemyShoot::SpawnProjectiles(AHumanoidEnemy* Enemy, const FVector& MuzzleLocation, const FVector& FireDir)

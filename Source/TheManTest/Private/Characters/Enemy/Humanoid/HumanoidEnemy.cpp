@@ -126,9 +126,16 @@ void AHumanoidEnemy::StartLostTargetSearch(const FVector& LastKnownLocation)
 
 	if (AAIController* AIC = Cast<AAIController>(GetController()))
 	{
-		const EPathFollowingRequestResult::Type Result = AIC->MoveToLocation(
-			SearchDestination, SearchAcceptanceRadius, true, true, true, false);
-		if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
+		FAIMoveRequest MoveRequest(SearchDestination);
+		MoveRequest.SetAcceptanceRadius(SearchAcceptanceRadius);
+		MoveRequest.SetUsePathfinding(true);
+		MoveRequest.SetAllowPartialPath(true);
+		MoveRequest.SetProjectGoalLocation(true);
+		MoveRequest.SetCanStrafe(false);
+		const FPathFollowingRequestResult Result = AIC->MoveTo(MoveRequest);
+		ActiveSearchMoveRequestId = Result.Code == EPathFollowingRequestResult::RequestSuccessful
+			? Result.MoveId : FAIRequestID::InvalidRequest;
+		if (Result.Code == EPathFollowingRequestResult::AlreadyAtGoal)
 		{
 			HandleSearchArrival();
 		}
@@ -140,6 +147,8 @@ void AHumanoidEnemy::RequestTurn(float Angle)
 	PendingTurnAngle = Angle;
 	bPendingTurn = true;
 	TargetTurnYaw = GetActorRotation().Yaw + Angle;
+	PendingTurnElapsed = 0.f;
+	PendingTurnTimeout = FMath::Abs(Angle) / FMath::Max(TurnRotationSpeed, 1.f) + TurnCompletionGraceSeconds;
 
 	// 关闭自动朝向，防止 PhysicsRotation 每帧覆盖 SetActorRotation
 	GetCharacterMovement()->bOrientRotationToMovement = false;
@@ -152,9 +161,15 @@ void AHumanoidEnemy::Tick(float DeltaSeconds)
 
 	if (bPendingTurn)
 	{
+		PendingTurnElapsed += DeltaSeconds;
 		FRotator Current = GetActorRotation();
 		Current.Yaw = FMath::FixedTurn(Current.Yaw, TargetTurnYaw, TurnRotationSpeed * DeltaSeconds);
 		SetActorRotation(Current);
+		if (FMath::Abs(FMath::FindDeltaAngleDegrees(Current.Yaw, TargetTurnYaw)) <= TurnCompletionTolerance
+			|| PendingTurnElapsed >= PendingTurnTimeout)
+		{
+			OnTurnComplete();
+		}
 	}
 
 	// 切换动作方案（已注释）
@@ -163,6 +178,15 @@ void AHumanoidEnemy::Tick(float DeltaSeconds)
 	if (!bIsStoppingAtPoint && !bPendingTurn && PatrolPoints.IsValidIndex(CurrentPatrolIndex))
 	{
 		const float Dist = FVector::Dist2D(GetActorLocation(), PatrolPoints[CurrentPatrolIndex]->GetActorLocation());
+		if (AIState == EHumanoidEnemyAIState::Patrol && ActivePatrolMoveRequestId.IsValid()
+			&& Dist <= PatrolAcceptanceRadius + 10.f)
+		{
+			ActivePatrolMoveRequestId = FAIRequestID::InvalidRequest;
+			bIsStoppingAtPoint = true;
+			if (AAIController* AIC = Cast<AAIController>(GetController())) AIC->StopMovement();
+			GetWorldTimerManager().SetTimerForNextTick(this, &AHumanoidEnemy::HandlePatrolArrival);
+			return;
+		}
 		if (Dist < SlowdownRadius)
 		{
 			const float Alpha    = FMath::Clamp(Dist / SlowdownRadius, 0.f, 1.f);
@@ -178,11 +202,31 @@ void AHumanoidEnemy::Tick(float DeltaSeconds)
 
 void AHumanoidEnemy::OnTurnComplete()
 {
+	if (!bPendingTurn) return;
 	SetActorRotation(FRotator(0.f, TargetTurnYaw, 0.f));
 	bPendingTurn = false;
 	PendingTurnAngle = 0.f;
+	PendingTurnElapsed = 0.f;
+	PendingTurnTimeout = 0.f;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	MoveToNextPatrolPoint();
+}
+
+void AHumanoidEnemy::ConfigurePatrolPoints(const TArray<APatrolPoint*>& InPatrolPoints, bool bStartImmediately)
+{
+	if (AAIController* AIC = Cast<AAIController>(GetController())) AIC->StopMovement();
+	ActivePatrolMoveRequestId = FAIRequestID::InvalidRequest;
+	PatrolPoints.Reset(InPatrolPoints.Num());
+	for (APatrolPoint* Point : InPatrolPoints)
+	{
+		if (IsValid(Point)) PatrolPoints.Add(Point);
+	}
+	CurrentPatrolIndex = FindNearestPatrolPointIndex();
+	PatrolArrivalCount = 0;
+	if (bStartImmediately && AIState == EHumanoidEnemyAIState::Patrol && !PatrolPoints.IsEmpty())
+	{
+		MoveToNextPatrolPoint();
+	}
 }
 
 void AHumanoidEnemy::MoveToNextPatrolPoint()
@@ -203,11 +247,20 @@ void AHumanoidEnemy::MoveToNextPatrolPoint()
 
 	GetCharacterMovement()->MaxWalkSpeed = PatrolWalkSpeed;
 
-	const EPathFollowingRequestResult::Type Result = AIC->MoveToLocation(
-		PatrolPoints[CurrentPatrolIndex]->GetActorLocation(), 50.f, true, true, true, false);
-	if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
+	FAIMoveRequest MoveRequest(PatrolPoints[CurrentPatrolIndex]->GetActorLocation());
+	MoveRequest.SetAcceptanceRadius(PatrolAcceptanceRadius);
+	MoveRequest.SetUsePathfinding(true);
+	MoveRequest.SetAllowPartialPath(true);
+	MoveRequest.SetProjectGoalLocation(true);
+	MoveRequest.SetCanStrafe(false);
+	const FPathFollowingRequestResult Result = AIC->MoveTo(MoveRequest);
+	ActivePatrolMoveRequestId = Result.Code == EPathFollowingRequestResult::RequestSuccessful
+		? Result.MoveId : FAIRequestID::InvalidRequest;
+	if (Result.Code == EPathFollowingRequestResult::AlreadyAtGoal)
 	{
-		HandlePatrolArrival();
+		// Never recurse synchronously through Arrival -> next MoveTo -> AlreadyAtGoal.
+		// Closely projected/repeated patrol points must advance on a later frame.
+		GetWorldTimerManager().SetTimerForNextTick(this, &AHumanoidEnemy::HandlePatrolArrival);
 	}
 }
 
@@ -263,6 +316,7 @@ void AHumanoidEnemy::HandlePatrolArrival()
 	if (AIState != EHumanoidEnemyAIState::Patrol || PatrolPoints.IsEmpty() ||
 		!PatrolPoints.IsValidIndex(CurrentPatrolIndex)) return;
 	bIsStoppingAtPoint = true;
+	++PatrolArrivalCount;
 
 	const float WaitTime = PatrolPoints[CurrentPatrolIndex]->WaitTime;
 	CurrentPatrolIndex = (CurrentPatrolIndex + 1) % PatrolPoints.Num();
@@ -316,6 +370,8 @@ void AHumanoidEnemy::OnPatrolMoveCompleted(FAIRequestID RequestID, const FPathFo
 {
 	if (AIState == EHumanoidEnemyAIState::SearchRush)
 	{
+		if (!ActiveSearchMoveRequestId.IsEquivalent(RequestID)) return;
+		ActiveSearchMoveRequestId = FAIRequestID::InvalidRequest;
 		if (Result.IsSuccess())
 		{
 			HandleSearchArrival();
@@ -329,8 +385,15 @@ void AHumanoidEnemy::OnPatrolMoveCompleted(FAIRequestID RequestID, const FPathFo
 	}
 
 	if (AIState != EHumanoidEnemyAIState::Patrol) return;
+	if (!ActivePatrolMoveRequestId.IsEquivalent(RequestID)) return;
+	ActivePatrolMoveRequestId = FAIRequestID::InvalidRequest;
 	if (Result.IsSuccess())
 	{
 		HandlePatrolArrival();
+	}
+	else
+	{
+		FTimerHandle RetryTimer;
+		GetWorldTimerManager().SetTimer(RetryTimer, this, &AHumanoidEnemy::MoveToNextPatrolPoint, 0.2f, false);
 	}
 }

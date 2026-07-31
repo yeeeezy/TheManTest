@@ -10,6 +10,7 @@ class UAnimMontage;
 class USoundBase;
 class UGameplayAbility;
 class UAbilitySystemComponent;
+class UNiagaraSystem;
 
 UCLASS()
 class THEMANTEST_API AFirearm : public AWeaponBase
@@ -60,6 +61,17 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Audio", meta = (ClampMin = "0.0"))
 	float FireSoundPitchMultiplier = 1.f;
+
+	/* ===== 枪口特效 ===== */
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|VFX")
+	TObjectPtr<UNiagaraSystem> MuzzleEffect;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|VFX")
+	FRotator MuzzleEffectRotation = FRotator::ZeroRotator;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|VFX")
+	FVector MuzzleEffectScale = FVector::OneVector;
 
 	/* ===== 后坐力 ===== */
 

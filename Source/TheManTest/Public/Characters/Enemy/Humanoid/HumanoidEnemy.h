@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Characters/Enemy/EnemyBase.h"
 #include "HumanoidEnemyTypes.h"
+#include "AITypes.h"
 #include "HumanoidEnemy.generated.h"
 
 class APatrolPoint;
@@ -46,6 +47,13 @@ public:
 	// 由 BTTask_ResumeNearestPatrol 调用：找最近路点并重启巡逻（仅在 bNeedsPatrolResume 时有效）
 	UFUNCTION(BlueprintCallable, Category = "Enemy|Patrol")
 	void ResumeNearestPatrol();
+
+	// Runtime-spawned humanoids can share the same NavMesh patrol implementation.
+	UFUNCTION(BlueprintCallable, Category = "Enemy|Patrol")
+	void ConfigurePatrolPoints(const TArray<APatrolPoint*>& InPatrolPoints, bool bStartImmediately = true);
+
+	UFUNCTION(BlueprintPure, Category = "Enemy|Patrol")
+	FORCEINLINE int32 GetPatrolArrivalCount() const { return PatrolArrivalCount; }
 
 	// 丢失目标后的公共搜索入口：冲向最后已知位置，到达后原地随机环视，再恢复最近巡逻点。
 	UFUNCTION(BlueprintCallable, Category = "Enemy|Search")
@@ -118,6 +126,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Patrol|Turn")
 	float TurnRotationSpeed = 270.f;
 
+	// AnimNotify remains supported, but reaching the requested yaw also completes the turn.
+	// This prevents a missing/late notify from permanently stalling a patrol loop.
+	UPROPERTY(EditDefaultsOnly, Category = "Patrol|Turn", meta = (ClampMin = "0.1"))
+	float TurnCompletionTolerance = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Patrol|Turn", meta = (ClampMin = "0.0"))
+	float TurnCompletionGraceSeconds = 0.25f;
+
 	// 转身期间的移动速度（cm/s），0 = 原地转身
 	UPROPERTY(EditDefaultsOnly, Category = "Patrol|Turn")
 	float TurnWalkSpeed = 50.f;
@@ -129,6 +145,9 @@ protected:
 	// 最低接近速度（cm/s），AI 停车时角色约为此速度
 	UPROPERTY(EditDefaultsOnly, Category = "Patrol|Movement")
 	float MinApproachSpeed = 30.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Patrol|Movement", meta = (ClampMin = "1.0"))
+	float PatrolAcceptanceRadius = 100.f;
 
 	// 武器 StaticMesh，蓝图 CDO 里赋值网格资产
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
@@ -143,14 +162,19 @@ protected:
 
 private:
 	int32 CurrentPatrolIndex   = 0;
+	int32 PatrolArrivalCount   = 0;
 	bool  bIsPatrolScanning    = false;
 	bool  bIsStoppingAtPoint   = false;
 	bool  bNeedsPatrolResume   = false;
 	float TargetTurnYaw = 0.f;
+	float PendingTurnElapsed = 0.f;
+	float PendingTurnTimeout = 0.f;
 	FTimerHandle PatrolWaitTimer;
 	FTimerHandle ScanDelayTimer;
 	FTimerHandle SearchScanTimer;
 	FVector SearchDestination = FVector::ZeroVector;
+	FAIRequestID ActivePatrolMoveRequestId;
+	FAIRequestID ActiveSearchMoveRequestId;
 
 	void MoveToNextPatrolPoint();
 	void HandlePatrolArrival();

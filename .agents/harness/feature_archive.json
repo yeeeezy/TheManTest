@@ -682,6 +682,20 @@
                              "构建、PIE 结构断言及 1920×1080 截图验收通过 ✓"
                          ],
                          "verification_evidence": "TheManTestEditor Win64 Development Succeeded；TheManTest.Player.Viewmodel.FramingCapture 1/1 Success，断言 HeadCamera→ViewmodelRoot→ArmsViewMesh、FOV=110、Location=(0,0,-7)、Rotation=0 与装备 Socket；Saved/Screenshots/PlayerFramingCurrent.png 完成视觉验收。"
+                     },
+                     {
+                         "id": "FEAT-066", "name": "玩家持枪姿势精确对齐与 Enemy 移动动画纠偏", "status": "done",
+                         "description": "整枪姿态对齐；修复 Enemy BlendSpace 运行数据、两点巡逻转身卡死；仅 NavMesh 移动，并加入可复用渐进散射。",
+                         "archive_file": "archive/FEAT-066-player-pose-and-enemy-animation-correction.md", "created": "2026-07-31", "updated": "2026-07-31-session128-complete",
+                         "done_criteria": ["整枪五锚点构图对齐 ✓", "移动动画正常 ✓", "NavMesh-only ✓", "两点巡逻转身无 Notify 也续行 ✓", "渐进散射可复用 ✓", "构建与 8/8 回归 ✓"],
+                         "verification_evidence": "Development Editor Succeeded；FEAT067FinalRegression4.log 8/8 Success；两点 NavMesh 巡逻 11.58 秒内 5 次到点/移动 1201.8cm；散射锥 1.5~5 度；最终截图已生成。"
+                     },
+                     {
+                         "id": "FEAT-067", "name": "RepairGun 与人形 Enemy 枪口特效", "status": "done",
+                         "description": "从 UE389 特效包只迁移两套枪口 Niagara 及精确依赖，整理为项目语义目录并接入玩家枪械与通用 Enemy 射击基类。",
+                         "archive_file": "archive/FEAT-067-repairgun-enemy-muzzle-vfx.md", "created": "2026-07-31", "updated": "2026-07-31-session128-complete",
+                         "done_criteria": ["源 ZIP/工程验证 ✓", "仅迁移两套系统与依赖 ✓", "无供应商目录残留 ✓", "RepairGun/Enemy 射击接入 ✓", "构建与自动化验证 ✓"],
+                         "verification_evidence": "重新解压源工程后 UE 5.7 加载成功；迁移 46 个依赖资产；NS_RepairGun_Muzzle 与 NS_HumanoidRifle_Muzzle 可加载，CDO 默认引用断言通过；FEAT067FinalRegression4.log 8/8 Success。"
                      }
                  ],
     "_说明":  "已完成功能的只读历史索引。通常无需在会话启动时读取；需要查询历史功能时按 ID 定向读取。"
