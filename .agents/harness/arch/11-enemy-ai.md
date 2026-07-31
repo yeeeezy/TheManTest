@@ -36,7 +36,9 @@ AEnemyBase（Public/Characters/Enemy/）  ← 所有敌人基类，ASC+属性挂
 | `Public/Characters/Enemy/Humanoid/HumanoidEnemyTypes.h` | `EHumanoidEnemyAIState`：`Patrol` / `Aim` / `SearchRush` / `SearchScan` / `Dead` |
 | `Public/Characters/Enemy/Humanoid/HumanoidEnemy.h` | 重开 `Tick`；`WeaponMesh`(StaticMesh，挂 `WeaponAttachSocket`=hand_r)；`AimTargetWorld`/`bIsAiming`(public，AIController 写)；`AIState`/`SetAIState`；巡逻路点 `PatrolPoints`；速度参数(PatrolWalkSpeed/CombatWalkSpeed/TurnWalkSpeed)；转身/减速参数；重写 `AimAtTarget` |
 | `Private/Characters/Enemy/Humanoid/HumanoidEnemy.cpp` | C++ 巡逻：`MoveToNextPatrolPoint`/`OnPatrolMoveCompleted`/`TryTurnOrMove`/`RequestTurn`/`OnTurnComplete`/`ResumeNearestPatrol`；`SetAIState`(Aim:停巡逻+Focus 朝向+加速；回 Patrol:置 bNeedsPatrolResume)；`Tick`(转身旋转 + 接近路点线性减速)；`AimAtTarget`(写 AimTargetWorld) |
-| `Public/Characters/Enemy/Humanoid/Phantom/Phantom.h` | `APhantom : AHumanoidEnemy`，空壳 |
+| `Public/Characters/Enemy/Humanoid/Phantom/Phantom.h` | `APhantom : AHumanoidEnemy`；二阶段透明材质、弹体通道穿透、`ShouldProjectilePassThrough` |
+| `Public/Characters/Enemy/Components/EnemyMagazineComponent.h` | 通用 20 发弹匣；仅普通自动射击消费，支持空匣判断、Reload 与 AmmoChanged |
+| `Public/Characters/Enemy/Cover/EnemyCoverPoint.h` | 通用掩体 Actor；StandPoint + 距离/威胁背向/Visibility 遮挡评分选择 |
 | `Public/Characters/Enemy/Nightmare/NightmareEnemy.h` | `ANightmareEnemy : AEnemyBase`，空壳（非人形，无巡逻/武器逻辑） |
 
 ### AI 控制器 / 行为树
@@ -44,7 +46,7 @@ AEnemyBase（Public/Characters/Enemy/）  ← 所有敌人基类，ASC+属性挂
 | 文件 | 关键内容 |
 |---|---|
 | `Public/Characters/Enemy/Humanoid/HumanoidAIController.h` | `UAIPerceptionComponent`；黑板 key static const `BB_TargetActor`("TargetActor") / `BB_LastKnownPlayerLocation`("LastKnownPlayerLocation")；`BehaviorTree`(蓝图子类指定) |
-| `Private/Characters/Enemy/Humanoid/HumanoidAIController.cpp` | 构造：Sight 配置(SightRadius=1500/LoseSightRadius=1800/PeripheralVision=60°/检测 Enemies+Neutrals)；`OnPossess` 运行 BT + 绑感知；`Tick`(Aim 下每帧更新 AimTargetWorld+bIsAiming，否则 bIsAiming=false)；`OnTargetPerceptionUpdated`(发现玩家→BB.TargetActor+SetFocus+SetAIState(Aim)；丢失→记 LastKnown+清目标+ClearFocus+SetAIState(Patrol)) |
+| `Private/Characters/Enemy/Humanoid/HumanoidAIController.cpp` | Sight 感知；发现玩家进入 Aim；丢失时写 LastKnown、清 Target/Focus 并调用公共 `StartLostTargetSearch` |
 | `Public/Characters/Enemy/BTTask_UseCombatSkill.h` | **通用战斗放招节点**：`Range`(近/中/远) + `TargetActorKey`(默认 TargetActor)；读黑板目标→`AEnemyBase::UseRandomSkill`；不绑定具体技能 |
 | `Public/Characters/Enemy/Humanoid/BTTask_ResumeNearestPatrol.h` | 丢失目标回巡逻：调 `AHumanoidEnemy::ResumeNearestPatrol`（找最近路点续巡逻） |
 
@@ -61,7 +63,8 @@ AEnemyBase（Public/Characters/Enemy/）  ← 所有敌人基类，ASC+属性挂
 
 - `Patrol` 巡逻（未发现玩家）——**移动由 C++ 自驱**（MoveToActor 循环 + 转身），BT 只 Wait。
 - `Aim` 锁定追击（发现玩家）——停 C++ 巡逻；`SetFocus` 锁朝向（bUseControllerRotationYaw）；CombatWalkSpeed；**移动+放招由 BT 驱动**。
-- `SearchRush` / `SearchScan` 丢失后搜索——**枚举已留，逻辑未实现**（FEAT-026；当前丢失直接回 Patrol）。
+- `SearchRush` 丢失后以 `SearchRushSpeed` 冲向 LastKnownLocation；到达转 `SearchScan`。
+- `SearchScan` 复用 Relaxed Fgt 随机环视，`SearchScanDuration` 后找最近巡逻点恢复；无 Nav/Move 失败时安全回 Patrol。
 - `Dead` 死亡。
 
 状态切换入口：`AHumanoidEnemy::SetAIState()`（负责停计时器/StopMovement/改朝向模式/置 bNeedsPatrolResume）。
@@ -88,9 +91,9 @@ Sight 感知玩家(1500cm/60°)
        → BTTask_UseCombatSkill(Range) → UseRandomSkill(当前阶段对应档随机一个技能)
        → Wait(出招间隔)
 丢失玩家(1800cm)
-  → OnTargetPerceptionUpdated(失败) → BB.LastKnownPlayerLocation + 清 TargetActor + ClearFocus + SetAIState(Patrol)
-  → Decorator Abort 中断战斗序列 → Selector 走 Wait 0.1 → C++ 巡逻自驱
-     （SetAIState 置 bNeedsPatrolResume，BTTask_ResumeNearestPatrol 找最近路点续巡逻）
+  → BB.LastKnownPlayerLocation + 清 TargetActor + ClearFocus
+  → StartLostTargetSearch → SearchRush(MoveTo LastKnown) → SearchScan(Relaxed 随机环视)
+  → SetAIState(Patrol) + ResumeNearestPatrol
 ```
 
 ### 行为树结构（BT_HumanoidEnemy，编辑器）
@@ -112,7 +115,7 @@ Root → Selector
 
 - 二维：`PhaseSkillSets[阶段]` → `FEnemyPhaseSkillSet{Near/Mid/FarAbilities}`。`CurrentPhase` 默认 1，`SetCombatPhase()` 切换（第二阶段换整组）。
 - `BeginPlay` 经 `GrantAbilities` 授予所有阶段所有档技能。
-- `UseRandomSkill(Target, Range)`：当前阶段技能集 → Range 对应数组 → 随机一个 → `AimAtTarget()`(virtual，人形怪写 AimTargetWorld) → `TryActivateAbilityByClass`。
+- `UseRandomSkill(Target, Range)`：从随机起点轮询当前阶段/距离档能力；空匣等激活条件失败时继续尝试同档其他能力。
 - 技能 = `UGA_EnemyShoot` 蓝图子类（技能与子弹绑定，复用子弹管线；不同开火逻辑重写 `SpawnProjectiles`）。详见 `10-gas-abilities.md`。
 - 触发不走 GameplayEvent，按类激活（`BTTask_UseCombatSkill` → `UseRandomSkill`），故一敌可多技能各自独立。
 
@@ -124,4 +127,4 @@ Root → Selector
 - 🔶 FEAT-032（感知+BT 战斗）：session40 已启用 C++ 感知/Tick/BTTask，**编辑器 BT 战斗序列与 PIE 验证待完成**。
 - ✅ FEAT-031（BBBAimIK 脊柱瞄准）：session40 恢复并验证通过，敌人 Aim 时上半身跟随玩家。（aim 取点当前用 GetActorLocation，如需更高改 eyes）
 - 🔶 FEAT-035（敌人射击）：C++ 完成，待编辑器配 BGA_EnemyShoot + 武器 Muzzle socket + BP_Phantom PhaseSkillSets。
-- ⏳ SearchRush / SearchScan 状态未实现（FEAT-026）。
+- ✅ FEAT-058～063：搜索链、通用掩体、弹匣/三连发/扫射/换弹、Phantom 找掩体与二阶段已实现；Phantom 通过 `PhaseSkillSets` 数据注入能力，公共 BT 不依赖 Phantom 类型。

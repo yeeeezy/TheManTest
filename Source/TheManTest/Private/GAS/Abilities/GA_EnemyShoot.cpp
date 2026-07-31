@@ -31,6 +31,14 @@ void UGA_EnemyShoot::ActivateAbility(
 		return;
 	}
 
+	FireSingleRound(Enemy);
+	EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+}
+
+bool UGA_EnemyShoot::FireSingleRound(AHumanoidEnemy* Enemy)
+{
+	if (!Enemy) return false;
+
 	// 枪口位置：武器网格 Muzzle socket → 武器组件原点 → 敌人位置
 	UStaticMeshComponent* WeaponMesh = Enemy->GetWeaponMesh();
 	FVector MuzzleLocation;
@@ -40,7 +48,7 @@ void UGA_EnemyShoot::ActivateAbility(
 	}
 	else if (WeaponMesh)
 	{
-		MuzzleLocation = WeaponMesh->GetComponentLocation();
+		MuzzleLocation = WeaponMesh->GetComponentTransform().TransformPosition(MuzzleRelativeOffset);
 	}
 	else
 	{
@@ -68,6 +76,12 @@ void UGA_EnemyShoot::ActivateAbility(
 			}
 		}
 	}
+	else if (FireAnimation)
+	{
+		if (USkeletalMeshComponent* Mesh = Enemy->GetMesh())
+			if (UAnimInstance* AnimInst = Mesh->GetAnimInstance())
+				AnimInst->PlaySlotAnimationAsDynamicMontage(FireAnimation, FireAnimationSlot);
+	}
 
 	// 开火音效
 	if (FireSound)
@@ -75,8 +89,7 @@ void UGA_EnemyShoot::ActivateAbility(
 		UGameplayStatics::PlaySoundAtLocation(this, FireSound, MuzzleLocation,
 			FireSoundVolumeMultiplier, FireSoundPitchMultiplier);
 	}
-
-	EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+	return BulletClass != nullptr;
 }
 
 void UGA_EnemyShoot::SpawnProjectiles(AHumanoidEnemy* Enemy, const FVector& MuzzleLocation, const FVector& FireDir)

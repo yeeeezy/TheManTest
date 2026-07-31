@@ -55,7 +55,11 @@ public:
 
 	// 切换战斗阶段（1 起；默认 1，第二阶段换整组技能集）
 	UFUNCTION(BlueprintCallable, Category = "Enemy|Combat")
-	void SetCombatPhase(int32 NewPhase);
+	virtual void SetCombatPhase(int32 NewPhase);
+
+	// 子弹命中前查询；阶段技能可让弹体继续飞行且不施加伤害。
+	UFUNCTION(BlueprintPure, Category = "Enemy|Combat")
+	virtual bool ShouldProjectilePassThrough() const { return false; }
 
 	UFUNCTION(BlueprintPure, Category = "Enemy|Combat")
 	FORCEINLINE int32 GetCombatPhase() const { return CurrentPhase; }

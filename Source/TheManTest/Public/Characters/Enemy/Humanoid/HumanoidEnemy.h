@@ -7,6 +7,7 @@
 
 class APatrolPoint;
 class UStaticMeshComponent;
+class UEnemyMagazineComponent;
 struct FAIRequestID;
 struct FPathFollowingResult;
 
@@ -46,6 +47,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Enemy|Patrol")
 	void ResumeNearestPatrol();
 
+	// 丢失目标后的公共搜索入口：冲向最后已知位置，到达后原地随机环视，再恢复最近巡逻点。
+	UFUNCTION(BlueprintCallable, Category = "Enemy|Search")
+	void StartLostTargetSearch(const FVector& LastKnownLocation);
+
 	UFUNCTION(BlueprintCallable, Category = "Enemy|Turn")
 	void RequestTurn(float Angle);
 
@@ -63,6 +68,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	FORCEINLINE UStaticMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
+
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	FORCEINLINE UEnemyMagazineComponent* GetMagazineComponent() const { return MagazineComponent; }
 
 protected:
 	// 放招前把瞄准点写为目标位置，供 UGA_EnemyShoot 取子弹方向 + AimIK 用
@@ -93,6 +101,15 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Aim|Movement")
 	float CombatWalkSpeed = 300.f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Search|Movement", meta = (ClampMin = "0.0"))
+	float SearchRushSpeed = 600.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Search|Movement", meta = (ClampMin = "0.0"))
+	float SearchAcceptanceRadius = 75.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Search", meta = (ClampMin = "0.0"))
+	float SearchScanDuration = 4.f;
+
 	// 偏转角超过此值才触发转身动画（度）
 	UPROPERTY(EditDefaultsOnly, Category = "Patrol|Turn")
 	float TurnAngleThreshold = 30.f;
@@ -117,6 +134,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	TObjectPtr<UStaticMeshComponent> WeaponMesh;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
+	TObjectPtr<UEnemyMagazineComponent> MagazineComponent;
+
 	// 武器挂载到哪个骨骼/Socket（默认 hand_r）
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	FName WeaponAttachSocket = "hand_r";
@@ -129,10 +149,13 @@ private:
 	float TargetTurnYaw = 0.f;
 	FTimerHandle PatrolWaitTimer;
 	FTimerHandle ScanDelayTimer;
+	FTimerHandle SearchScanTimer;
+	FVector SearchDestination = FVector::ZeroVector;
 
 	void MoveToNextPatrolPoint();
 	void TryTurnOrMove();
 	void OnPatrolWaitFinished();
+	void OnSearchScanFinished();
 	void OnPatrolMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result);
 	int32 FindNearestPatrolPointIndex() const;
 };

@@ -11,6 +11,10 @@ public class TheManTest : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "GameplayAbilities", "GameplayTags", "GameplayTasks", "BBBAimIK", "Niagara", "AIModule", "NavigationSystem", "UMG", "AnimGraphRuntime", "CinematicCamera", });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		if (Target.bBuildEditor)
+		{
+			PrivateDependencyModuleNames.Add("UnrealEd");
+		}
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

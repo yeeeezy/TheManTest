@@ -6,6 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
 #include "GAS/TheManGameplayTags.h"
+#include "Characters/Enemy/EnemyBase.h"
 
 ABulletBase::ABulletBase()
 {
@@ -82,6 +83,14 @@ void ABulletBase::ProcessHit_Implementation(
 	UAbilitySystemComponent* SourceASC)
 {
 	if (bHasProcessedHit) { return; }
+	if (AEnemyBase* Enemy = Cast<AEnemyBase>(HitResult.GetActor()))
+	{
+		if (Enemy->ShouldProjectilePassThrough())
+		{
+			if (CollisionSphere) CollisionSphere->IgnoreActorWhenMoving(Enemy, true);
+			return;
+		}
+	}
 	bHasProcessedHit = true;
 
 	// 命中目标若带 ASC 则施加伤害 GE；打墙/地等无 ASC 目标跳过此步，但子弹仍会按下方逻辑销毁。

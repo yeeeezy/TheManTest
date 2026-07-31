@@ -104,12 +104,15 @@ bool AEnemyBase::UseRandomSkill(AActor* Target, EEnemySkillRange Range)
 	}
 	if (!Pool || Pool->Num() == 0) { return false; }
 
-	// 随机挑一个技能放出
-	const TSubclassOf<UGameplayAbility> Chosen = (*Pool)[FMath::RandRange(0, Pool->Num() - 1)];
-	if (!Chosen) { return false; }
-
 	AimAtTarget(Target);
-	return AbilitySystemComponent->TryActivateAbilityByClass(Chosen);
+	// 从随机起点轮询一次；弹匣为空等条件导致某技能不可激活时，仍可尝试同档其他合法技能。
+	const int32 StartIndex = FMath::RandRange(0, Pool->Num() - 1);
+	for (int32 Offset = 0; Offset < Pool->Num(); ++Offset)
+	{
+		const TSubclassOf<UGameplayAbility> Candidate = (*Pool)[(StartIndex + Offset) % Pool->Num()];
+		if (Candidate && AbilitySystemComponent->TryActivateAbilityByClass(Candidate)) return true;
+	}
+	return false;
 }
 
 void AEnemyBase::SetCombatPhase(int32 NewPhase)

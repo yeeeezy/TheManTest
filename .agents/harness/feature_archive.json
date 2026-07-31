@@ -608,6 +608,48 @@
                              "Development Editor 构建与基础 PIE 动画切换通过 ✓"
                          ],
                          "verification_evidence": "TMIIR 只读审计确认原 Mesh 与动画共用 UE4_Mannequin_Skeleton。AssetTools 迁入并整理 51 个正式资产到 /Game/Enemy/Phantom/OriginalRifle，无 IK Rig、IK Retargeter 或源 FBX。ABP_Phantom_OriginalRifle、Relaxed/Aim 两套 BlendSpace 编译保存且零 Cyber01 依赖；BP_Phantom 已使用原 SK_Mannequin、AnimBP 和 M4。临时 PIE 验证角色可见落地、运行时 Mesh/AnimInstance/Patrol 状态正确，临时 Actor 已销毁且 TestMap 未保存。关闭相关编辑器后 TheManTestEditor Win64 Development 完整构建 40/40 actions，Result: Succeeded。"
+                     },
+                     {
+                         "id": "FEAT-058", "name": "通用人形 Enemy 巡逻感知与丢失目标搜索", "status": "done",
+                         "description": "公共 Patrol/Aim/SearchRush/SearchScan 状态链，丢失后冲到 LastKnown、Relaxed 随机环视并恢复最近巡逻点。",
+                         "archive_file": "archive/FEAT-058-humanoid-patrol-perception-search.md", "created": "2026-07-30", "updated": "2026-07-30-session122-complete",
+                         "done_criteria": ["公共状态流可复用 ✓", "SearchRush/SearchScan ✓", "恢复最近巡逻路径 ✓", "Runtime 与 PIE 验证 ✓"],
+                         "verification_evidence": "Development Editor 构建成功；ReusableCombatModules 与 PIESmoke Success。TestMap 无 RecastNavMesh 时搜索 Move 失败安全回 Patrol。"
+                     },
+                     {
+                         "id": "FEAT-059", "name": "通用掩体系统与测试掩体资产", "status": "done",
+                         "description": "通用 CoverPoint 查询和 Blender 测试掩体。",
+                         "archive_file": "archive/FEAT-059-humanoid-cover-system.md", "created": "2026-07-30", "updated": "2026-07-30-session122-complete",
+                         "done_criteria": ["跨 Enemy 查询 ✓", "距离/方向/遮挡筛选 ✓", "外部 Blender 源与正式 Unreal 资产分离 ✓", "遮挡自动化 ✓"],
+                         "verification_evidence": "Blender 源工程、FBX、PNG 和预览位于 D:/Blender Projects/PhantomCover；最终资产位于 /Game/Enemy/_Shared/Cover；射线选择测试 Success。"
+                     },
+                     {
+                         "id": "FEAT-060", "name": "通用敌人弹匣三连发持续扫射与换弹", "status": "done",
+                         "description": "20 发普通弹匣、数据化三连发/扫射/换弹与可替换弹体。",
+                         "archive_file": "archive/FEAT-060-enemy-magazine-fire-modes.md", "created": "2026-07-30", "updated": "2026-07-30-session122-complete",
+                         "done_criteria": ["20 发仅普通射击消费 ✓", "三连发/扫射可配置 ✓", "空匣换弹 ✓", "GAS 跨 Enemy 复用 ✓"],
+                         "verification_evidence": "Burst/Continuous/Aim Reload 原动画绑定正式 Skeleton；自动耗弹/空匣/补弹测试、蓝图编译和资产验证通过。"
+                     },
+                     {
+                         "id": "FEAT-061", "name": "Phantom 翻滚找掩体与战斗决策", "status": "done",
+                         "description": "Phantom 通过阶段技能数据组合 TakeCover、普通射击和换弹。",
+                         "archive_file": "archive/FEAT-061-phantom-cover-roll-combat.md", "created": "2026-07-30", "updated": "2026-07-30-session122-complete",
+                         "done_criteria": ["有效掩体选择/接近 ✓", "射击与换弹激活条件 ✓", "缺失 Roll 动画显式空槽 ✓", "公共 BT 无 Phantom 硬编码 ✓"],
+                         "verification_evidence": "Rifle_01 无 Roll 动画，RollMontage 按约定留空；TakeCover/Burst/Suppressive/Reload 由 PhaseSkillSets 注入。"
+                     },
+                     {
+                         "id": "FEAT-062", "name": "Phantom 二阶段透明穿透与范围轰炸", "status": "done",
+                         "description": "Phase 2 保留一期能力并新增透明弹体穿透和范围轰炸。",
+                         "archive_file": "archive/FEAT-062-phantom-phase2-cloak-barrage.md", "created": "2026-07-30", "updated": "2026-07-30-session122-complete",
+                         "done_criteria": ["保留一期能力 ✓", "透明穿透且可恢复 ✓", "独立 Barrage GAS/弹体槽 ✓", "阶段 PIE 验证 ✓"],
+                         "verification_evidence": "Translucent Cloak、碰撞通道 Ignore 与 Bullet pass-through 双层防护；12 发范围轰炸不消费普通弹匣；PIE Success。"
+                     },
+                     {
+                         "id": "FEAT-063", "name": "Phantom 行为树整合与完整验收", "status": "done",
+                         "description": "公共 BT + PhaseSkillSets 数据注入完成 Phantom 两阶段整合与回归。",
+                         "archive_file": "archive/FEAT-063-phantom-integration-verification.md", "created": "2026-07-30", "updated": "2026-07-30-session122-complete",
+                         "done_criteria": ["公共 BT 可复用 ✓", "差异能力数据注入 ✓", "蓝图/引用审计 ✓", "Runtime 与真实 PIE 回归 ✓"],
+                         "verification_evidence": "CODEX_PHANTOM_VALIDATION_SUCCESS animations=3 abilities=5 phases=2 scan_variants=4 cover=1；ReusableCombatModules 和 PIESmoke 均 Success；Development Editor 构建成功。"
                      }
                  ],
     "_说明":  "已完成功能的只读历史索引。通常无需在会话启动时读取；需要查询历史功能时按 ID 定向读取。"

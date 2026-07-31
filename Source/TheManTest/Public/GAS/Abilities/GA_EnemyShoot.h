@@ -6,6 +6,7 @@
 
 class ABulletBase;
 class UAnimMontage;
+class UAnimSequenceBase;
 class USoundBase;
 class AHumanoidEnemy;
 
@@ -36,6 +37,9 @@ public:
 		const FGameplayEventData* TriggerEventData) override;
 
 protected:
+	// 执行一发完整射击表现；供三连发/持续扫射子类按节奏复用。
+	bool FireSingleRound(AHumanoidEnemy* Enemy);
+
 	// 子弹生成扩展点：默认从枪口单发 BulletClass。
 	// 不同开火逻辑（散射 / 连发 / hitscan）由 C++ 子类重写本函数，复用基类其余流程。
 	virtual void SpawnProjectiles(AHumanoidEnemy* Enemy, const FVector& MuzzleLocation, const FVector& FireDir);
@@ -48,9 +52,19 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "EnemyShoot")
 	FName MuzzleSocketName = TEXT("Muzzle");
 
+	// 武器没有枪口 Socket 时的可配置局部生成点，避免把子弹生成在角色/武器原点。
+	UPROPERTY(EditDefaultsOnly, Category = "EnemyShoot")
+	FVector MuzzleRelativeOffset = FVector(70.f, 0.f, 10.f);
+
 	// 开火蒙太奇（可选，留空不播）。FEAT-027 上半身插槽就绪前播全身会盖住移动，按需配置。
 	UPROPERTY(EditDefaultsOnly, Category = "EnemyShoot")
 	UAnimMontage* FireMontage = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "EnemyShoot")
+	TObjectPtr<UAnimSequenceBase> FireAnimation;
+
+	UPROPERTY(EditDefaultsOnly, Category = "EnemyShoot")
+	FName FireAnimationSlot = TEXT("DefaultSlot");
 
 	UPROPERTY(EditDefaultsOnly, Category = "EnemyShoot")
 	USoundBase* FireSound = nullptr;

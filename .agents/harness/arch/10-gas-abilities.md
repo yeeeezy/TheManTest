@@ -11,6 +11,10 @@
 | `Source/TheManTest/Public/GAS/Abilities/GA_InfiltratorScan.h` | 玩家扫描技能；`bScanActive` 独立控制开关并调用 `UScanEffectComponent`；全息 UI 为可选展示，类为空或生成失败都不能阻断扫描材质 |
 | `Source/TheManTest/Public/GAS/Abilities/GA_EnemyShoot.h` | **敌人射击技能基类**；复用子弹管线；配置(BulletClass/Muzzle/蒙太奇/音效)作技能 UPROPERTY(技能=子弹绑定)；`virtual SpawnProjectiles()` 扩展点(散射/连发由子类重写)；**不注册 GameplayEvent 触发器**(由 UseRandomSkill 按类激活) |
 | `Source/TheManTest/Private/GAS/Abilities/GA_EnemyShoot.cpp` | `ActivateAbility()`：`Cast<AHumanoidEnemy>` → 武器 Muzzle socket 取枪口 → 朝 `AimTargetWorld` → `SpawnProjectiles` 生成子弹 `InitBullet(Enemy, 敌人ASC)` |
+| `GA_EnemyAutomaticFire` | 数据化 `ShotsPerActivation`/`ShotInterval`；同一 C++ 能力配置成三连发或持续扫射；每发消费 `UEnemyMagazineComponent` |
+| `GA_EnemyReload` | 仅空匣可激活，延时/动画均可配置，完成后把弹匣补满 |
+| `GA_EnemyTakeCover` | 调通用 `AEnemyCoverPoint::FindBestCover`，可选 RollMontage，移动到 StandPoint |
+| `GA_EnemyAreaBarrage` | 不消费普通弹匣；在目标范围上方随机生成可替换弹体并向下轰炸 |
 | `Source/TheManTest/Public/Characters/Enemy/BTTask_UseCombatSkill.h` | **通用敌人战斗放招 BT 节点**；UPROPERTY `Range`(近/中/远)+`TargetActorKey`；读黑板目标 → `AEnemyBase::UseRandomSkill`；不绑定具体技能 |
 
 > **玩家技能授予时序（武器持有，ASC 在 PlayerState）：**
@@ -22,7 +26,8 @@
 > **敌人技能系统（ASC 在敌人自身；技能集 = 阶段 × 近/中/远）：**
 > - `AEnemyBase`：`PhaseSkillSets`（`TArray<FEnemyPhaseSkillSet>`，[0]=阶段1…；每项含 `Near/Mid/FarAbilities`）+ `CurrentPhase`(默认1) + `SetCombatPhase()`。
 > - `BeginPlay` 经 `GrantAbilities()` 授予 `DefaultAbilities` + 所有阶段所有距离档技能。
-> - `UseRandomSkill(Target, EEnemySkillRange)`：当前阶段技能集 → 对应距离档随机一个 → `AimAtTarget()`(virtual，`AHumanoidEnemy` 重写写 `AimTargetWorld`) → `TryActivateAbilityByClass`。
+> - `UseRandomSkill(Target, EEnemySkillRange)`：从随机起点轮询距离档能力；某能力因空匣等条件拒绝激活时继续尝试其他候选。
+> - Phantom 阶段1：TakeCover/Burst/SuppressiveFire/Reload；阶段2保留全部并新增 AreaBarrage。用 `PhaseSkillSets` 数据注入，无需 Phantom 专属行为树子树。
 > - 触发链：感知发现玩家→`SetAIState(Aim)` → BT 战斗序列 `BTTask_UseCombatSkill`(配 Range) → `UseRandomSkill`。详见 FEAT-032 archive。
 
 > **新增 GAS 技能的标准流程：**

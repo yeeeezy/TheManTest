@@ -76,8 +76,10 @@ Aim → Idle：AIState != Aim，Blend 0.2s
 |---|---|
 | Patrol | 巡逻（C++ 路点循环自驱） |
 | Aim | 锁定玩家追击（BT 接管，SetFocus 驱动朝向） |
-| SearchRush | 冲向消失点（预留） |
-| SearchScan | 原地晃头搜索（预留） |
+| SearchRush | 冲向玩家最后已知位置，使用非 Aim 的移动表现 |
+| SearchScan | 到达后复用 Relaxed Fgt v1～v4 随机环视；连续两次不重复 |
 | Dead | 死亡 |
+
+**Phantom 原始 Rifle_01：** `/Game/Enemy/Phantom/OriginalRifle` 使用原 `SK_Mannequin + UE4_Mannequin_Skeleton`，不含 IK Retargeter。`BS_Phantom_RelaxedPatrol2D` 仅 Relaxed，`BS_Phantom_AimLocomotion` 仅 Aim；Burst/Continuous/Aim Reload 直接使用同 Skeleton 的 TMIIR 最终动画。武器没有 `grip_l` 时左手 IK 自动关闭，避免把手拉到组件原点。
 
 **已删除（FEAT-041）：** 旧 `UTheManAnimInstanceBase`（绑定旧 `ATheManCharacterBase`）已删除。对应旧 ABP（`ABP_MainCharacter` / `ABP_FirstPerson_MainCharacter`）需在编辑器一并删除。

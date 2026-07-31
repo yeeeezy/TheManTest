@@ -6,6 +6,7 @@
 #include "Navigation/PathFollowingComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Characters/Enemy/Components/EnemyMagazineComponent.h"
 
 AHumanoidEnemy::AHumanoidEnemy()
 {
@@ -18,6 +19,7 @@ AHumanoidEnemy::AHumanoidEnemy()
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
 	WeaponMesh->SetupAttachment(GetMesh());
 	WeaponMesh->CastShadow = false;
+	MagazineComponent = CreateDefaultSubobject<UEnemyMagazineComponent>(TEXT("MagazineComponent"));
 }
 
 void AHumanoidEnemy::BeginPlay()
@@ -45,10 +47,12 @@ void AHumanoidEnemy::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 
 	AAIController* AIC = Cast<AAIController>(NewController);
-	if (!AIC || PatrolPoints.IsEmpty()) return;
+	if (!AIC) return;
 
 	AIC->GetPathFollowingComponent()->OnRequestFinished.AddUObject(
 		this, &AHumanoidEnemy::OnPatrolMoveCompleted);
+
+	if (PatrolPoints.IsEmpty()) return;
 
 	// 延迟启动，等 CharacterMovement 完成物理初始化进入 MOVE_Walking
 	FTimerHandle StartTimer;
@@ -67,6 +71,7 @@ void AHumanoidEnemy::SetAIState(EHumanoidEnemyAIState NewState)
 		// 切入战斗：清除巡逻计时器，停止当前移动，让 BT 接管
 		GetWorldTimerManager().ClearTimer(PatrolWaitTimer);
 		GetWorldTimerManager().ClearTimer(ScanDelayTimer);
+		GetWorldTimerManager().ClearTimer(SearchScanTimer);
 		bIsPatrolScanning  = false;
 		bIsStoppingAtPoint = false;
 		// 战斗朝向由 AIController Focus 驱动，关闭速度方向自动旋转
@@ -78,15 +83,50 @@ void AHumanoidEnemy::SetAIState(EHumanoidEnemyAIState NewState)
 			AIC->StopMovement();
 		}
 	}
-	else if (NewState == EHumanoidEnemyAIState::Patrol
-		  && OldState == EHumanoidEnemyAIState::Aim)
+	else if (NewState == EHumanoidEnemyAIState::SearchRush)
+	{
+		GetWorldTimerManager().ClearTimer(PatrolWaitTimer);
+		GetWorldTimerManager().ClearTimer(ScanDelayTimer);
+		GetWorldTimerManager().ClearTimer(SearchScanTimer);
+		bIsPatrolScanning = false;
+		bIsStoppingAtPoint = false;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		bUseControllerRotationYaw = false;
+		GetCharacterMovement()->MaxWalkSpeed = SearchRushSpeed;
+	}
+	else if (NewState == EHumanoidEnemyAIState::SearchScan)
+	{
+		GetCharacterMovement()->StopMovementImmediately();
+		GetCharacterMovement()->MaxWalkSpeed = 0.f;
+		bIsStoppingAtPoint = true;
+		bIsPatrolScanning = true;
+	}
+	else if (NewState == EHumanoidEnemyAIState::Patrol)
 	{
 		// 回到巡逻：恢复速度方向自动旋转
 		GetCharacterMovement()->bOrientRotationToMovement = true;
 		bUseControllerRotationYaw                         = false;
 		GetCharacterMovement()->MaxWalkSpeed              = PatrolWalkSpeed;
-		// 置旗，让 BTTask_ResumeNearestPatrol 在下一个 BT tick 中处理
+		// 战斗或搜索结束后都从最近路点恢复，避免折返到旧索引。
 		bNeedsPatrolResume = true;
+	}
+}
+
+void AHumanoidEnemy::StartLostTargetSearch(const FVector& LastKnownLocation)
+{
+	if (IsDead()) return;
+
+	SearchDestination = LastKnownLocation;
+	// 先在旧状态下终止 BT/战斗遗留 Move，避免它的 Abort 回调被误判成搜索 Move 失败。
+	if (AAIController* AIC = Cast<AAIController>(GetController()))
+	{
+		AIC->StopMovement();
+	}
+	SetAIState(EHumanoidEnemyAIState::SearchRush);
+
+	if (AAIController* AIC = Cast<AAIController>(GetController()))
+	{
+		AIC->MoveToLocation(SearchDestination, SearchAcceptanceRadius, true, true, true, false);
 	}
 }
 
@@ -187,6 +227,14 @@ void AHumanoidEnemy::OnPatrolWaitFinished()
 	TryTurnOrMove();
 }
 
+void AHumanoidEnemy::OnSearchScanFinished()
+{
+	bIsPatrolScanning = false;
+	bIsStoppingAtPoint = false;
+	SetAIState(EHumanoidEnemyAIState::Patrol);
+	ResumeNearestPatrol();
+}
+
 void AHumanoidEnemy::ResumeNearestPatrol()
 {
 	if (!bNeedsPatrolResume) return;
@@ -218,6 +266,29 @@ int32 AHumanoidEnemy::FindNearestPatrolPointIndex() const
 
 void AHumanoidEnemy::OnPatrolMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
 {
+	if (AIState == EHumanoidEnemyAIState::SearchRush)
+	{
+		if (Result.IsSuccess())
+		{
+			SetAIState(EHumanoidEnemyAIState::SearchScan);
+			if (SearchScanDuration > 0.f)
+			{
+				GetWorldTimerManager().SetTimer(SearchScanTimer, this,
+					&AHumanoidEnemy::OnSearchScanFinished, SearchScanDuration, false);
+			}
+			else
+			{
+				OnSearchScanFinished();
+			}
+		}
+		else
+		{
+			SetAIState(EHumanoidEnemyAIState::Patrol);
+			ResumeNearestPatrol();
+		}
+		return;
+	}
+
 	if (AIState != EHumanoidEnemyAIState::Patrol) return;
 	if (!Result.IsSuccess() || PatrolPoints.IsEmpty()) return;
 	bIsStoppingAtPoint = true;

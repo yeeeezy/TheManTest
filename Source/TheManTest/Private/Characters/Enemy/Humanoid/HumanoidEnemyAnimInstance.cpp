@@ -37,7 +37,17 @@ void UHumanoidEnemyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	// Index=0 时会用 Reference Pose 混入，偶发 A-Pose
 	if (bIsPatrolScanning && !bPrevPatrolScanning && PatrolScanAnimCount > 0)
 	{
-		PatrolScanAnimIndex = FMath::RandRange(1, PatrolScanAnimCount);
+		if (PatrolScanAnimCount == 1)
+		{
+			PatrolScanAnimIndex = 1;
+		}
+		else
+		{
+			int32 NextIndex = PatrolScanAnimIndex;
+			while (NextIndex == PatrolScanAnimIndex)
+				NextIndex = FMath::RandRange(1, PatrolScanAnimCount);
+			PatrolScanAnimIndex = NextIndex;
+		}
 	}
 	bPrevPatrolScanning = bIsPatrolScanning;
 
@@ -93,31 +103,28 @@ void UHumanoidEnemyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	bHasWeapon = false;
 	if (UStaticMeshComponent* Weapon = HumanoidOwner->GetWeaponMesh())
 	{
-		bHasWeapon = (Weapon->GetStaticMesh() != nullptr);
+		const bool bWeaponMeshValid = (Weapon->GetStaticMesh() != nullptr);
+		bHasWeapon = bWeaponMeshValid && Weapon->DoesSocketExist(WeaponGripLeftSocket);
 		if (bHasWeapon)
 		{
 			const FVector GripWorld = Weapon->GetSocketLocation(WeaponGripLeftSocket);
 			LeftHandIKTarget = HumanoidOwner->GetMesh()->GetComponentTransform().InverseTransformPosition(GripWorld);
+		}
 
-			// 首帧从武器 Muzzle socket 计算稳定绑定变换，之后固定不再更新
-			// 无 Muzzle socket 时不初始化，IK 保持关闭直到 socket 建好
-			if (!bAimSourceInitialized && Weapon->DoesSocketExist(FName("Muzzle")))
+		// 首帧从武器 Muzzle socket 计算稳定绑定变换，之后固定不再更新。
+		if (bWeaponMeshValid && !bAimSourceInitialized && Weapon->DoesSocketExist(FName("Muzzle")))
+		{
+			const FTransform HandWorldTr   = HumanoidOwner->GetMesh()->GetSocketTransform(FName("hand_r"), RTS_World);
+			const FTransform MuzzleWorldTr = Weapon->GetSocketTransform(FName("Muzzle"), RTS_World);
+			AimSourceLocalTransform = MuzzleWorldTr.GetRelativeTransform(HandWorldTr);
+
+			if (HumanoidOwner->GetMesh()->DoesSocketExist(AimAxisSocketName))
 			{
-				const FTransform HandWorldTr   = HumanoidOwner->GetMesh()->GetSocketTransform(FName("hand_r"), RTS_World);
-				const FTransform MuzzleWorldTr = Weapon->GetSocketTransform(FName("Muzzle"), RTS_World);
-				AimSourceLocalTransform = MuzzleWorldTr.GetRelativeTransform(HandWorldTr);
-
-				// 从 hand_r 上的辅助插槽算出正确的 AimAxis（hand_r 局部空间的 +X 朝向）
-				// 插槽须在骨骼编辑器里设好朝向：+X 指向枪管方向
-				if (HumanoidOwner->GetMesh()->DoesSocketExist(AimAxisSocketName))
-				{
-					const FTransform SocketWorldTr = HumanoidOwner->GetMesh()->GetSocketTransform(AimAxisSocketName, RTS_World);
-					const FTransform SocketLocalTr = SocketWorldTr.GetRelativeTransform(HandWorldTr);
-					AimAxis = SocketLocalTr.GetRotation().GetForwardVector(); // socket +X 在 hand_r 局部空间的方向
-				}
-
-				bAimSourceInitialized = true;
+				const FTransform SocketWorldTr = HumanoidOwner->GetMesh()->GetSocketTransform(AimAxisSocketName, RTS_World);
+				const FTransform SocketLocalTr = SocketWorldTr.GetRelativeTransform(HandWorldTr);
+				AimAxis = SocketLocalTr.GetRotation().GetForwardVector();
 			}
+			bAimSourceInitialized = true;
 		}
 	}
 

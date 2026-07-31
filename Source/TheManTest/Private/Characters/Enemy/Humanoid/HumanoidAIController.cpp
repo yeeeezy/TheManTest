@@ -87,14 +87,13 @@ void AHumanoidAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
 	}
 	else
 	{
-		// 丢失玩家：记录最后位置 + 清目标 + 解除 Focus + 回巡逻
-		// （SearchRush/SearchScan 留待 FEAT-026，此处直接回 Patrol）
+		// 丢失玩家：记录最后位置、清目标，然后启动公共 SearchRush → SearchScan → Patrol 流程。
 		if (BB)
 		{
 			BB->SetValueAsVector(BB_LastKnownPlayerLocation, Stimulus.StimulusLocation);
 			BB->ClearValue(BB_TargetActor);
 		}
 		ClearFocus(EAIFocusPriority::Gameplay);
-		Enemy->SetAIState(EHumanoidEnemyAIState::Patrol);
+		Enemy->StartLostTargetSearch(Stimulus.StimulusLocation);
 	}
 }
