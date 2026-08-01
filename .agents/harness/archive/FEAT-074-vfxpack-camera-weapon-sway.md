@@ -47,3 +47,12 @@
 - 蓝图编译通过：`ABP_MaintenanceWorker`、`ABP_RepairGun_AnimLayer`、`BP_MaintenanceWorker`、`BP_RepairGun`。
 - Development Editor / Win64：Succeeded（Target is up to date）。
 - PIE 冷启动确认 CharacterMesh0/ArmsViewMesh/LegsMesh 均加载 MaintenanceWorker 主 ABP，RepairGun Linked Anim Layer 同时存在于身体与 ArmsViewMesh；HeadBob、Viewmodel sway、RepairGun CameraShake 第一阶段配置保留。
+
+## 2026-08-01 可见性回归修复
+
+- 用户前台复核发现第一人称手臂与 RepairGun 均不可见。运行时定位并非 BlendSpace/Linked Layer 未加载，而是 VFX Skeleton 合并后项目原 `Grip_Point` Socket 丢失，RepairGun 实际回落到 ArmsViewMesh 组件原点；同时旧 Viewmodel 构图变换不适用于 VFX 手臂 Mesh。
+- 写入前建立检查点 `3970105`。用户补充确认允许直接使用 VFXPack 原版第一人称 Mesh。
+- 从 FPSShooter1 的最终资产迁入 `SKM_VFXPack_FirstPersonArms`，整理到 `/Game/Characters/MaintenanceWorker/FirstPersonArms/Mesh/`，并合并回项目统一 Skeleton；未保留迁移 Skeleton、供应商 PhysicsAsset、CodexRetargeting 或供应商目录。
+- VFX 原版 `GripPoint` 保留；项目原 `Rifle_A` 与 `Grip_Point` 按修改前精确骨骼/变换恢复，其中 RepairGun 再次正确附着 `Grip_Point`。
+- Viewmodel 采用 VFX Mesh 原版旋转，并针对本项目 110° 相机及 RepairGun 尺寸校准构图。TestMap PIE 截图确认手臂、RepairGun、移动 HeadBob 与移动动画均可见；相关 4 个蓝图编译保存、目标资产验证通过。
+- 已知观感项：VFX 动画原本按素材包枪型制作，RepairGun 前握把几何不同，左手尚未精确贴合 RepairGun；如需完全贴握，应在外部动画资源项目制作 RepairGun 专属最终动画或另行确认程序化左手 IK。

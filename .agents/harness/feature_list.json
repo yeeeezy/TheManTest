@@ -21,7 +21,7 @@
                                                "现有RepairGun、装备/GAS/弹道和Linked Anim Layer架构保持有效",
                                                "Development Editor编译、蓝图/资产验证及PIE行走奔跑跳跃开火验证通过"
                                            ],
-                         "verification_evidence":  "2026-08-01-session145：FPSShooter1逐骨验证两套Skeleton均为68骨且名称/顺序/参考姿势完全一致，采用无损Skeleton合并且未创建IK资产；MaintenanceWorker全身/腿Mesh与20套body locomotion统一引用VFXPack最终Skeleton；RepairGun不再保留原生Walk，BS_WalkRun_RepairGun按VFXPack原版Speed 0/280/420/700与RateScale 0.8/0.5/1.0/1.5重建为2D 12样本；Temp/供应商/CodexRetargeting目录清场；四个相关蓝图编译保存成功；Development Editor Win64成功。待前台实际输入复核走跑跳开火主观观感。"
+                         "verification_evidence":  "2026-08-01-session145：FPSShooter1逐骨验证两套Skeleton均为68骨且名称/顺序/参考姿势完全一致，采用无损Skeleton合并且未创建IK资产；MaintenanceWorker全身/腿Mesh与20套body locomotion统一引用VFXPack最终Skeleton；RepairGun不再保留原生Walk，BS_WalkRun_RepairGun按VFXPack原版Speed 0/280/420/700与RateScale 0.8/0.5/1.0/1.5重建为2D 12样本。可见性回归复核定位为Grip_Point丢失和旧Viewmodel构图不适配VFX Mesh；现已改用语义目录内VFXPack原版手臂Mesh、恢复Grip_Point并校准构图，TestMap PIE确认手臂/RepairGun/移动动画可见；Temp/供应商/CodexRetargeting目录清场，四个相关蓝图编译保存、目标资产验证与Development Editor Win64成功。RepairGun左手贴握仍待主观确认或后续专属适配。"
                      },
                      {
                          "id":  "FEAT-071",
