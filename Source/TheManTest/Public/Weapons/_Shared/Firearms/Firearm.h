@@ -11,6 +11,7 @@ class USoundBase;
 class UGameplayAbility;
 class UAbilitySystemComponent;
 class UNiagaraSystem;
+class UCameraShakeBase;
 
 UCLASS()
 class THEMANTEST_API AFirearm : public AWeaponBase
@@ -72,6 +73,14 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|VFX")
 	FVector MuzzleEffectScale = FVector::OneVector;
+
+	/* ===== 相机反馈 ===== */
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Camera")
+	TSubclassOf<UCameraShakeBase> FireCameraShake;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Camera", meta = (ClampMin = "0.0"))
+	float FireCameraShakeScale = 1.f;
 
 	/* ===== 后坐力 ===== */
 

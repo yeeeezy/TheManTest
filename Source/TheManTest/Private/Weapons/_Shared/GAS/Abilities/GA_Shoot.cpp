@@ -10,6 +10,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "GameFramework/PlayerController.h"
+#include "Camera/PlayerCameraManager.h"
 
 UGA_Shoot::UGA_Shoot()
 {
@@ -126,6 +128,19 @@ void UGA_Shoot::ActivateAbility(
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, Firearm->FireSound, MuzzleLocation,
 			Firearm->FireSoundVolumeMultiplier, Firearm->FireSoundPitchMultiplier);
+	}
+
+	// 武器专属射击震屏；仅本地玩家相机播放，不参与弹道、复制或服务器状态。
+	if (Firearm->FireCameraShake)
+	{
+		if (APlayerController* PC = Cast<APlayerController>(Character->GetController()))
+		{
+			if (PC->PlayerCameraManager)
+			{
+				PC->PlayerCameraManager->StartCameraShake(
+					Firearm->FireCameraShake, Firearm->FireCameraShakeScale);
+			}
+		}
 	}
 
 	// 施加后坐力

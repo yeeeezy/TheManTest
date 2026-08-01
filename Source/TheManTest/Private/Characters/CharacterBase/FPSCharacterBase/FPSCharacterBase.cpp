@@ -4,6 +4,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Camera/CameraShakeBase.h"
 #include "EnhancedInputComponent.h"
 #include "Weapons/_Shared/Components/EquipmentManagerComponent.h"
 #include "Characters/_Shared/Components/ScanEffectComponent.h"
@@ -446,20 +447,64 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		const FRotator RotDelta = (CurrentControlRot - LastControlRotation).GetNormalized();
 		LastControlRotation = CurrentControlRot;
 
-		// Sway disabled for now while tuning the independent FP arms.
-		// const FRotator SwayTarget(
-		// 	-RotDelta.Pitch * SwayIntensity,
-		// 	-RotDelta.Yaw   * SwayIntensity,
-		// 	-RotDelta.Yaw   * SwayIntensity
-		// );
-		// CurrentSway.Pitch = FMath::FInterpTo(CurrentSway.Pitch, SwayTarget.Pitch, DeltaTime, SwayInterpSpeedY);
-		// CurrentSway.Yaw   = FMath::FInterpTo(CurrentSway.Yaw,   SwayTarget.Yaw,   DeltaTime, SwayInterpSpeedX);
-		// CurrentSway.Roll  = FMath::FInterpTo(CurrentSway.Roll,  SwayTarget.Roll,  DeltaTime, SwayInterpSpeedX);
-		CurrentSway = FRotator::ZeroRotator;
+		const FRotator SwayTarget(
+			-RotDelta.Pitch * SwayIntensity,
+			-RotDelta.Yaw   * SwayIntensity,
+			-RotDelta.Yaw   * SwayIntensity);
+		CurrentSway.Pitch = FMath::FInterpTo(CurrentSway.Pitch, SwayTarget.Pitch, DeltaTime, SwayInterpSpeedY);
+		CurrentSway.Yaw   = FMath::FInterpTo(CurrentSway.Yaw,   SwayTarget.Yaw,   DeltaTime, SwayInterpSpeedX);
+		CurrentSway.Roll  = FMath::FInterpTo(CurrentSway.Roll,  SwayTarget.Roll,  DeltaTime, SwayInterpSpeedX);
 
-		// 手臂基础朝向（BaseArmsRotation 含骨架 Yaw -90 转正）+ 摇摆，作用在 ArmsViewMesh 上。
-		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation + CurrentSway);
+		const FVector LocalVelocity = GetActorTransform().InverseTransformVectorNoScale(GetVelocity());
+		const float SpeedDenominator = FMath::Max(SprintSpeed, 1.f);
+		const float ForwardAlpha = FMath::Clamp(LocalVelocity.X / SpeedDenominator, -1.f, 1.f);
+		const float RightAlpha = FMath::Clamp(LocalVelocity.Y / SpeedDenominator, -1.f, 1.f);
+		const float MoveAmount = FMath::Clamp(FMath::Abs(ForwardAlpha) + FMath::Abs(RightAlpha), 0.f, 1.f);
+
+		const FVector MovementLocationTarget(
+			MovementSwayLocationAmplitude.X * MoveAmount,
+			MovementSwayLocationAmplitude.Y * RightAlpha,
+			MovementSwayLocationAmplitude.Z * MoveAmount);
+		const FRotator MovementRotationTarget(
+			MovementSwayRotationAmplitude.Pitch * ForwardAlpha,
+			MovementSwayRotationAmplitude.Yaw * RightAlpha,
+			MovementSwayRotationAmplitude.Roll * RightAlpha);
+		CurrentMovementSwayLocation = FMath::VInterpTo(
+			CurrentMovementSwayLocation, MovementLocationTarget, DeltaTime, MovementSwayInterpSpeed);
+		CurrentMovementSwayRotation = FMath::RInterpTo(
+			CurrentMovementSwayRotation, MovementRotationTarget, DeltaTime, MovementSwayInterpSpeed);
+
+		// 所有摆动都在 ViewmodelRoot 汇总；ArmsViewMesh 保留骨架基础校正，弹道与相机不受影响。
+		ViewmodelRoot->SetRelativeLocation(ViewmodelOffsetLocation + CurrentMovementSwayLocation);
+		ViewmodelRoot->SetRelativeRotation(ViewmodelOffsetRotation + CurrentSway + CurrentMovementSwayRotation);
+		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
 		CurrentArmsPitch = 0.f;
+	}
+
+	// Walking/Running HeadBob 只在本地、落地且实际移动时运行；状态不变时不重复启动。
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		TSubclassOf<UCameraShakeBase> DesiredShake;
+		const float GroundSpeed = GetVelocity().Size2D();
+		if (GetCharacterMovement()->IsMovingOnGround() && GroundSpeed > 5.f)
+		{
+			DesiredShake = (bIsSprinting || GroundSpeed > WalkSpeed + 10.f)
+				? RunningCameraShake : WalkingCameraShake;
+		}
+
+		if (DesiredShake != ActiveMovementCameraShakeClass)
+		{
+			if (ActiveMovementCameraShake && PC->PlayerCameraManager)
+			{
+				PC->PlayerCameraManager->StopCameraShake(ActiveMovementCameraShake, false);
+			}
+			ActiveMovementCameraShake = nullptr;
+			ActiveMovementCameraShakeClass = DesiredShake;
+			if (DesiredShake && PC->PlayerCameraManager)
+			{
+				ActiveMovementCameraShake = PC->PlayerCameraManager->StartCameraShake(DesiredShake);
+			}
+		}
 	}
 }
 
