@@ -1,9 +1,26 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-01-session141",
+    "last_updated":  "2026-08-01-session143",
     "source_file":  "feature_list.json",
     "status_scope":  "done",
     "features":  [
+                     {
+                         "id":  "FEAT-073",
+                         "name":  "子弹命中警觉与RepairGun减速",
+                         "status":  "done",
+                         "description":  "玩家子弹命中敌人时使敌人立即面向攻击者并进入战斗；RepairGun子弹命中敌人后按子弹属性施加限时减速并立即销毁。",
+                         "archive_file":  "archive/FEAT-073-projectile-hit-alert-repairgun-slow.md",
+                         "created":  "2026-08-01",
+                         "updated":  "2026-08-01-session143",
+                         "done_criteria":  [
+                                               "玩家任意子弹有效命中敌人后，敌人立即面向攻击者；人形敌人进入Aim并锁定攻击者",
+                                               "RepairGun子弹暴露SlowPercent与SlowDuration属性，默认40%与2.5秒",
+                                               "RepairGun命中敌人后立即销毁，连续命中刷新时长且减速不叠加",
+                                               "RepairGun命中非敌人仍保留膨胀与危险区压制生命周期",
+                                               "Development Editor编译与冷启动运行时回读通过"
+                                           ],
+                         "verification_evidence":  "TheManTestEditor Win64 Development完整编译成功两次。冷启动运行时回读：攻击者位于正Y时敌人Yaw=90°；基础速度600，40%减速后360，重复命中仍为360；BP_RepairGunBullet CDO SlowPercent=0.4、SlowDuration=2.5。代码路径确认RepairGun敌人命中立即Destroy，环境命中继续原有膨胀/危险区压制。"
+                     },
                      {
                          "id":  "FEAT-072",
                          "name":  "RepairGun应用Sniper Scout枪口火焰与烟雾",

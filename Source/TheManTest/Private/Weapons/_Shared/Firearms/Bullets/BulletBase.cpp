@@ -90,6 +90,11 @@ void ABulletBase::ProcessHit_Implementation(
 			if (CollisionSphere) CollisionSphere->IgnoreActorWhenMoving(Enemy, true);
 			return;
 		}
+		// 只把玩家/非敌方发射者视为威胁；避免敌人友军火力互相改写战斗目标。
+		if (HitInstigator && !HitInstigator->IsA<AEnemyBase>())
+		{
+			Enemy->ReactToProjectileHit(HitInstigator);
+		}
 	}
 	bHasProcessedHit = true;
 

@@ -74,7 +74,21 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Enemy")
 	FORCEINLINE bool IsDead() const { return bIsDead; }
 
+	// 玩家弹体有效命中后的统一警觉入口。基类立即水平转向攻击者；具体敌人可扩展战斗状态/Focus。
+	UFUNCTION(BlueprintCallable, Category = "Enemy|Combat")
+	virtual void ReactToProjectileHit(AActor* HitInstigator);
+
+	// 施加限时移动减速。SlowPercent=0.4 表示减速40%；重复命中刷新时长且只保留最强减速。
+	UFUNCTION(BlueprintCallable, Category = "Enemy|Movement")
+	void ApplyMovementSlow(float SlowPercent, float Duration);
+
+	UFUNCTION(BlueprintPure, Category = "Enemy|Movement")
+	FORCEINLINE float GetActiveMovementSpeedMultiplier() const { return ActiveMovementSpeedMultiplier; }
+
 protected:
+	// 敌人状态切换必须通过此入口设置基础速度，当前减速会自动叠加且到期恢复到最新状态速度。
+	void SetDesiredMaxWalkSpeed(float NewSpeed);
+
 	// ASC 挂在敌人自身（无 PlayerState）
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	UAbilitySystemComponent* AbilitySystemComponent;
@@ -136,6 +150,12 @@ protected:
 
 private:
 	bool bIsDead = false;
+	bool bHasDesiredMaxWalkSpeed = false;
+	float DesiredMaxWalkSpeed = 0.f;
+	float ActiveMovementSpeedMultiplier = 1.f;
+	FTimerHandle MovementSlowTimerHandle;
+
+	void ClearMovementSlow();
 
 	UFUNCTION()
 	void HandleMidRoundStrengthIncrease();

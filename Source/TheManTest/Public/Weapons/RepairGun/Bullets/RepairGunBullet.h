@@ -33,6 +33,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Bullet|Expansion")
 	float LifetimeAfterExpansion = 5.f;
 
+	// 命中敌人时降低其移动速度的百分比。0.4 = 减速40%。
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Bullet|Slow", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float SlowPercent = 0.4f;
+
+	// 敌人减速持续时间；连续命中刷新持续时间，不叠加强度。
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Bullet|Slow", meta = (ClampMin = "0.0"))
+	float SlowDuration = 2.5f;
+
 private:
 	bool  bIsExpanding     = false;
 	float ExpansionElapsed = 0.f;

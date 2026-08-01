@@ -22,6 +22,7 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
+	virtual void ReactToProjectileHit(AActor* HitInstigator) override;
 
 	// --- AnimInstance 轮询接口 ---
 	UFUNCTION(BlueprintPure, Category = "Enemy|AI")

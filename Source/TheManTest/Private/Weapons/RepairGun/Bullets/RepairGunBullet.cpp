@@ -2,6 +2,7 @@
 #include "AbilitySystemComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Enemy/EnemyBase.h"
 
 ARepairGunBullet::ARepairGunBullet()
 {
@@ -17,6 +18,13 @@ void ARepairGunBullet::ProcessHit_Implementation(
 	AActor* HitInstigator,
 	UAbilitySystemComponent* SourceASC)
 {
+	AEnemyBase* HitEnemy = Cast<AEnemyBase>(HitResult.GetActor());
+	if (HitEnemy && HitEnemy->ShouldProjectilePassThrough())
+	{
+		Super::ProcessHit_Implementation(HitResult, HitInstigator, SourceASC);
+		return;
+	}
+
 	Super::ProcessHit_Implementation(HitResult, HitInstigator, SourceASC);
 
 	if (ProjectileMovement)
@@ -24,6 +32,15 @@ void ARepairGunBullet::ProcessHit_Implementation(
 		ProjectileMovement->StopMovementImmediately();
 	}
 
+	// 命中敌人：施加子弹自身配置的减速并立即消失，不生成驻留泡泡。
+	if (HitEnemy)
+	{
+		HitEnemy->ApplyMovementSlow(SlowPercent, SlowDuration);
+		Destroy();
+		return;
+	}
+
+	// 命中环境/危险区仍保留原有膨胀与压制生命周期。
 	SetActorScale3D(FVector(1.f));
 	bIsExpanding = true;
 	SetActorTickEnabled(true);

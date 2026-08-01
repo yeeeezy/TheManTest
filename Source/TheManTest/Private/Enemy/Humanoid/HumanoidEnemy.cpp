@@ -7,6 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Enemy/Components/EnemyMagazineComponent.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 AHumanoidEnemy::AHumanoidEnemy()
 {
@@ -25,12 +26,31 @@ AHumanoidEnemy::AHumanoidEnemy()
 void AHumanoidEnemy::BeginPlay()
 {
 	Super::BeginPlay();
-	GetCharacterMovement()->MaxWalkSpeed = PatrolWalkSpeed;
+	SetDesiredMaxWalkSpeed(PatrolWalkSpeed);
 
 	// 运行时重新按配置的 socket 名挂载武器，构造函数里只能 SetupAttachment 到 Mesh 根
 	WeaponMesh->AttachToComponent(GetMesh(),
 		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 		WeaponAttachSocket);
+}
+
+void AHumanoidEnemy::ReactToProjectileHit(AActor* HitInstigator)
+{
+	Super::ReactToProjectileHit(HitInstigator);
+	if (!IsValid(HitInstigator) || IsDead()) return;
+
+	AimTargetWorld = HitInstigator->GetActorLocation();
+	bIsAiming = true;
+	SetAIState(EHumanoidEnemyAIState::Aim);
+
+	if (AHumanoidAIController* AIC = Cast<AHumanoidAIController>(GetController()))
+	{
+		AIC->SetFocus(HitInstigator);
+		if (UBlackboardComponent* Blackboard = AIC->GetBlackboardComponent())
+		{
+			Blackboard->SetValueAsObject(AHumanoidAIController::BB_TargetActor, HitInstigator);
+		}
+	}
 }
 
 void AHumanoidEnemy::AimAtTarget(AActor* Target)
@@ -77,7 +97,7 @@ void AHumanoidEnemy::SetAIState(EHumanoidEnemyAIState NewState)
 		// 战斗朝向由 AIController Focus 驱动，关闭速度方向自动旋转
 		GetCharacterMovement()->bOrientRotationToMovement = false;
 		bUseControllerRotationYaw                         = true;
-		GetCharacterMovement()->MaxWalkSpeed              = CombatWalkSpeed;
+		SetDesiredMaxWalkSpeed(CombatWalkSpeed);
 		if (AAIController* AIC = Cast<AAIController>(GetController()))
 		{
 			AIC->StopMovement();
@@ -92,12 +112,12 @@ void AHumanoidEnemy::SetAIState(EHumanoidEnemyAIState NewState)
 		bIsStoppingAtPoint = false;
 		GetCharacterMovement()->bOrientRotationToMovement = true;
 		bUseControllerRotationYaw = false;
-		GetCharacterMovement()->MaxWalkSpeed = SearchRushSpeed;
+		SetDesiredMaxWalkSpeed(SearchRushSpeed);
 	}
 	else if (NewState == EHumanoidEnemyAIState::SearchScan)
 	{
 		GetCharacterMovement()->StopMovementImmediately();
-		GetCharacterMovement()->MaxWalkSpeed = 0.f;
+		SetDesiredMaxWalkSpeed(0.f);
 		bIsStoppingAtPoint = true;
 		bIsPatrolScanning = true;
 	}
@@ -106,7 +126,7 @@ void AHumanoidEnemy::SetAIState(EHumanoidEnemyAIState NewState)
 		// 回到巡逻：恢复速度方向自动旋转
 		GetCharacterMovement()->bOrientRotationToMovement = true;
 		bUseControllerRotationYaw                         = false;
-		GetCharacterMovement()->MaxWalkSpeed              = PatrolWalkSpeed;
+		SetDesiredMaxWalkSpeed(PatrolWalkSpeed);
 		// 战斗或搜索结束后都从最近路点恢复，避免折返到旧索引。
 		bNeedsPatrolResume = true;
 	}
@@ -152,7 +172,7 @@ void AHumanoidEnemy::RequestTurn(float Angle)
 
 	// 关闭自动朝向，防止 PhysicsRotation 每帧覆盖 SetActorRotation
 	GetCharacterMovement()->bOrientRotationToMovement = false;
-	GetCharacterMovement()->MaxWalkSpeed = TurnWalkSpeed;
+	SetDesiredMaxWalkSpeed(TurnWalkSpeed);
 }
 
 void AHumanoidEnemy::Tick(float DeltaSeconds)
@@ -191,11 +211,11 @@ void AHumanoidEnemy::Tick(float DeltaSeconds)
 		{
 			const float Alpha    = FMath::Clamp(Dist / SlowdownRadius, 0.f, 1.f);
 			const float NewSpeed = FMath::Lerp(MinApproachSpeed, PatrolWalkSpeed, Alpha);
-			GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
+			SetDesiredMaxWalkSpeed(NewSpeed);
 		}
 		else
 		{
-			GetCharacterMovement()->MaxWalkSpeed = PatrolWalkSpeed;
+			SetDesiredMaxWalkSpeed(PatrolWalkSpeed);
 		}
 	}
 }
@@ -256,7 +276,7 @@ void AHumanoidEnemy::MoveToNextPatrolPoint()
 	AAIController* AIC = Cast<AAIController>(GetController());
 	if (!AIC) return;
 
-	GetCharacterMovement()->MaxWalkSpeed = PatrolWalkSpeed;
+	SetDesiredMaxWalkSpeed(PatrolWalkSpeed);
 
 	FAIMoveRequest MoveRequest(PatrolPoints[CurrentPatrolIndex]->GetActorLocation());
 	MoveRequest.SetAcceptanceRadius(PatrolAcceptanceRadius);

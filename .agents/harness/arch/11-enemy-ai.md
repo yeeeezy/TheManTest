@@ -23,7 +23,7 @@ AEnemyBase（Public/Enemy/）  ← 所有敌人基类，ASC+属性挂自身（�
 
 | 文件 | 关键内容 |
 |---|---|
-| `Public/Enemy/EnemyBase.h` | ASC + `UEnemyAttributeSetBase` 挂自身；`InitGEClass`；`DefaultAbilities`（常驻技能）；**技能集系统**：`PhaseSkillSets`(阶段数组)/`CurrentPhase`/`SetCombatPhase()`/`UseRandomSkill(Target,Range)`/`GrantAbilities()`/virtual `AimAtTarget()`；`CurrentStrength`；`OnDeath()`。`Tick` 默认关闭 |
+| `Public/Enemy/EnemyBase.h` | ASC + `UEnemyAttributeSetBase` 挂自身；`InitGEClass`；`DefaultAbilities`（常驻技能）；**技能集系统**：`PhaseSkillSets`(阶段数组)/`CurrentPhase`/`SetCombatPhase()`/`UseRandomSkill(Target,Range)`/`GrantAbilities()`/virtual `AimAtTarget()`；`CurrentStrength`；`OnDeath()`。FEAT-073 新增 `ReactToProjectileHit` 与可刷新限时 `ApplyMovementSlow`；`SetDesiredMaxWalkSpeed` 将状态基础速度和临时倍率分离。`Tick` 默认关闭。 |
 | `Private/Enemy/EnemyBase.cpp` | BeginPlay：InitAbilityActorInfo(self,self) + 应用 InitGE + 授予 DefaultAbilities & 所有阶段技能 + 强度初始化（绑 `OnMidRoundStrengthIncrease`）；`UseRandomSkill`（当前阶段+距离档随机→AimAtTarget→TryActivateAbilityByClass）；`OnDeath` 默认 Destroy |
 | `Public/Enemy/EnemyAttributeSetBase.h` | 继承 `UTheManAttributeSetBase`，怪物专属属性在此扩展（当前为空） |
 | `EEnemySkillRange`（EnemyBase.h 内） | 交战距离档枚举：`Near` / `Mid` / `Far` |
@@ -35,7 +35,7 @@ AEnemyBase（Public/Enemy/）  ← 所有敌人基类，ASC+属性挂自身（�
 |---|---|
 | `Public/Enemy/Humanoid/HumanoidEnemyTypes.h` | `EHumanoidEnemyAIState`：`Patrol` / `Aim` / `SearchRush` / `SearchScan` / `Dead` |
 | `Public/Enemy/Humanoid/HumanoidEnemy.h` | 重开 `Tick`；`WeaponMesh`(StaticMesh，挂 `WeaponAttachSocket`=hand_r)；`AimTargetWorld`/`bIsAiming`(public，AIController 写)；`AIState`/`SetAIState`；巡逻路点 `PatrolPoints`；速度参数(PatrolWalkSpeed/CombatWalkSpeed/TurnWalkSpeed)；转身/减速参数；重写 `AimAtTarget` |
-| `Private/Enemy/Humanoid/HumanoidEnemy.cpp` | C++ 巡逻：`MoveToNextPatrolPoint`/`OnPatrolMoveCompleted`/`TryTurnOrMove`/`RequestTurn`/`OnTurnComplete`/`ResumeNearestPatrol`；`SetAIState`(Aim:停巡逻+Focus 朝向+加速；回 Patrol:置 bNeedsPatrolResume)；`Tick`(转身旋转 + 接近路点线性减速)；`AimAtTarget`(写 AimTargetWorld) |
+| `Private/Enemy/Humanoid/HumanoidEnemy.cpp` | C++ 巡逻：`MoveToNextPatrolPoint`/`OnPatrolMoveCompleted`/`TryTurnOrMove`/`RequestTurn`/`OnTurnComplete`/`ResumeNearestPatrol`；`SetAIState`(Aim:停巡逻+Focus 朝向+加速；回 Patrol:置 bNeedsPatrolResume)；`Tick`(转身旋转 + 接近路点线性减速)；`AimAtTarget`(写 AimTargetWorld)。FEAT-073 起，玩家子弹命中会立即面向玩家、进入 Aim，并写 AI Focus/Blackboard TargetActor；所有状态速度均通过减速倍率入口。 |
 | `Public/Enemy/Humanoid/Phantom/Phantom.h` | `APhantom : AHumanoidEnemy`；二阶段透明材质、弹体通道穿透、`ShouldProjectilePassThrough` |
 | `Public/Enemy/Components/EnemyMagazineComponent.h` | 通用 20 发弹匣；仅普通自动射击消费，支持空匣判断、Reload 与 AmmoChanged |
 | `Public/Enemy/Cover/EnemyCoverPoint.h` | 通用掩体 Actor；StandPoint + 距离/威胁背向/Visibility 遮挡评分选择 |

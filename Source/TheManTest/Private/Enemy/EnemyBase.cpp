@@ -5,6 +5,7 @@
 #include "GameplayEffect.h"
 #include "Abilities/GameplayAbility.h"
 #include "Engine/Engine.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 AEnemyBase::AEnemyBase()
 {
@@ -22,6 +23,8 @@ UAbilitySystemComponent* AEnemyBase::GetAbilitySystemComponent() const
 void AEnemyBase::BeginPlay()
 {
 	Super::BeginPlay();
+	DesiredMaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
+	bHasDesiredMaxWalkSpeed = true;
 
 	// ASC 初始化：敌人自身同时作为 OwnerActor 和 AvatarActor
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
@@ -73,6 +76,50 @@ void AEnemyBase::BeginPlay()
 	{
 		CurrentStrength = BaseStrength;
 	}
+}
+
+void AEnemyBase::ReactToProjectileHit(AActor* HitInstigator)
+{
+	if (!IsValid(HitInstigator) || HitInstigator == this || IsDead()) return;
+
+	const FVector ToInstigator = HitInstigator->GetActorLocation() - GetActorLocation();
+	if (!ToInstigator.IsNearlyZero())
+	{
+		SetActorRotation(FRotator(0.f, ToInstigator.Rotation().Yaw, 0.f));
+	}
+}
+
+void AEnemyBase::ApplyMovementSlow(float SlowPercent, float Duration)
+{
+	if (IsDead() || Duration <= 0.f) return;
+	if (!bHasDesiredMaxWalkSpeed)
+	{
+		DesiredMaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
+		bHasDesiredMaxWalkSpeed = true;
+	}
+
+	const float NewMultiplier = 1.f - FMath::Clamp(SlowPercent, 0.f, 1.f);
+	ActiveMovementSpeedMultiplier = FMath::Min(ActiveMovementSpeedMultiplier, NewMultiplier);
+	SetDesiredMaxWalkSpeed(DesiredMaxWalkSpeed);
+
+	GetWorldTimerManager().SetTimer(
+		MovementSlowTimerHandle, this, &AEnemyBase::ClearMovementSlow, Duration, false);
+}
+
+void AEnemyBase::SetDesiredMaxWalkSpeed(float NewSpeed)
+{
+	DesiredMaxWalkSpeed = FMath::Max(0.f, NewSpeed);
+	bHasDesiredMaxWalkSpeed = true;
+	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
+	{
+		Movement->MaxWalkSpeed = DesiredMaxWalkSpeed * ActiveMovementSpeedMultiplier;
+	}
+}
+
+void AEnemyBase::ClearMovementSlow()
+{
+	ActiveMovementSpeedMultiplier = 1.f;
+	SetDesiredMaxWalkSpeed(DesiredMaxWalkSpeed);
 }
 
 void AEnemyBase::GrantAbilities(const TArray<TSubclassOf<UGameplayAbility>>& Abilities)
