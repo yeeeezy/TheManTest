@@ -8,7 +8,7 @@
 
 | 文件 | 关键内容 |
 |---|---|
-| `Source/TheManTest/Public/Characters/Animation/BaseLocomotionAnimInstance.h` | 所有动画实例的 C++ 基类；输出 Speed / Velocity_Z（垂直速度，上升+下落-）/ bIsFalling（离地即 true）/ AimPitch（[-1,1] 归一化）/ Direction |
+| `Source/TheManTest/Public/Characters/_Shared/Animation/BaseLocomotionAnimInstance.h` | 所有动画实例的 C++ 基类；输出 Speed / Velocity_Z（垂直速度，上升+下落-）/ bIsFalling（离地即 true）/ AimPitch（[-1,1] 归一化）/ Direction |
 
 > **session47 起 `AimPitch` 是玩家上下瞄准的唯一来源**：身体已关物理俯仰（`bUseControllerRotationPitch=false`），看上下不再转 mesh，须由 ABP 用 `AimPitch` 驱动上半身 AimOffset/脊柱 Modify Bone 绕肩俯仰（FEAT-039）。`bIsFalling`/`Velocity_Z` 驱动跳跃状态机过渡。
 
@@ -16,9 +16,9 @@
 
 | 文件 | 关键内容 |
 |---|---|
-| `Source/TheManTest/Public/Characters/FPSCharacterBase/Animation/FPSCharacterAnimInstance.h` | 玩家动画实例（FEAT-041 由 `UFPSArmsAnimInstance` 改名）。挂在 **`GetMesh()`**，驱动身体/影子/腿三件套共享的全身姿势。session63 改为 UE 模板式普通 locomotion：Idle 与 Walk/Run BlendSpace 按 `Speed` / `Direction` 直接混合，不再做专门停步动画。当前子类只在基类变量之外补 `AccelDirection` / `bHasAcceleration`，保留为玩家专属扩展点。DefaultEngine.ini 有 CoreRedirect 保旧 ABP 父类链接 |
-| `Source/TheManTest/Public/Equipment/Animation/EquipmentAnimInstance.h` | 装备/武器动画层通用父类。输出 Speed / Direction / Velocity_Z / bIsFalling，供通用装备上半身 Idle/Walk/Run/Jump 动画层使用。FEAT-046 session75 回退为普通 1D BlendSpace 方案后，不再暴露 Start/End 状态机专用临时变量 |
-| `Source/TheManTest/Public/Equipment/Firearms/FirearmAnimInstance.h` | 4 个 AimIK 变量：AimSourceLocalTransform / AimTargetComponentSpace / bHasValidAimTarget / bIsAiming |
+| `Source/TheManTest/Public/Characters/CharacterBase/FPSCharacterBase/Animation/FPSCharacterAnimInstance.h` | 玩家动画实例（FEAT-041 由 `UFPSArmsAnimInstance` 改名）。挂在 **`GetMesh()`**，驱动身体/影子/腿三件套共享的全身姿势。session63 改为 UE 模板式普通 locomotion：Idle 与 Walk/Run BlendSpace 按 `Speed` / `Direction` 直接混合，不再做专门停步动画。当前子类只在基类变量之外补 `AccelDirection` / `bHasAcceleration`，保留为玩家专属扩展点。DefaultEngine.ini 有 CoreRedirect 保旧 ABP 父类链接 |
+| `Source/TheManTest/Public/Weapons/_Shared/Animation/EquipmentAnimInstance.h` | 装备/武器动画层通用父类。输出 Speed / Direction / Velocity_Z / bIsFalling，供通用装备上半身 Idle/Walk/Run/Jump 动画层使用。FEAT-046 session75 回退为普通 1D BlendSpace 方案后，不再暴露 Start/End 状态机专用临时变量 |
+| `Source/TheManTest/Public/Weapons/_Shared/Firearms/FirearmAnimInstance.h` | 4 个 AimIK 变量：AimSourceLocalTransform / AimTargetComponentSpace / bHasValidAimTarget / bIsAiming |
 
 **玩家 locomotion（session63 简化）：**
 - 不再使用 `StopAnimIndex` / `bShouldStop` / `bShouldMove` / 脚相位 / 延迟停 / 保持原速滑行。
@@ -33,9 +33,9 @@
 
 | 文件 | 关键内容 |
 |---|---|
-| `Source/TheManTest/Public/Characters/Enemy/Humanoid/HumanoidEnemyAnimInstance.h` | 继承基类；AIState / bIsTurning / TurnAngle / TurnAnimIndex；bIsPatrolScanning / PatrolScanAnimIndex；**无 Stopping 状态**：StopDecelerationRate / VirtualSpeed / bIsVirtualDecelerating 驱动虚拟减速；**AimIK**：AimTargetComponentSpace / AimSourceLocalTransform / AimAxisSocketName / AimAxis / bHasValidAimTarget / bIsAiming / AimAlpha / AimAlphaInterpSpeed；**左手 IK**：LeftHandIKTarget / bHasWeapon / WeaponGripLeftSocket |
-| `Source/TheManTest/Private/Characters/Enemy/Humanoid/HumanoidEnemyAnimInstance.cpp` | NativeUpdateAnimation：巡逻停车（bIsStoppingAtPoint 上升沿）和 Aim 停车（RealSpeed 骤降，bIsAimStopping 标志）共用同一套虚拟减速；bAimSourceInitialized 首帧从武器 `Muzzle` socket 计算 AimSourceLocalTransform，同时从骨骼 `AimAxisSocketName`（默认 `AimSocket`，挂在 `hand_r` 下，+X 朝枪管方向）计算 AimAxis；AimAlpha 用 FInterpTo 平滑 |
-| `Source/TheManTest/Public/Characters/Enemy/Humanoid/AnimNotify_FootDown.h` | 已弃用空壳（FEAT-029 移除 Stopping 状态后废弃），代码保留 |
+| `Source/TheManTest/Public/Enemy/Humanoid/HumanoidEnemyAnimInstance.h` | 继承基类；AIState / bIsTurning / TurnAngle / TurnAnimIndex；bIsPatrolScanning / PatrolScanAnimIndex；**无 Stopping 状态**：StopDecelerationRate / VirtualSpeed / bIsVirtualDecelerating 驱动虚拟减速；**AimIK**：AimTargetComponentSpace / AimSourceLocalTransform / AimAxisSocketName / AimAxis / bHasValidAimTarget / bIsAiming / AimAlpha / AimAlphaInterpSpeed；**左手 IK**：LeftHandIKTarget / bHasWeapon / WeaponGripLeftSocket |
+| `Source/TheManTest/Private/Enemy/Humanoid/HumanoidEnemyAnimInstance.cpp` | NativeUpdateAnimation：巡逻停车（bIsStoppingAtPoint 上升沿）和 Aim 停车（RealSpeed 骤降，bIsAimStopping 标志）共用同一套虚拟减速；bAimSourceInitialized 首帧从武器 `Muzzle` socket 计算 AimSourceLocalTransform，同时从骨骼 `AimAxisSocketName`（默认 `AimSocket`，挂在 `hand_r` 下，+X 朝枪管方向）计算 AimAxis；AimAlpha 用 FInterpTo 平滑 |
+| `Source/TheManTest/Public/Enemy/Humanoid/AnimNotify_FootDown.h` | 已弃用空壳（FEAT-029 移除 Stopping 状态后废弃），代码保留 |
 
 **ABP_HumanoidEnemy AnimGraph 节点链：**
 

@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Interfaces/Highlightable.h"
+#include "Actors/_Shared/Interfaces/Highlightable.h"
 #include "InteractableBase.generated.h"
 
 class UHighlightComponent;

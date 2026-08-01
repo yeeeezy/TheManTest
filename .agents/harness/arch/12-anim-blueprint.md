@@ -24,7 +24,7 @@
 | `ABP_BodyLocomotion` | `Content/Characters/CharacterBase/Animations/Logic/` | 当前玩家主 AnimBP；`GetMesh()` 与 `ArmsViewMesh` 可各自使用该主 ABP，并接收同一玩家 Skeleton 上的武器 Linked Anim Layer |
 | `ALI_WeaponAnim` | `Content/Weapons/_Shared/Animations/Interface/` | 武器动画层接口，定义两个层：`WeaponAimOffset`、`WeaponUpperBody` |
 | `TABP_Firearm_UpperBodyBase` | `Content/Weapons/_Shared/Animations/Logic/` | 当前枪械上半身 Template AnimBP，实现 `ALI_WeaponAnim`；具体玩家骨架层继续与玩家 Skeleton 兼容 |
-| `UFPSCharacterAnimInstance` | `Source/.../Characters/FPSCharacterBase/Animation/FPSCharacterAnimInstance.h` | 玩家 ABP 的 C++ 父类（FEAT-041 由 `UFPSArmsAnimInstance` 改名），持有 Locomotion 变量（继承基类）；CoreRedirect 保旧链接 |
+| `UFPSCharacterAnimInstance` | `Source/.../Characters/CharacterBase/FPSCharacterBase/Animation/FPSCharacterAnimInstance.h` | 玩家 ABP 的 C++ 父类（FEAT-041 由 `UFPSArmsAnimInstance` 改名），持有 Locomotion 变量（继承基类）；CoreRedirect 保旧链接 |
 | `UFirearmAnimInstance` | `Source/.../Equipment/Firearms/FirearmAnimInstance.h` | 当前枪械动画层模板 `TABP_Firearm_UpperBodyBase` 的 C++ 父类，持有四个 AimIK 变量 |
 
 > 敌人 ABP（`ABP_HumanoidEnemy`）见下方“敌人动画架构”节及 `11-enemy-ai.md`。
@@ -237,9 +237,9 @@ BBBAimIK 节点
 |---|---|---|
 | `ABP_BaseLocomotion` | `Content/Characters/CharacterBase/Animations/Logic/` | Template ABP，无骨骼，Locomotion 状态机框架 |
 | `ABP_HumanoidEnemy` | `Content/Enemy/Phantom/Animations/Logic/`（ABP_Phantom 等） | 人形怪 ABP，Parent Class = `UHumanoidEnemyAnimInstance` |
-| `UBaseLocomotionAnimInstance` | `Source/.../Characters/Animation/BaseLocomotionAnimInstance.h` | 所有 AnimInstance 的 C++ 基类 |
-| `UHumanoidEnemyAnimInstance` | `Source/.../Characters/Enemy/Humanoid/HumanoidEnemyAnimInstance.h` | 人形怪专属 AnimInstance |
-| `UAnimNotify_TurnComplete` | `Source/.../Characters/Enemy/Humanoid/AnimNotify_TurnComplete.h` | Turn 动画末尾 → `AHumanoidEnemy::OnTurnComplete()` |
+| `UBaseLocomotionAnimInstance` | `Source/.../Characters/_Shared/Animation/BaseLocomotionAnimInstance.h` | 所有 AnimInstance 的 C++ 基类 |
+| `UHumanoidEnemyAnimInstance` | `Source/.../Enemy/Humanoid/HumanoidEnemyAnimInstance.h` | 人形怪专属 AnimInstance |
+| `UAnimNotify_TurnComplete` | `Source/.../Enemy/Humanoid/AnimNotify_TurnComplete.h` | Turn 动画末尾 → `AHumanoidEnemy::OnTurnComplete()` |
 
 ### ABP_HumanoidEnemy AnimGraph 节点链
 

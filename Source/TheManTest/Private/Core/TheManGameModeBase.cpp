@@ -2,7 +2,7 @@
 #include "Core/TheManGameStateBase.h"
 #include "Core/TheManGameInstance.h"
 #include "Core/TheManCharacterTypes.h"
-#include "Characters/FPSCharacterBase/FPSCharacterBase.h"
+#include "Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h"
 #include "Engine/DataTable.h"
 #include "Engine/Engine.h"
 

@@ -2,7 +2,7 @@
 
 #include "Core/TheManPlayerState.h"
 #include "AbilitySystemComponent.h"
-#include "Characters/BaseCharacter/TheManAttributeSetBase.h"
+#include "Characters/CharacterBase/TheManAttributeSetBase.h"
 
 ATheManPlayerState::ATheManPlayerState()
 {

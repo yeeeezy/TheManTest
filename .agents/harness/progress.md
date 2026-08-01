@@ -2,28 +2,30 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-01-session131  
-**当前功能：** 无 active feature  
-**状态：** FEAT-068 已完成并归档
+**最后更新：** 2026-08-01-session133
+
+**当前功能：** FEAT-069 — 全项目 C++ 语义目录与未使用模板资产清理
+
+**状态：** needs_improvement（整理与清理已完成，2 项 PIE 行为验证待复核）
 
 ## 本轮完成
 
-- 按项目语义整理 Unreal 资产，不再保留供应商/素材包目录和笼统顶层 `Effects`。
-- 输入进入 `/Game/Core/Input`；跨系统共享基础特效进入 `/Game/Core/_Shared/Effects`。
-- RepairGun 与 Phantom 的枪口 Niagara System 分别进入具体 Weapon / Enemy 目录。
-- GAS C++ 按具体 Character、Enemy、Weapon 与 `_Shared` 所有权重新归档，include 和硬编码资产路径已同步。
-- 新增强制目录规则：专属优先、共享须有两个实际使用方、导入后必须清理空目录和 Redirector。
+- `Source/TheManTest` 全项目按 Actors、Characters、Core、Enemy、Environment、UI、Weapons 归档；通用代码进入对应 `_Shared`，具体武器、角色和敌人代码归具体功能目录。
+- MaintenanceWorker 的 Temp 手臂/身体资产迁入正式目录，删除零引用动画、模板身体资产和历史零引用 IK Rig。
+- TestGun 清除未使用导入簇；用户确认旧动作将整体替换后，进一步清空 `BP_TestGun.FireMontage` 并删除 `AM_HandFire_Montage`、`A_HandFire`，现保留 12 个资产。
+- 递归依赖审计确认 SciFiIndustrialBase 未被 TestMap、Lobby、GASP 或 World Partition 外部对象使用，删除 328 个资产（约 1.67 GB）。
+- 修复 NullRHI 自动化崩溃和 `CharacterIcon` 默认初始化问题。
+- 目录规则已写入 harness：供应商目录不得作为正式归档；专属资产/代码归具体所有者；至少两个实际使用方才进入 `_Shared`；迁移后清空旧目录和 Redirector；Editor 与 C++ 所有权结构保持一致。
 
 ## 验证
 
-- Development Editor / Win64：Succeeded。
-- 冷启动 Asset Registry：`/Game/Effects`、`/Game/Inputs`、`/Game/ShapesFX_Pack`、`/Game/RTG` 均为 0 资产。
-- 目标资产全部可加载；两套 Niagara System 无旧路径依赖；目标目录 Redirector 为 0。
-- 自动化启动后未返回完成汇总，因此未声明自动化通过。
-- 冷启动日志仍有既存 `/Game/Weapons/TestGun/Animation/Sequence/A_HandFire` 缺 Skeleton 错误，和本次目录整理无关，后续应独立修复。
+- Development Editor / Win64：Succeeded（最终 8/8 actions）。
+- 目标蓝图编译、资产验证、冷启动加载、旧目录清空和 Redirector 检查通过。
+- Phantom 自动化：8 项中 6 项通过；PIESmoke 的 NullRHI Niagara 可见性、PIETacticalApproach 的持续移动/侧移仍失败，需前台 PIE 复核。
+- `BP_TestGun.FireMontage` 已回读为 null，蓝图编译保存成功；TestGun 目录递归资产验证通过，原 `A_HandFire` 缺 Skeleton 问题已随旧动作链删除。
 
 ## 工作区边界
 
-- 整理前 WIP checkpoint：`bffbfb7`。
-- 最终改动未自动提交、未 push。
+- 整理前安全检查点：`e32c1f8`。
+- 本轮改动未自动提交、未 push。
 - 未在 TheManTest 内执行动画重定向或创建 IK Retargeter。

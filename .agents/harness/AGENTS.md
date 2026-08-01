@@ -179,7 +179,7 @@ TheManTest — UE 5.7.4 单人游戏项目。C++ 负责数据结构、GAS 配置
   2. 新建 C++ 类继承 `UGameplayAbility`，CDO 中用 `AbilityTriggers` 监听该 Tag
   3. 在对应角色的 `DefaultAbilityClasses`（或武器的 `PrimaryFireAbilityClass`）中引用
   4. 在编辑器创建蓝图子类赋值到角色蓝图
-- **Gameplay Tag 定义**：所有 C++ Tag 在 `GAS/TheManGameplayTags.h/.cpp` 中用 `UE_DECLARE/DEFINE_GAMEPLAY_TAG` 宏定义，不得硬编码字符串。
+- **Gameplay Tag 定义**：所有 C++ Tag 在 `Core/_Shared/GAS/TheManGameplayTags.h/.cpp` 中用 `UE_DECLARE/DEFINE_GAMEPLAY_TAG` 宏定义，不得硬编码字符串。
 
 ### 装备系统
 

@@ -31,7 +31,7 @@ struct THEMANTEST_API FCharacterType : public FTableRowBase
 
 	// UI 选人界面的角色头像
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CharacterData")
-	class UTexture2D* CharacterIcon;
+	class UTexture2D* CharacterIcon = nullptr;
 
 	// 核心：这个角色对应的物理肉体蓝图类（当前指向 AFPSCharacterBase 子类）
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CharacterData")

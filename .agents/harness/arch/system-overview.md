@@ -54,10 +54,10 @@ UFPSCharacterAnimInstance（玩家 ABP 父类；FEAT-041 由 UFPSArmsAnimInstanc
   └── 每帧输出（来自基类）：Speed / Velocity_Z / bIsFalling / AimPitch / Direction
 
 敌人继承链：
-AEnemyBase（Public/Characters/Enemy/）
-  ├── AHumanoidEnemy（Public/Characters/Enemy/Humanoid/）← 人形怪基类
-  │     └── APhantom（Public/Characters/Enemy/Humanoid/Phantom/）← 幻影
-  └── ANightmareEnemy（Public/Characters/Enemy/Nightmare/）← 梦魇基类
+AEnemyBase（Public/Enemy/）
+  ├── AHumanoidEnemy（Public/Enemy/Humanoid/）← 人形怪基类
+  │     └── APhantom（Public/Enemy/Humanoid/Phantom/）← 幻影
+  └── ANightmareEnemy（Public/Enemy/Nightmare/）← 梦魇基类
   - ASC + UEnemyAttributeSetBase 挂在自身（无 PlayerState）
   - UEnemyAttributeSetBase 继承 UTheManAttributeSetBase，怪物专属属性在此扩展
   - InitGEClass = GE_EnemyBase_Init（复制自 GE_CharacterBaseBase_Init，独立维护）
@@ -99,7 +99,7 @@ ATheManGameStateBase（Public/Core/）— 回合驱动
 ATestGun（Public/Equipment/Firearms/）← 继承 AFirearm，空壳测试武器
 
 动画基类（FEAT-021）：
-UBaseLocomotionAnimInstance（Public/Characters/Animation/）← 骨骼无关 C++ 基类
+UBaseLocomotionAnimInstance（Public/Characters/_Shared/Animation/）← 骨骼无关 C++ 基类
 ABP_BaseLocomotion（Content/Characters/CharacterBase/Animations/Logic/）← Template ABP，不绑骨骼
 
 ✅ 已删除（FEAT-041，session43）：旧 ATheManCharacterBase / AInfiltrator / AMaintenanceWorker /

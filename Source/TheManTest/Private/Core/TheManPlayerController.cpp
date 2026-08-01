@@ -4,7 +4,7 @@
 #include "Engine/DataTable.h"
 #include "Core/TheManCharacterTypes.h"
 #include "Core/TheManGameStateBase.h"
-#include "Characters/FPSCharacterBase/FPSCharacterBase.h"
+#include "Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h"
 
 void ATheManPlayerController::BeginPlay()
 {

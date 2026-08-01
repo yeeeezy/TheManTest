@@ -1,9 +1,26 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-07-31-session127",
-    "active_feature":  null,
+    "last_updated":  "2026-08-01-session133",
+    "active_feature":  "FEAT-069",
     "archive_file":  "feature_archive.json",
     "features":  [
+                     {
+                         "id":  "FEAT-069",
+                         "name":  "全项目 C++ 语义目录与未使用模板资产清理",
+                         "status":  "needs_improvement",
+                         "description":  "将整个 Source/TheManTest 按 Content 所有权语义整理；清理确认无引用的 Engine/模板/测试导入资产，并将仍使用的 TempCharacter 资产迁入正式目录。",
+                         "archive_file":  "archive/FEAT-069-full-source-and-unused-asset-cleanup.md",
+                         "created":  "2026-08-01",
+                         "updated":  "2026-08-01-session134",
+                         "done_criteria":  [
+                                               "Enemy、Weapons、Characters、Actors、Core、Environment、UI 源码目录与 Content 语义一致",
+                                               "所有 include、测试和 arch 路径已更新且不存在旧目录引用",
+                                               "确认无引用的模板/测试资产已删除，仍使用的 TempCharacter 资产迁入正式目录",
+                                               "SciFiIndustrialBase 仅按 TestMap 可达依赖证据处理，不误删入口地图或活动资产",
+                                               "Development Editor / Win64 编译成功；资产冷启动、Redirector 和相关自动化验证完成"
+                                           ],
+                         "verification_evidence":  "2026-08-01-session134：全项目 C++ 目录完成语义迁移，Development Editor / Win64 构建成功；资产冷启动、目标蓝图编译、资产验证和 Redirector 检查通过；用户确认 TestGun 旧动作将替换后，已清空 FireMontage 并删除 AM_HandFire_Montage/A_HandFire，TestGun 12 个资产验证通过；Phantom 自动化 8 项中 6 通过，PIESmoke 与 PIETacticalApproach 仍需前台 PIE 复核。"
+                     },
                      {
                          "id":  "FEAT-003",
                          "name":  "BBBAimIK 插件集成",

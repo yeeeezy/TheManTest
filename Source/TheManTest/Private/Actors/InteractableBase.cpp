@@ -1,5 +1,5 @@
 #include "Actors/InteractableBase.h"
-#include "Characters/Components/HighlightComponent.h"
+#include "Characters/_Shared/Components/HighlightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 

@@ -4,19 +4,19 @@
 
 | 文件 | 关键内容 |
 |---|---|
-| `Source/TheManTest/Public/Equipment/EquipmentBase/EquipmentBase.h` | `Equip()` / `Unequip()` / `PlayEquipMontage()`；StaticMesh / SkeletalMesh / RectLight 组件；插槽名；EquipMontage；EquipmentAnimLayerClass |
-| `Source/TheManTest/Private/Equipment/EquipmentBase/EquipmentBase.cpp` | 动画层目标同时包含 `ArmsViewMesh` 与 `GetMesh()`；Equip 同步 Link、Unequip 同步 Unlink，且 Montage 不负责改变动画层。`PlayEquipMontage()` 同步播放在 FP 手臂和隐藏身体宿主；快速切走时若该装备 Montage 仍 active，以 0.01 秒非零 Blend Out 结束（禁止 0 秒硬停，避免实例清理前无法重新播放） |
+| `Source/TheManTest/Public/Weapons/_Shared/EquipmentBase/EquipmentBase.h` | `Equip()` / `Unequip()` / `PlayEquipMontage()`；StaticMesh / SkeletalMesh / RectLight 组件；插槽名；EquipMontage；EquipmentAnimLayerClass |
+| `Source/TheManTest/Private/Weapons/_Shared/EquipmentBase/EquipmentBase.cpp` | 动画层目标同时包含 `ArmsViewMesh` 与 `GetMesh()`；Equip 同步 Link、Unequip 同步 Unlink，且 Montage 不负责改变动画层。`PlayEquipMontage()` 同步播放在 FP 手臂和隐藏身体宿主；快速切走时若该装备 Montage 仍 active，以 0.01 秒非零 Blend Out 结束（禁止 0 秒硬停，避免实例清理前无法重新播放） |
 
 装备 Montage 必须包含 `UpperBodySlot` 轨道：主 `TABP_BodyLocomotion` 的中央 `WeaponUpperBody` 会在 `DefaultSlot` 之后从 `spine_01` 覆盖上半身，所以只放 `DefaultSlot` 虽然 Montage 计时正常，动作仍会被最终武器层遮掉。`UpperBodySlot` 位于中央混合之后，适合 Equip/开火/换弹等需要进入最终上半身输出的动作。
 
 拔枪 Montage 建议 `Blend In = 0`。session107 起，运行中切入带 Equip Montage 的武器使用显式 Pose 事务：在旧层解链前由 Arms/Body AnimInstance 保存 `WeaponTransitionPose`；新层链接后等待 next tick，把 Equip Montage 播放并暂停在准确 0 秒低位姿势，以旧快照为输出起点原子换枪，并在主 AnimBP 末端用 `WeaponTransitionAlpha` 短时混合到该起始姿势。桥接完成后 AnimInstance 才恢复 Montage，以 1x 从 0 向前播放。禁止先混到稳定持枪 Pose（会形成“先放下再拿起”），也不再依赖 Inertialization、Linked Graph 0.1 秒 Blend 或 Montage 时间恢复。原子替换第一人称枪体时标记一次无位移 Camera Cut，清除 TAA/TSR 的旧枪颜色历史。若保留 Montage 默认 0.25 秒 Blend In，持枪姿势会混入动画下方起始姿势，视觉上变成先放下再拿起。
-| `Source/TheManTest/Public/Equipment/WeaponBase/WeaponBase.h` | 武器基类（继承 EquipmentBase，当前为空壳） |
-| `Source/TheManTest/Public/Equipment/Firearms/Firearm.h` | 射击参数：`bIsHitscan` / `HitscanRange` / `FireRate` / `BulletClass` / `MuzzleSocketName`；开火反馈：`FireMontage` / `FireSound` / 后坐力；技能：`PrimaryFireAbilityClass` / `SecondaryFireAbilityClass`；`GrantAbilities()` / `RevokeAbilities()`；**`GrantedASC`(TWeakObjectPtr 缓存，切角色回收技能用)** |
-| `Source/TheManTest/Private/Equipment/Firearms/Firearm.cpp` | `Equip()` 在基类链接层后写入 Arms/Body AimSource 并 GrantAbilities；`Unequip()` 先 RevokeAbilities 再由基类解链 |
+| `Source/TheManTest/Public/Weapons/_Shared/WeaponBase/WeaponBase.h` | 武器基类（继承 EquipmentBase，当前为空壳） |
+| `Source/TheManTest/Public/Weapons/_Shared/Firearms/Firearm.h` | 射击参数：`bIsHitscan` / `HitscanRange` / `FireRate` / `BulletClass` / `MuzzleSocketName`；开火反馈：`FireMontage` / `FireSound` / 后坐力；技能：`PrimaryFireAbilityClass` / `SecondaryFireAbilityClass`；`GrantAbilities()` / `RevokeAbilities()`；**`GrantedASC`(TWeakObjectPtr 缓存，切角色回收技能用)** |
+| `Source/TheManTest/Private/Weapons/_Shared/Firearms/Firearm.cpp` | `Equip()` 在基类链接层后写入 Arms/Body AimSource 并 GrantAbilities；`Unequip()` 先 RevokeAbilities 再由基类解链 |
 
 `AFirearm` 还提供可按具体武器覆盖的 `MuzzleEffect / MuzzleEffectRotation / MuzzleEffectScale`；`UGA_Shoot` 每发在实际 Muzzle Socket 附着一次性 Niagara。当前默认使用 `/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_Muzzle`；共享材质/纹理依赖位于 `/Game/Core/_Shared/Effects/Muzzle/`。
-| `Source/TheManTest/Public/Equipment/Firearms/Bullets/BulletBase.h` | CollisionSphere(QueryOnly) + BulletMesh + ProjectileMovement；`Damage`(SetByCaller 传入 HitEffectClass) / `HitEffectClass` / `bDestroyOnHit`；`InitBullet(发射者, SourceASC)`(忽略发射者防自撞) / `ProcessHit()` BlueprintNativeEvent |
-| `Source/TheManTest/Public/Equipment/Firearms/Bullets/RepairGunBullet.h` | 指数膨胀（e^(Rate×t)）；膨胀到 MaxExpansionScale 后锁定，LifetimeAfterExpansion 秒后销毁 |
+| `Source/TheManTest/Public/Weapons/_Shared/Firearms/Bullets/BulletBase.h` | CollisionSphere(QueryOnly) + BulletMesh + ProjectileMovement；`Damage`(SetByCaller 传入 HitEffectClass) / `HitEffectClass` / `bDestroyOnHit`；`InitBullet(发射者, SourceASC)`(忽略发射者防自撞) / `ProcessHit()` BlueprintNativeEvent |
+| `Source/TheManTest/Public/Weapons/RepairGun/Bullets/RepairGunBullet.h` | 指数膨胀（e^(Rate×t)）；膨胀到 MaxExpansionScale 后锁定，LifetimeAfterExpansion 秒后销毁 |
 
 抛射体的根 `CollisionSphere` 必须保持 `Movable`；`ProjectileMovementComponent` 移动的是根碰撞组件，仅把子级 `BulletMesh` 设为 Movable 不足以让 Actor 飞行。若根球体为 Static，PIE 会报告 `CollisionSphere has to be 'Movable'`，子弹将停在生成点，直到其他物体碰到它才触发命中逻辑。
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Characters/FPSCharacterBase/FPSCharacterBase.h"
+#include "Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h"
 #include "FPSTheExecutive.generated.h"
 
 UCLASS()

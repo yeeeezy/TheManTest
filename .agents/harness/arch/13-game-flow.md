@@ -16,7 +16,7 @@
 | `Public/Core/TheManLobbyGameMode.h` / `.cpp` | 大厅专用 GameMode：`DefaultPawnClass=nullptr`；BeginPlay 建选角色 UI + 显鼠标 + UI 输入模式 |
 | `Public/UI/CharacterSelectWidgetBase.h` / `.cpp` | 选角色 UI 基类：BindWidget 三按钮 + 自动绑点击 → `SelectCharacter(ID)` |
 | `Private/Core/TheManPlayerController.cpp` | BeginPlay 末尾重置 `FInputModeGameOnly` + 隐藏鼠标（覆盖大厅残留的 UI 输入模式） |
-| `Private/Characters/FPSCharacterBase/FPSCharacterBase.cpp` | `OnDeath()` → `GI->HandlePlayerDeath(RoundNumber)`（不再原地复活） |
+| `Private/Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.cpp` | `OnDeath()` → `GI->HandlePlayerDeath(RoundNumber)`（不再原地复活） |
 
 ---
 

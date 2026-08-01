@@ -7,15 +7,15 @@
 | `Source/TheManTest/Public/Core/_Shared/GAS/TheManGameplayTags.h` | 全局 Tag 声明；定义在对应 Private 路径 |
 | `Source/TheManTest/Public/Weapons/_Shared/GAS/Abilities/GA_Shoot.h` | 多枪械共用的玩家射击技能；实现位于对应 Private 路径 |
 | `Source/TheManTest/Public/Characters/Infiltrator/GAS/Abilities/GA_InfiltratorScan.h` | Infiltrator 专属扫描技能；实现位于对应 Private 路径 |
-| `Source/TheManTest/Public/Characters/Enemy/_Shared/GAS/Abilities/` | 多种 Enemy 可复用的 `GA_EnemyShoot`、自动射击、换弹和掩体技能 |
-| `Source/TheManTest/Public/Characters/Enemy/Humanoid/Phantom/GAS/Abilities/GA_EnemyAreaBarrage.h` | Phantom 专属二阶段区域轰炸技能 |
+| `Source/TheManTest/Public/Enemy/_Shared/GAS/Abilities/` | 多种 Enemy 可复用的 `GA_EnemyShoot`、自动射击、换弹和掩体技能 |
+| `Source/TheManTest/Public/Enemy/Humanoid/Phantom/GAS/Abilities/GA_EnemyAreaBarrage.h` | Phantom 专属二阶段区域轰炸技能 |
 
 `UGA_EnemyShoot` 公共基类统一处理人形敌人的渐进散射（基础、逐发扩散、上限、移动惩罚、恢复）和枪口 Niagara；三连发/扫射子类只负责节奏。默认人形步枪特效为 `/Game/Enemy/Phantom/Effects/Muzzle/Systems/NS_HumanoidRifle_Muzzle`，具体技能蓝图可覆盖；跨系统共享依赖位于 `/Game/Core/_Shared/Effects/Muzzle/`。
 | `GA_EnemyAutomaticFire` | 数据化 `ShotsPerActivation`/`ShotInterval`；同一 C++ 能力配置成三连发或持续扫射；每发消费 `UEnemyMagazineComponent` |
 | `GA_EnemyReload` | 仅空匣可激活，延时/动画均可配置，完成后把弹匣补满 |
 | `GA_EnemyTakeCover` | 调通用 `AEnemyCoverPoint::FindBestCover`，可选 RollMontage，移动到 StandPoint |
 | `GA_EnemyAreaBarrage` | 不消费普通弹匣；在目标范围上方随机生成可替换弹体并向下轰炸 |
-| `Source/TheManTest/Public/Characters/Enemy/BTTask_UseCombatSkill.h` | **通用敌人战斗放招 BT 节点**；UPROPERTY `Range`(近/中/远)+`TargetActorKey`；读黑板目标 → `AEnemyBase::UseRandomSkill`；不绑定具体技能 |
+| `Source/TheManTest/Public/Enemy/BTTask_UseCombatSkill.h` | **通用敌人战斗放招 BT 节点**；UPROPERTY `Range`(近/中/远)+`TargetActorKey`；读黑板目标 → `AEnemyBase::UseRandomSkill`；不绑定具体技能 |
 
 > **玩家技能授予时序（武器持有，ASC 在 PlayerState）：**
 > - 角色 `BeginPlay` 时 ASC 尚未就绪，`Equip()` 中的 `GrantAbilities()` 会因 ASC 为空而跳过。
