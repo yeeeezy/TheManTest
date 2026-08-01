@@ -16,7 +16,7 @@
 #include "GameplayTagContainer.h"
 #include "Characters/BaseCharacter/Data/TheManCharacterDataAssetBase.h"
 #include "Equipment/Firearms/Firearm.h"
-#include "GAS/TheManGameplayTags.h"
+#include "Core/_Shared/GAS/TheManGameplayTags.h"
 #include "Engine/Engine.h"
 #include "Core/TheManGameStateBase.h"
 #include "Core/TheManGameInstance.h"

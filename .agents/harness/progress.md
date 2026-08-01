@@ -2,37 +2,28 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-31-session130-verification
-**当前功能：** 无 active feature
-**状态：** FEAT-066、FEAT-067 已完成并归档
+**最后更新：** 2026-08-01-session131  
+**当前功能：** 无 active feature  
+**状态：** FEAT-068 已完成并归档
 
 ## 本轮完成
 
-- Enemy 所有行为树技能改为“技能结束后至少 3 秒后摇”，由公共 `BTTask_UseCombatSkill` 节点统一控制。
-- RepairGun/Phantom 枪口特效改为世界枪口 Transform 生成，PIE 实际开火已确认生成两套对应 NiagaraComponent。
-- 持枪构图第二轮候选：Location `(-27,4,-7.5)`、Rotation `(0,-9,0)`；截图 `Saved/Screenshots/PlayerFramingCurrent.png`。
-- 迁入枪口资产已审计为共享语义目录；C++ 公共逻辑和 Phantom 专属蓝图职责分离。
-
-- 复验 TestMap 实际 Phantom 四点巡逻闭环：到点序列 1→2→3→4→1，50.38 秒内 5 次到点、累计移动 4501.9 cm，确认不再卡在第二点。
-- 最终使用生产 `AHumanoidAIController` 与真实地图路点验证；`TheManTest.Enemy.Phantom` 8/8 Success，日志 `Saved/Logs/FEAT066PhantomFullFinal.log`。
-
-- 修复两点巡逻的 180° 转身死锁：动画 Notify 与到角容差双完成路径，不改变 NavMesh-only 移动约束。
-- 人形 Enemy 公共射击加入基础散布、连射扩散、移动惩罚、最大散布和停火恢复。
-- 玩家整枪姿态按五组轮廓锚点反复截图校准：Location `(-25,2,-6)`，Rotation `(0,-10,0)`，FOV 110。
-- 从 UE389 重新解压并验证源工程，只迁移 RepairGun Energy Burst 2、人形步枪 Physical Burst 1 及依赖，共 46 个资产。
-- 枪口特效整理至 `/Game/Effects/_Shared/Muzzle/`，玩家 `AFirearm/UGA_Shoot` 与敌人 `UGA_EnemyShoot` 均使用可覆盖公共接口。
+- 按项目语义整理 Unreal 资产，不再保留供应商/素材包目录和笼统顶层 `Effects`。
+- 输入进入 `/Game/Core/Input`；跨系统共享基础特效进入 `/Game/Core/_Shared/Effects`。
+- RepairGun 与 Phantom 的枪口 Niagara System 分别进入具体 Weapon / Enemy 目录。
+- GAS C++ 按具体 Character、Enemy、Weapon 与 `_Shared` 所有权重新归档，include 和硬编码资产路径已同步。
+- 新增强制目录规则：专属优先、共享须有两个实际使用方、导入后必须清理空目录和 Redirector。
 
 ## 验证
 
 - Development Editor / Win64：Succeeded。
-- `TheManTest.Enemy.Phantom + TheManTest.Player.Viewmodel.FramingCapture`：8/8 Success。
-- 真实两点 NavMesh 巡逻 11.58 秒完成 5 次到点、累计移动 1201.8 cm；无 Notify 反转完成、持续射击散布非零且不超过 5°、两套 Niagara System/CDO 引用均由自动化断言覆盖。
-- 最终日志：`Saved/Logs/FEAT067FinalRegression4.log`。
-- 最终构图：`Saved/Screenshots/PlayerFramingCurrent.png`。
+- 冷启动 Asset Registry：`/Game/Effects`、`/Game/Inputs`、`/Game/ShapesFX_Pack`、`/Game/RTG` 均为 0 资产。
+- 目标资产全部可加载；两套 Niagara System 无旧路径依赖；目标目录 Redirector 为 0。
+- 自动化启动后未返回完成汇总，因此未声明自动化通过。
+- 冷启动日志仍有既存 `/Game/Weapons/TestGun/Animation/Sequence/A_HandFire` 缺 Skeleton 错误，和本次目录整理无关，后续应独立修复。
 
 ## 工作区边界
 
-- 安全检查点：`7cbf7fd`。
-- 用户资产仍未纳入：`BP_MaintenanceWorker.uasset`、TestMap External Actor `D/YN/...`、未跟踪 `0/GS/` 与 `0/X7/`。
-- 未在 TheManTest 中执行动画重定向或创建 IK Retargeter。
-- 外部重新解压源保存在 `D:\Unreal Projects\UE389_MuzzleSource`，未复制进主项目。
+- 整理前 WIP checkpoint：`bffbfb7`。
+- 最终改动未自动提交、未 push。
+- 未在 TheManTest 内执行动画重定向或创建 IK Retargeter。

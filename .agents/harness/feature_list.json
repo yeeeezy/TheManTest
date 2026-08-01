@@ -1,7 +1,7 @@
 {
     "schema_version":  "1.0",
     "last_updated":  "2026-07-31-session127",
-    "active_feature":  "FEAT-066",
+    "active_feature":  null,
     "archive_file":  "feature_archive.json",
     "features":  [
                      {

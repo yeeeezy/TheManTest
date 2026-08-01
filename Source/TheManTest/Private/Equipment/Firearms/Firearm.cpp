@@ -13,7 +13,7 @@
 AFirearm::AFirearm()
 {
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> DefaultPlayerMuzzle(
-		TEXT("/Game/Effects/_Shared/Muzzle/Systems/NS_RepairGun_Muzzle.NS_RepairGun_Muzzle"));
+		TEXT("/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_Muzzle.NS_RepairGun_Muzzle"));
 	if (DefaultPlayerMuzzle.Succeeded())
 	{
 		MuzzleEffect = DefaultPlayerMuzzle.Object;

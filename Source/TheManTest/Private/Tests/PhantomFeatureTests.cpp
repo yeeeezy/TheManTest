@@ -12,7 +12,7 @@
 #include "Characters/Enemy/Humanoid/Phantom/Phantom.h"
 #include "Characters/Enemy/Cover/EnemyCoverPoint.h"
 #include "Actors/PatrolPoint.h"
-#include "GAS/Abilities/GA_EnemyShoot.h"
+#include "Characters/Enemy/_Shared/GAS/Abilities/GA_EnemyShoot.h"
 #include "Equipment/Firearms/Firearm.h"
 #include "NiagaraSystem.h"
 #include "NiagaraComponent.h"
@@ -196,9 +196,9 @@ bool FPhantomReusableCombatTest::RunTest(const FString& Parameters)
 	TestNotNull(TEXT("Barrage ability"), LoadObject<UBlueprint>(nullptr,
 		TEXT("/Game/Enemy/Phantom/GAS/GameplayAbility/BGA_PhantomAreaBarrage.BGA_PhantomAreaBarrage")));
 	UNiagaraSystem* RepairMuzzle = LoadObject<UNiagaraSystem>(nullptr,
-		TEXT("/Game/Effects/_Shared/Muzzle/Systems/NS_RepairGun_Muzzle.NS_RepairGun_Muzzle"));
+		TEXT("/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_Muzzle.NS_RepairGun_Muzzle"));
 	UNiagaraSystem* HumanoidMuzzle = LoadObject<UNiagaraSystem>(nullptr,
-		TEXT("/Game/Effects/_Shared/Muzzle/Systems/NS_HumanoidRifle_Muzzle.NS_HumanoidRifle_Muzzle"));
+		TEXT("/Game/Enemy/Phantom/Effects/Muzzle/Systems/NS_HumanoidRifle_Muzzle.NS_HumanoidRifle_Muzzle"));
 	TestNotNull(TEXT("RepairGun semantic muzzle system"), RepairMuzzle);
 	TestNotNull(TEXT("Humanoid rifle semantic muzzle system"), HumanoidMuzzle);
 	if (UClass* RepairClass = LoadClass<AFirearm>(nullptr,
@@ -279,7 +279,7 @@ bool FValidatePhantomPIECommand::Update()
 	if (!World) return false;
 
 	UNiagaraSystem* RepairMuzzle = LoadObject<UNiagaraSystem>(nullptr,
-		TEXT("/Game/Effects/_Shared/Muzzle/Systems/NS_RepairGun_Muzzle.NS_RepairGun_Muzzle"));
+		TEXT("/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_Muzzle.NS_RepairGun_Muzzle"));
 	if (APlayerController* PC = World->GetFirstPlayerController())
 	{
 		if (AFPSCharacterBase* Player = Cast<AFPSCharacterBase>(PC->GetPawn())) Player->PrimaryFire();
@@ -310,7 +310,7 @@ bool FValidatePhantomPIECommand::Update()
 		Test->TestTrue(TEXT("PIE Phantom burst ability activates"), BurstClass &&
 			Phantom->GetAbilitySystemComponent()->TryActivateAbilityByClass(BurstClass));
 		UNiagaraSystem* EnemyMuzzle = LoadObject<UNiagaraSystem>(nullptr,
-			TEXT("/Game/Effects/_Shared/Muzzle/Systems/NS_HumanoidRifle_Muzzle.NS_HumanoidRifle_Muzzle"));
+			TEXT("/Game/Enemy/Phantom/Effects/Muzzle/Systems/NS_HumanoidRifle_Muzzle.NS_HumanoidRifle_Muzzle"));
 		bool bEnemyMuzzleSpawned = false;
 		for (TObjectIterator<UNiagaraComponent> It; It; ++It)
 		{

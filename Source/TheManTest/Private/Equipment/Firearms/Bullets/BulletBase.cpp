@@ -5,7 +5,7 @@
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
-#include "GAS/TheManGameplayTags.h"
+#include "Core/_Shared/GAS/TheManGameplayTags.h"
 #include "Characters/Enemy/EnemyBase.h"
 
 ABulletBase::ABulletBase()

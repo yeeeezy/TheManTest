@@ -1,9 +1,26 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-07-31-session126",
+    "last_updated":  "2026-08-01-session131",
     "source_file":  "feature_list.json",
     "status_scope":  "done",
     "features":  [
+                     {
+                         "id":  "FEAT-068",
+                         "name":  "全项目资产与源码语义目录整理",
+                         "status":  "done",
+                         "description":  "清理外部素材包和错误顶层目录；按项目语义归档 Unreal 资产与 GAS C++ 源码。",
+                         "archive_file":  "archive/FEAT-068-project-content-source-organization.md",
+                         "created":  "2026-08-01",
+                         "updated":  "2026-08-01-session131",
+                         "done_criteria":  [
+                                               "旧外部/通用顶层目录清理",
+                                               "资产引用和 Redirector 冷启动验证通过",
+                                               "GAS C++ 按所有权归档并更新 include",
+                                               "目录规则写入 harness",
+                                               "Development Editor / Win64 编译成功"
+                                           ],
+                         "verification_evidence":  "UBT Development Editor / Win64 Succeeded；冷启动 Asset Registry：旧根目录 0 资产、目标资产全部可加载、Niagara System 无旧路径依赖、Redirector 0。"
+                     },
                      {
                          "id":  "FEAT-001",
                          "name":  "FirstPersonMesh 作为相机父级",

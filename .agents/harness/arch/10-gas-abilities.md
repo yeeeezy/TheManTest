@@ -4,15 +4,13 @@
 
 | 文件 | 关键内容 |
 |---|---|
-| `Source/TheManTest/Public/GAS/TheManGameplayTags.h` | 全局 Tag 声明：`TAG_Input_Weapon_PrimaryFire` / `TAG_Input_Weapon_SecondaryFire` / `TAG_Input_Character_Interact` / `TAG_Data_Damage`(`Data.Damage`，子弹伤害 SetByCaller) |
-| `Source/TheManTest/Private/GAS/TheManGameplayTags.cpp` | Tag 定义（字符串绑定），新增 Tag 在此添加 `UE_DEFINE_GAMEPLAY_TAG` |
-| `Source/TheManTest/Public/GAS/Abilities/GA_Shoot.h` | 玩家射击技能；CDO 中 `AbilityTriggers` 监听 `Input.Weapon.PrimaryFire` |
-| `Source/TheManTest/Private/GAS/Abilities/GA_Shoot.cpp` | `ActivateAbility()`：从 `AFPSCharacterBase` 取当前 `AFirearm` → 从枪口生成 `Firearm->BulletClass` 子弹(`InitBullet`)，命中由子弹施加 `HitEffectClass`(GE_BulletDamage)；与开火反馈(蒙太奇/音效/后坐力)解耦，空枪也播反馈 |
-| `Source/TheManTest/Public/GAS/Abilities/GA_InfiltratorScan.h` | 玩家扫描技能；`bScanActive` 独立控制开关并调用 `UScanEffectComponent`；全息 UI 为可选展示，类为空或生成失败都不能阻断扫描材质 |
-| `Source/TheManTest/Public/GAS/Abilities/GA_EnemyShoot.h` | **敌人射击技能基类**；复用子弹管线；配置(BulletClass/Muzzle/蒙太奇/音效)作技能 UPROPERTY(技能=子弹绑定)；`virtual SpawnProjectiles()` 扩展点(散射/连发由子类重写)；**不注册 GameplayEvent 触发器**(由 UseRandomSkill 按类激活) |
-| `Source/TheManTest/Private/GAS/Abilities/GA_EnemyShoot.cpp` | `ActivateAbility()`：`Cast<AHumanoidEnemy>` → 武器 Muzzle socket 取枪口 → 朝 `AimTargetWorld` → `SpawnProjectiles` 生成子弹 `InitBullet(Enemy, 敌人ASC)` |
+| `Source/TheManTest/Public/Core/_Shared/GAS/TheManGameplayTags.h` | 全局 Tag 声明；定义在对应 Private 路径 |
+| `Source/TheManTest/Public/Weapons/_Shared/GAS/Abilities/GA_Shoot.h` | 多枪械共用的玩家射击技能；实现位于对应 Private 路径 |
+| `Source/TheManTest/Public/Characters/Infiltrator/GAS/Abilities/GA_InfiltratorScan.h` | Infiltrator 专属扫描技能；实现位于对应 Private 路径 |
+| `Source/TheManTest/Public/Characters/Enemy/_Shared/GAS/Abilities/` | 多种 Enemy 可复用的 `GA_EnemyShoot`、自动射击、换弹和掩体技能 |
+| `Source/TheManTest/Public/Characters/Enemy/Humanoid/Phantom/GAS/Abilities/GA_EnemyAreaBarrage.h` | Phantom 专属二阶段区域轰炸技能 |
 
-`UGA_EnemyShoot` 公共基类统一处理人形敌人的渐进散射（基础、逐发扩散、上限、移动惩罚、恢复）和枪口 Niagara；三连发/扫射子类只负责节奏。默认人形步枪特效为 `/Game/Effects/_Shared/Muzzle/Systems/NS_HumanoidRifle_Muzzle`，具体技能蓝图可覆盖。
+`UGA_EnemyShoot` 公共基类统一处理人形敌人的渐进散射（基础、逐发扩散、上限、移动惩罚、恢复）和枪口 Niagara；三连发/扫射子类只负责节奏。默认人形步枪特效为 `/Game/Enemy/Phantom/Effects/Muzzle/Systems/NS_HumanoidRifle_Muzzle`，具体技能蓝图可覆盖；跨系统共享依赖位于 `/Game/Core/_Shared/Effects/Muzzle/`。
 | `GA_EnemyAutomaticFire` | 数据化 `ShotsPerActivation`/`ShotInterval`；同一 C++ 能力配置成三连发或持续扫射；每发消费 `UEnemyMagazineComponent` |
 | `GA_EnemyReload` | 仅空匣可激活，延时/动画均可配置，完成后把弹匣补满 |
 | `GA_EnemyTakeCover` | 调通用 `AEnemyCoverPoint::FindBestCover`，可选 RollMontage，移动到 StandPoint |
