@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-01-session139
+**最后更新：** 2026-08-01-session141
 
 **当前功能：** FEAT-071 — Phantom Boss伤害与命中容错平衡
 
@@ -10,17 +10,16 @@
 
 ## 本轮完成
 
-- Phantom 两种子弹 Damage 10 -> 6。
-- 四套射击 Ability 散布统一为3/0.8/9°、恢复2°/s、移动惩罚2°。
-- Phantom 每波伤害成长20% -> 10%，最大倍率2.0 -> 1.5。
-- 7个蓝图编译保存成功；冷启动回读、资产验证通过。
-- `TheManTest.Enemy.Phantom.ReusableCombatModules` headless自动化成功，退出码0。
+- FEAT-072 已完成：RepairGun 改用 Sniper Scout 的 `NE_VFX_Muzzle_Energy_Burst_1` 效果。
+- 新 System 与两项专属前向烟雾依赖已整理到 `/Game/Weapons/RepairGun/Effects/Muzzle/`；其余依赖复用 `/Game/Core/_Shared/Effects/Muzzle/`。
+- BP、Niagara、资产验证与 PIE 实际开火通过；供应商资产与 Redirector 均为 0。
 
 ## 待办
 
-- 用户前台PIE确认 Burst、Suppressive和二阶段 Area Barrage 的实际生存压力；如仍过强，优先调整射击节奏/攻击间隔，而非继续无差别降低全部伤害。
+- 用户前台确认 RepairGun 新枪口火焰、烟雾的主观尺寸和亮度。
+- FEAT-071 仍等待用户前台确认 Phantom 实战压力。
 
 ## 工作区边界
 
-- FEAT-070 结果安全检查点：`5ee22d9`。
-- FEAT-070 留作 needs_improvement，等待用户最终主观确认移动观感。
+- FEAT-071 WIP 安全检查点：`e153470`。
+- FEAT-072 已归档；当前未提交改动仅应包含该功能资产与 Harness 记录。

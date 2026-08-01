@@ -1,9 +1,26 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-01-session131",
+    "last_updated":  "2026-08-01-session141",
     "source_file":  "feature_list.json",
     "status_scope":  "done",
     "features":  [
+                     {
+                         "id":  "FEAT-072",
+                         "name":  "RepairGun应用Sniper Scout枪口火焰与烟雾",
+                         "status":  "done",
+                         "description":  "从外部VFXPack精确迁移地图中Sniper Scout使用的枪口Niagara效果及必要依赖，按RepairGun所有权目录整理并替换现有枪口效果。",
+                         "archive_file":  "archive/FEAT-072-repairgun-sniper-scout-muzzle-vfx.md",
+                         "created":  "2026-08-01",
+                         "updated":  "2026-08-01-session141",
+                         "done_criteria":  [
+                                               "仅迁移Sniper Scout枪口效果及必要依赖，不保留示例地图、枪械蓝图或供应商目录",
+                                               "正式资产按类型位于/Game/Weapons/RepairGun/Effects/Muzzle/，共享依赖必须有复用证据",
+                                               "BP_RepairGun引用新枪口效果，方向、尺寸与枪口Socket匹配",
+                                               "相关Niagara与蓝图可加载、编译、保存，依赖及Redirector检查通过",
+                                               "PIE开火可见枪口火焰与烟雾且无新增运行错误"
+                                           ],
+                         "verification_evidence":  "Sniper Scout CDO冷回读确认使用NE_VFX_Muzzle_Energy_Burst_1；迁移1个Niagara System及31个必要依赖，29个已有依赖合并到Core/_Shared，RepairGun仅新增System、前向烟雾材质和纹理。BP_RepairGun编译保存成功；Niagara验证无错误/警告；目标目录资产验证通过；供应商资产0、Redirector 0。PIE实际开火截图确认效果生成，日志无新增Niagara、Socket或加载错误。"
+                     },
                      {
                          "id":  "FEAT-068",
                          "name":  "全项目资产与源码语义目录整理",
