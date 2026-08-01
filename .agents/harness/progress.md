@@ -2,30 +2,24 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-01-session133
+**最后更新：** 2026-08-01-session137
 
-**当前功能：** FEAT-069 — 全项目 C++ 语义目录与未使用模板资产清理
+**当前功能：** FEAT-070 — MaintenanceWorker 移动动画步速标定
 
-**状态：** needs_improvement（整理与清理已完成，2 项 PIE 行为验证待复核）
+**状态：** in_progress
 
 ## 本轮完成
 
-- `Source/TheManTest` 全项目按 Actors、Characters、Core、Enemy、Environment、UI、Weapons 归档；通用代码进入对应 `_Shared`，具体武器、角色和敌人代码归具体功能目录。
-- MaintenanceWorker 的 Temp 手臂/身体资产迁入正式目录，删除零引用动画、模板身体资产和历史零引用 IK Rig。
-- TestGun 清除未使用导入簇；用户确认旧动作将整体替换后，进一步清空 `BP_TestGun.FireMontage` 并删除 `AM_HandFire_Montage`、`A_HandFire`，现保留 12 个资产。
-- 递归依赖审计确认 SciFiIndustrialBase 未被 TestMap、Lobby、GASP 或 World Partition 外部对象使用，删除 328 个资产（约 1.67 GB）。
-- 修复 NullRHI 自动化崩溃和 `CharacterIcon` 默认初始化问题。
-- 目录规则已写入 harness：供应商目录不得作为正式归档；专属资产/代码归具体所有者；至少两个实际使用方才进入 `_Shared`；迁移后清空旧目录和 Redirector；Editor 与 C++ 所有权结构保持一致。
+- 完成 Walk/Jog 八方向左右脚着地段逐帧测量；自然速度范围分别为 95.3~119.6 和 218.6~339.5 cm/s。
+- 最终修正为 `BP_MaintenanceWorker` Walk=100 / Sprint=300；BlendSpace 轴和样本为 0/100/300，全部 RateScale=1.0，确保对应档位完整播放原动画。
+- BlendSpace 重建、BP/ABP 编译保存和三项资产验证通过。
+- 发现上一轮 BlendSpace 写入未持久化，导致角色120速度仍在旧0~250区间混合Idle、产生慢放观感；已通过新结构体写入并冷回读确认修复。
 
-## 验证
+## 待办
 
-- Development Editor / Win64：Succeeded（最终 8/8 actions）。
-- 目标蓝图编译、资产验证、冷启动加载、旧目录清空和 Redirector 检查通过。
-- Phantom 自动化：8 项中 6 项通过；PIESmoke 的 NullRHI Niagara 可见性、PIETacticalApproach 的持续移动/侧移仍失败，需前台 PIE 复核。
-- `BP_TestGun.FireMontage` 已回读为 null，蓝图编译保存成功；TestGun 目录递归资产验证通过，原 `A_HandFire` 缺 Skeleton 问题已随旧动作链删除。
+- 用户前台确认 Walk=100/Jog=300 原速样本的观感；后续若需要降低残余脚滑，优先调整移动速度或使用距离匹配，不再用方向 RateScale 破坏步态节奏。
 
 ## 工作区边界
 
-- 整理前安全检查点：`e32c1f8`。
-- 本轮改动未自动提交、未 push。
-- 未在 TheManTest 内执行动画重定向或创建 IK Retargeter。
+- FEAT-069 整理结果已建立 WIP 检查点：`a03f30d`。
+- 不在 TheManTest 内执行动画重定向或创建 IK Retargeter。

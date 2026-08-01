@@ -1,9 +1,25 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-01-session133",
-    "active_feature":  "FEAT-069",
+    "last_updated":  "2026-08-01-session137",
+    "active_feature":  "FEAT-070",
     "archive_file":  "feature_archive.json",
     "features":  [
+                     {
+                         "id":  "FEAT-070",
+                         "name":  "MaintenanceWorker 移动动画步速标定",
+                         "status":  "in_progress",
+                         "description":  "测量 MaintenanceWorker Walk/Jog 动画的自然步速，校准角色 WalkSpeed、SprintSpeed 与 BS_RunWalk_MaintenanceWorker，降低脚滑。",
+                         "archive_file":  "archive/FEAT-070-maintenance-worker-locomotion-speed-calibration.md",
+                         "created":  "2026-08-01",
+                         "updated":  "2026-08-01-session137",
+                         "done_criteria":  [
+                                               "逐帧测量 Walk/Jog 八方向动画脚掌着地阶段的自然速度并记录方法与结果",
+                                               "WalkSpeed、SprintSpeed 与 BlendSpace Speed 轴和样本标定一致",
+                                               "MaintenanceWorker 蓝图和相关动画资产编译、保存、验证无错误",
+                                               "PIE 前后脚滑量有可复核对比，移动输入和冲刺切换正常"
+                                           ],
+                         "verification_evidence":  "2026-08-01-session137：八方向自然脚速测量完成。上一轮 BlendSpace 写入未持久化，导致120速度在旧0~250区间混入Idle、Walk观感慢放；现最终改为BP速度100/300、BlendSpace轴0~300、样本0/100/300、全部RateScale=1.0。冷回读与BP/ABP编译、三项资产验证通过，待用户前台确认观感。"
+                     },
                      {
                          "id":  "FEAT-069",
                          "name":  "全项目 C++ 语义目录与未使用模板资产清理",

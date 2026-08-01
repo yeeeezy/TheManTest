@@ -37,7 +37,7 @@ Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE
 - **session62 FP viewmodel 方案修正（重要）**：相机仍挂 capsule 固定眼高、只用控制器旋转转向；FP 手臂不再绕肩部 `ArmsPivot` 手动俯仰，而是 `HeadCamera -> ViewmodelRoot -> ArmsViewMesh`。这样旋转支点就是相机原点，手臂屏幕位置不随 pitch 漂移。不要把相机挂到动画 head 骨骼下，也不要旋转 Character capsule pitch。后续相机/移动惯性优先叠到 `ViewmodelRoot` 或 `ArmsViewMesh`，不用 SpringArm。
 - 第一人称视点横向/纵向微调不需要 SpringArm，继续保持 `Capsule -> HeadCamera -> ViewmodelRoot -> ArmsViewMesh`。`HeadCamera.RelativeLocation` 只定义真实观察点；`ViewmodelRoot.RelativeTransform` 负责反向补偿和最终手臂/武器画面构图，并继续完整继承相机旋转。`ArmsViewMesh.RelativeTransform` 仅保留模型导入轴向、骨架原点等基础校正，不作为日常构图参数。
 - **FEAT-065 最终构图（session126）：** `ViewmodelRoot.RelativeLocation=(0,0,-7)`、`RelativeRotation=(0,0,0)`，HeadCamera 保持 110° FOV 与真实观察点不变。构造、OnConstruction、BeginPlay 均通过 `ApplyViewmodelFraming()` 应用，避免 BP 旧默认值覆盖；装备继续挂 `ArmsViewMesh` Socket。`TheManTest.Player.Viewmodel.FramingCapture` 会以稳定 Idle 帧执行 1920×1080 截图及层级/FOV/Transform/Socket 断言。
-- 速度默认（session47 调）：`WalkSpeed`=250 / `SprintSpeed`=550；`PitchMin`=-75 / `PitchMax`=40。
+- C++ 基类速度默认（session47 调）：`WalkSpeed`=250 / `SprintSpeed`=550；`PitchMin`=-75 / `PitchMax`=40。FEAT-070 对 MaintenanceWorker 的实际 Walk/Jog 脚速逐帧标定后，`BP_MaintenanceWorker` 专属覆盖为 Walk=100 / Sprint=300 cm/s，与其 BlendSpace 的原速样本网格点精确一致；其他角色不得无依据照搬该动画专属值。
 - FEAT-038 C++ 已完成（session43 编译通过，session47 改相机/俯仰/BodyRoot/速度）；身体 mesh 已物理拆好导入，角色 BP 三件套装配在蓝图侧进行。
 
 > 旧 `ATheManCharacterBase` / `Infiltrator` / `MaintenanceWorker` / `TheExecutive` 及 `UTheManAnimInstanceBase` 已于 FEAT-041 删除，备份在 scratchpad/deprecated-char-backup-session43。

@@ -174,6 +174,8 @@ ABP_BodyLocomotion:
 
 > 走跑档由 `AFPSCharacterBase::StartSprint/StopSprint` 改 `CharacterMovement->MaxWalkSpeed`，ABP 通常只读 `Speed` 进入同一个 Walk/Run BlendSpace。
 
+**MaintenanceWorker 步速标定（FEAT-070）：** `BS_RunWalk_MaintenanceWorker` 的 Speed 轴为 0~300，Idle=0、Walk=100、Jog=300；`BP_MaintenanceWorker` 同步覆盖 WalkSpeed=100 / SprintSpeed=300。全部方向样本保持 RateScale=1.0，使 Walk/Jog 在对应速度点完整播放原动画，不被 Idle/Jog 权重稀释；不能把这组值直接用于其他动画集。
+
 **原地转身：** session89 起暂停。玩家 ABP 不应包含 Turn 状态、`TurnRootYaw` 曲线读取或 root-bone 转向抵消节点；Pawn 与 `BodyRoot` 直接跟随 Controller/Actor yaw。后续转体方案另立功能重新设计。
 
 未来重新设计时可参考本机 `D:\Unreal Projects\GameAnimationSample`，但不要直接移植整套 Motion Matching。该样例通过 TurnInPlace/Pivot/Spin Pose Search Database、未来轨迹、左右支撑脚动画版本、`Offset Root Bone`、`Orientation Warping` 和 `Foot Placement` 共同减少滑脚；适合提炼为“脚相选择 + 左右脚转身动画 + 明确的 Actor/Root 同步 + Foot IK”方案。
