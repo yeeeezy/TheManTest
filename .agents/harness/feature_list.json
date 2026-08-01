@@ -1,25 +1,27 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-01-session144",
+    "last_updated":  "2026-08-01-session145",
     "active_feature":  "FEAT-074",
     "archive_file":  "feature_archive.json",
     "features":  [
                      {
                          "id":  "FEAT-074",
-                         "name":  "VFXPack移动HeadBob、武器摆动与RepairGun射击震屏",
+                         "name":  "VFXPack第一人称动画替换、HeadBob、武器摆动与RepairGun射击震屏",
                          "status":  "in_progress",
-                         "description":  "复现VFXPack第一人称移动观感：行走/奔跑HeadBob、程序化武器摆动，并为RepairGun接入Sniper Scout同款射击Camera Shake。",
+                         "description":  "采用VFXPack手臂骨架、网格和第一人称动画观感替换MaintenanceWorker视觉动画，同时保留本项目武器/GAS/弹道；复现行走/奔跑HeadBob、程序化武器摆动，并为RepairGun接入Sniper Scout同款射击Camera Shake。所有骨架适配与重定向只在FPSShooter1完成，主项目仅接收最终资产。",
                          "archive_file":  "archive/FEAT-074-vfxpack-camera-weapon-sway.md",
                          "created":  "2026-08-01",
-                         "updated":  "2026-08-01-session144",
+                         "updated":  "2026-08-01-session145",
                          "done_criteria":  [
                                                "Walking/Running Camera Shake精确迁入共享角色目录，并按落地移动状态启动、切换和停止",
                                                "现有第一人称Viewmodel视觉层恢复视角摆动并增加移动方向偏移，不改变相机权威、枪口弹道或碰撞",
                                                "RepairGun使用Sniper Scout的CamShake_Fire_Medium精确参数，其他武器默认不受影响",
                                                "不保留VFXPack供应商目录、示例角色或无关依赖，Redirector检查通过",
-                                               "Development Editor编译、蓝图/资产验证及PIE行走奔跑开火验证通过"
+                                               "VFXPack目标骨架、第一人称手臂网格/动画及适配后的全身腿部动画从FPSShooter1以最终资产形式迁入，主项目不含IK Rig、IK Retargeter、源骨架或工作目录",
+                                               "现有RepairGun、装备/GAS/弹道和Linked Anim Layer架构保持有效",
+                                               "Development Editor编译、蓝图/资产验证及PIE行走奔跑跳跃开火验证通过"
                                            ],
-                         "verification_evidence":  ""
+                         "verification_evidence":  "2026-08-01-session145：FPSShooter1逐骨验证两套Skeleton均为68骨且名称/顺序/参考姿势完全一致，采用无损Skeleton合并且未创建IK资产；MaintenanceWorker全身/腿Mesh与20套body locomotion统一引用VFXPack最终Skeleton；RepairGun不再保留原生Walk，BS_WalkRun_RepairGun按VFXPack原版Speed 0/280/420/700与RateScale 0.8/0.5/1.0/1.5重建为2D 12样本；Temp/供应商/CodexRetargeting目录清场；四个相关蓝图编译保存成功；Development Editor Win64成功。待前台实际输入复核走跑跳开火主观观感。"
                      },
                      {
                          "id":  "FEAT-071",

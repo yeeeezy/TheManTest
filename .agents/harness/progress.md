@@ -2,25 +2,25 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-01-session144
+**最后更新：** 2026-08-01-session145
 
-**当前功能：** FEAT-074 — VFXPack移动HeadBob、武器摆动与RepairGun射击震屏
+**当前功能：** FEAT-074 — VFXPack第一人称动画替换、HeadBob、武器摆动与RepairGun射击震屏
 
 **状态：** in_progress
 
 ## 本轮完成
 
-- FEAT-073 已建立安全检查点 `34fbfaf`。
-- 已确认VFXPack移动观感由跑步动画、Walking/Running HeadBob和程序Body Sway叠加。
-- 已回读三套Camera Shake精确参数；项目现有第一人称Sway代码处于禁用状态，可在原视觉链恢复扩展。
+- 第一阶段 HeadBob、Viewmodel sway 与 RepairGun CameraShake 已完成并保存在检查点 `b7ff993`。
+- FPSShooter1 中完成 68 骨逐骨/参考姿势一致性验证；无 IK 重定向，VFXPack Skeleton 已成为 MaintenanceWorker 身体、腿与动画统一 Skeleton。
+- RepairGun 不再保留原生 Walk；2D BlendSpace 精确复刻 VFXPack 的 Idle/Run 混合曲线（Speed 0/280/420/700，RateScale 0.8/0.5/1.0/1.5），按三个 Direction 档共 12 个有效样本。
+- 临时 Retarget、TempCharacter 与供应商目录已清场；四个相关蓝图编译保存成功，Development Editor 编译成功。
 
 ## 待办
 
-- 迁移并整理三套Camera Shake。
-- 实现移动HeadBob状态切换、恢复程序化Viewmodel摆动、接入RepairGun射击震屏。
-- 完整编译与PIE行走/奔跑/开火验证。
+- 前台实际输入复核走/跑/跳/开火观感；MCP 模拟 Enhanced Input 无法持续按住移动键，截图链也未显示 OnlyOwnerSee 第一人称几何。
+- 确认后决定是否把 VFXPack Jump/Fire/Recoil 继续接到现有状态机/蒙太奇；当前资产已整理但未强行覆盖本项目 RepairGun 装备/开火动作。
 
 ## 工作区边界
 
 - FEAT-073 安全检查点：`34fbfaf`。
-- 本轮仅修改玩家Camera/Viewmodel、Firearm开火反馈、三套Shake资产与对应Harness记录。
+- 本轮修改 MaintenanceWorker 最终 Skeleton/身体动画、RepairGun 第一人称 locomotion、既有 Camera/Viewmodel/开火反馈与 Harness；不包含 IK Rig/Retargeter 或供应商工作目录。
