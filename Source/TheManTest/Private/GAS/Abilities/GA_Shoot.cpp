@@ -102,14 +102,14 @@ void UGA_Shoot::ActivateAbility(
 	}
 
 	// 播放开火蒙太奇（与子弹解耦：空枪/未配子弹也能播）
-	if (Firearm->MuzzleEffect && WeaponMesh)
+	if (Firearm->MuzzleEffect)
 	{
-		if (UNiagaraComponent* Effect = UNiagaraFunctionLibrary::SpawnSystemAttached(
-			Firearm->MuzzleEffect, WeaponMesh, MuzzleSocket, FVector::ZeroVector,
-			Firearm->MuzzleEffectRotation, EAttachLocation::SnapToTarget,
-			true, true, ENCPoolMethod::AutoRelease, true))
+		if (UNiagaraComponent* Effect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			this, Firearm->MuzzleEffect, MuzzleLocation,
+			CameraForward.Rotation() + Firearm->MuzzleEffectRotation,
+			Firearm->MuzzleEffectScale, true, true, ENCPoolMethod::AutoRelease, true))
 		{
-			Effect->SetRelativeScale3D(Firearm->MuzzleEffectScale);
+			Effect->Activate(true);
 		}
 	}
 

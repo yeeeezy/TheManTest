@@ -20,9 +20,13 @@ class THEMANTEST_API UBTTask_UseCombatSkill : public UBTTaskNode
 
 public:
 	UBTTask_UseCombatSkill();
+	UFUNCTION(BlueprintPure, Category = "CombatSkill|Cadence")
+	float GetPostSkillDelay() const { return FMath::Max(3.f, PostSkillDelay); }
 
 protected:
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+	virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
+	virtual EBTNodeResult::Type AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 
 	// 本节点对应的交战距离档（从当前阶段技能集的对应档随机放招）
 	UPROPERTY(EditAnywhere, Category = "CombatSkill")
@@ -31,4 +35,13 @@ protected:
 	// 目标黑板键名（默认 TargetActor，与 AIController 写入的键一致）
 	UPROPERTY(EditAnywhere, Category = "CombatSkill")
 	FName TargetActorKey = TEXT("TargetActor");
+
+	// 技能完全结束后仍需等待的行为树后摇。所有人形敌人的技能节奏统一由 BT 节点控制。
+	UPROPERTY(EditAnywhere, Category = "CombatSkill|Cadence", meta = (ClampMin = "3.0"))
+	float PostSkillDelay = 3.f;
+
+private:
+	TWeakObjectPtr<AEnemyBase> ActiveEnemy;
+	float RemainingPostSkillDelay = 0.f;
+	bool bWaitingForAbilityEnd = false;
 };

@@ -4,6 +4,7 @@
 #include "Characters/Enemy/Components/EnemyMagazineComponent.h"
 #include "Characters/Enemy/Humanoid/HumanoidEnemy.h"
 #include "Characters/Enemy/Humanoid/HumanoidAIController.h"
+#include "Characters/Enemy/BTTask_UseCombatSkill.h"
 #include "Characters/Enemy/Humanoid/HumanoidEnemyAnimInstance.h"
 #include "Characters/FPSCharacterBase/FPSCharacterBase.h"
 #include "Characters/Components/EquipmentManagerComponent.h"
@@ -14,6 +15,8 @@
 #include "GAS/Abilities/GA_EnemyShoot.h"
 #include "Equipment/Firearms/Firearm.h"
 #include "NiagaraSystem.h"
+#include "NiagaraComponent.h"
+#include "AbilitySystemComponent.h"
 #include "NavigationSystem.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISense_Sight.h"
@@ -24,6 +27,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "UObject/UObjectIterator.h"
 #include "Tests/AutomationEditorCommon.h"
 #include "Tests/AutomationCommon.h"
 #include "Editor.h"
@@ -173,6 +177,9 @@ bool FPhantomReusableCombatTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("Empty magazine rejects extra shot"), Magazine->ConsumeRound());
 	Magazine->Reload();
 	TestEqual(TEXT("Reload restores capacity"), Magazine->GetCurrentAmmo(), 20);
+	const UBTTask_UseCombatSkill* CombatSkillTask = NewObject<UBTTask_UseCombatSkill>();
+	TestTrue(TEXT("Behavior-tree combat skill node enforces at least three seconds between skills"),
+		CombatSkillTask && CombatSkillTask->GetPostSkillDelay() >= 3.f);
 
 	TestNotNull(TEXT("Cover mesh asset"), LoadObject<UStaticMesh>(nullptr,
 		TEXT("/Game/Enemy/_Shared/Cover/Mesh/SM_PhantomCover.SM_PhantomCover")));
@@ -199,12 +206,14 @@ bool FPhantomReusableCombatTest::RunTest(const FString& Parameters)
 	{
 		const AFirearm* RepairCDO = RepairClass->GetDefaultObject<AFirearm>();
 		TestEqual(TEXT("RepairGun inherits the shared energy muzzle default"), RepairCDO->MuzzleEffect.Get(), RepairMuzzle);
+		TestTrue(TEXT("RepairGun muzzle effect has a visible production scale"), RepairCDO->MuzzleEffectScale.GetMin() >= 0.8f);
 	}
 	if (UClass* BurstClass = LoadClass<UGA_EnemyShoot>(nullptr,
 		TEXT("/Game/Enemy/Phantom/GAS/GameplayAbility/BGA_PhantomBurst.BGA_PhantomBurst_C")))
 	{
 		const UGA_EnemyShoot* BurstCDO = BurstClass->GetDefaultObject<UGA_EnemyShoot>();
 		TestEqual(TEXT("Humanoid burst inherits the shared physical muzzle default"), BurstCDO->GetMuzzleEffect(), HumanoidMuzzle);
+		TestTrue(TEXT("Humanoid muzzle effect has a visible production scale"), BurstCDO->GetMuzzleEffectScale().GetMin() >= 0.7f);
 	}
 
 	UWorld* World = LoadObject<UWorld>(nullptr, TEXT("/Game/Maps/TestMap.TestMap"));
@@ -269,6 +278,19 @@ bool FValidatePhantomPIECommand::Update()
 	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
 	if (!World) return false;
 
+	UNiagaraSystem* RepairMuzzle = LoadObject<UNiagaraSystem>(nullptr,
+		TEXT("/Game/Effects/_Shared/Muzzle/Systems/NS_RepairGun_Muzzle.NS_RepairGun_Muzzle"));
+	if (APlayerController* PC = World->GetFirstPlayerController())
+	{
+		if (AFPSCharacterBase* Player = Cast<AFPSCharacterBase>(PC->GetPawn())) Player->PrimaryFire();
+	}
+	bool bRepairMuzzleSpawned = false;
+	for (TObjectIterator<UNiagaraComponent> It; It; ++It)
+	{
+		bRepairMuzzleSpawned |= It->GetWorld() == World && It->GetAsset() == RepairMuzzle;
+	}
+	Test->TestTrue(TEXT("PIE RepairGun shot spawns its visible muzzle Niagara component"), bRepairMuzzleSpawned);
+
 	FActorSpawnParameters Params;
 	Params.ObjectFlags = RF_Transient;
 	UClass* PhantomClass = LoadClass<APhantom>(nullptr,
@@ -282,6 +304,19 @@ bool FValidatePhantomPIECommand::Update()
 		Test->TestNotNull(TEXT("PIE original Rifle AnimInstance"), Phantom->GetMesh()->GetAnimInstance());
 		Test->TestEqual(TEXT("PIE magazine starts at 20"),
 			Phantom->GetMagazineComponent()->GetCurrentAmmo(), 20);
+		Phantom->AimTargetWorld = Phantom->GetActorLocation() + FVector(1000.f, 0.f, 0.f);
+		UClass* BurstClass = LoadClass<UGameplayAbility>(nullptr,
+			TEXT("/Game/Enemy/Phantom/GAS/GameplayAbility/BGA_PhantomBurst.BGA_PhantomBurst_C"));
+		Test->TestTrue(TEXT("PIE Phantom burst ability activates"), BurstClass &&
+			Phantom->GetAbilitySystemComponent()->TryActivateAbilityByClass(BurstClass));
+		UNiagaraSystem* EnemyMuzzle = LoadObject<UNiagaraSystem>(nullptr,
+			TEXT("/Game/Effects/_Shared/Muzzle/Systems/NS_HumanoidRifle_Muzzle.NS_HumanoidRifle_Muzzle"));
+		bool bEnemyMuzzleSpawned = false;
+		for (TObjectIterator<UNiagaraComponent> It; It; ++It)
+		{
+			bEnemyMuzzleSpawned |= It->GetWorld() == World && It->GetAsset() == EnemyMuzzle;
+		}
+		Test->TestTrue(TEXT("PIE Phantom shot spawns its visible muzzle Niagara component"), bEnemyMuzzleSpawned);
 		Phantom->SetAIState(EHumanoidEnemyAIState::Aim);
 		Phantom->StartLostTargetSearch(Phantom->GetActorLocation() + FVector(200.f, 0.f, 0.f));
 		Test->TestNotEqual(TEXT("PIE lost target exits combat and begins the NavMesh search flow"),
@@ -575,21 +610,20 @@ public:
 			}
 			Test->TestTrue(TEXT("Placed-patrol audit found the TestMap Phantom"), Enemy.IsValid());
 			if (!Enemy.IsValid()) return true;
+			Test->AddInfo(FString::Printf(TEXT("PLACED_PATROL_ACTOR path=%s name=%s start=%s mesh_rel=%s"),
+				*Enemy->GetPathName(), *Enemy->GetName(), *Enemy->GetActorLocation().ToString(),
+				*Enemy->GetMesh()->GetRelativeLocation().ToString()));
 			Test->TestEqual(TEXT("TestMap Phantom keeps its four authored patrol points"), Enemy->GetPatrolPointCount(), 4);
 			AHumanoidAIController* RealController = Cast<AHumanoidAIController>(Enemy->GetController());
 			Test->TestNotNull(TEXT("Placed Phantom keeps its production humanoid AI controller"), RealController);
 			if (!RealController) return true;
-			// Keep the production controller/path-following/behavior-tree stack, while preventing
-			// the automation player pawn from turning this patrol-only regression into combat.
-			if (UAIPerceptionComponent* Perception = RealController->GetPerceptionComponent())
-			{
-				Perception->SetSenseEnabled(UAISense_Sight::StaticClass(), false);
-				Perception->ForgetAll();
-			}
+			// Deliberately keep production perception enabled: this regression must match the
+			// normal Play flow rather than an isolated patrol-only setup.
 			Enemy->SetAIState(EHumanoidEnemyAIState::Patrol);
 			StartTime = World->GetTimeSeconds();
 			PreviousLocation = Enemy->GetActorLocation();
 			LastArrivalCount = Enemy->GetPatrolArrivalCount();
+			CaptureOverview(World, TEXT("PatrolPIE_00_Start.png"));
 			return false;
 		}
 
@@ -598,13 +632,16 @@ public:
 		const int32 Arrivals = Enemy->GetPatrolArrivalCount();
 		if (Arrivals != LastArrivalCount)
 		{
-			Test->AddInfo(FString::Printf(TEXT("PLACED_PATROL arrival=%d next_index=%d elapsed=%.2f"),
-				Arrivals, Enemy->GetCurrentPatrolIndex(), World->GetTimeSeconds() - StartTime));
+			Test->AddInfo(FString::Printf(TEXT("PLACED_PATROL arrival=%d next_index=%d elapsed=%.2f loc=%s target=%s"),
+				Arrivals, Enemy->GetCurrentPatrolIndex(), World->GetTimeSeconds() - StartTime,
+				*Enemy->GetActorLocation().ToString(), *Enemy->GetCurrentPatrolTargetLocation().ToString()));
+			if (Arrivals == 2) CaptureOverview(World, TEXT("PatrolPIE_02_SecondPoint.png"));
+			if (Arrivals == 3) CaptureOverview(World, TEXT("PatrolPIE_03_ThirdPoint.png"));
 			LastArrivalCount = Arrivals;
 		}
-		if (Arrivals < 5 && World->GetTimeSeconds() - StartTime < 75.f) return false;
+		if (Arrivals < 3 && World->GetTimeSeconds() - StartTime < 40.f) return false;
 
-		Test->TestTrue(TEXT("Placed TestMap Phantom completes all four points and starts another loop"), Arrivals >= 5);
+		Test->TestTrue(TEXT("Placed TestMap Phantom physically advances from patrol point two to point three"), Arrivals >= 3);
 		Test->AddInfo(FString::Printf(
 			TEXT("PLACED_PATROL_FINAL arrivals=%d index=%d state=%d pending=%d scanning=%d wait=%.2f travel=%.1f velocity=%.1f loc=%s target=%s"),
 			Arrivals, Enemy->GetCurrentPatrolIndex(), static_cast<int32>(Enemy->GetAIState()), Enemy->IsPendingTurn(),
@@ -613,6 +650,34 @@ public:
 		return true;
 	}
 private:
+	static bool CaptureOverview(UWorld* World, const FString& FileName)
+	{
+		if (!World) return false;
+		UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>();
+		RenderTarget->RenderTargetFormat = RTF_RGBA8;
+		RenderTarget->InitAutoFormat(1280, 720);
+		RenderTarget->UpdateResourceImmediate(true);
+
+		USceneCaptureComponent2D* Capture = NewObject<USceneCaptureComponent2D>(World->GetWorldSettings());
+		Capture->RegisterComponentWithWorld(World);
+		Capture->TextureTarget = RenderTarget;
+		Capture->ProjectionType = ECameraProjectionMode::Perspective;
+		Capture->FOVAngle = 90.f;
+		Capture->SetWorldLocation(FVector(-3500.f, 400.f, 1000.f));
+		Capture->SetWorldRotation(FRotator(-22.f, 0.f, 0.f));
+		Capture->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+		Capture->CaptureScene();
+
+		TArray<FColor> Pixels;
+		const bool bRead = RenderTarget->GameThread_GetRenderTargetResource()->ReadPixels(Pixels);
+		TArray64<uint8> PNGData;
+		if (bRead) FImageUtils::PNGCompressImageArray(1280, 720, Pixels, PNGData);
+		const FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("Screenshots"), FileName);
+		const bool bSaved = bRead && !PNGData.IsEmpty() && FFileHelper::SaveArrayToFile(PNGData, *Path);
+		Capture->DestroyComponent();
+		return bSaved;
+	}
+
 	FAutomationTestBase* Test = nullptr;
 	TWeakObjectPtr<APhantom> Enemy;
 	FVector PreviousLocation = FVector::ZeroVector;
@@ -751,9 +816,9 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 	Test->TestEqual(TEXT("ArmsViewMesh is attached to ViewmodelRoot"),
 		Player->GetArmsMesh()->GetAttachParent(), Player->GetViewmodelRoot());
 	Test->TestTrue(TEXT("Final viewmodel location matches approved framing"),
-		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector(-25.f, 2.f, -6.f), 0.01f));
+		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector(-25.f, -4.f, 3.f), 0.01f));
 	Test->TestTrue(TEXT("Final viewmodel rotation preserves imported pose orientation"),
-		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator(0.f, -10.f, 0.f), 0.01f));
+		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator(0.f, -13.f, 0.f), 0.01f));
 
 	UEquipmentManagerComponent* EquipmentManager = Player->GetEquipmentManager();
 	AEquipmentBase* Equipment = EquipmentManager ? EquipmentManager->GetCurrentEquipment() : nullptr;

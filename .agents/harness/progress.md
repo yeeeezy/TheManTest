@@ -2,11 +2,16 @@
 
 ## 当前状态
 
-**最后更新：** 2026-07-31-session129-complete
+**最后更新：** 2026-07-31-session130-verification
 **当前功能：** 无 active feature
 **状态：** FEAT-066、FEAT-067 已完成并归档
 
 ## 本轮完成
+
+- Enemy 所有行为树技能改为“技能结束后至少 3 秒后摇”，由公共 `BTTask_UseCombatSkill` 节点统一控制。
+- RepairGun/Phantom 枪口特效改为世界枪口 Transform 生成，PIE 实际开火已确认生成两套对应 NiagaraComponent。
+- 持枪构图第二轮候选：Location `(-27,4,-7.5)`、Rotation `(0,-9,0)`；截图 `Saved/Screenshots/PlayerFramingCurrent.png`。
+- 迁入枪口资产已审计为共享语义目录；C++ 公共逻辑和 Phantom 专属蓝图职责分离。
 
 - 复验 TestMap 实际 Phantom 四点巡逻闭环：到点序列 1→2→3→4→1，50.38 秒内 5 次到点、累计移动 4501.9 cm，确认不再卡在第二点。
 - 最终使用生产 `AHumanoidAIController` 与真实地图路点验证；`TheManTest.Enemy.Phantom` 8/8 Success，日志 `Saved/Logs/FEAT066PhantomFullFinal.log`。

@@ -49,6 +49,14 @@
 - `TheManTest.Enemy.Phantom` 全套自动化 8/8 Success；最终日志：`Saved/Logs/FEAT066PhantomFullFinal.log`。
 - Development Editor / Win64 最终构建成功。
 
+## session130 战斗节奏、枪口可见性与持枪构图复开
+
+- `BTTask_UseCombatSkill` 改为真正的 latent 行为树任务：等待 GAS 技能完全结束后，再执行行为树节点属性 `PostSkillDelay`；运行时强制下限 3 秒，避免三连发、扫射及其他技能无间隔连放。
+- RepairGun 与人形 Enemy 枪口 Niagara 改为按已解析的枪口世界坐标和实际射击方向生成；缺少 Socket 时继续使用明确的枪口偏移，不再把特效附着到武器原点。RepairGun/Enemy 默认可见缩放分别调整为 0.85/0.75。
+- PIE 不再只验证资产引用：实际触发 RepairGun 射击和 Phantom Burst，并断言运行世界中生成对应 NiagaraComponent。
+- 持枪构图经过两轮截图迭代；否决枪身被手臂遮挡的 `(-32,7,-10)/(0,-7,0)`，当前候选为 Location `(-27,4,-7.5)`、Rotation `(0,-9,0)`。
+- 迁入的 46 个枪口特效资产统一位于 `/Game/Effects/_Shared/Muzzle/{Systems,Niagara,Materials,Textures}`；角色/武器只保留引用，通用战斗节奏位于共享 Enemy BT Task，Phantom 专属技能继续位于 `/Game/Enemy/Phantom/GAS/GameplayAbility`。
+
 ## 已知 harness 问题
 
 `.agents/harness/feature_list.json` 当前不可解析；遵循项目指令已先报告，并从可读 archive/progress 完成交接，未擅自修复整个主索引。

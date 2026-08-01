@@ -17,7 +17,7 @@ AFirearm::AFirearm()
 	if (DefaultPlayerMuzzle.Succeeded())
 	{
 		MuzzleEffect = DefaultPlayerMuzzle.Object;
-		MuzzleEffectScale = FVector(0.45f);
+		MuzzleEffectScale = FVector(0.85f);
 	}
 }
 

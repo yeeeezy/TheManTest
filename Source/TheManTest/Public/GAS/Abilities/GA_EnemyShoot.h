@@ -42,6 +42,7 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "EnemyShoot|VFX")
 	UNiagaraSystem* GetMuzzleEffect() const { return MuzzleEffect; }
+	FVector GetMuzzleEffectScale() const { return MuzzleEffectScale; }
 
 	// Shared accuracy entry point for automatic-fire variants and future humanoid weapons.
 	UFUNCTION(BlueprintCallable, Category = "EnemyShoot|Accuracy")

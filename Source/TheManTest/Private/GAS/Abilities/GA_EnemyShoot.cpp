@@ -23,7 +23,7 @@ UGA_EnemyShoot::UGA_EnemyShoot()
 	if (DefaultHumanoidMuzzle.Succeeded())
 	{
 		MuzzleEffect = DefaultHumanoidMuzzle.Object;
-		MuzzleEffectScale = FVector(0.35f);
+		MuzzleEffectScale = FVector(0.75f);
 	}
 }
 
@@ -76,14 +76,15 @@ bool UGA_EnemyShoot::FireSingleRound(AHumanoidEnemy* Enemy)
 	// 子弹生成（可被子类重写为散射/连发/hitscan）。散布在公共基类统一处理，
 	// 因此三连发、扫射和后续人形怪无需各自复制命中误差逻辑。
 	SpawnProjectiles(Enemy, MuzzleLocation, CalculateShotDirection(Enemy, FireDir));
-	if (MuzzleEffect && WeaponMesh)
+	if (MuzzleEffect)
 	{
-		if (UNiagaraComponent* Effect = UNiagaraFunctionLibrary::SpawnSystemAttached(
-			MuzzleEffect, WeaponMesh, MuzzleSocketName, FVector::ZeroVector,
-			MuzzleEffectRotation, EAttachLocation::SnapToTarget,
-			true, true, ENCPoolMethod::AutoRelease, true))
+		// 使用已经验证过的枪口世界位置和射击方向。即使模型缺少同名 Socket，
+		// 也不会把特效悄悄挂到武器原点、藏进枪体内部。
+		if (UNiagaraComponent* Effect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			this, MuzzleEffect, MuzzleLocation, FireDir.Rotation() + MuzzleEffectRotation,
+			MuzzleEffectScale, true, true, ENCPoolMethod::AutoRelease, true))
 		{
-			Effect->SetRelativeScale3D(MuzzleEffectScale);
+			Effect->Activate(true);
 		}
 	}
 
