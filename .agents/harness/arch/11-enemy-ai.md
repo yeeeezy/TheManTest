@@ -128,5 +128,6 @@ Root → Selector
 - ✅ FEAT-031（BBBAimIK 脊柱瞄准）：session40 恢复并验证通过，敌人 Aim 时上半身跟随玩家。（aim 取点当前用 GetActorLocation，如需更高改 eyes）
 - 🔶 FEAT-035（敌人射击）：C++ 完成，待编辑器配 BGA_EnemyShoot + 武器 Muzzle socket + BP_Phantom PhaseSkillSets。
 - ✅ FEAT-058～063：搜索链、通用掩体、弹匣/三连发/扫射/换弹、Phantom 找掩体与二阶段已实现；Phantom 通过 `PhaseSkillSets` 数据注入能力，公共 BT 不依赖 Phantom 类型。
+- ✅ FEAT-071：Phantom 子弹 Damage=6；射击散布扩大为3°基础/0.8°逐发/9°上限，移动惩罚2°、恢复2°/s；每波伤害成长10%、最大倍率1.5。只覆盖 Phantom 蓝图，不修改通用 Enemy C++ 默认。
 - ✅ FEAT-058 session126：Patrol 与 SearchRush 均优先使用 NavMesh；请求立即/异步失败时改用 CharacterMovement 直移。到达后仍复用等待、Relaxed 随机环视、下一路点、SearchScan 与最近巡逻点恢复；`SetPatrolPoints` 支持运行时生成敌人。TestMap 无 RecastNavMesh 的两条 PIE 路径均验证真实移动与扫描。
 - ✅ FEAT-064：Aim 状态移动由 `AHumanoidAIController` 的公共距离环带接管。BT 的 Actor `MoveTo(TargetActor)` 在 Aim 时只作为技能序列门槛并返回 AlreadyAtGoal；真实移动目标为 NavMesh 投影后的战术 Location。默认保持 700±150 cm：近距后撤+侧移、远距收拢+侧移、环带内切向绕行；无 NavMesh 时回退 CharacterMovement 直接移动。实际局部速度继续由 `UBaseLocomotionAnimInstance` 计算 Direction，驱动子 AnimBP 二维 Aim BlendSpace。

@@ -1,13 +1,29 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-01-session137",
-    "active_feature":  "FEAT-070",
+    "last_updated":  "2026-08-01-session139",
+    "active_feature":  "FEAT-071",
     "archive_file":  "feature_archive.json",
     "features":  [
                      {
+                         "id":  "FEAT-071",
+                         "name":  "Phantom Boss伤害与命中容错平衡",
+                         "status":  "needs_improvement",
+                         "description":  "降低 Phantom 子弹和成长伤害，扩大持续射击散布，让玩家拥有可读、可恢复的受击容错。",
+                         "archive_file":  "archive/FEAT-071-phantom-boss-damage-accuracy-balance.md",
+                         "created":  "2026-08-01",
+                         "updated":  "2026-08-01-session139",
+                         "done_criteria":  [
+                                               "Phantom 两种子弹基础伤害从10降至6",
+                                               "所有 Phantom 射击 Ability 使用3/0.8/9度散布、2度移动惩罚和2度每秒恢复",
+                                               "Phantom 每波伤害成长降至10%，最大倍率降至1.5",
+                                               "相关蓝图编译保存、资产验证与PIE射击验证通过"
+                                           ],
+                         "verification_evidence":  "2026-08-01-session139：两种子弹Damage=6；四套射击Ability散布=3/0.8/9°、恢复2°/s、移动惩罚2°；成长10%、上限1.5。7个蓝图编译保存、编辑器重启冷回读、资产验证通过；ReusableCombatModules自动化Success/exit0。待用户前台PIE确认实战压力。"
+                     },
+                     {
                          "id":  "FEAT-070",
                          "name":  "MaintenanceWorker 移动动画步速标定",
-                         "status":  "in_progress",
+                         "status":  "needs_improvement",
                          "description":  "测量 MaintenanceWorker Walk/Jog 动画的自然步速，校准角色 WalkSpeed、SprintSpeed 与 BS_RunWalk_MaintenanceWorker，降低脚滑。",
                          "archive_file":  "archive/FEAT-070-maintenance-worker-locomotion-speed-calibration.md",
                          "created":  "2026-08-01",

@@ -2,24 +2,25 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-01-session137
+**最后更新：** 2026-08-01-session139
 
-**当前功能：** FEAT-070 — MaintenanceWorker 移动动画步速标定
+**当前功能：** FEAT-071 — Phantom Boss伤害与命中容错平衡
 
-**状态：** in_progress
+**状态：** needs_improvement（数值与自动化通过，待前台PIE确认实战压力）
 
 ## 本轮完成
 
-- 完成 Walk/Jog 八方向左右脚着地段逐帧测量；自然速度范围分别为 95.3~119.6 和 218.6~339.5 cm/s。
-- 最终修正为 `BP_MaintenanceWorker` Walk=100 / Sprint=300；BlendSpace 轴和样本为 0/100/300，全部 RateScale=1.0，确保对应档位完整播放原动画。
-- BlendSpace 重建、BP/ABP 编译保存和三项资产验证通过。
-- 发现上一轮 BlendSpace 写入未持久化，导致角色120速度仍在旧0~250区间混合Idle、产生慢放观感；已通过新结构体写入并冷回读确认修复。
+- Phantom 两种子弹 Damage 10 -> 6。
+- 四套射击 Ability 散布统一为3/0.8/9°、恢复2°/s、移动惩罚2°。
+- Phantom 每波伤害成长20% -> 10%，最大倍率2.0 -> 1.5。
+- 7个蓝图编译保存成功；冷启动回读、资产验证通过。
+- `TheManTest.Enemy.Phantom.ReusableCombatModules` headless自动化成功，退出码0。
 
 ## 待办
 
-- 用户前台确认 Walk=100/Jog=300 原速样本的观感；后续若需要降低残余脚滑，优先调整移动速度或使用距离匹配，不再用方向 RateScale 破坏步态节奏。
+- 用户前台PIE确认 Burst、Suppressive和二阶段 Area Barrage 的实际生存压力；如仍过强，优先调整射击节奏/攻击间隔，而非继续无差别降低全部伤害。
 
 ## 工作区边界
 
-- FEAT-069 整理结果已建立 WIP 检查点：`a03f30d`。
-- 不在 TheManTest 内执行动画重定向或创建 IK Retargeter。
+- FEAT-070 结果安全检查点：`5ee22d9`。
+- FEAT-070 留作 needs_improvement，等待用户最终主观确认移动观感。
