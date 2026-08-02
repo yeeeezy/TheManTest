@@ -114,3 +114,10 @@
 - 第一人称 `ArmsViewMesh` 使用已迁入并精简的 `ABP_VFXPack_FirstPerson`，直接恢复 VFXPack Idle/Run 状态机及 0.8×/0.5×/1.0×/1.5×速度逻辑；身体与下半身仍维持项目现状。
 - 原项目 `SK_ArmMesh` 相机变换实测为 `(-18.107912,18.852108,-150.00795)` / `(-3,-15,-1)`；因相机/画幅差异最终横向补偿为 41，即 `(-18.107912,41,-150.00795)` / `(-3,-15,-1)`。
 - `TheManTestEditor Win64 Development` 冷构建成功；冷重启后 `TheManTest.Player.Viewmodel.FramingCapture` 为 Success。1920×1080 证据为 `Saved/Screenshots/PlayerFramingCurrent.png`，枪口约位于参考要求的中心偏右区域，枪体延伸并裁出右下边界。
+
+## 2026-08-02 session153 — 原版移动反馈、Outline 组合与影子修正
+
+- C++ 移除鼠标旋转滞后、自创方向移动偏移及 PlayerCameraManager 走跑 CameraShake；保留 VFXPack 动画主姿态，并按 Walking 0.2°@2Hz/0.5s 淡入、Running Pitch 0.75°@12Hz + Yaw 0.2°@16Hz/0.1s 淡入生成仅作用于 ViewmodelRoot 的波形。
+- 迁入 `SM_Weapon_Ballistics_Rifle_01_Outline`，归档为 `SM_RepairGun_Rifle_Outline`。审计确认它是描边壳而非实体枪，因此按原版组合：实体 `SM_RepairGun_Rifle` + 无碰撞/无投影 `StaticMeshOverlay` 描边壳。
+- 动画框架运行时逐骨审计定位影子朝向根因：Shadow 原先忠实复制 CharacterMesh0，但后者不是 VFXPack 第一人称持枪 Pose。Shadow Leader 改为 ArmsViewMesh 后，spine_03/hand_r/hand_l 组件空间 Pose 精确一致；LegsMesh 仍跟随 CharacterMesh0。
+- Development Editor / Win64 冷构建成功；冷启动 `TheManTest.Player.Viewmodel.FramingCapture` 成功，最终截图仍为 `Saved/Screenshots/PlayerFramingCurrent.png`。

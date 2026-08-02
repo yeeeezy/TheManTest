@@ -3,8 +3,6 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
-#include "Camera/PlayerCameraManager.h"
-#include "Camera/CameraShakeBase.h"
 #include "EnhancedInputComponent.h"
 #include "Weapons/_Shared/Components/EquipmentManagerComponent.h"
 #include "Characters/_Shared/Components/ScanEffectComponent.h"
@@ -33,11 +31,6 @@ AFPSCharacterBase::AFPSCharacterBase()
 	SprintSpeed     = 550.0f;   // 按住 Shift（跑）：匹配 Jog_Loop 动画速度
 	PitchMin        = -75.0f;
 	PitchMax        = 40.0f;
-	SwayIntensity   = 2.0f;
-	SwayInterpSpeedX = 5.33f;
-	SwayInterpSpeedY = 3.33f;
-	CurrentSway          = FRotator::ZeroRotator;
-	LastControlRotation  = FRotator::ZeroRotator;
 	BaseArmsRotation     = FRotator(0.f, -90.f, 0.f);   // 新全身骨架转正：朝 +Y → 朝 +X
 
 	// FEAT-038 修正：身体不再物理俯仰。相机从 head 骨骼摘下挂 capsule 固定眼高，
@@ -196,7 +189,10 @@ void AFPSCharacterBase::BeginPlay()
 	}
 
 	// FEAT-038：影子/腿共用 GetMesh() 的姿势（Leader/Follower），动画只在 GetMesh() 评估一次。
-	if (ShadowBodyMesh) { ShadowBodyMesh->SetLeaderPoseComponent(GetMesh()); }
+	// FEAT-074：第一人称已使用 VFXPack 原版完整骨架 Pose。投影身体必须与该持枪上半身同源，
+	// 否则 CharacterMesh0 的项目 locomotion 会让影子双臂朝向与屏幕内武器明显不一致。
+	// 只把投影身体切到 ArmsViewMesh；玩家可见腿仍继续跟随 CharacterMesh0，暂不改变下半身速度体系。
+	if (ShadowBodyMesh) { ShadowBodyMesh->SetLeaderPoseComponent(ArmsViewMesh); }
 	if (LegsMesh)       { LegsMesh->SetLeaderPoseComponent(GetMesh()); }
 	// FEAT-038/042：渲染分离——FP 手臂藏非手臂段（作用到 ArmsViewMesh）、腿藏躯干以上段（只改渲染不碰姿势）。
 	// 物理拆好的 Arms/Legs mesh 本身已只含对应几何时，对应数组留空即可。
@@ -207,7 +203,6 @@ void AFPSCharacterBase::BeginPlay()
 	// 完成初始化。不要在这里隐藏整套 Mesh，否则进入地图时会出现一帧“角色未加载”的空白。
 	GetWorldTimerManager().SetTimerForNextTick(this, &AFPSCharacterBase::PlayInitialEquipMontage);
 
-	LastControlRotation = GetControlRotation();
 }
 
 void AFPSCharacterBase::PlayInitialEquipMontage()
@@ -438,73 +433,46 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		RecoilYawVelocity   = FMath::FInterpTo(RecoilYawVelocity,   0.f, DeltaTime, RecoilDamping);
 	}
 
-	// 武器摇摆 / viewmodel 相对偏移——只作用到相机子级 viewmodel。
-	// 不再碰 GetMesh()：它是 MM 宿主，朝向归 MM（OffsetRootBone）管，外部转无效。
-	// 不再手动按 pitch 转父级：ArmsViewMesh 挂在 HeadCamera 下，已天然继承相机旋转，支点就是相机原点。
+	// VFXPack 的 Walk/Run 动画负责主要持枪姿态；原 Walking/Running CameraShake
+	// 只补充轻微周期旋转。这里复刻其状态和参数，但把输出隔离在 ViewmodelRoot。
 	if (ArmsViewMesh && ViewmodelRoot)
 	{
-		const FRotator CurrentControlRot = GetControlRotation();
-		const FRotator RotDelta = (CurrentControlRot - LastControlRotation).GetNormalized();
-		LastControlRotation = CurrentControlRot;
+		EVFXPackMovementBobState DesiredState = EVFXPackMovementBobState::None;
+		const float GroundSpeed = GetVelocity().Size2D();
+		if (bEnableVFXPackMovementBob && GetCharacterMovement()->IsMovingOnGround() && GroundSpeed > 5.f)
+		{
+			DesiredState = (bIsSprinting || GroundSpeed > WalkSpeed + 10.f)
+				? EVFXPackMovementBobState::Running : EVFXPackMovementBobState::Walking;
+		}
 
-		const FRotator SwayTarget(
-			-RotDelta.Pitch * SwayIntensity,
-			-RotDelta.Yaw   * SwayIntensity,
-			-RotDelta.Yaw   * SwayIntensity);
-		CurrentSway.Pitch = FMath::FInterpTo(CurrentSway.Pitch, SwayTarget.Pitch, DeltaTime, SwayInterpSpeedY);
-		CurrentSway.Yaw   = FMath::FInterpTo(CurrentSway.Yaw,   SwayTarget.Yaw,   DeltaTime, SwayInterpSpeedX);
-		CurrentSway.Roll  = FMath::FInterpTo(CurrentSway.Roll,  SwayTarget.Roll,  DeltaTime, SwayInterpSpeedX);
+		if (DesiredState != MovementBobState)
+		{
+			MovementBobState = DesiredState;
+			MovementBobElapsed = 0.f;
+		}
+		else if (MovementBobState != EVFXPackMovementBobState::None)
+		{
+			MovementBobElapsed += DeltaTime;
+		}
 
-		const FVector LocalVelocity = GetActorTransform().InverseTransformVectorNoScale(GetVelocity());
-		const float SpeedDenominator = FMath::Max(SprintSpeed, 1.f);
-		const float ForwardAlpha = FMath::Clamp(LocalVelocity.X / SpeedDenominator, -1.f, 1.f);
-		const float RightAlpha = FMath::Clamp(LocalVelocity.Y / SpeedDenominator, -1.f, 1.f);
-		const float MoveAmount = FMath::Clamp(FMath::Abs(ForwardAlpha) + FMath::Abs(RightAlpha), 0.f, 1.f);
+		FRotator BobRotation = FRotator::ZeroRotator;
+		if (MovementBobState == EVFXPackMovementBobState::Walking)
+		{
+			const float Alpha = FMath::Clamp(MovementBobElapsed / 0.5f, 0.f, 1.f);
+			const float Wave = FMath::Sin(UE_TWO_PI * 2.f * MovementBobElapsed) * 0.2f * Alpha;
+			BobRotation = FRotator(Wave, Wave, Wave);
+		}
+		else if (MovementBobState == EVFXPackMovementBobState::Running)
+		{
+			const float Alpha = FMath::Clamp(MovementBobElapsed / 0.1f, 0.f, 1.f);
+			BobRotation.Pitch = FMath::Sin(UE_TWO_PI * 12.f * MovementBobElapsed) * 0.75f * Alpha;
+			BobRotation.Yaw = FMath::Sin(UE_TWO_PI * 16.f * MovementBobElapsed) * 0.2f * Alpha;
+		}
 
-		const FVector MovementLocationTarget(
-			MovementSwayLocationAmplitude.X * MoveAmount,
-			MovementSwayLocationAmplitude.Y * RightAlpha,
-			MovementSwayLocationAmplitude.Z * MoveAmount);
-		const FRotator MovementRotationTarget(
-			MovementSwayRotationAmplitude.Pitch * ForwardAlpha,
-			MovementSwayRotationAmplitude.Yaw * RightAlpha,
-			MovementSwayRotationAmplitude.Roll * RightAlpha);
-		CurrentMovementSwayLocation = FMath::VInterpTo(
-			CurrentMovementSwayLocation, MovementLocationTarget, DeltaTime, MovementSwayInterpSpeed);
-		CurrentMovementSwayRotation = FMath::RInterpTo(
-			CurrentMovementSwayRotation, MovementRotationTarget, DeltaTime, MovementSwayInterpSpeed);
-
-		// 所有摆动都在 ViewmodelRoot 汇总；ArmsViewMesh 保留骨架基础校正，弹道与相机不受影响。
-		ViewmodelRoot->SetRelativeLocation(ViewmodelOffsetLocation + CurrentMovementSwayLocation);
-		ViewmodelRoot->SetRelativeRotation(ViewmodelOffsetRotation + CurrentSway + CurrentMovementSwayRotation);
+		ViewmodelRoot->SetRelativeLocation(ViewmodelOffsetLocation);
+		ViewmodelRoot->SetRelativeRotation(ViewmodelOffsetRotation + BobRotation);
 		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
 		CurrentArmsPitch = 0.f;
-	}
-
-	// Walking/Running HeadBob 只在本地、落地且实际移动时运行；状态不变时不重复启动。
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
-	{
-		TSubclassOf<UCameraShakeBase> DesiredShake;
-		const float GroundSpeed = GetVelocity().Size2D();
-		if (GetCharacterMovement()->IsMovingOnGround() && GroundSpeed > 5.f)
-		{
-			DesiredShake = (bIsSprinting || GroundSpeed > WalkSpeed + 10.f)
-				? RunningCameraShake : WalkingCameraShake;
-		}
-
-		if (DesiredShake != ActiveMovementCameraShakeClass)
-		{
-			if (ActiveMovementCameraShake && PC->PlayerCameraManager)
-			{
-				PC->PlayerCameraManager->StopCameraShake(ActiveMovementCameraShake, false);
-			}
-			ActiveMovementCameraShake = nullptr;
-			ActiveMovementCameraShakeClass = DesiredShake;
-			if (DesiredShake && PC->PlayerCameraManager)
-			{
-				ActiveMovementCameraShake = PC->PlayerCameraManager->StartCameraShake(DesiredShake);
-			}
-		}
 	}
 }
 

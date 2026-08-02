@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-02-session152",
+    "last_updated":  "2026-08-02-session153",
     "active_feature":  "FEAT-074",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -11,7 +11,7 @@
                          "description":  "采用VFXPack手臂骨架、网格和第一人称动画观感替换MaintenanceWorker视觉动画，同时保留本项目武器/GAS/弹道；复现行走/奔跑HeadBob、程序化武器摆动，并为RepairGun接入Sniper Scout同款射击Camera Shake。所有骨架适配与重定向只在FPSShooter1完成，主项目仅接收最终资产。",
                          "archive_file":  "archive/FEAT-074-vfxpack-camera-weapon-sway.md",
                          "created":  "2026-08-01",
-                         "updated":  "2026-08-02-session152",
+                         "updated":  "2026-08-02-session153",
                          "done_criteria":  [
                                                "Walking/Running Camera Shake精确迁入共享角色目录，并按落地移动状态启动、切换和停止",
                                                "现有第一人称Viewmodel视觉层恢复视角摆动并增加移动方向偏移，不改变相机权威、枪口弹道或碰撞",
@@ -21,7 +21,7 @@
                                                "现有RepairGun、装备/GAS/弹道和Linked Anim Layer架构保持有效",
                                                "Development Editor编译、蓝图/资产验证及PIE行走奔跑跳跃开火验证通过"
                                            ],
-                         "verification_evidence":  "2026-08-01-session145：FPSShooter1逐骨验证两套Skeleton均为68骨且名称/顺序/参考姿势完全一致，采用无损Skeleton合并且未创建IK资产；MaintenanceWorker全身/腿Mesh与20套body locomotion统一引用VFXPack最终Skeleton；RepairGun不再保留原生Walk，BS_WalkRun_RepairGun按VFXPack原版Speed 0/280/420/700与RateScale 0.8/0.5/1.0/1.5重建为2D 12样本。可见性回归复核定位为Grip_Point丢失和旧Viewmodel构图不适配VFX Mesh；现已改用语义目录内VFXPack原版手臂Mesh、恢复Grip_Point并校准构图，TestMap PIE确认手臂/RepairGun/移动动画可见；Temp/供应商/CodexRetargeting目录清场，四个相关蓝图编译保存、目标资产验证与Development Editor Win64成功。RepairGun左手贴握仍待主观确认或后续专属适配。"
+                         "verification_evidence":  "2026-08-01-session145：FPSShooter1逐骨验证两套Skeleton均为68骨且名称/顺序/参考姿势完全一致，采用无损Skeleton合并且未创建IK资产；MaintenanceWorker全身/腿Mesh与20套body locomotion统一引用VFXPack最终Skeleton。2026-08-02-session153：C++停用鼠标滞后、自创方向偏移和gameplay移动CameraShake，按VFXPack原参数仅驱动ViewmodelRoot；RepairGun采用实体Rifle+Outline附加壳组合；ShadowBodyMesh改跟随ArmsViewMesh，运行时spine_03/hand_r/hand_l组件空间Pose完全一致，LegsMesh继续跟随CharacterMesh0。Development Editor冷构建与FramingCapture成功。"
                      },
                      {
                          "id":  "FEAT-071",

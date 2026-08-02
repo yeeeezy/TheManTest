@@ -14,6 +14,12 @@
 
 AFirearm::AFirearm()
 {
+	StaticMeshOverlay = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshOverlay"));
+	StaticMeshOverlay->SetupAttachment(GetStaticMesh());
+	StaticMeshOverlay->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	StaticMeshOverlay->SetGenerateOverlapEvents(false);
+	StaticMeshOverlay->SetCastShadow(false);
+
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> DefaultPlayerMuzzle(
 		TEXT("/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_Muzzle.NS_RepairGun_Muzzle"));
 	if (DefaultPlayerMuzzle.Succeeded())

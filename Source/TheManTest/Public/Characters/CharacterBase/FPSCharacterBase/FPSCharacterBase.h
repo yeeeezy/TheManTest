@@ -14,7 +14,6 @@ class UTheManCharacterDataAssetBase;
 class UGameplayEffect;
 class UGameplayAbility;
 class UAbilitySystemComponent;
-class UCameraShakeBase;
 class AEquipmentBase;
 
 UCLASS()
@@ -76,31 +75,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 	float PitchMax;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponSway")
-	float SwayIntensity;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponSway")
-	float SwayInterpSpeedX;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponSway")
-	float SwayInterpSpeedY;
-
-	// 本地移动方向对第一人称 ViewmodelRoot 的附加位移；X=前进后坐、Y=横移、Z=移动下沉。
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponSway|Movement")
-	FVector MovementSwayLocationAmplitude = FVector(-1.5f, 2.f, -1.f);
-
-	// Pitch=前进倾角、Yaw/Roll=横移倾角，仅改变视觉层。
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponSway|Movement")
-	FRotator MovementSwayRotationAmplitude = FRotator(-1.f, 1.5f, -2.f);
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponSway|Movement", meta = (ClampMin = "0.1"))
-	float MovementSwayInterpSpeed = 8.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera|Movement")
-	TSubclassOf<UCameraShakeBase> WalkingCameraShake;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera|Movement")
-	TSubclassOf<UCameraShakeBase> RunningCameraShake;
+	// 复刻 VFXPack Walking/Running CameraShake 的原始参数波形，但仅作用于第一人称 ViewmodelRoot。
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|MovementBob")
+	bool bEnableVFXPackMovementBob = true;
 
 	// ArmsMesh 鍩虹鐩稿鏃嬭浆銆傛柊鍏ㄨ韩楠ㄦ灦鍙傝€冨Э鍔挎湞 +Y锛岄渶 Yaw -90掳 杞鏈?+X銆?	// 姝﹀櫒鎽囨憜姣忓抚鍙犲姞鍦ㄥ畠涔嬩笂锛堣€岄潪瑕嗙洊锛夛紝鍚﹀垯韬綋浼氳鐢╁洖 identity 姝悜渚ч潰銆?	U_PROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
@@ -187,15 +164,9 @@ private:
 
 	void PlayInitialEquipMontage();
 
-	FRotator CurrentSway;
-	FRotator CurrentMovementSwayRotation;
-	FVector CurrentMovementSwayLocation = FVector::ZeroVector;
-	FRotator LastControlRotation;
-
-	UPROPERTY(Transient)
-	TObjectPtr<UCameraShakeBase> ActiveMovementCameraShake;
-
-	TSubclassOf<UCameraShakeBase> ActiveMovementCameraShakeClass;
+	enum class EVFXPackMovementBobState : uint8 { None, Walking, Running };
+	EVFXPackMovementBobState MovementBobState = EVFXPackMovementBobState::None;
+	float MovementBobElapsed = 0.f;
 
 	float CurrentArmsPitch = 0.f;
 

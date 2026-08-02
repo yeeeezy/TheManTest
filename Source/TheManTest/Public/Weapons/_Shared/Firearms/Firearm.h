@@ -12,6 +12,7 @@ class UGameplayAbility;
 class UAbilitySystemComponent;
 class UNiagaraSystem;
 class UCameraShakeBase;
+class UStaticMeshComponent;
 
 UCLASS()
 class THEMANTEST_API AFirearm : public AWeaponBase
@@ -121,6 +122,10 @@ public:
 	FORCEINLINE float GetFireRate() const { return FireRate; }
 
 private:
+	// 可选的静态枪体叠加壳（例如 VFXPack Rifle Outline）；附着主 StaticMesh，不参与碰撞/弹道。
+	UPROPERTY(VisibleAnywhere, Category = "Weapon|Visual")
+	TObjectPtr<UStaticMeshComponent> StaticMeshOverlay;
+
 	FGameplayAbilitySpecHandle PrimaryFireHandle;
 	FGameplayAbilitySpecHandle SecondaryFireHandle;
 

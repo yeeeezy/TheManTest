@@ -368,3 +368,9 @@ Cache_Locomotion → WeaponUpperBody → Slot"UpperBody" → WeaponAimOffset →
 - 用户明确要求先忽略下半身速度、让玩家视角上半身与 VFXPack 一致；MaintenanceWorker 的 `ArmsViewMesh` 因此直接使用已整理的 `ABP_VFXPack_FirstPerson`，复用原版 Idle/Run 状态机和播放速度。
 - `CharacterMesh0`、`ShadowBodyMesh` 与 `LegsMesh` 继续保留项目主 ABP/Leader Pose 链，下半身 locomotion 不在本次调整范围内。
 - 这是 RepairGun/VFXPack 第一人称视图的明确特例；不要据此把其他角色或武器改成独立第一人称 AnimBP。
+
+## 2026-08-02 session153 — 移动反馈与投影 Pose 同源
+
+- `ABP_VFXPack_FirstPerson` 的 Idle/Run 继续负责主要武器姿态偏移；C++ 只复刻原 Walking/Running CameraShake 的频率、振幅和淡入状态，输出改写到 `ViewmodelRoot`，不启动 gameplay CameraShake。
+- 已删除此前自创的移动方向位移/旋转和鼠标旋转滞后，避免与原动画重复叠加。
+- 运行时逐骨审计确认旧 `ShadowBodyMesh` 虽正确 Leader=`CharacterMesh0`，但因此复制了与第一人称不同的身体 locomotion 上半身。现改为 Leader=`ArmsViewMesh`；`spine_03/hand_r/hand_l` 组件空间 Pose 与 VFXPack 第一人称逐项相同。`LegsMesh` 仍 Leader=`CharacterMesh0`，下半身速度体系本轮不改。

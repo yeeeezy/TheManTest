@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-02-session150
+**最后更新：** 2026-08-02-session153
 
 **当前功能：** FEAT-074 — VFXPack第一人称动画替换、HeadBob、武器摆动与RepairGun射击震屏
 
@@ -37,6 +37,13 @@
 - 第一人称 ArmsViewMesh 直接使用 `ABP_VFXPack_FirstPerson`，恢复原版上半身 Idle/Run 姿态与速度；下半身速度未调整。
 - 最终 Viewmodel 为 `Location=(-18.107912,41,-150.00795)`、`Rotation=(-3,-15,-1)`；确定性 1920×1080 截图为 `Saved/Screenshots/PlayerFramingCurrent.png`。
 - 静态枪模枪口回退已落入 `AFirearm::GetMuzzleWorldTransform()`；Development Editor / Win64 冷构建与 `TheManTest.Player.Viewmodel.FramingCapture` 均成功。
+
+## 2026-08-02 session153 交接
+
+- 已停用鼠标旋转枪械滞后、自创方向移动偏移与 gameplay 相机走跑 CameraShake；VFXPack 动画负责主要姿态，C++ 原参数波形只作用 ViewmodelRoot。
+- Rifle Outline 作为原版附加描边壳与实体枪组合使用，不再单独替代实体枪。
+- 影子上半身根因已修：ShadowBodyMesh Leader=ArmsViewMesh；运行时 spine_03/hand_r/hand_l 组件空间 Pose 完全一致。LegsMesh 仍跟随 CharacterMesh0，下半身速度未调整。
+- 冷编译和 FramingCapture 均成功；最终截图 `Saved/Screenshots/PlayerFramingCurrent.png`。
 
 ## 工作区边界
 
