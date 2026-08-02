@@ -56,3 +56,35 @@
 - VFX 原版 `GripPoint` 保留；项目原 `Rifle_A` 与 `Grip_Point` 按修改前精确骨骼/变换恢复，其中 RepairGun 再次正确附着 `Grip_Point`。
 - Viewmodel 采用 VFX Mesh 原版旋转，并针对本项目 110° 相机及 RepairGun 尺寸校准构图。TestMap PIE 截图确认手臂、RepairGun、移动 HeadBob 与移动动画均可见；相关 4 个蓝图编译保存、目标资产验证通过。
 - 已知观感项：VFX 动画原本按素材包枪型制作，RepairGun 前握把几何不同，左手尚未精确贴合 RepairGun；如需完全贴握，应在外部动画资源项目制作 RepairGun 专属最终动画或另行确认程序化左手 IK。
+
+## 2026-08-01 session146 T-Pose 根因修正
+
+- 用户前台截图确认主项目第一人称手臂实际为完整 T-Pose；session145 关于“移动动画可见”的结论撤销，不能作为验收证据。
+- PIE 隔离验证：同一 `SKM_VFXPack_FirstPersonArms` 直接播放 `AS_Rifle_A_Idle` 能正常弯臂；将 ArmsViewMesh 从 `ABP_MaintenanceWorker + RepairGun Linked Anim Layer` 临时切换为 VFXPack 原版 `FirstPerson_AnimBP` 后也立即脱离 T-Pose。根因确定为旧主 ABP/Linked Layer 最终输出，而非 Mesh、Skeleton、播放速度或 Viewmodel Offset。
+- 将原版 AnimBP 整理为 `/Game/Characters/MaintenanceWorker/Animations/VFXPackFirstPerson/ABP_VFXPack_FirstPerson`，删除其示例工程专属 `FirstPersonCharacter` 侧倾/ADS/后坐力分支，仅保留 Pawn Velocity、Falling 和原版 Idle/Run/Jump 状态机；Idle、Run 与现有最终 Jump/Still/BlendSpace 资产统一引用项目语义目录及统一 Skeleton。
+- `BP_MaintenanceWorker.ArmsViewMesh` 已持久化改用 `ABP_VFXPack_FirstPerson_C`；身体/腿仍保留 `ABP_MaintenanceWorker`，RepairGun/GAS/弹道未替换。
+- 冷启动 PIE 证据：Idle 时 ArmsViewMesh 脱离 T-Pose；持续 420 cm/s 速度驱动时 `Is_Moving=True` 且进入移动状态。截图：`Saved/Screenshots/WindowsEditor/TMT_PersistedVFXAnimBP_Idle.png`、`TMT_PersistedVFXAnimBP_Run.png`。
+- 迁移产生的供应商目录在删除前为 43 个剩余资产、0 个外部引用，已通过 Unreal 删除；正式 AnimBP 与角色蓝图资产验证通过。删除时引擎产生一次 `CurObject` handled ensure，编辑器仍响应，需在最终冷重启验证中继续检查日志。
+
+## 2026-08-01 session147 构图与影子回归
+
+- 用户指出 session146 虽解除 T-Pose，但第一人称模型仍离相机过远，且影子仍为 T-Pose；继续处理而非按“已知问题”停止。
+- 原错误 `ViewmodelOffsetLocation=(302.4,100,-210)` 经端点测试确认 X 将模型推得过远；`X=80` 会贴脸过大。以原 VFXPack 拾枪截图为构图参考，最终收敛为 `(100,75,-200)`，使 RepairGun/手臂占据右下区域。由于本项目保留 RepairGun 而非素材包长步枪，几何轮廓和占屏宽度不会完全相同。
+- PIE Idle/Run 截图：`Saved/Screenshots/WindowsEditor/TMT_VFXAligned_Idle.png`、`TMT_VFXAligned_Run.png`。420 cm/s 驱动时第一人称 AnimBP `Is_Moving=True`。
+- 影子复核已恢复非 T-Pose 持枪姿势；运行时链为 CharacterMesh0=`ABP_MaintenanceWorker`，ShadowBodyMesh/LegsMesh 的 LeaderPose 均为 CharacterMesh0，ArmsViewMesh 独立使用 `ABP_VFXPack_FirstPerson`。
+
+## 2026-08-01 session148 身体 T-Pose 最终修复
+
+- 用户最新截图证明 session147 的影子判断仍错误；骨骼连续采样确认 CharacterMesh0 双臂旋转固定为 Skeleton 参考姿势，而 ArmsViewMesh 的双手在 300ms 内持续变化，第一人称 Idle 实际有播放。
+- 隔离结果：解除 RepairGun Linked Layer、强制 `WeaponTransitionAlpha=0` 均无法解除身体 T-Pose；同 Mesh 直接播放 `RTG_MM_Idle` 立即正常，排除 Mesh、Skeleton 和动画序列。
+- 根因定位为 `TABP_BodyLocomotion` 的 WeaponUpperBody Linked Layer 支路：`UpperBodyInPose` 原本无输入，且该层稳定输出参考姿势并以权重 1 覆盖 spine_01 以上。补接基础 Pose 后只在过渡期短暂正常，移动后仍回 T-Pose。
+- 最终让第三人称身体从故障 WeaponUpperBody/AimOffset 支路旁路，`DefaultSlot.Pose` 直接进入 `UpperBodySlot.Source`；第一人称 RepairGun 继续由独立 `ABP_VFXPack_FirstPerson` 驱动。
+- 冷启动后 Idle 与 420 cm/s Run 均验证：CharacterMesh0 hand_r 不再等于参考姿势，ArmsViewMesh `Is_Moving=True` 且双手跨帧变化。截图：`TMT_ShadowPoseFixed_Idle.png`、`TMT_ShadowPoseFixed_Run.png`。
+## 2026-08-01 session149 — 统一主 ABP 与持枪姿势最终修复
+
+- session146~148 中“第一人称独立 VFX AnimBP、身体绕过武器层”的方案已撤销；它违背项目既有架构，不能作为最终实现。
+- `CharacterMesh0` 与 `ArmsViewMesh` 现均使用 `ABP_MaintenanceWorker`；`ShadowBodyMesh` 与 `LegsMesh` 继续通过 Leader Pose 跟随 `CharacterMesh0`。RepairGun 在身体和第一人称两边均链接同一个 `ABP_RepairGun_AnimLayer`。
+- `TABP_Firearm_UpperBodyBase` 的 Idle 节点已指定 `AS_Rifle_A_Idle`；`TABP_BodyLocomotion` 已恢复 `DefaultSlot.Pose -> Layered Blend Per Bone.BasePose` 基础姿势链。
+- 2D/1D BlendSpace Player 在当前模板继承链的 PIE 运行时持续返回参考姿势，尽管样本、Skeleton、Speed 输入及 Linked Layer 实例均有效。WalkRun 状态最终改为直接播放已验证有效的 `AS_Rifle_A_Run`，PlayRate=0.5；状态切换仍由武器层 Speed 驱动。
+- PIE 真输入验证：移动时主 AnimInstance 与 RepairGun Linked Layer 在 `CharacterMesh0` / `ArmsViewMesh` 两边 Speed 均为 100；两边手骨输出有效 Run Pose，影子通过 Leader Pose 同步。Idle 时 `CharacterMesh0`、`ArmsViewMesh`、`ShadowBodyMesh` 的 hand_r 组件空间 Pose 完全一致。
+- 证据截图：`TMT_UnifiedABP_Idle_Final.png`、`TMT_UnifiedABP_RunSequence.png`。五个相关 Blueprint 均已编译保存。

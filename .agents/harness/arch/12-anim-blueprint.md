@@ -184,6 +184,8 @@ ABP_BodyLocomotion:
 
 ## TABP_Firearm_UpperBodyBase（武器层模板）AimIK 目标流程
 
+> **FEAT-074 session148 临时边界：** `TABP_BodyLocomotion` 的第三人称身体输出已旁路 `WeaponUpperBody/AimOffset` 支路，改由 `DefaultSlot.Pose` 直接进入 `UpperBodySlot.Source`。原因是现有 RepairGun Linked Layer 在稳定状态返回参考姿势并覆盖 spine_01 以上，造成 CharacterMesh0/影子 T-Pose。第一人称 ArmsViewMesh 已独立使用 `ABP_VFXPack_FirstPerson`。在武器层能够保证有效 Pose 输出前，不得重新把该支路接回身体最终输出。
+
 ```
 WeaponAimInPose（输入 Pose）
          │  LocalToComponentSpace
@@ -354,3 +356,9 @@ Cache_Locomotion → WeaponUpperBody → Slot"UpperBody" → WeaponAimOffset →
 | `bIsFalling` | `bool` | 是否在空中 |
 | `AimPitch` | `float` | 瞄准俯仰角，归一化到 [-1, 1] |
 | `Direction` | `float` | 移动方向角 [-180, 180] |
+## 2026-08-01 session149 — 玩家统一 AnimBP 修正
+
+- MaintenanceWorker 的 `CharacterMesh0` 与 `ArmsViewMesh` 必须统一使用 `ABP_MaintenanceWorker`；不得再为第一人称直接挂独立 VFX AnimBP。
+- `ShadowBodyMesh` / `LegsMesh` 是 `CharacterMesh0` 的 Leader Pose 跟随者；影子姿势以主身体最终 Pose 为准。
+- RepairGun 的 `ABP_RepairGun_AnimLayer` 同时链接到 `CharacterMesh0` 和 `ArmsViewMesh`。基础链为 `DefaultSlot -> Layered Blend Per Bone.BasePose`，武器层只覆盖配置的上半身分支，再进入 WeaponAimOffset/Slots。
+- 当前 WalkRun 状态直接播放 `AS_Rifle_A_Run`（0.5×）；这是因为已验证 BlendSpace Player 在该模板继承链运行时返回参考姿势。不要重新接回旧 BlendSpace，除非先在 PIE 同时证明身体、第一人称和影子均输出非参考 Pose。
