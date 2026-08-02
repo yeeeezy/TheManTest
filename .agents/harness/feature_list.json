@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-02-session153",
+    "last_updated":  "2026-08-02-session156",
     "active_feature":  "FEAT-074",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -11,7 +11,7 @@
                          "description":  "采用VFXPack手臂骨架、网格和第一人称动画观感替换MaintenanceWorker视觉动画，同时保留本项目武器/GAS/弹道；复现行走/奔跑HeadBob、程序化武器摆动，并为RepairGun接入Sniper Scout同款射击Camera Shake。所有骨架适配与重定向只在FPSShooter1完成，主项目仅接收最终资产。",
                          "archive_file":  "archive/FEAT-074-vfxpack-camera-weapon-sway.md",
                          "created":  "2026-08-01",
-                         "updated":  "2026-08-02-session153",
+                         "updated":  "2026-08-02-session156",
                          "done_criteria":  [
                                                "Walking/Running Camera Shake精确迁入共享角色目录，并按落地移动状态启动、切换和停止",
                                                "现有第一人称Viewmodel视觉层恢复视角摆动并增加移动方向偏移，不改变相机权威、枪口弹道或碰撞",

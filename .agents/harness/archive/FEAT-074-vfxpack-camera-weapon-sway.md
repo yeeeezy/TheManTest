@@ -121,3 +121,29 @@
 - 迁入 `SM_Weapon_Ballistics_Rifle_01_Outline`，归档为 `SM_RepairGun_Rifle_Outline`。审计确认它是描边壳而非实体枪，因此按原版组合：实体 `SM_RepairGun_Rifle` + 无碰撞/无投影 `StaticMeshOverlay` 描边壳。
 - 动画框架运行时逐骨审计定位影子朝向根因：Shadow 原先忠实复制 CharacterMesh0，但后者不是 VFXPack 第一人称持枪 Pose。Shadow Leader 改为 ArmsViewMesh 后，spine_03/hand_r/hand_l 组件空间 Pose 精确一致；LegsMesh 仍跟随 CharacterMesh0。
 - Development Editor / Win64 冷构建成功；冷启动 `TheManTest.Player.Viewmodel.FramingCapture` 成功，最终截图仍为 `Saved/Screenshots/PlayerFramingCurrent.png`。
+
+## 2026-08-02 session154：按 VFXPack 原版逻辑重做移动动画与 HeadBob
+
+- 撤销 session153 的自创 Viewmodel 正弦波方案；移动反馈直接使用已迁入的原版 `CS_Player_HeadBob_Walk` / `CS_Player_HeadBob_Run` CameraShake 资产。调用条件、频率与原蓝图一致：真实速度 `Size > 0` 时每帧 Start（依赖资产 Single Instance），Walk Scale=0.5、Run Scale=1.0、CameraLocal；退出状态立即 Stop。
+- 撤销 session153 的错误影子结论：`ShadowBodyMesh` 与 `LegsMesh` 都必须跟随 `CharacterMesh0`，绝不能让全身影子跟随第一人称 `ArmsViewMesh`。该错误正是用户最新截图中身体/手臂错位的根因。
+- `ABP_VFXPack_FirstPerson` 原状态机和 BlendSpace 保留；C++ 仅复刻原蓝图变量更新：`Is_Moving=Velocity.Size()>0`、`Is_InAir=IsFalling()`、`Character_Speed=Velocity.Size()`。
+- MaintenanceWorker 运行时固定使用原示例参数：Walk=550、Sprint=750、MaxAcceleration=2000、BrakingDecelerationWalking=750，修复 BP 旧序列化 100/300 导致走路接近 Idle、看似不播放动画的问题。
+- 鼠标左右旋转枪械滞后和自创方向移动偏移保持停用；RepairGun 使用 Rifle 实体网格叠加 Outline 壳。
+- 冷构建成功；冷启动构图自动化第 3 次运行 Success。真实 W 输入验证 Idle→550 cm/s Run→Idle，AnimBP 的 `Is_Moving/Character_Speed` 正确切换且 `hand_r` 跨帧 Pose 持续变化；长按 2 秒与 5 秒采样均确认循环动画持续播放。运行时 Shadow leader 为 `CharacterMesh0`。动态截图：`Saved/Screenshots/WindowsEditor/TMT_ExactVFX_Walk.png`。
+
+## 2026-08-02 session155：原版资产链替换与冷启动复核
+
+- 撤销“精简重建 AnimBP 等同原版”的错误结论；从指定 VFXPack 原项目直接迁入原版 `FirstPerson_AnimBP`、全部状态机动画、`SK_Mannequin_Arms`、Skeleton、PhysicsAsset 与手臂材质。
+- 原版 EventGraph 对示例 `FirstPersonCharacter` 的硬 Cast 会递归带入示例武器、HUD、Widget 和无关 VFX；保留原版 AnimGraph、状态机、Transition 与动画序列，删除该 EventGraph，由现有 C++ 每帧写入完全同名的 `Is_Moving`、`Is_InAir`、`Character_Speed`。
+- 13 个最终资产通过 AssetTools 整理至 `/Game/Characters/MaintenanceWorker/FirstPerson/`；供应商目录已删除。删除过程出现 `CurObject != nullptr` handled ensure，但随后冷重启确认全部最终资产、角色 BP 与 RepairGun BP 可加载和编译，供应商目录不存在。
+- RepairGun 插槽由错误的 `Grip_Point` 改为原版精确名称 `GripPoint`，并编译蓝图使 GeneratedClass/CDO 真正刷新；自动化新增 Mesh Socket、装备声明和运行时实际挂载三重断言。
+- 冷启动运行时移动复核：速度 `550.0`、AnimClass=`ABP_MaintenanceWorker_FirstPerson_Original_C`、`Is_Moving=True`、`Is_InAir=False`、`Character_Speed=550.0`，`GripPoint` 存在；截图 `Saved/Screenshots/WindowsEditor/TMT_OriginalAnimBP_Walk_Cold.png`，活动相机 FOV=77。
+- Development Editor / Win64 冷构建成功；冷启动 `TheManTest.Player.Viewmodel.FramingCapture` 通过（1/1 Success）。确定性截图更新为 `Saved/Screenshots/PlayerFramingCurrent.png`。
+
+## 2026-08-02 session156：统一第一/第三人称动画源与原版侧移 Lean
+
+- 用户截图 `屏幕截图 2026-08-02 123929.png` 证明影子上半身仍与第一人称分叉。恢复项目原本的同源架构：`CharacterMesh0` 与 `ArmsViewMesh` 均使用 `ABP_MaintenanceWorker_FirstPerson_Original_C`；`ShadowBodyMesh`、`LegsMesh` 继续 Leader=`CharacterMesh0`。
+- 审计原 VFXPack 后确认 `Walk_Run_1D` 是一维速度 BlendSpace，不包含左右方向轴。原版左右姿态来自角色 `Body_Sway`：MoveRight Clamp 到 `[-1,1]`，步行以 2、冲刺以 8 插值，再写入 AnimBP 的 `Lean_Sides_Amount`；前后输入同样写入 `Look_Up_Down_Amount`。按用户此前要求，未恢复 MouseX 枪械滞后。
+- C++ 现在向第一/第三人称两个原版 AnimInstance 同步写入 `Is_Moving`、`Is_InAir`、`Character_Speed`、`Lean_Sides_Amount`、`Look_Up_Down_Amount`。
+- PIE 右移实测 Lean=`+0.9782058`，左移=`-0.9782051`；两侧速度均 550。两个 Mesh 的 AnimClass 相同，`hand_r` 组件空间旋转/位移逐项一致（仅浮点百万分位误差）；Shadow Leader 冷回读为 `CharacterMesh0`。
+- 证据截图：`Saved/Screenshots/WindowsEditor/TMT_VFXPack_StrafeRight.png`、`TMT_VFXPack_StrafeLeft.png`。Development Editor / Win64 冷构建成功；FramingCapture 1/1 Success；三个相关蓝图编译并保存，全部 Dirty Package 已保存。

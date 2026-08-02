@@ -3,6 +3,8 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "Camera/PlayerCameraManager.h"
+#include "Camera/CameraShakeBase.h"
 #include "EnhancedInputComponent.h"
 #include "Weapons/_Shared/Components/EquipmentManagerComponent.h"
 #include "Characters/_Shared/Components/ScanEffectComponent.h"
@@ -21,17 +23,45 @@
 #include "Core/TheManGameInstance.h"
 #include "Characters/CharacterBase/TheManAttributeSetBase.h"
 #include "GameFramework/GameModeBase.h"
+#include "UObject/UnrealType.h"
+
+namespace
+{
+void SetAnimBool(UAnimInstance* AnimInstance, const FName PropertyName, const bool bValue)
+{
+	if (AnimInstance)
+	{
+		if (FBoolProperty* Property = FindFProperty<FBoolProperty>(AnimInstance->GetClass(), PropertyName))
+		{
+			Property->SetPropertyValue_InContainer(AnimInstance, bValue);
+		}
+	}
+}
+
+void SetAnimNumber(UAnimInstance* AnimInstance, const FName PropertyName, const double Value)
+{
+	if (AnimInstance)
+	{
+		if (FNumericProperty* Property = FindFProperty<FNumericProperty>(AnimInstance->GetClass(), PropertyName);
+			Property && Property->IsFloatingPoint())
+		{
+			Property->SetFloatingPointPropertyValue(Property->ContainerPtrToValuePtr<void>(AnimInstance), Value);
+		}
+	}
+}
+}
 
 AFPSCharacterBase::AFPSCharacterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
 	LookSensitivity = 1.0f;
-	WalkSpeed       = 250.0f;   // 基础（走）：匹配 Walk_Loop 动画速度
-	SprintSpeed     = 550.0f;   // 按住 Shift（跑）：匹配 Jog_Loop 动画速度
+	WalkSpeed       = 550.0f;   // VFXPack FirstPersonCharacter.Speed_Walking
+	SprintSpeed     = 750.0f;   // VFXPack FirstPersonCharacter.Speed_Sprinting
 	PitchMin        = -75.0f;
 	PitchMax        = 40.0f;
-	BaseArmsRotation     = FRotator(0.f, -90.f, 0.f);   // 新全身骨架转正：朝 +Y → 朝 +X
+	// VFXPack FirstPersonCharacter.SK_ArmMesh exact relative rotation.
+	BaseArmsRotation = FRotator(-3.f, -15.f, -1.f);
 
 	// FEAT-038 修正：身体不再物理俯仰。相机从 head 骨骼摘下挂 capsule 固定眼高，
 	// 看上下交给控制器旋转（相机 bUsePawnControlRotation）+ 后续 FEAT-039 上半身 AimOffset。
@@ -61,7 +91,7 @@ AFPSCharacterBase::AFPSCharacterBase()
 	HeadCamera->SetupAttachment(RootComponent);
 	HeadCamera->SetRelativeLocation(FVector(0.f, 0.f, 77.f));
 	HeadCamera->SetRelativeRotation(FRotator::ZeroRotator);
-	HeadCamera->SetFieldOfView(110.0f);
+	HeadCamera->SetFieldOfView(77.0f);
 	HeadCamera->bUsePawnControlRotation = true;
 
 	// FEAT-042：第一人称 viewmodel 根挂在相机下。相机是 gameplay 权威，手臂作为子级天然跟随相机旋转；
@@ -166,10 +196,10 @@ void AFPSCharacterBase::BeginPlay()
 	EnsureViewmodelAttachment();
 	ApplyViewmodelFraming();
 	// Character Blueprints may retain an older serialized camera value. Keep the
-	// shared first-person gameplay FOV authoritative across every player class.
+	// VFXPack FirstPersonCharacter.FPS_Camera exact FOV.
 	if (HeadCamera)
 	{
-		HeadCamera->SetFieldOfView(110.0f);
+		HeadCamera->SetFieldOfView(77.0f);
 	}
 
 	if (GetCharacterMovement())
@@ -189,10 +219,7 @@ void AFPSCharacterBase::BeginPlay()
 	}
 
 	// FEAT-038：影子/腿共用 GetMesh() 的姿势（Leader/Follower），动画只在 GetMesh() 评估一次。
-	// FEAT-074：第一人称已使用 VFXPack 原版完整骨架 Pose。投影身体必须与该持枪上半身同源，
-	// 否则 CharacterMesh0 的项目 locomotion 会让影子双臂朝向与屏幕内武器明显不一致。
-	// 只把投影身体切到 ArmsViewMesh；玩家可见腿仍继续跟随 CharacterMesh0，暂不改变下半身速度体系。
-	if (ShadowBodyMesh) { ShadowBodyMesh->SetLeaderPoseComponent(ArmsViewMesh); }
+	if (ShadowBodyMesh) { ShadowBodyMesh->SetLeaderPoseComponent(GetMesh()); }
 	if (LegsMesh)       { LegsMesh->SetLeaderPoseComponent(GetMesh()); }
 	// FEAT-038/042：渲染分离——FP 手臂藏非手臂段（作用到 ArmsViewMesh）、腿藏躯干以上段（只改渲染不碰姿势）。
 	// 物理拆好的 Arms/Legs mesh 本身已只含对应几何时，对应数组留空即可。
@@ -433,46 +460,73 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		RecoilYawVelocity   = FMath::FInterpTo(RecoilYawVelocity,   0.f, DeltaTime, RecoilDamping);
 	}
 
-	// VFXPack 的 Walk/Run 动画负责主要持枪姿态；原 Walking/Running CameraShake
-	// 只补充轻微周期旋转。这里复刻其状态和参数，但把输出隔离在 ViewmodelRoot。
+	// VFXPack 的 Walk_Run_1D 只有速度轴。左右移动时的姿态偏移来自原角色
+	// Body_Sway：MoveRight 经 Clamp(-1,1)，再以 Walk=2 / Sprint=8 的速度插值，
+	// 最终写入 AnimBP 的 Lean_Sides_Amount。这里保留该原逻辑，但按用户要求不叠加 MouseX。
 	if (ArmsViewMesh && ViewmodelRoot)
 	{
-		EVFXPackMovementBobState DesiredState = EVFXPackMovementBobState::None;
-		const float GroundSpeed = GetVelocity().Size2D();
-		if (bEnableVFXPackMovementBob && GetCharacterMovement()->IsMovingOnGround() && GroundSpeed > 5.f)
-		{
-			DesiredState = (bIsSprinting || GroundSpeed > WalkSpeed + 10.f)
-				? EVFXPackMovementBobState::Running : EVFXPackMovementBobState::Walking;
-		}
+		// VFXPack FirstPerson_AnimBP 原 Event Blueprint Update Animation 的等价逻辑。
+		// 直接写原变量，保留其原 StateMachine / BlendSpace 资产，不另造动画状态机。
+		const FVector AnimationVelocity = GetVelocity();
+		const double CharacterSpeed = AnimationVelocity.Size();
+		const float MaxMoveSpeed = FMath::Max(GetCharacterMovement()->MaxWalkSpeed, 1.f);
+		const FVector LocalVelocity = GetActorTransform().InverseTransformVectorNoScale(AnimationVelocity);
+		const float SideInput = FMath::Clamp(LocalVelocity.Y / MaxMoveSpeed, -1.f, 1.f);
+		const float ForwardInput = FMath::Clamp(LocalVelocity.X / MaxMoveSpeed, -1.f, 1.f);
+		const float BodySwayInterpSpeed = bIsSprinting ? 8.f : 2.f;
+		CurrentVFXLeanSides = FMath::FInterpTo(CurrentVFXLeanSides, SideInput, DeltaTime, BodySwayInterpSpeed);
+		CurrentVFXLookUpDown = FMath::FInterpTo(CurrentVFXLookUpDown, -ForwardInput, DeltaTime, BodySwayInterpSpeed);
 
-		if (DesiredState != MovementBobState)
+		auto UpdateVFXPackAnimInstance = [this, CharacterSpeed](UAnimInstance* AnimInstance)
 		{
-			MovementBobState = DesiredState;
-			MovementBobElapsed = 0.f;
-		}
-		else if (MovementBobState != EVFXPackMovementBobState::None)
-		{
-			MovementBobElapsed += DeltaTime;
-		}
+			SetAnimBool(AnimInstance, TEXT("Is_Moving"), CharacterSpeed > 0.0);
+			SetAnimBool(AnimInstance, TEXT("Is_InAir"), GetCharacterMovement()->IsFalling());
+			SetAnimNumber(AnimInstance, TEXT("Character_Speed"), CharacterSpeed);
+			SetAnimNumber(AnimInstance, TEXT("Lean_Sides_Amount"), CurrentVFXLeanSides);
+			SetAnimNumber(AnimInstance, TEXT("Look_Up_Down_Amount"), CurrentVFXLookUpDown);
+		};
 
-		FRotator BobRotation = FRotator::ZeroRotator;
-		if (MovementBobState == EVFXPackMovementBobState::Walking)
-		{
-			const float Alpha = FMath::Clamp(MovementBobElapsed / 0.5f, 0.f, 1.f);
-			const float Wave = FMath::Sin(UE_TWO_PI * 2.f * MovementBobElapsed) * 0.2f * Alpha;
-			BobRotation = FRotator(Wave, Wave, Wave);
-		}
-		else if (MovementBobState == EVFXPackMovementBobState::Running)
-		{
-			const float Alpha = FMath::Clamp(MovementBobElapsed / 0.1f, 0.f, 1.f);
-			BobRotation.Pitch = FMath::Sin(UE_TWO_PI * 12.f * MovementBobElapsed) * 0.75f * Alpha;
-			BobRotation.Yaw = FMath::Sin(UE_TWO_PI * 16.f * MovementBobElapsed) * 0.2f * Alpha;
-		}
+		// 恢复项目原有的第一/第三人称同一动画源：两个 Mesh 使用同一个 VFXPack
+		// AnimBP 类并接收同一组驱动值；ShadowBodyMesh 继续 Leader=CharacterMesh0。
+		UpdateVFXPackAnimInstance(ArmsViewMesh->GetAnimInstance());
+		UpdateVFXPackAnimInstance(GetMesh() ? GetMesh()->GetAnimInstance() : nullptr);
 
 		ViewmodelRoot->SetRelativeLocation(ViewmodelOffsetLocation);
-		ViewmodelRoot->SetRelativeRotation(ViewmodelOffsetRotation + BobRotation);
+		ViewmodelRoot->SetRelativeRotation(ViewmodelOffsetRotation);
 		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
 		CurrentArmsPitch = 0.f;
+	}
+
+	// VFXPack 原蓝图：CharacterMovement.Velocity.Size() > 0 判定移动；走路 Shake Scale=0.5，
+	// 冲刺 Shake Scale=1.0；状态退出时 StopCameraShake(bImmediately=true)。
+	if (APlayerController* PC = Cast<APlayerController>(GetController()); PC && PC->PlayerCameraManager)
+	{
+		TSubclassOf<UCameraShakeBase> DesiredShake;
+		float DesiredScale = 1.f;
+		const bool bIsMoving = GetCharacterMovement()->Velocity.Size() > 0.f;
+		if (bIsMoving && GetCharacterMovement()->IsMovingOnGround())
+		{
+			DesiredShake = bIsSprinting ? RunningCameraShake : WalkingCameraShake;
+			DesiredScale = bIsSprinting ? 1.f : 0.5f;
+		}
+
+		if (DesiredShake)
+		{
+			if (ActiveMovementCameraShake && DesiredShake != ActiveMovementCameraShakeClass)
+			{
+				PC->PlayerCameraManager->StopCameraShake(ActiveMovementCameraShake, true);
+			}
+			ActiveMovementCameraShakeClass = DesiredShake;
+			// 原蓝图在移动检查链中每帧调用 StartCameraShake；资产启用 Single Instance，
+			// 因而返回/刷新同一实例，而不是不断堆叠新 Shake。
+			ActiveMovementCameraShake = PC->PlayerCameraManager->StartCameraShake(DesiredShake, DesiredScale);
+		}
+		else if (ActiveMovementCameraShake)
+		{
+			PC->PlayerCameraManager->StopCameraShake(ActiveMovementCameraShake, true);
+			ActiveMovementCameraShake = nullptr;
+			ActiveMovementCameraShakeClass = nullptr;
+		}
 	}
 }
 

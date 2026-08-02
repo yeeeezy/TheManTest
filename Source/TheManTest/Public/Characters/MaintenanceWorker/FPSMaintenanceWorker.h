@@ -8,4 +8,7 @@ UCLASS()
 class THEMANTEST_API AFPSMaintenanceWorker : public AFPSCharacterBase
 {
 	GENERATED_BODY()
+
+protected:
+	virtual void BeginPlay() override;
 };

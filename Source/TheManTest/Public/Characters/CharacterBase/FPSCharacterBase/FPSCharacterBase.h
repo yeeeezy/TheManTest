@@ -15,6 +15,7 @@ class UGameplayEffect;
 class UGameplayAbility;
 class UAbilitySystemComponent;
 class AEquipmentBase;
+class UCameraShakeBase;
 
 UCLASS()
 class THEMANTEST_API AFPSCharacterBase : public ACharacter, public IAbilitySystemInterface
@@ -75,9 +76,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 	float PitchMax;
 
-	// 复刻 VFXPack Walking/Running CameraShake 的原始参数波形，但仅作用于第一人称 ViewmodelRoot。
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|MovementBob")
-	bool bEnableVFXPackMovementBob = true;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera|Movement")
+	TSubclassOf<UCameraShakeBase> WalkingCameraShake;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera|Movement")
+	TSubclassOf<UCameraShakeBase> RunningCameraShake;
 
 	// ArmsMesh 鍩虹鐩稿鏃嬭浆銆傛柊鍏ㄨ韩楠ㄦ灦鍙傝€冨Э鍔挎湞 +Y锛岄渶 Yaw -90掳 杞鏈?+X銆?	// 姝﹀櫒鎽囨憜姣忓抚鍙犲姞鍦ㄥ畠涔嬩笂锛堣€岄潪瑕嗙洊锛夛紝鍚﹀垯韬綋浼氳鐢╁洖 identity 姝悜渚ч潰銆?	U_PROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
@@ -96,10 +99,10 @@ public:
 
 	// 第一人称最终构图只作用于相机子级 ViewmodelRoot，不改变 gameplay 相机或骨架基础校正。
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Framing")
-	FVector ViewmodelOffsetLocation = FVector(-25.f, -4.f, 3.f);
+	FVector ViewmodelOffsetLocation = FVector(-18.107912f, 18.852108f, -150.007950f);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Framing")
-	FRotator ViewmodelOffsetRotation = FRotator(0.f, -13.f, 0.f);
+	FRotator ViewmodelOffsetRotation = FRotator::ZeroRotator;
 
 protected:
 	virtual void BeginPlay() override;
@@ -164,11 +167,14 @@ private:
 
 	void PlayInitialEquipMontage();
 
-	enum class EVFXPackMovementBobState : uint8 { None, Walking, Running };
-	EVFXPackMovementBobState MovementBobState = EVFXPackMovementBobState::None;
-	float MovementBobElapsed = 0.f;
+	UPROPERTY(Transient)
+	TObjectPtr<UCameraShakeBase> ActiveMovementCameraShake;
+
+	TSubclassOf<UCameraShakeBase> ActiveMovementCameraShakeClass;
 
 	float CurrentArmsPitch = 0.f;
+	float CurrentVFXLeanSides = 0.f;
+	float CurrentVFXLookUpDown = 0.f;
 
 	float RecoilPitchVelocity = 0.f;
 	float RecoilYawVelocity   = 0.f;

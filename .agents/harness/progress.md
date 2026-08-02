@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-02-session153
+**最后更新：** 2026-08-02-session156
 
 **当前功能：** FEAT-074 — VFXPack第一人称动画替换、HeadBob、武器摆动与RepairGun射击震屏
 
@@ -46,6 +46,29 @@
 - 冷编译和 FramingCapture 均成功；最终截图 `Saved/Screenshots/PlayerFramingCurrent.png`。
 
 ## 工作区边界
+
+## 2026-08-02 session154 交接
+
+- session153 的自创 Viewmodel 波形与 `ShadowBodyMesh=ArmsViewMesh` 结论均已撤销；影子和腿恢复跟随 `CharacterMesh0`，修复第一人称视野中全身错位及影子上半身朝向异常。
+- 移动反馈直接复用 VFXPack 原版 Walking/Running CameraShake 资产与原蓝图调用语义；C++ 只代替原蓝图内部状态更新，不强行替代资产。
+- `ABP_VFXPack_FirstPerson` 由真实 Velocity 驱动 `Is_Moving/Is_InAir/Character_Speed`；MaintenanceWorker 运行值为 Walk 550、Sprint 750、Acceleration 2000、Braking 750。
+- 真实 W 输入已重复验证 Idle→Run→Idle，长按期间手骨 Pose 持续变化；冷构建、`git diff --check`、UTF-8 JSON 解析与 FramingCapture 第 3 次运行均成功。
+- 动态验证截图：`Saved/Screenshots/WindowsEditor/TMT_ExactVFX_Walk.png`。仍需用户在自己的前台游戏窗口按参考图主观确认运动节奏与最终画面对齐。
+
+## 2026-08-02 session155 交接
+
+- 第一人称现已直接运行原 VFXPack `FirstPerson_AnimBP` 的完整 AnimGraph/状态机与原动画资产，不再使用此前重建版；仅删除会拖入整套示例工程的 EventGraph Cast，三个驱动变量由 C++ 等价写入。
+- 原版手臂 Mesh/Skeleton/Physics/材质和动画共 13 个最终资产已整理到 `/Game/Characters/MaintenanceWorker/FirstPerson/`，供应商目录冷重启后确认不存在。
+- 原版武器插槽精确名称已修正为 `GripPoint`，自动化直接检查 Socket 存在、装备声明和实际挂载三项。
+- 冷构建及冷启动 FramingCapture 1/1 成功；真实移动时原版 AnimClass、550 速度与三个状态变量已回读。最新动态截图：`Saved/Screenshots/WindowsEditor/TMT_OriginalAnimBP_Walk_Cold.png`。
+
+## 2026-08-02 session156 交接
+
+- `CharacterMesh0` 与 `ArmsViewMesh` 已恢复使用同一个原版 VFXPack AnimBP；Shadow/Legs 继续跟随 CharacterMesh0，修复影子上半身与第一人称姿态分叉。
+- 原版 `Walk_Run_1D` 确认为 1D 速度轴；左右偏移不是 BlendSpace Direction 轴，而是 `Body_Sway -> Lean_Sides_Amount`。已按原参数恢复：侧移 Clamp `[-1,1]`，Walk 插值 2、Sprint 插值 8；不恢复 MouseX 枪械滞后。
+- PIE A/D 实测 Lean 分别为 `+0.9782/-0.9782`，两个 AnimInstance 的 AnimClass、速度和 hand_r Pose 一致；Shadow Leader=`CharacterMesh0`。
+- 冷构建、FramingCapture 1/1、蓝图编译和全部资产保存完成。截图：`TMT_VFXPack_StrafeRight.png`、`TMT_VFXPack_StrafeLeft.png`。
+
 
 - FEAT-073 安全检查点：`34fbfaf`。
 - 本轮修改 MaintenanceWorker 最终 Skeleton/身体动画、RepairGun 第一人称 locomotion、既有 Camera/Viewmodel/开火反馈与 Harness；不包含 IK Rig/Retargeter 或供应商工作目录。

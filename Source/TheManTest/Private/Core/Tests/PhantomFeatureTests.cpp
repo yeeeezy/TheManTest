@@ -784,7 +784,7 @@ bool FPlayerFramingScreenshotCommand::Update()
 	USceneCaptureComponent2D* Capture = NewObject<USceneCaptureComponent2D>(Player);
 	Capture->RegisterComponentWithWorld(World);
 	Capture->AttachToComponent(Player->GetHeadCamera(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-	Capture->FOVAngle = 110.f;
+	Capture->FOVAngle = 77.f;
 	Capture->CaptureSource = SCS_FinalColorLDR;
 	Capture->TextureTarget = RenderTarget;
 	Capture->bCaptureEveryFrame = false;
@@ -810,22 +810,38 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 	AFPSCharacterBase* Player = PC ? Cast<AFPSCharacterBase>(PC->GetPawn()) : nullptr;
 	if (!Player || !Player->GetHeadCamera() || !Player->GetViewmodelRoot() || !Player->GetArmsMesh()) return false;
 
-	Test->TestTrue(TEXT("Gameplay camera remains 110 degree FOV"),
-		FMath::IsNearlyEqual(Player->GetHeadCamera()->FieldOfView, 110.f));
+	Test->TestTrue(TEXT("Gameplay camera matches VFXPack 77 degree FOV"),
+		FMath::IsNearlyEqual(Player->GetHeadCamera()->FieldOfView, 77.f));
 	Test->TestEqual(TEXT("ViewmodelRoot is attached directly to HeadCamera"),
 		Player->GetViewmodelRoot()->GetAttachParent(), static_cast<USceneComponent*>(Player->GetHeadCamera()));
 	Test->TestEqual(TEXT("ArmsViewMesh is attached to ViewmodelRoot"),
 		Player->GetArmsMesh()->GetAttachParent(), Player->GetViewmodelRoot());
 	Test->TestTrue(TEXT("Final viewmodel location matches approved framing"),
-		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector(-18.107912f, 41.f, -150.00795f), 0.01f));
-	Test->TestTrue(TEXT("Final viewmodel rotation preserves imported pose orientation"),
-		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator(-3.f, -15.f, -1.f), 0.01f));
+		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector(-18.107912f, 18.852108f, -150.00795f), 0.01f));
+	Test->TestTrue(TEXT("Viewmodel root matches VFXPack BodyRotator identity rotation"),
+		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
+	Test->TestTrue(TEXT("Arms rotation matches VFXPack SK_ArmMesh"),
+		Player->GetArmsMesh()->GetRelativeRotation().Equals(FRotator(-3.f, -15.f, -1.f), 0.01f));
+	Test->TestNotNull(TEXT("Body uses an animation instance"), Player->GetMesh()->GetAnimInstance());
+	Test->TestNotNull(TEXT("First-person arms use an animation instance"), Player->GetArmsMesh()->GetAnimInstance());
+	if (Player->GetMesh()->GetAnimInstance() && Player->GetArmsMesh()->GetAnimInstance())
+	{
+		Test->TestEqual(TEXT("First- and third-person meshes use the same VFXPack AnimBP class"),
+			Player->GetMesh()->GetAnimInstance()->GetClass(), Player->GetArmsMesh()->GetAnimInstance()->GetClass());
+	}
+	Test->TestEqual(TEXT("Shadow body follows the third-person animation source"),
+		Player->GetShadowBodyMesh()->GetBaseComponent(), static_cast<const USkinnedMeshComponent*>(Player->GetMesh()));
 
 	UEquipmentManagerComponent* EquipmentManager = Player->GetEquipmentManager();
 	AEquipmentBase* Equipment = EquipmentManager ? EquipmentManager->GetCurrentEquipment() : nullptr;
 	Test->TestNotNull(TEXT("Player has initial equipment"), Equipment);
 	if (Equipment)
 	{
+		const FName VFXPackGripSocket(TEXT("GripPoint"));
+		Test->TestEqual(TEXT("VFXPack arms expose the original GripPoint socket"),
+			Player->GetArmsMesh()->DoesSocketExist(VFXPackGripSocket), true);
+		Test->TestEqual(TEXT("Current equipment declares the original VFXPack GripPoint socket"),
+			Equipment->GetEquipSocketName(), VFXPackGripSocket);
 		Test->TestEqual(TEXT("Current equipment follows ArmsViewMesh socket"),
 			Equipment->GetRootComponent()->GetAttachParent(), static_cast<USceneComponent*>(Player->GetArmsMesh()));
 		Test->TestEqual(TEXT("Current equipment uses declared equip socket"),

@@ -374,3 +374,9 @@ Cache_Locomotion → WeaponUpperBody → Slot"UpperBody" → WeaponAimOffset →
 - `ABP_VFXPack_FirstPerson` 的 Idle/Run 继续负责主要武器姿态偏移；C++ 只复刻原 Walking/Running CameraShake 的频率、振幅和淡入状态，输出改写到 `ViewmodelRoot`，不启动 gameplay CameraShake。
 - 已删除此前自创的移动方向位移/旋转和鼠标旋转滞后，避免与原动画重复叠加。
 - 运行时逐骨审计确认旧 `ShadowBodyMesh` 虽正确 Leader=`CharacterMesh0`，但因此复制了与第一人称不同的身体 locomotion 上半身。现改为 Leader=`ArmsViewMesh`；`spine_03/hand_r/hand_l` 组件空间 Pose 与 VFXPack 第一人称逐项相同。`LegsMesh` 仍 Leader=`CharacterMesh0`，下半身速度体系本轮不改。
+
+## 2026-08-02 session156 — VFXPack 同源 AnimBP 最终修正
+
+- session153 的 `ShadowBodyMesh Leader=ArmsViewMesh` 已撤销。MaintenanceWorker 恢复本项目既有的同源方式：`CharacterMesh0` 与 `ArmsViewMesh` 使用同一原版 VFXPack AnimBP 类，各自拥有 AnimInstance；Shadow/Legs 均 Leader=`CharacterMesh0`。
+- VFXPack `Walk_Run_1D` 只有 Speed 轴。左右移动姿态由原角色 Body_Sway 写入 AnimBP 的 `Lean_Sides_Amount`，不是 2D BlendSpace：侧移输入 Clamp `[-1,1]`，Walk 插值速度 2、Sprint 8。`Look_Up_Down_Amount` 同步接收前后移动偏移；MouseX 枪械滞后按用户要求保持关闭。
+- C++ 必须把 `Is_Moving`、`Is_InAir`、`Character_Speed`、`Lean_Sides_Amount`、`Look_Up_Down_Amount` 同帧写给两个 AnimInstance，避免第一/第三人称及影子上半身再次分叉。
