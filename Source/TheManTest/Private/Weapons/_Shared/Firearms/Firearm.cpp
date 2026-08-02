@@ -1,4 +1,6 @@
 #include "Weapons/_Shared/Firearms/Firearm.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Weapons/_Shared/Firearms/FirearmAnimInstance.h"
 #include "Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h"
 #include "AbilitySystemInterface.h"
@@ -19,6 +21,23 @@ AFirearm::AFirearm()
 		MuzzleEffect = DefaultPlayerMuzzle.Object;
 		MuzzleEffectScale = FVector(0.85f);
 	}
+}
+
+FTransform AFirearm::GetMuzzleWorldTransform() const
+{
+	if (const USkeletalMeshComponent* Mesh = GetSkeletalMesh();
+		Mesh && Mesh->GetSkeletalMeshAsset() && MuzzleSocketName != NAME_None && Mesh->DoesSocketExist(MuzzleSocketName))
+	{
+		return Mesh->GetSocketTransform(MuzzleSocketName);
+	}
+
+	if (const UStaticMeshComponent* Mesh = GetStaticMesh();
+		Mesh && Mesh->GetStaticMesh() && MuzzleSocketName != NAME_None && Mesh->DoesSocketExist(MuzzleSocketName))
+	{
+		return Mesh->GetSocketTransform(MuzzleSocketName);
+	}
+
+	return MuzzleLocalTransform * GetActorTransform();
 }
 
 static void SetLinkedFirearmAimSource(USkeletalMeshComponent* Mesh, TSubclassOf<UAnimInstance> AnimLayerClass, const FTransform& AimSourceLocalTransform)

@@ -15,6 +15,8 @@
 | `Source/TheManTest/Private/Weapons/_Shared/Firearms/Firearm.cpp` | `Equip()` 在基类链接层后写入 Arms/Body AimSource 并 GrantAbilities；`Unequip()` 先 RevokeAbilities 再由基类解链 |
 
 `AFirearm` 还提供可按具体武器覆盖的 `MuzzleEffect / MuzzleEffectRotation / MuzzleEffectScale`；`UGA_Shoot` 每发在实际 Muzzle Socket 附着一次性 Niagara。RepairGun 当前使用 `/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_SniperScout_Muzzle`（FEAT-072，从外部 Sniper Scout 精确迁入，包含枪口闪光与烟雾）；专属前向烟雾材质/纹理位于同一 RepairGun Muzzle 目录，其余复用依赖位于 `/Game/Core/_Shared/Effects/Muzzle/`。
+
+FEAT-074 起，玩家枪口统一由 `AFirearm::GetMuzzleWorldTransform()` 解析：优先 SkeletalMesh 的命名 Socket，其次 StaticMesh 的命名 Socket，最后使用 `MuzzleLocalTransform * ActorTransform`。因此纯静态枪模也必须在武器 BP 配置正确的 `MuzzleLocalTransform`，不得退回相机位置伪造枪口。
 | `Source/TheManTest/Public/Weapons/_Shared/Firearms/Bullets/BulletBase.h` | CollisionSphere(QueryOnly) + BulletMesh + ProjectileMovement；`Damage`(SetByCaller 传入 HitEffectClass) / `HitEffectClass` / `bDestroyOnHit`；`InitBullet(发射者, SourceASC)`(忽略发射者防自撞) / `ProcessHit()` BlueprintNativeEvent。FEAT-073 起，玩家/非敌方弹体有效命中 `AEnemyBase` 时统一调用 `ReactToProjectileHit`，穿透判定优先。 |
 | `Source/TheManTest/Public/Weapons/RepairGun/Bullets/RepairGunBullet.h` | 环境命中保持指数膨胀（e^(Rate×t)）与危险区压制；敌人命中施加 `SlowPercent`/`SlowDuration`（默认40%/2.5秒）后立即销毁。连续命中刷新时长、不叠加强度。 |
 

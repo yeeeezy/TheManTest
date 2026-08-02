@@ -88,3 +88,29 @@
 - 2D/1D BlendSpace Player 在当前模板继承链的 PIE 运行时持续返回参考姿势，尽管样本、Skeleton、Speed 输入及 Linked Layer 实例均有效。WalkRun 状态最终改为直接播放已验证有效的 `AS_Rifle_A_Run`，PlayRate=0.5；状态切换仍由武器层 Speed 驱动。
 - PIE 真输入验证：移动时主 AnimInstance 与 RepairGun Linked Layer 在 `CharacterMesh0` / `ArmsViewMesh` 两边 Speed 均为 100；两边手骨输出有效 Run Pose，影子通过 Leader Pose 同步。Idle 时 `CharacterMesh0`、`ArmsViewMesh`、`ShadowBodyMesh` 的 hand_r 组件空间 Pose 完全一致。
 - 证据截图：`TMT_UnifiedABP_Idle_Final.png`、`TMT_UnifiedABP_RunSequence.png`。五个相关 Blueprint 均已编译保存。
+
+## 2026-08-02 session150 — VFXPack 视角构图重新标定
+
+- 用户指出 session147~149 只验证了非 T-Pose 和动画输出，实际第一人称构图仍与 VFXPack 参考明显不一致；此前将 `(100,75,-200)` 记为“校准完成”的结论撤销。
+- 使用 `TheManTest.Player.Viewmodel.FramingCapture` 从 `HeadCamera`、110° FOV 生成确定性 1920×1080 截图，并直接与用户的 VFXPack 参考截图对照枪口位置、枪身轴线、屏幕占比和手臂裁切。
+- 四轮定量迭代后，MaintenanceWorker 最终采用 `ViewmodelOffsetLocation=(90,80,-185)`、`ViewmodelOffsetRotation=(0,-13,0)`：枪口从过低过右位置移到参考图的中心偏右区域，枪身恢复左上到右下的 VFXPack 轴线；RepairGun 几何短于参考长步枪，因此轮廓长度不作为伪一致性证据。
+- 自动化断言同步更新；Live Coding 成功，`TheManTestEditor Win64 Development` 构建成功，`TheManTest.Player.Viewmodel.FramingCapture` 最终为 Success。确定性截图：`Saved/Screenshots/PlayerFramingCurrent.png`；实际 PIE 截图：`TMT_VFXPack_Reframed_Idle.png`。
+
+## 2026-08-02 session151 — 按用户指定原项目与正确截图重做构图
+
+- 用户指定唯一正确参考图为桌面 `微信图片_20260802100122_109_52.png`，参考项目为 `D:\Unreal Projects\UE389_MuzzleSource\VFX Pack - Stylized FPS Muzzle and Impacts Effects 5.1\VFXPack`；session150 使用了错误参考图，其 `(90,80,-185)` 结论作废。
+- 正确参考图为 1059×597，和 1920×1080 确定性 SceneCapture 宽高比一致。量化目标：枪口约位于屏幕 `(58.5%,58.1%)`，武器主体从该位置延伸并裁出右侧和底部边界。
+- 逐步把 Viewmodel 前向距离从 90 降至 60、30、0，并同步补偿横向和高度；最终采用 `ViewmodelOffsetLocation=(0,41,-155)`、`ViewmodelOffsetRotation=(0,-13,0)`。
+- 最终 1920×1080 截图中枪口约为 `(57.9%,57.2%)`，RepairGun 主体延伸到右下边界，和正确参考的构图尺度与轴线一致；枪械几何仍为本项目 RepairGun，不伪装成参考项目长步枪。
+- 正确参考截图已用系统查看器打开；确定性结果写入 `Saved/Screenshots/PlayerFramingCurrent.png`，实际 PIE 截图为 `TMT_CorrectVFXReference_Idle.png`。当前编辑器内嵌 PIE 面板为 1567×428 的异常超宽比例，因此不用于和 16:9 参考做像素位置验收。
+- 自动化断言已同步为最终 Transform；Live Coding 成功，`TheManTest.Player.Viewmodel.FramingCapture` 为 Success，`TheManTestEditor Win64 Development` 冷构建成功。重启编辑器后蓝图资产验证通过，CDO 冷回读仍为 `(0,41,-155)` / `(0,-13,0)`。
+
+## 2026-08-02 session152 — Rifle Physical 01 与原版第一人称上半身
+
+- 用户要求暂停下半身速度调整，改用 `BP_Weapon_Rifle_Physical` 实际引用的 Rifle 01 Mesh，并优先保证玩家视角上半身与 VFXPack 一致。
+- 审计确认无编号重定向器最终指向 `BP_Weapon_Rifle_Physical_01_Child`；通过 Unreal AssetTools 迁入 `SM_Weapon_Ballistics_Rifle_01` 及 4 个必要材质/函数/纹理依赖，并整理为 `/Game/Weapons/RepairGun/` 语义路径，主 Mesh 命名为 `SM_RepairGun_Rifle`。
+- 原项目实测 Rifle 组件相对变换为 `(0,-16.757669,3.554176)` / 零旋转，MuzzleFlashLoc 为 `(0,58.509277,4.953239)` / Yaw 90；RepairGun 已按该值配置 StaticMesh，旧 SkeletalMesh 清空隐藏。
+- `AFirearm::GetMuzzleWorldTransform()` 新增 Skeletal Socket → Static Socket → `MuzzleLocalTransform` 回退链；`UGA_Shoot` 统一使用该结果，保留弹体、Niagara、音效和调试射线的真实枪口位置。
+- 第一人称 `ArmsViewMesh` 使用已迁入并精简的 `ABP_VFXPack_FirstPerson`，直接恢复 VFXPack Idle/Run 状态机及 0.8×/0.5×/1.0×/1.5×速度逻辑；身体与下半身仍维持项目现状。
+- 原项目 `SK_ArmMesh` 相机变换实测为 `(-18.107912,18.852108,-150.00795)` / `(-3,-15,-1)`；因相机/画幅差异最终横向补偿为 41，即 `(-18.107912,41,-150.00795)` / `(-3,-15,-1)`。
+- `TheManTestEditor Win64 Development` 冷构建成功；冷重启后 `TheManTest.Player.Viewmodel.FramingCapture` 为 Success。1920×1080 证据为 `Saved/Screenshots/PlayerFramingCurrent.png`，枪口约位于参考要求的中心偏右区域，枪体延伸并裁出右下边界。

@@ -116,6 +116,7 @@ public:
 	FORCEINLINE bool IsHitscan() const { return bIsHitscan; }
 	FORCEINLINE float GetHitscanRange() const { return HitscanRange; }
 	FORCEINLINE FName GetMuzzleSocketName() const { return MuzzleSocketName; }
+	FTransform GetMuzzleWorldTransform() const;
 	FORCEINLINE TSubclassOf<ABulletBase> GetBulletClass() const { return BulletClass; }
 	FORCEINLINE float GetFireRate() const { return FireRate; }
 

@@ -817,9 +817,9 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 	Test->TestEqual(TEXT("ArmsViewMesh is attached to ViewmodelRoot"),
 		Player->GetArmsMesh()->GetAttachParent(), Player->GetViewmodelRoot());
 	Test->TestTrue(TEXT("Final viewmodel location matches approved framing"),
-		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector(-25.f, -4.f, 3.f), 0.01f));
+		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector(-18.107912f, 41.f, -150.00795f), 0.01f));
 	Test->TestTrue(TEXT("Final viewmodel rotation preserves imported pose orientation"),
-		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator(0.f, -13.f, 0.f), 0.01f));
+		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator(-3.f, -15.f, -1.f), 0.01f));
 
 	UEquipmentManagerComponent* EquipmentManager = Player->GetEquipmentManager();
 	AEquipmentBase* Equipment = EquipmentManager ? EquipmentManager->GetCurrentEquipment() : nullptr;

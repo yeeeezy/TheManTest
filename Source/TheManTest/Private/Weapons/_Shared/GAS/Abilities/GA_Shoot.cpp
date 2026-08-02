@@ -50,12 +50,7 @@ void UGA_Shoot::ActivateAbility(
 	const FVector CameraLocation    = Camera->GetComponentLocation();
 	const FVector CameraForward     = Camera->GetForwardVector();
 
-	USkeletalMeshComponent* WeaponMesh = Firearm->GetSkeletalMesh();
-	const FName MuzzleSocket           = Firearm->GetMuzzleSocketName();
-	const FVector MuzzleLocation       =
-		(WeaponMesh && MuzzleSocket != NAME_None && WeaponMesh->DoesSocketExist(MuzzleSocket))
-		? WeaponMesh->GetSocketLocation(MuzzleSocket)
-		: CameraLocation;
+	const FVector MuzzleLocation = Firearm->GetMuzzleWorldTransform().GetLocation();
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = Character;

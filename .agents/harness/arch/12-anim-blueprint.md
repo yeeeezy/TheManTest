@@ -362,3 +362,9 @@ Cache_Locomotion → WeaponUpperBody → Slot"UpperBody" → WeaponAimOffset →
 - `ShadowBodyMesh` / `LegsMesh` 是 `CharacterMesh0` 的 Leader Pose 跟随者；影子姿势以主身体最终 Pose 为准。
 - RepairGun 的 `ABP_RepairGun_AnimLayer` 同时链接到 `CharacterMesh0` 和 `ArmsViewMesh`。基础链为 `DefaultSlot -> Layered Blend Per Bone.BasePose`，武器层只覆盖配置的上半身分支，再进入 WeaponAimOffset/Slots。
 - 当前 WalkRun 状态直接播放 `AS_Rifle_A_Run`（0.5×）；这是因为已验证 BlendSpace Player 在该模板继承链运行时返回参考姿势。不要重新接回旧 BlendSpace，除非先在 PIE 同时证明身体、第一人称和影子均输出非参考 Pose。
+
+## 2026-08-02 session152 — VFXPack 第一人称上半身例外
+
+- 用户明确要求先忽略下半身速度、让玩家视角上半身与 VFXPack 一致；MaintenanceWorker 的 `ArmsViewMesh` 因此直接使用已整理的 `ABP_VFXPack_FirstPerson`，复用原版 Idle/Run 状态机和播放速度。
+- `CharacterMesh0`、`ShadowBodyMesh` 与 `LegsMesh` 继续保留项目主 ABP/Leader Pose 链，下半身 locomotion 不在本次调整范围内。
+- 这是 RepairGun/VFXPack 第一人称视图的明确特例；不要据此把其他角色或武器改成独立第一人称 AnimBP。
