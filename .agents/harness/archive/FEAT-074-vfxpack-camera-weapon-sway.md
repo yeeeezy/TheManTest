@@ -236,3 +236,20 @@
 - 原项目 HeadCamera FOV 为 77°。当前 C++ 基础值和自动化断言已恢复 77°，不在 BeginPlay 硬覆盖蓝图 Camera 属性。
 - 原武器实际挂载链为 `GripPoint -> Actor Root -> RootOffset(Y=+11.660166) -> WeaponGripLoc -> Weapon_MainMesh(Y=-16.757669,Z=3.554176)`，最终网格位置为 `(-0.000656,-5.097503,3.554176)`。项目先前只复制了末级 Mesh 变换，漏掉 RootOffset，造成持枪轴向偏差 11.66cm；`BP_RepairGun.StaticMesh` 已恢复为原版最终值。
 - 原 `BodyRotator` 冲刺 0.2s / Pitch -12.5° 保持不变。Development Editor 编译成功，RepairGun 蓝图编译保存并冷回读正确。
+
+## 2026-08-03 session172：冲刺收枪避让中央视野
+
+- 用户在 77° FOV 和修正后挂点下仍确认 Shift 时前臂遮挡中央视野，因此将冲刺终点由硬编码 -12.5° 改为蓝图可调 `SprintViewmodelPitchDegrees`，默认 -25°。
+- 仍在 `ViewmodelRoot` / BodyRotator 等价枢轴旋转，过渡时长 0.2s，不添加位移，不影响 Idle 或 A/D Body Sway。Development Editor / Win64 完整编译成功。
+
+## 2026-08-03 session173：撤销冲刺角度误调
+
+- session172 将“手臂挡枪/挡视野实现与原版一致”误解为要求加大收枪角。现已删除自定义 `SprintViewmodelPitchDegrees=-25°`，恢复原 `BodyRotator` 终点 Pitch -12.5° 和 0.2s 可逆时间线。
+- 手臂与枪的遮挡必须由原 AnimBP Pose、`GripPoint` 挂点及正常深度关系复现，不再以改大冲刺角度代替。
+
+## 2026-08-03 session174：截图定位并修复冲刺旋转枢轴
+
+- 实际 PIE 分别隐藏 `ArmsViewMesh` 与 `LegsMesh` 截图隔离，确认 Shift 冲刺时中央白色遮挡来自第一人称手臂，而不是腿或场景物体。
+- 对比原项目组件层级后找到根因：原版是 `FPS_Camera -> BodyRotator(RelativeLocation=0) -> SK_ArmMesh(RelativeLocation=-18.107912,18.852108,-150.00795)`；当前曾把该位置偏移错误放在 `ViewmodelRoot`，导致 -12.5° 冲刺旋转绕错误枢轴进行。
+- 已将 `ViewmodelRoot` 固定到相机原点，并把原位置/轴向变换放回 `ArmsViewMesh`。Idle 世界变换不变，冲刺仍为原版 0.2s / -12.5°，但前臂不再翻入中央视野。
+- 修复后 1280×720 PIE 对比图中中央视野已清空，枪和手臂按原版方向退到画面下沿；Development Editor / Win64 完整构建成功。

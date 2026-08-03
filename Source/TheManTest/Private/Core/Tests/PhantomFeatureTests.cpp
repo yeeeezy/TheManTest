@@ -816,12 +816,14 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 		Player->GetViewmodelRoot()->GetAttachParent(), static_cast<USceneComponent*>(Player->GetHeadCamera()));
 	Test->TestEqual(TEXT("ArmsViewMesh is attached to ViewmodelRoot"),
 		Player->GetArmsMesh()->GetAttachParent(), Player->GetViewmodelRoot());
-	Test->TestTrue(TEXT("Final viewmodel location matches approved framing"),
-		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector(-18.107912f, 18.852108f, -150.00795f), 0.01f));
+	Test->TestTrue(TEXT("BodyRotator-equivalent pivot remains at the camera origin"),
+		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector::ZeroVector, 0.01f));
 	Test->TestTrue(TEXT("Viewmodel root matches VFXPack BodyRotator identity rotation"),
 		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
 	Test->TestTrue(TEXT("Arms rotation matches VFXPack SK_ArmMesh"),
 		Player->GetArmsMesh()->GetRelativeRotation().Equals(FRotator(-3.f, -15.f, -1.f), 0.01f));
+	Test->TestTrue(TEXT("Arms location matches VFXPack SK_ArmMesh beneath BodyRotator"),
+		Player->GetArmsMesh()->GetRelativeLocation().Equals(FVector(-18.107912f, 18.852108f, -150.00795f), 0.01f));
 	Test->TestNotNull(TEXT("Body uses an animation instance"), Player->GetMesh()->GetAnimInstance());
 	Test->TestNotNull(TEXT("First-person arms use an animation instance"), Player->GetArmsMesh()->GetAnimInstance());
 	if (Player->GetMesh()->GetAnimInstance() && Player->GetArmsMesh()->GetAnimInstance())

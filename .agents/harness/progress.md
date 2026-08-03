@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-03-session171
+**最后更新：** 2026-08-03-session174
 
 **当前功能：** FEAT-074 — VFXPack第一人称动画替换、HeadBob、武器摆动与RepairGun射击震屏
 
@@ -10,6 +10,9 @@
 
 ## 本轮完成
 
+- session174：按用户要求进行实际 PIE 截图对比，并通过分别隐藏 ArmsViewMesh/LegsMesh 确认冲刺中央遮挡来自第一人称前臂。根因是当前把原 SK_ArmMesh 的位置偏移放到了旋转节点 ViewmodelRoot，旋转枢轴与原版 `FPS_Camera -> BodyRotator(原点) -> SK_ArmMesh(偏移)` 不一致。现已让 ViewmodelRoot 回到相机原点、ArmsViewMesh 持有原位置/轴向偏移；Idle 构图不变，Shift 仍用原版 0.2s / -12.5°，修复后截图中央视野无前臂遮挡。Development Editor / Win64 构建成功。
+- session173：纠正对用户“手臂挡枪/挡视野实现要与原版一致”的误解。撤销 session172 自定义 -25° 终点及 `SprintViewmodelPitchDegrees`，恢复原版 `BodyRotator` 精确 0.2s / Pitch -12.5°。后续只核对原版手臂 Pose、GripPoint 武器挂点与正常深度遮挡关系，不用加大角度伪修复。
+- session172：按用户前台反馈加大 Shift 冲刺收枪角度，使前臂和枪退出中央视野。新增蓝图可调 `SprintViewmodelPitchDegrees`，默认由 -12.5° 加大为 -25°；原 0.2s 可逆过渡、550→750 速度与无横移设计不变。Development Editor / Win64 完整编译链接成功。
 - session171：按原 VFXPack 实机 1280×720 截图重新对比 Idle/按 Shift+W 冲刺。相机恢复原版 HeadCamera `FieldOfView=77°`，保留原 `BodyRotator` 0.2s / Pitch -12.5°。另定位 RepairGun 漏复制原武器父节点 `RootOffset.Y=+11.660166`：原版网格相对 GripPoint 最终为 `(-0.000656,-5.097503,3.554176)`，而当前误为 `(0,-16.757669,3.554176)`。已将 `BP_RepairGun.StaticMesh` 恢复到原版最终变换并冷回读；Development Editor 编译成功。
 - session170：找到原版枪械倾斜明显、当前项目几乎无反应的真正根因：迁移 AnimBP 时删除了对示例 `FirstPersonCharacter` 的硬 Cast EventGraph，C++ 只复制了 `PlayerLeanAmount/PlayerLookUpAmount`，遗漏原 EventGraph 随后使用的 `Lean_Sides_Offset=8.0` 与 `Look_Up_Offset=2.0`。现按原顺序在写入 AnimBP 前精确恢复 `Side×8` / `LookUp×2`，不添加任何组件位移或自创旋转。运行时探针实测 RepairGun A/D 前后旋转差由约 2.05° 恢复到约 10.24°，`hand_r` 由约 2.15° 恢复到约 6.61°。Development Editor 编译成功。
 - session169：按用户要求撤销 session167–168 所有 A/D 可见性补偿。删除 `VFXMovementWeaponRollDegrees` 及任何 `ViewmodelRoot` / `ArmsViewMesh` 方向 Roll；普通移动严格只走原 Body Sway 变量和原 AnimBP `spine_03/hand_l` Modify Bone 链。`ViewmodelRoot` 只复刻原 `BodyRotator` 冲刺 0.2s / Pitch -12.5°，无位置变化。Development Editor 完整编译链接成功。

@@ -98,13 +98,15 @@ AFPSCharacterBase::AFPSCharacterBase()
 	// 后续 ADS / bob / sway / movement lag 只叠到 ViewmodelRoot 或 ArmsViewMesh，不污染相机。
 	ViewmodelRoot = CreateDefaultSubobject<USceneComponent>(TEXT("ViewmodelRoot"));
 	ViewmodelRoot->SetupAttachment(HeadCamera);
-	ViewmodelRoot->SetRelativeLocation(ViewmodelOffsetLocation);
+	ViewmodelRoot->SetRelativeLocation(FVector::ZeroVector);
 	ViewmodelRoot->SetRelativeRotation(ViewmodelOffsetRotation);
 
 	// FEAT-042：独立 FP 手臂 mesh。挂 ViewmodelRoot 下，跑自己的武器 ABP（持枪 pose），
 	// 只给自己看、不投影、始终评估姿势。骨架/相对 Transform/AnimClass 在 BP 配。
 	ArmsViewMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmsViewMesh"));
 	ArmsViewMesh->SetupAttachment(ViewmodelRoot);
+	ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
+	ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
 	ArmsViewMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ArmsViewMesh->SetOnlyOwnerSee(true);
 	ArmsViewMesh->bCastDynamicShadow = false;
@@ -165,8 +167,13 @@ void AFPSCharacterBase::ApplyViewmodelFraming()
 {
 	if (ViewmodelRoot)
 	{
-		ViewmodelRoot->SetRelativeLocation(ViewmodelOffsetLocation);
+		ViewmodelRoot->SetRelativeLocation(FVector::ZeroVector);
 		ViewmodelRoot->SetRelativeRotation(ViewmodelOffsetRotation);
+	}
+	if (ArmsViewMesh)
+	{
+		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
+		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
 	}
 }
 
@@ -517,9 +524,10 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		// ViewmodelRoot is the direct equivalent of VFXPack's FPS_Camera -> BodyRotator
 		// pivot and owns only the source sprint lowering. Directional lean remains wholly
 		// in the unmodified source AnimBP spine_03/hand_l Modify Bone chain.
-		ViewmodelRoot->SetRelativeLocation(ViewmodelOffsetLocation);
+		ViewmodelRoot->SetRelativeLocation(FVector::ZeroVector);
 		ViewmodelRoot->SetRelativeRotation(
 			ViewmodelOffsetRotation + FRotator(-12.5f * SprintTransitionAlpha, 0.f, 0.f));
+		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
 		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
 		CurrentArmsPitch = 0.f;
 		// Mouse axis values in the source are frame deltas. Consume this frame's value

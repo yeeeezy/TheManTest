@@ -9,7 +9,7 @@
 | 文件 | 关键内容 |
 |---|---|
 | `Source/TheManTest/Public/Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h` | HeadCamera / **ViewmodelRoot / ArmsViewMesh**（FEAT-042 独立 FP viewmodel）/ **BodyRoot / ShadowBodyMesh / LegsMesh**（FEAT-038 三件套，含 Getter）/ EquipmentManager；**`GetArmsMesh()` 返回 `ArmsViewMesh`**，武器挂载/开火蒙太奇/装备渲染走相机子级 FP 手臂；`GetMesh()` 是 GASP/MM 宿主，驱动身体/影子/腿；`ArmsHiddenSections` / `LegsHiddenSections`（EditDefaultsOnly 材质段隐藏）；CharacterData / InitGEClass；通用 `DefaultAbilityClasses`；`PrimaryFire()` / `SecondaryFire()` / `IsSprinting()`（冲刺键状态，停步走/跑档用）|
-| `Source/TheManTest/Private/Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.cpp` | 组件挂载：**HeadCamera←RootComponent(capsule)，相对 Z≈+77 固定眼高，bUsePawnControlRotation**；**ViewmodelRoot←HeadCamera，ArmsViewMesh←ViewmodelRoot**。HeadCamera 的 C++ 基础 FOV 为原 VFXPack 的 77°，`BeginPlay` 不再强制覆盖，角色蓝图可直接使用 Camera 组件原生 `Field Of View`。C++ 同步驱动 ArmsViewMesh 与 GetMesh 的原版 VFXPack AnimBP，并复刻 Body_Sway：Side=`Clamp(MoveRight+MouseX)`，Forward=`Clamp(-MoveForward-10×LookUp)`，Walk/Sprint 插值速度 2/8。冲刺按原版 0.2s 可逆过渡同时驱动速度 550→750 与 `ViewmodelRoot` Pitch 0→-12.5°，不叠加横向位移。`ShadowBodyMesh` 与 `LegsMesh` 均 Leader=`GetMesh()`。BodyRoot 每帧保持 Actor Yaw/直立。|
+| `Source/TheManTest/Private/Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.cpp` | 组件挂载：**HeadCamera←RootComponent(capsule)，相对 Z≈+77 固定眼高，bUsePawnControlRotation**；**ViewmodelRoot←HeadCamera 且位置为零，ArmsViewMesh←ViewmodelRoot 并持有原版 SK_ArmMesh 偏移**。这精确对应原版 `FPS_Camera -> BodyRotator(原点) -> SK_ArmMesh(偏移)`，避免冲刺时绕手臂自身原点旋转而让前臂翻入中央视野。HeadCamera 的 C++ 基础 FOV 为原 VFXPack 的 77°，`BeginPlay` 不再强制覆盖，角色蓝图可直接使用 Camera 组件原生 `Field Of View`。C++ 同步驱动 ArmsViewMesh 与 GetMesh 的原版 VFXPack AnimBP，并复刻 Body_Sway：Side=`Clamp(MoveRight+MouseX)`，Forward=`Clamp(-MoveForward-10×LookUp)`，Walk/Sprint 插值速度 2/8。冲刺按原版 0.2s 可逆过渡同时驱动速度 550→750 与 `ViewmodelRoot` Pitch 0→-12.5°，不叠加横向位移。`ShadowBodyMesh` 与 `LegsMesh` 均 Leader=`GetMesh()`。BodyRoot 每帧保持 Actor Yaw/直立。|
 
 **扫描组件：** `UScanEffectComponent` 由所有玩家角色基类创建。组件构造函数提供项目默认 `MPC_ScanEffect` 与世界空间适配材质 `M_InfiltratorScanTerrainAdaptive`，角色 BP 仍可覆盖。`TriggerScan` 会创建归属角色的运行时 `UDecalComponent`，先通过 `AddInstanceComponent` 纳入 Actor 生命周期，再注册到当前 World；独立 MID 接收 `ScanOriginWS` / `ScanRadius` / `ScanOpacity`，不复用红色后处理的相机相对参数。红色 MPC 为空时只跳过红色后处理，不再阻断地形扫描。`RetractScan` 隐藏 Decal 并清零透明度。
 
@@ -18,8 +18,8 @@
 ```
 Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE]
 ├─ HeadCamera = 挂 capsule 固定眼高(相对 Z≈+77)，bUsePawnControlRotation，稳定 gameplay 相机
-│   └─ ViewmodelRoot = 普通 SceneComponent，FP viewmodel 相对偏移层（ADS/bob/sway/lag）
-│       └─ ArmsViewMesh = 独立 FP 手臂+武器挂载目标，OnlyOwnerSee，CastShadow=false
+│   └─ ViewmodelRoot = 原版 BodyRotator 等价节点，位于相机原点，负责整体冲刺旋转
+│       └─ ArmsViewMesh = 持有原版 SK_ArmMesh 相对位置/旋转的独立 FP 手臂+武器挂载目标
 ├─ GetMesh()  = GASP/MM Leader+动画宿主+根运动源，OwnerNoSee，CastShadow=false
 └─ BodyRoot (SceneComponent, 绝对旋转, Tick 每帧只取 Yaw → 直立；相对 Location X=-30 往后)
     ├─ ShadowBodyMesh = Follower，全身，OwnerNoSee + bCastHiddenShadow（只投影）
@@ -35,7 +35,7 @@ Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE
 - 前提条件成立才安全：session47 相机已从 head 骨骼挪到 capsule → 手臂无人依赖，可合并。
 - **根运动方案（详见 arch/12 + archive/FEAT-039）**：ABP 根运动模式与「输入驱动 locomotion」的取舍是本项目踩过的大坑，务必看 12。一句话：**`Root Motion from Everything` 会让动画接管移动、压制 WASD 输入**——铁律「原地 clip（idle/走跑循环/跳跃）Enable Root Motion 必须关，只有位移 clip（停步等）才开」；漏关一个原地 clip（尤其 idle）→ 移动卡死+抖动。
 - **session62 FP viewmodel 方案修正（重要）**：相机仍挂 capsule 固定眼高、只用控制器旋转转向；FP 手臂不再绕肩部 `ArmsPivot` 手动俯仰，而是 `HeadCamera -> ViewmodelRoot -> ArmsViewMesh`。这样旋转支点就是相机原点，手臂屏幕位置不随 pitch 漂移。不要把相机挂到动画 head 骨骼下，也不要旋转 Character capsule pitch。后续相机/移动惯性优先叠到 `ViewmodelRoot` 或 `ArmsViewMesh`，不用 SpringArm。
-- 第一人称视点横向/纵向微调不需要 SpringArm，继续保持 `Capsule -> HeadCamera -> ViewmodelRoot -> ArmsViewMesh`。`HeadCamera.RelativeLocation` 只定义真实观察点；`ViewmodelRoot.RelativeTransform` 负责反向补偿和最终手臂/武器画面构图，并继续完整继承相机旋转。`ArmsViewMesh.RelativeTransform` 仅保留模型导入轴向、骨架原点等基础校正，不作为日常构图参数。
+- 第一人称视点横向/纵向微调不需要 SpringArm，继续保持 `Capsule -> HeadCamera -> ViewmodelRoot -> ArmsViewMesh`。`HeadCamera.RelativeLocation` 只定义真实观察点；`ViewmodelRoot` 必须留在相机原点，以保持原版 BodyRotator 的旋转半径；最终手臂/武器构图偏移由 `ArmsViewMesh.RelativeTransform` 持有。
 - **FEAT-065 最终构图（session126）：** `ViewmodelRoot.RelativeLocation=(0,0,-7)`、`RelativeRotation=(0,0,0)`，HeadCamera 保持 110° FOV 与真实观察点不变。构造、OnConstruction、BeginPlay 均通过 `ApplyViewmodelFraming()` 应用，避免 BP 旧默认值覆盖；装备继续挂 `ArmsViewMesh` Socket。`TheManTest.Player.Viewmodel.FramingCapture` 会以稳定 Idle 帧执行 1920×1080 截图及层级/FOV/Transform/Socket 断言。
 - C++ 基类速度默认（session47 调）：`WalkSpeed`=250 / `SprintSpeed`=550；`PitchMin`=-75 / `PitchMax`=40。FEAT-070 对 MaintenanceWorker 的实际 Walk/Jog 脚速逐帧标定后，`BP_MaintenanceWorker` 专属覆盖为 Walk=100 / Sprint=300 cm/s，与其 BlendSpace 的原速样本网格点精确一致；其他角色不得无依据照搬该动画专属值。
 - FEAT-038 C++ 已完成（session43 编译通过，session47 改相机/俯仰/BodyRoot/速度）；身体 mesh 已物理拆好导入，角色 BP 三件套装配在蓝图侧进行。

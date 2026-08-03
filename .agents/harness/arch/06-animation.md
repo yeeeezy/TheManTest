@@ -22,7 +22,7 @@
 
 **玩家 locomotion（session63 简化）：**
 
-- FEAT-074 MaintenanceWorker 特例：`CharacterMesh0` 与 `ArmsViewMesh` 同时使用整理后的原版 VFXPack 第一人称 AnimBP，C++ 向两者同步写原变量。原 `Walk_Run_1D` 是 Speed 一维轴；Body Sway 目标为 Side=`Clamp(MoveRight+MouseX)` 与 Forward=`Clamp(-MoveForward-10×LookUp)`，Walk/Sprint 插值速度分别为 2/8。原 AnimBP EventGraph 随后还会应用 authored `Lean_Sides_Offset=8` / `Look_Up_Offset=2`；由于该 EventGraph 的示例角色硬 Cast 已被移除，C++ 写 AnimBP 时必须保留这两个倍率。鼠标轴按帧消费，移动输入 Completed/Canceled 时目标清零。A/D 不额外平移或旋转 `ViewmodelRoot`；只有原版冲刺 Timeline 在 0.2s 内将该整体持枪枢轴压至 Pitch -12.5°。Shadow/Legs 仍 Leader=`CharacterMesh0`。
+- FEAT-074 MaintenanceWorker 特例：`CharacterMesh0` 与 `ArmsViewMesh` 同时使用整理后的原版 VFXPack 第一人称 AnimBP，C++ 向两者同步写原变量。原 `Walk_Run_1D` 是 Speed 一维轴；Body Sway 目标为 Side=`Clamp(MoveRight+MouseX)` 与 Forward=`Clamp(-MoveForward-10×LookUp)`，Walk/Sprint 插值速度分别为 2/8。原 AnimBP EventGraph 随后还会应用 authored `Lean_Sides_Offset=8` / `Look_Up_Offset=2`；由于该 EventGraph 的示例角色硬 Cast 已被移除，C++ 写 AnimBP 时必须保留这两个倍率。鼠标轴按帧消费，移动输入 Completed/Canceled 时目标清零。A/D 不额外平移或旋转 `ViewmodelRoot`。原版冲刺层级是 `FPS_Camera -> BodyRotator(相机原点) -> SK_ArmMesh(位置偏移)`；当前必须同样让零位置的 `ViewmodelRoot` 在 0.2s 内压至 Pitch -12.5°，并让 `ArmsViewMesh` 持有 SK_ArmMesh 偏移，不能把偏移放到旋转节点。Shadow/Legs 仍 Leader=`CharacterMesh0`。
 - 不再使用 `StopAnimIndex` / `bShouldStop` / `bShouldMove` / 脚相位 / 延迟停 / 保持原速滑行。
 - ABP 应采用最小状态机：`Idle <-> WalkRun BlendSpace`，常用条件为 `Speed > 3` 与 `Speed <= 3`；跳跃可继续用 `bIsFalling` / `Velocity_Z`。
 - `UFPSCharacterAnimInstance` 继承 `UBaseLocomotionAnimInstance`，保留 `AccelDirection` / `bHasAcceleration` 给起步 Lean 或后续玩家专属动画使用。若 ABP 不需要 Lean，可以完全不读这两个变量。
