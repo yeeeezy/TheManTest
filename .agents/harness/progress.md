@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-03-session175
+**最后更新：** 2026-08-03-session176
 
 **当前功能：** FEAT-074 — VFXPack第一人称动画替换、HeadBob、武器摆动与RepairGun射击震屏
 
@@ -10,6 +10,7 @@
 
 ## 本轮完成
 
+- session176：按用户最新截图将 Viewmodel Movement Lag 正式默认值同步为左右 2.4cm、前后 1.4cm、跟随 8、回弹 10；保留用户当前 BP_MaintenanceWorker 资产设置。
 - session175：新增轻量且可调的 WASD 枪械位置滞后，只作用于 ArmsViewMesh，默认左右 1.2cm、前后 0.8cm、跟随 8、回弹 16；两轴独立回弹，不改变原版冲刺旋转枢轴、角度或相机。Development Editor / Win64 构建成功。
 - session174：按用户要求进行实际 PIE 截图对比，并通过分别隐藏 ArmsViewMesh/LegsMesh 确认冲刺中央遮挡来自第一人称前臂。根因是当前把原 SK_ArmMesh 的位置偏移放到了旋转节点 ViewmodelRoot，旋转枢轴与原版 `FPS_Camera -> BodyRotator(原点) -> SK_ArmMesh(偏移)` 不一致。现已让 ViewmodelRoot 回到相机原点、ArmsViewMesh 持有原位置/轴向偏移；Idle 构图不变，Shift 仍用原版 0.2s / -12.5°，修复后截图中央视野无前臂遮挡。Development Editor / Win64 构建成功。
 - session173：纠正对用户“手臂挡枪/挡视野实现要与原版一致”的误解。撤销 session172 自定义 -25° 终点及 `SprintViewmodelPitchDegrees`，恢复原版 `BodyRotator` 精确 0.2s / Pitch -12.5°。后续只核对原版手臂 Pose、GripPoint 武器挂点与正常深度遮挡关系，不用加大角度伪修复。

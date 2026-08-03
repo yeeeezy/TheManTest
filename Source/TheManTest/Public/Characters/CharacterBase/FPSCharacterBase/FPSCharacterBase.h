@@ -108,16 +108,16 @@ public:
 	// Subtle positional inertia driven by raw WASD input. These offsets are applied to
 	// ArmsViewMesh so ViewmodelRoot remains at the camera origin as the source BodyRotator pivot.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Movement Lag", meta = (ClampMin = "0.0", Units = "cm"))
-	float ViewmodelMoveLagSideDistance = 1.2f;
+	float ViewmodelMoveLagSideDistance = 2.4f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Movement Lag", meta = (ClampMin = "0.0", Units = "cm"))
-	float ViewmodelMoveLagForwardDistance = 0.8f;
+	float ViewmodelMoveLagForwardDistance = 1.4f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Movement Lag", meta = (ClampMin = "0.0"))
 	float ViewmodelMoveLagFollowSpeed = 8.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Movement Lag", meta = (ClampMin = "0.0"))
-	float ViewmodelMoveLagReturnSpeed = 16.f;
+	float ViewmodelMoveLagReturnSpeed = 10.f;
 
 protected:
 	virtual void BeginPlay() override;

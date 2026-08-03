@@ -259,3 +259,8 @@
 - 按用户确认增加轻微的左右/前后位置惯性：位置目标与 WASD 输入方向相反，并只叠加到 `ArmsViewMesh`，不移动相机原点的 `ViewmodelRoot`，因此原版冲刺 BodyRotator 枢轴保持正确。
 - 蓝图参数位于 `Viewmodel|Movement Lag`：左右最大 1.2cm、前后最大 0.8cm、跟随速度 8、回弹速度 16。左右和前后轴独立插值，松开某一方向时该轴使用更快回弹速度。
 - `TheManTestEditor Win64 Development` 完整编译链接成功。
+
+## 2026-08-03 session176：同步用户调好的平移滞后默认值
+
+- 读取用户最新截图，将 C++ 正式默认值同步为蓝图中已调好的观感：左右 2.4cm、前后 1.4cm、跟随速度 8、回弹速度 10。
+- 保留用户已修改的 `BP_MaintenanceWorker` 资产，不覆盖其蓝图设置。
