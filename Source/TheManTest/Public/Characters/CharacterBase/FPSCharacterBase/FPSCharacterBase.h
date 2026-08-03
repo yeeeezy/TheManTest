@@ -105,6 +105,20 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Framing")
 	FRotator ViewmodelOffsetRotation = FRotator::ZeroRotator;
 
+	// Subtle positional inertia driven by raw WASD input. These offsets are applied to
+	// ArmsViewMesh so ViewmodelRoot remains at the camera origin as the source BodyRotator pivot.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Movement Lag", meta = (ClampMin = "0.0", Units = "cm"))
+	float ViewmodelMoveLagSideDistance = 1.2f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Movement Lag", meta = (ClampMin = "0.0", Units = "cm"))
+	float ViewmodelMoveLagForwardDistance = 0.8f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Movement Lag", meta = (ClampMin = "0.0"))
+	float ViewmodelMoveLagFollowSpeed = 8.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Movement Lag", meta = (ClampMin = "0.0"))
+	float ViewmodelMoveLagReturnSpeed = 16.f;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
@@ -179,6 +193,7 @@ private:
 	FVector2D CurrentVFXMoveInput = FVector2D::ZeroVector;
 	float CurrentVFXLookInputX = 0.f;
 	float CurrentVFXLookInputY = 0.f;
+	FVector CurrentViewmodelMoveLag = FVector::ZeroVector;
 	float SprintTransitionAlpha = 0.f;
 	static constexpr float VFXSprintTransitionDuration = 0.2f;
 

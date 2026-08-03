@@ -253,3 +253,9 @@
 - 对比原项目组件层级后找到根因：原版是 `FPS_Camera -> BodyRotator(RelativeLocation=0) -> SK_ArmMesh(RelativeLocation=-18.107912,18.852108,-150.00795)`；当前曾把该位置偏移错误放在 `ViewmodelRoot`，导致 -12.5° 冲刺旋转绕错误枢轴进行。
 - 已将 `ViewmodelRoot` 固定到相机原点，并把原位置/轴向变换放回 `ArmsViewMesh`。Idle 世界变换不变，冲刺仍为原版 0.2s / -12.5°，但前臂不再翻入中央视野。
 - 修复后 1280×720 PIE 对比图中中央视野已清空，枪和手臂按原版方向退到画面下沿；Development Editor / Win64 完整构建成功。
+
+## 2026-08-03 session175：轻量可调 WASD 平移滞后
+
+- 按用户确认增加轻微的左右/前后位置惯性：位置目标与 WASD 输入方向相反，并只叠加到 `ArmsViewMesh`，不移动相机原点的 `ViewmodelRoot`，因此原版冲刺 BodyRotator 枢轴保持正确。
+- 蓝图参数位于 `Viewmodel|Movement Lag`：左右最大 1.2cm、前后最大 0.8cm、跟随速度 8、回弹速度 16。左右和前后轴独立插值，松开某一方向时该轴使用更快回弹速度。
+- `TheManTestEditor Win64 Development` 完整编译链接成功。

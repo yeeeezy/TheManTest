@@ -172,6 +172,7 @@ void AFPSCharacterBase::ApplyViewmodelFraming()
 	}
 	if (ArmsViewMesh)
 	{
+		CurrentViewmodelMoveLag = FVector::ZeroVector;
 		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
 		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
 	}
@@ -527,7 +528,24 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		ViewmodelRoot->SetRelativeLocation(FVector::ZeroVector);
 		ViewmodelRoot->SetRelativeRotation(
 			ViewmodelOffsetRotation + FRotator(-12.5f * SprintTransitionAlpha, 0.f, 0.f));
-		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
+		// Move opposite the player's input to create subtle positional inertia.
+		// Each axis returns independently, using the faster release speed.
+		const FVector MoveLagTarget(
+			-CurrentVFXMoveInput.Y * ViewmodelMoveLagForwardDistance,
+			-CurrentVFXMoveInput.X * ViewmodelMoveLagSideDistance,
+			0.f);
+		const float ForwardLagSpeed = FMath::IsNearlyZero(CurrentVFXMoveInput.Y)
+			? ViewmodelMoveLagReturnSpeed
+			: ViewmodelMoveLagFollowSpeed;
+		const float SideLagSpeed = FMath::IsNearlyZero(CurrentVFXMoveInput.X)
+			? ViewmodelMoveLagReturnSpeed
+			: ViewmodelMoveLagFollowSpeed;
+		CurrentViewmodelMoveLag.X = FMath::FInterpTo(
+			CurrentViewmodelMoveLag.X, MoveLagTarget.X, DeltaTime, ForwardLagSpeed);
+		CurrentViewmodelMoveLag.Y = FMath::FInterpTo(
+			CurrentViewmodelMoveLag.Y, MoveLagTarget.Y, DeltaTime, SideLagSpeed);
+		CurrentViewmodelMoveLag.Z = 0.f;
+		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation + CurrentViewmodelMoveLag);
 		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
 		CurrentArmsPitch = 0.f;
 		// Mouse axis values in the source are frame deltas. Consume this frame's value
