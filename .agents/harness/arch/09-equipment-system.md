@@ -5,11 +5,11 @@
 | 文件 | 关键内容 |
 |---|---|
 | `Source/TheManTest/Public/Weapons/_Shared/EquipmentBase/EquipmentBase.h` | `Equip()` / `Unequip()` / `PlayEquipMontage()`；StaticMesh / SkeletalMesh / RectLight 组件；插槽名；EquipMontage；EquipmentAnimLayerClass |
-| `Source/TheManTest/Private/Weapons/_Shared/EquipmentBase/EquipmentBase.cpp` | 动画层目标同时包含 `ArmsViewMesh` 与 `GetMesh()`；Equip 同步 Link、Unequip 同步 Unlink，且 Montage 不负责改变动画层。`PlayEquipMontage()` 同步播放在 FP 手臂和隐藏身体宿主；快速切走时若该装备 Montage 仍 active，以 0.01 秒非零 Blend Out 结束（禁止 0 秒硬停，避免实例清理前无法重新播放） |
+| `Source/TheManTest/Private/Weapons/_Shared/EquipmentBase/EquipmentBase.cpp` | 动画层目标同时包含 `ArmsViewMesh` 与 `GetMesh()`；Equip 同步 Link、Unequip 同步 Unlink。活动装备入口现在调用 C++ `PlayEquipEffect()`：对装备全部 Mesh 创建 MID，固定使用 VFXPack 材质参数 `Amount (S)`，在 0.45 秒内由 1 平滑过渡到 -1。`PlayEquipMontage()` 与资产字段暂时保留兼容，但开局及切枪流程均不再调用。 |
 
 装备 Montage 必须包含 `UpperBodySlot` 轨道：主 `TABP_BodyLocomotion` 的中央 `WeaponUpperBody` 会在 `DefaultSlot` 之后从 `spine_01` 覆盖上半身，所以只放 `DefaultSlot` 虽然 Montage 计时正常，动作仍会被最终武器层遮掉。`UpperBodySlot` 位于中央混合之后，适合 Equip/开火/换弹等需要进入最终上半身输出的动作。
 
-拔枪 Montage 建议 `Blend In = 0`。session107 起，运行中切入带 Equip Montage 的武器使用显式 Pose 事务：在旧层解链前由 Arms/Body AnimInstance 保存 `WeaponTransitionPose`；新层链接后等待 next tick，把 Equip Montage 播放并暂停在准确 0 秒低位姿势，以旧快照为输出起点原子换枪，并在主 AnimBP 末端用 `WeaponTransitionAlpha` 短时混合到该起始姿势。桥接完成后 AnimInstance 才恢复 Montage，以 1x 从 0 向前播放。禁止先混到稳定持枪 Pose（会形成“先放下再拿起”），也不再依赖 Inertialization、Linked Graph 0.1 秒 Blend 或 Montage 时间恢复。原子替换第一人称枪体时标记一次无位移 Camera Cut，清除 TAA/TSR 的旧枪颜色历史。若保留 Montage 默认 0.25 秒 Blend In，持枪姿势会混入动画下方起始姿势，视觉上变成先放下再拿起。
+Equip Montage 兼容代码仍保留，但 FEAT-074 session178 起不再由开局或切枪流程播放。当前切枪在新层求值一帧后直接用材质溶解显示枪体，并标记一次无位移 Camera Cut 清除 TAA/TSR 的旧枪颜色历史。
 | `Source/TheManTest/Public/Weapons/_Shared/WeaponBase/WeaponBase.h` | 武器基类（继承 EquipmentBase，当前为空壳） |
 | `Source/TheManTest/Public/Weapons/_Shared/Firearms/Firearm.h` | 射击参数：`bIsHitscan` / `HitscanRange` / `FireRate` / `BulletClass` / `MuzzleSocketName`；开火反馈：`FireMontage` / `FireSound` / 后坐力；技能：`PrimaryFireAbilityClass` / `SecondaryFireAbilityClass`；`GrantAbilities()` / `RevokeAbilities()`；**`GrantedASC`(TWeakObjectPtr 缓存，切角色回收技能用)** |
 | `Source/TheManTest/Private/Weapons/_Shared/Firearms/Firearm.cpp` | `Equip()` 在基类链接层后写入 Arms/Body AimSource 并 GrantAbilities；`Unequip()` 先 RevokeAbilities 再由基类解链 |

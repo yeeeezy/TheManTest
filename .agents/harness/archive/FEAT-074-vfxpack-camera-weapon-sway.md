@@ -269,3 +269,11 @@
 
 - 将冲刺 BodyRotator 终点由 C++ 硬编码改为角色蓝图可调 `SprintViewmodelPitchDegrees`，分类为 `Viewmodel|Sprint`，默认仍保持原版 -12.5°，允许范围 -45° 到 0°。
 - 当前 RepairGun 已有 `AS_Rifle_A_Equip` 与对应 Montage；开局短暂下压来自角色在 BeginPlay 下一帧主动播放该装备 Montage，不是移动平移滞后。本轮不改装备动画行为。
+
+## 2026-08-03 session178：装备 Montage 改为 C++ 材质溶解
+
+- 按用户确认停用开局与切枪时的手臂 Equip Montage，但保留装备生命周期入口及旧 Montage 兼容字段。
+- 复核原 VFXPack `FirstPersonCharacter`，原装备表现入口为 `Attach And Dissolve In Weapon`，通过枪械动态材质显现而非 Niagara。当前 RepairGun 主材质已包含同款 Dissolve/Noise/`Amount (S)` 参数。
+- `AEquipmentBase::PlayEquipEffect()` 现完全由 C++ 固定管理：参数名 `Amount (S)`、持续 0.45 秒、数值 1→-1 平滑过渡，不向蓝图暴露开关或参数。开局下一帧与切枪新层稳定后一帧均调用该入口。
+- `SprintViewmodelPitchDegrees` 的 C++ 默认值按用户要求由 -12.5° 改为 -6°。
+- Development Editor / Win64 完整编译链接成功。

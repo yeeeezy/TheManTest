@@ -120,7 +120,7 @@ public:
 	float ViewmodelMoveLagReturnSpeed = 10.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Sprint", meta = (ClampMin = "-45.0", ClampMax = "0.0", Units = "deg"))
-	float SprintViewmodelPitchDegrees = -12.5f;
+	float SprintViewmodelPitchDegrees = -6.f;
 
 protected:
 	virtual void BeginPlay() override;
@@ -183,7 +183,7 @@ private:
 	void EnsureViewmodelAttachment();
 	void ApplyViewmodelFraming();
 
-	void PlayInitialEquipMontage();
+	void PlayInitialEquipEffect();
 
 	UPROPERTY(Transient)
 	TObjectPtr<UCameraShakeBase> ActiveMovementCameraShake;

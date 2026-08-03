@@ -229,18 +229,19 @@ void AFPSCharacterBase::BeginPlay()
 
 	// 角色与装备保持首帧可见；只把拔枪 Montage 延迟到下一帧，等待 AnimInstance
 	// 完成初始化。不要在这里隐藏整套 Mesh，否则进入地图时会出现一帧“角色未加载”的空白。
-	GetWorldTimerManager().SetTimerForNextTick(this, &AFPSCharacterBase::PlayInitialEquipMontage);
+	GetWorldTimerManager().SetTimerForNextTick(this, &AFPSCharacterBase::PlayInitialEquipEffect);
 
 }
 
-void AFPSCharacterBase::PlayInitialEquipMontage()
+void AFPSCharacterBase::PlayInitialEquipEffect()
 {
-	// 此时手臂动画实例与姿势已就绪，从第 0 帧播放当前武器拔枪动画。
+	// Keep the established next-tick equip hook, but reveal the weapon with the
+	// source VFXPack-style material dissolve instead of moving the player's arms.
 	if (EquipmentManager)
 	{
 		if (AEquipmentBase* Current = EquipmentManager->GetCurrentEquipment())
 		{
-			Current->PlayEquipMontage();
+			Current->PlayEquipEffect();
 		}
 	}
 }

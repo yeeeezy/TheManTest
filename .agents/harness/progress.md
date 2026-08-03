@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-03-session177
+**最后更新：** 2026-08-03-session178
 
 **当前功能：** FEAT-074 — VFXPack第一人称动画替换、HeadBob、武器摆动与RepairGun射击震屏
 
@@ -10,6 +10,7 @@
 
 ## 本轮完成
 
+- session178：开局/切枪不再播放手臂 Equip Montage，装备入口改为 C++ 固定的 VFXPack 枪体材质溶解（`Amount (S)`、0.45 秒、1→-1），不暴露蓝图参数；冲刺压枪默认改为 -6°。Development Editor / Win64 构建成功。
 - session177：冲刺压枪终点新增蓝图参数 `SprintViewmodelPitchDegrees`（`Viewmodel|Sprint`，默认 -12.5°）；确认开局下压来自现有 Rifle Equip Montage 的自动播放，本轮未改装备动画。
 - session176：按用户最新截图将 Viewmodel Movement Lag 正式默认值同步为左右 2.4cm、前后 1.4cm、跟随 8、回弹 10；保留用户当前 BP_MaintenanceWorker 资产设置。
 - session175：新增轻量且可调的 WASD 枪械位置滞后，只作用于 ArmsViewMesh，默认左右 1.2cm、前后 0.8cm、跟随 8、回弹 16；两轴独立回弹，不改变原版冲刺旋转枢轴、角度或相机。Development Editor / Win64 构建成功。

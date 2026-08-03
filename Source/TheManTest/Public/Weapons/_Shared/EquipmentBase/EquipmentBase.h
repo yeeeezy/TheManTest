@@ -13,6 +13,7 @@ class USceneComponent;
 class URectLightComponent;
 class UAnimMontage;
 class UAnimInstance;
+class UMaterialInstanceDynamic;
 
 UCLASS()
 class THEMANTEST_API AEquipmentBase : public AActor
@@ -47,6 +48,10 @@ public:
     // 切换角色初次装备时推迟到手臂姿势就绪的下一帧再调用，避免起始位置错乱、音效误触发。
 	UFUNCTION(BlueprintCallable, Category = "Equipment|Action")
 	void PlayEquipMontage();
+
+    // VFXPack-style material dissolve used by the active equip lifecycle.
+    // Timing, parameter name and value range are intentionally owned by C++.
+    void PlayEquipEffect();
 
     /* ==========================================
      * 🎒 物理表现与组件
@@ -94,4 +99,11 @@ public:
     FORCEINLINE FName GetEquipSocketName() const { return EquipSocketName; }
     FORCEINLINE FName GetHolsterSocketName() const { return HolsterSocketName; }
     FORCEINLINE UAnimMontage* GetEquipMontage() const { return EquipMontage; }
+
+private:
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<UMaterialInstanceDynamic>> EquipEffectMaterials;
+
+    float EquipEffectElapsed = 0.f;
+    bool bEquipEffectActive = false;
 };

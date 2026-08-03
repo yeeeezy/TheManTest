@@ -5,14 +5,26 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/RectLightComponent.h"
 #include "Components/SceneComponent.h"
+#include "Components/MeshComponent.h"
 #include "GameFramework/Character.h"
 #include "Animation/AnimInstance.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h"
+
+namespace
+{
+    const FName EquipDissolveParameter(TEXT("Amount (S)"));
+    constexpr float EquipDissolveDuration = 0.45f;
+    constexpr float EquipDissolveHiddenValue = 1.f;
+    constexpr float EquipDissolveVisibleValue = -1.f;
+}
 
 AEquipmentBase::AEquipmentBase()
 {
-    // 默认关闭 Tick 以节省性能，只有在装备激活时才开启
-    PrimaryActorTick.bCanEverTick = false;
+    // Equip dissolve uses Tick only while this equipment is active; inventory items
+    // remain disabled by EquipmentManager until equipped.
+    PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.bStartWithTickEnabled = false;
 
     // 1. 创建虚拟根节点
     RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
@@ -48,6 +60,23 @@ void AEquipmentBase::BeginPlay()
 void AEquipmentBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+
+    if (!bEquipEffectActive) { return; }
+
+    EquipEffectElapsed = FMath::Min(EquipEffectElapsed + DeltaTime, EquipDissolveDuration);
+    const float Alpha = EquipDissolveDuration > 0.f ? EquipEffectElapsed / EquipDissolveDuration : 1.f;
+    const float DissolveAmount = FMath::Lerp(
+        EquipDissolveHiddenValue,
+        EquipDissolveVisibleValue,
+        FMath::SmoothStep(0.f, 1.f, Alpha));
+    for (UMaterialInstanceDynamic* Material : EquipEffectMaterials)
+    {
+        if (Material)
+        {
+            Material->SetScalarParameterValue(EquipDissolveParameter, DissolveAmount);
+        }
+    }
+    bEquipEffectActive = Alpha < 1.f;
 }
 
 static void GetAnimLayerMeshes(AActor* Owner, TArray<USkeletalMeshComponent*>& OutMeshes)
@@ -114,6 +143,30 @@ void AEquipmentBase::PlayEquipMontage()
             }
         }
     }
+}
+
+void AEquipmentBase::PlayEquipEffect()
+{
+    EquipEffectMaterials.Reset();
+
+    TArray<UMeshComponent*> MeshComponents;
+    GetComponents<UMeshComponent>(MeshComponents);
+    for (UMeshComponent* MeshComponent : MeshComponents)
+    {
+        if (!MeshComponent) { continue; }
+
+        for (int32 MaterialIndex = 0; MaterialIndex < MeshComponent->GetNumMaterials(); ++MaterialIndex)
+        {
+            if (UMaterialInstanceDynamic* Material = MeshComponent->CreateAndSetMaterialInstanceDynamic(MaterialIndex))
+            {
+                Material->SetScalarParameterValue(EquipDissolveParameter, EquipDissolveHiddenValue);
+                EquipEffectMaterials.Add(Material);
+            }
+        }
+    }
+
+    EquipEffectElapsed = 0.f;
+    bEquipEffectActive = EquipEffectMaterials.Num() > 0;
 }
 
 void AEquipmentBase::Unequip()
