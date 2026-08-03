@@ -188,3 +188,51 @@
 - 架构按原版职责重排：C++ 只向 AnimBP 传 `Lean_Sides_Amount`、`Look_Up_Amount` 和速度；删除 C++ 对 `ViewmodelRoot` 的移动 Roll 与 Sprint Pitch 直接旋转。
 - 冲刺速度比例产生的 -12.5° 压枪值并入 `Look_Up_Amount`，由现有原版 `spine_03` Additive Modify Bone 在 AnimBP 内执行；A/D 原版 Roll 链保持不变。
 - 用户认可的额外“左右偏移”作为项目补充保留，但改为 C++ 在动画 Pose 后叠加 `ViewmodelRoot` Y 方向最大 5cm 位置偏移，不再使用组件 Roll。
+
+## 2026-08-03 session165：取消额外横向平移
+
+- 用户确认暂不使用项目补充的 5cm `ViewmodelRoot` Y 向横移；删除该常量及 Tick 中的平移叠加。
+- `ViewmodelRoot` 恢复只使用确定性构图 Transform；A/D 姿态完全由原版 AnimBP 的 `spine_03` 与 `hand_l` Additive Roll 链负责，原输入 Clamp、2/8 插值和回正逻辑不变。
+- `TheManTestEditor Win64 Development` 完整编译与链接成功；当前编辑器进程仍在运行，需重启后再做前台 A/D 观感复核。
+- 相机基础 FOV 按用户要求从 77° 改回 110°，并删除 `BeginPlay` 的硬编码覆盖；后续角色蓝图可直接调整 HeadCamera 组件原生 `Field Of View`。构图截图测试改为读取运行时 Camera FOV，不再另写死捕获角度。
+- FOV 与横移调整后的 `TheManTestEditor Win64 Development` 完整编译链接成功。
+
+## 2026-08-03 session166：恢复原版完整 Body Sway 与冲刺 BodyRotator
+
+- 重新导出并核对原 `FirstPersonCharacter.Body_Sway`：侧向目标为 `Clamp(MoveRight + MouseX, -1, 1)`，前后/俯仰目标为 `Clamp(-MoveForward - 10×LookUp, -1, 1)`；两者均以 Walk=2 / Sprint=8 的 `FInterpTo` 速度写入 AnimBP。
+- 普通 A/D 最终仍使用原 AnimBP 的 `spine_03` Additive Component-Space Roll 与 `hand_l` 0.5 倍 Roll；不叠加 `ViewmodelRoot` 侧向位移或 Roll。可见观感还包含原 Run 动画、HeadBob 与鼠标 Body Sway，不能只用单个 1°数值解释。
+- 原冲刺由按键意图驱动两条 0.2s 可逆 Timeline：MaxWalkSpeed 550→750；`BodyRotator` 用 `RLerp(Identity, Pitch=-12.5°)` 整体旋转手臂/武器。当前实现使用同一线性 alpha 同步驱动速度与 `ViewmodelRoot` 等价枢轴，松键从当前位置反向播放；空中拒绝开始冲刺。
+- 取消 session162–164 的速度阈值驱动与“把 -12.5° 写入 `Look_Up_Amount`”的非原版路径；Running CameraShake 也恢复按 sprint 状态选择。
+- 自动化首轮暴露 `BP_MaintenanceWorker` 仍序列化 HeadCamera FOV=100°；已直接改为 110°，使蓝图 Camera 原生默认值真正生效。`TheManTestEditor Win64 Development` 编译成功，`TheManTest.Player.Viewmodel.FramingCapture` 复跑 1/1 Success；尚需前台 PIE 对比普通 A/D、鼠标转向和冲刺压枪的最终观感。
+
+## 2026-08-03 session167：强化普通移动的可见旋转
+
+- 用户前台复核确认仅有原 AnimBP `spine_03=±1°` / `hand_l=±0.5°` 时仍观察不到旋转；不再把变量或骨骼 Pose 数值变化当作可见效果验收。
+- 保留原 Body Sway 与 AnimBP Modify Bone 链，同时把 `CurrentVFXLeanSides` 以最大 ±6° 纯 Roll 应用到 `ViewmodelRoot`；与原版冲刺的最大 -12.5° Pitch 在同一枢轴合并。位置仍固定为 authored Transform，没有恢复 5cm 横向平移。
+- Development Editor / Win64 完整编译和链接成功。
+
+## 2026-08-03 session168：修正侧倾旋转枢轴
+
+- session167 将 Roll 施加在相机子级 `ViewmodelRoot`，由于枢轴距枪械过远，屏幕观感仍是圆弧横移，与原版围绕胸口/持枪骨骼的倾斜不符。
+- 撤掉 `ViewmodelRoot` 的 A/D Roll；该节点只保留原 `BodyRotator` 冲刺 Pitch。可见性 Roll 改在 `ArmsViewMesh` 相对旋转上与 authored `BaseArmsRotation` 合并，使枢轴靠近骨架根/胸口；无位置变化。
+- Development Editor / Win64 完整编译链接成功。
+
+## 2026-08-03 session169：删除所有方向倾斜补偿
+
+- 用户明确要求既然 Skeleton、Mesh、AnimBP 与动画均来自原版，应直接复制原逻辑，不再进行任何项目侧可见性补偿。
+- 撤销 session167–168 的 ±6° 组件 Roll；`ViewmodelRoot` 和 `ArmsViewMesh` 均不再从 A/D 直接获得旋转。方向摆动仅使用原 Body Sway 的 `Lean_Sides_Amount` / `Look_Up_Amount` 与 AnimBP Modify Bone 输出。
+- 冲刺仍仅使用原 `BodyRotator` 等价层：0.2s 可逆 alpha 驱动 Pitch 0→-12.5°。Development Editor / Win64 完整编译链接成功。
+
+## 2026-08-03 session170：恢复 AnimBP 遗漏的原版 Body Sway 倍率
+
+- 对原/现 AnimBP 做 T3D 节点级对比：4 个 Modify Bone、`spine_03`、`hand_l`、变量 GUID 与输出连接均完整，资产迁移未丢节点。
+- 真正缺失位于被删除的原 AnimBP EventGraph：它在从示例角色复制 `PlayerLeanAmount` / `PlayerLookUpAmount` 后，还会分别乘以 `Lean_Sides_Offset` / `Look_Up_Offset` 再写回。直接读取原版 CDO 确认精确默认值为 8.0 / 2.0。
+- C++ 现按原顺序写入 `Lean_Sides_Amount=CurrentVFXLeanSides×8` 与 `Look_Up_Amount=CurrentVFXLookUpDown×2`；未添加任何组件 Roll 或位移。
+- 运行时探针强制真实 A/D 入口与 Pose 评估：修复前 `hand_r` / RepairGun 角差约为 2.15° / 2.05°；修复后为 6.61° / 10.24°，证明原版明显旋转链已恢复并传递到最终武器。
+
+## 2026-08-03 session171：原版 FOV 与武器挂点最终变换
+
+- 修改 VFXPack `MainScene` 中最近出生点的 `BP_Weapon_Rifle_Physical_01_Child` 位置，使其可在开局附近按 E 拾取；实机采集 1280×720 Idle 与 Shift+W 参考图。
+- 原项目 HeadCamera FOV 为 77°。当前 C++ 基础值和自动化断言已恢复 77°，不在 BeginPlay 硬覆盖蓝图 Camera 属性。
+- 原武器实际挂载链为 `GripPoint -> Actor Root -> RootOffset(Y=+11.660166) -> WeaponGripLoc -> Weapon_MainMesh(Y=-16.757669,Z=3.554176)`，最终网格位置为 `(-0.000656,-5.097503,3.554176)`。项目先前只复制了末级 Mesh 变换，漏掉 RootOffset，造成持枪轴向偏差 11.66cm；`BP_RepairGun.StaticMesh` 已恢复为原版最终值。
+- 原 `BodyRotator` 冲刺 0.2s / Pitch -12.5° 保持不变。Development Editor 编译成功，RepairGun 蓝图编译保存并冷回读正确。

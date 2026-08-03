@@ -784,7 +784,7 @@ bool FPlayerFramingScreenshotCommand::Update()
 	USceneCaptureComponent2D* Capture = NewObject<USceneCaptureComponent2D>(Player);
 	Capture->RegisterComponentWithWorld(World);
 	Capture->AttachToComponent(Player->GetHeadCamera(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-	Capture->FOVAngle = 77.f;
+	Capture->FOVAngle = Player->GetHeadCamera()->FieldOfView;
 	Capture->CaptureSource = SCS_FinalColorLDR;
 	Capture->TextureTarget = RenderTarget;
 	Capture->bCaptureEveryFrame = false;
@@ -810,7 +810,7 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 	AFPSCharacterBase* Player = PC ? Cast<AFPSCharacterBase>(PC->GetPawn()) : nullptr;
 	if (!Player || !Player->GetHeadCamera() || !Player->GetViewmodelRoot() || !Player->GetArmsMesh()) return false;
 
-	Test->TestTrue(TEXT("Gameplay camera matches VFXPack 77 degree FOV"),
+	Test->TestTrue(TEXT("Gameplay camera uses the original VFXPack 77 degree baseline FOV"),
 		FMath::IsNearlyEqual(Player->GetHeadCamera()->FieldOfView, 77.f));
 	Test->TestEqual(TEXT("ViewmodelRoot is attached directly to HeadCamera"),
 		Player->GetViewmodelRoot()->GetAttachParent(), static_cast<USceneComponent*>(Player->GetHeadCamera()));
@@ -847,6 +847,7 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 		Test->TestEqual(TEXT("Current equipment uses declared equip socket"),
 			Equipment->GetRootComponent()->GetAttachSocketName(), Equipment->GetEquipSocketName());
 	}
+
 	return true;
 }
 

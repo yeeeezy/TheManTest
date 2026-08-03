@@ -177,7 +177,10 @@ private:
 	float CurrentVFXLeanSides = 0.f;
 	float CurrentVFXLookUpDown = 0.f;
 	FVector2D CurrentVFXMoveInput = FVector2D::ZeroVector;
-	static constexpr float VFXMovementWeaponLateralOffsetCm = 5.f;
+	float CurrentVFXLookInputX = 0.f;
+	float CurrentVFXLookInputY = 0.f;
+	float SprintTransitionAlpha = 0.f;
+	static constexpr float VFXSprintTransitionDuration = 0.2f;
 
 	float RecoilPitchVelocity = 0.f;
 	float RecoilYawVelocity   = 0.f;
