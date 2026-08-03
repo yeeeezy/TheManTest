@@ -527,7 +527,7 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		// in the unmodified source AnimBP spine_03/hand_l Modify Bone chain.
 		ViewmodelRoot->SetRelativeLocation(FVector::ZeroVector);
 		ViewmodelRoot->SetRelativeRotation(
-			ViewmodelOffsetRotation + FRotator(-12.5f * SprintTransitionAlpha, 0.f, 0.f));
+			ViewmodelOffsetRotation + FRotator(SprintViewmodelPitchDegrees * SprintTransitionAlpha, 0.f, 0.f));
 		// Move opposite the player's input to create subtle positional inertia.
 		// Each axis returns independently, using the faster release speed.
 		const FVector MoveLagTarget(

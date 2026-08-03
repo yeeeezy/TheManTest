@@ -119,6 +119,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Movement Lag", meta = (ClampMin = "0.0"))
 	float ViewmodelMoveLagReturnSpeed = 10.f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Sprint", meta = (ClampMin = "-45.0", ClampMax = "0.0", Units = "deg"))
+	float SprintViewmodelPitchDegrees = -12.5f;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;

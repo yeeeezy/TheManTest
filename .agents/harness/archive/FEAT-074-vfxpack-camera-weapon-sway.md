@@ -264,3 +264,8 @@
 
 - 读取用户最新截图，将 C++ 正式默认值同步为蓝图中已调好的观感：左右 2.4cm、前后 1.4cm、跟随速度 8、回弹速度 10。
 - 保留用户已修改的 `BP_MaintenanceWorker` 资产，不覆盖其蓝图设置。
+
+## 2026-08-03 session177：冲刺压枪幅度开放为蓝图参数
+
+- 将冲刺 BodyRotator 终点由 C++ 硬编码改为角色蓝图可调 `SprintViewmodelPitchDegrees`，分类为 `Viewmodel|Sprint`，默认仍保持原版 -12.5°，允许范围 -45° 到 0°。
+- 当前 RepairGun 已有 `AS_Rifle_A_Equip` 与对应 Montage；开局短暂下压来自角色在 BeginPlay 下一帧主动播放该装备 Montage，不是移动平移滞后。本轮不改装备动画行为。
