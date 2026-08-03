@@ -155,6 +155,21 @@ void AEquipmentBase::PlayEquipEffect()
     {
         if (!MeshComponent) { continue; }
 
+        // Some equipment owns helper mesh components (for example the firearm
+        // outline overlay) whose asset is intentionally empty. Such components
+        // can still report an override material slot, but creating a MID for it
+        // produces an invalid-material-index warning in PIE.
+        if (const UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(MeshComponent);
+            StaticMeshComponent && !StaticMeshComponent->GetStaticMesh())
+        {
+            continue;
+        }
+        if (const USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(MeshComponent);
+            SkeletalMeshComponent && !SkeletalMeshComponent->GetSkeletalMeshAsset())
+        {
+            continue;
+        }
+
         for (int32 MaterialIndex = 0; MaterialIndex < MeshComponent->GetNumMaterials(); ++MaterialIndex)
         {
             if (UMaterialInstanceDynamic* Material = MeshComponent->CreateAndSetMaterialInstanceDynamic(MaterialIndex))

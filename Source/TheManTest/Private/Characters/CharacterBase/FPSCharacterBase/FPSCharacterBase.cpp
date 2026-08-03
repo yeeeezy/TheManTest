@@ -8,7 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "Weapons/_Shared/Components/EquipmentManagerComponent.h"
 #include "Characters/_Shared/Components/ScanEffectComponent.h"
-#include "Characters/CharacterBase/FPSCharacterBase/Animation/FPSCharacterAnimInstance.h"
+#include "Characters/CharacterBase/Animation/CharacterBaseAnimInstance.h"
 #include "Core/TheManPlayerController.h"
 #include "Core/TheManPlayerState.h"
 #include "AbilitySystemComponent.h"
@@ -505,17 +505,26 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		CurrentVFXLeanSides = FMath::FInterpTo(CurrentVFXLeanSides, SideInput, DeltaTime, BodySwayInterpSpeed);
 		CurrentVFXLookUpDown = FMath::FInterpTo(CurrentVFXLookUpDown, ForwardSwayTarget, DeltaTime, BodySwayInterpSpeed);
 
-		auto UpdateVFXPackAnimInstance = [this, CharacterSpeed](UAnimInstance* AnimInstance)
+			auto UpdateVFXPackAnimInstance = [this, CharacterSpeed](UAnimInstance* AnimInstance)
 		{
-			SetAnimBool(AnimInstance, TEXT("Is_Moving"), CharacterSpeed > 0.0);
-			SetAnimBool(AnimInstance, TEXT("Is_InAir"), GetCharacterMovement()->IsFalling());
-			SetAnimNumber(AnimInstance, TEXT("Character_Speed"), CharacterSpeed);
-			// The source AnimBP EventGraph applies its authored offsets after copying
-			// PlayerLeanAmount / PlayerLookUpAmount: Side * 8 and LookUp * 2. Its hard
-			// cast to FirstPersonCharacter was removed during migration, so reproduce
-			// that second stage here before the original Modify Bone nodes evaluate.
-			SetAnimNumber(AnimInstance, TEXT("Lean_Sides_Amount"), CurrentVFXLeanSides * 8.f);
-			SetAnimNumber(AnimInstance, TEXT("Look_Up_Amount"), CurrentVFXLookUpDown * 2.f);
+			if (UCharacterBaseAnimInstance* CharacterAnimInstance = Cast<UCharacterBaseAnimInstance>(AnimInstance))
+			{
+				CharacterAnimInstance->UpdateCharacterAnimationState(
+					static_cast<float>(CharacterSpeed),
+					GetCharacterMovement()->IsFalling(),
+					CurrentVFXLeanSides * 8.f,
+					CurrentVFXLookUpDown * 2.f);
+			}
+			else
+			{
+				// Compatibility path for the restored original VFXPack AnimBP. Keep
+				// this until its complete graph has been migrated into the template.
+				SetAnimBool(AnimInstance, TEXT("Is_Moving"), CharacterSpeed > 0.0);
+				SetAnimBool(AnimInstance, TEXT("Is_InAir"), GetCharacterMovement()->IsFalling());
+				SetAnimNumber(AnimInstance, TEXT("Character_Speed"), CharacterSpeed);
+				SetAnimNumber(AnimInstance, TEXT("Lean_Sides_Amount"), CurrentVFXLeanSides * 8.0);
+				SetAnimNumber(AnimInstance, TEXT("Look_Up_Amount"), CurrentVFXLookUpDown * 2.0);
+			}
 		};
 
 		// 恢复项目原有的第一/第三人称同一动画源：两个 Mesh 使用同一个 VFXPack

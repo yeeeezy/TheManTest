@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-03-session178
+**最后更新：** 2026-08-03-session181
 
 **当前功能：** FEAT-074 — VFXPack第一人称动画替换、HeadBob、武器摆动与RepairGun射击震屏
 
@@ -10,6 +10,9 @@
 
 ## 本轮完成
 
+- session181：修复 session179/180 未通过动画验证造成的回归。完整原版 VFXPack AnimBP 和 12 个依赖资产已从检查点恢复并用 AssetTools 迁入 CharacterBase；最终 ABP 保留完整原父类/AnimGraph，不再继承空模板。`ArmsViewMesh` 已重新绑定正式 Mesh 与 `ABP_CharacterBase_C`。普通 PIE 与冷重启 PIE 均用真实 A 键验证 `Is_Moving=True`、Speed 550/750 且双手为动态非参考 Pose；游戏视口截图确认枪和持枪手恢复。`TABP_CharacterBase` 目前仅预留，不在运行链。
+- session180：FramingCapture 仅验证了构图，未能发现 AnimGraph 被剥离，原“模板链正确”结论已由 session181 撤销；装备溶解跳过空 helper mesh 的 C++ 修复及完整构建结果仍有效。
+- session179：将 MaintenanceWorker 下暂时公用的 Body、第一人称 Mesh/材质/纹理、Body/第一人称动画和旧 VFXPack 参考动画统一迁到 `/Game/Characters/CharacterBase`；新增 `UCharacterBaseAnimInstance` 强类型承载原 VFXPack 五个变量，创建无骨架 `TABP_CharacterBase` 与最终骨架子类 `ABP_CharacterBase`，MaintenanceWorker 已引用最终子类。旧 `FPSArmsAnimInstance` 源码原先已不存在，本轮删除最后的 CoreRedirect；仍被 `TABP_BodyLocomotion` 使用的 `UFPSCharacterAnimInstance` 保留。Development Editor / Win64 构建成功。
 - session178：开局/切枪不再播放手臂 Equip Montage，装备入口改为 C++ 固定的 VFXPack 枪体材质溶解（`Amount (S)`、0.45 秒、1→-1），不暴露蓝图参数；冲刺压枪默认改为 -6°。Development Editor / Win64 构建成功。
 - session177：冲刺压枪终点新增蓝图参数 `SprintViewmodelPitchDegrees`（`Viewmodel|Sprint`，默认 -12.5°）；确认开局下压来自现有 Rifle Equip Montage 的自动播放，本轮未改装备动画。
 - session176：按用户最新截图将 Viewmodel Movement Lag 正式默认值同步为左右 2.4cm、前后 1.4cm、跟随 8、回弹 10；保留用户当前 BP_MaintenanceWorker 资产设置。

@@ -277,3 +277,25 @@
 - `AEquipmentBase::PlayEquipEffect()` 现完全由 C++ 固定管理：参数名 `Amount (S)`、持续 0.45 秒、数值 1→-1 平滑过渡，不向蓝图暴露开关或参数。开局下一帧与切枪新层稳定后一帧均调用该入口。
 - `SprintViewmodelPitchDegrees` 的 C++ 默认值按用户要求由 -12.5° 改为 -6°。
 - Development Editor / Win64 完整编译链接成功。
+
+## 2026-08-03 session179：共享角色资产与第一人称 AnimBP 分层整理
+
+- 通过正常 Unreal Editor 的 AssetTools 将 MaintenanceWorker 下暂时公用的 Body、第一人称 Mesh/材质/纹理、Body/第一人称动画统一迁到 `/Game/Characters/CharacterBase`；旧 VFXPack 重建资产保留在 `CharacterBase/Animations/Legacy`，不再污染具体角色目录。未在 TheManTest 内执行任何重定向或创建 IK Retargeter。
+- 新增 `UCharacterBaseAnimInstance`，强类型保存 `Is_Moving`、`Is_InAir`、`Character_Speed`、`Lean_Sides_Amount`、`Look_Up_Amount`；`AFPSCharacterBase` 不再依靠反射字符串写入这些变量。
+- 新建无骨架模板 `TABP_CharacterBase`（C++ 父类 `UCharacterBaseAnimInstance`），原版 VFXPack 最终图整理为带目标 Skeleton 的子 AnimBP `ABP_CharacterBase`；`BP_MaintenanceWorker` 的第一人称与当前共用动画组件引用均已重定向到新最终资产。
+- 身体 Locomotion 模板仍实际依赖 `UFPSCharacterAnimInstance` 的移动/切枪姿势变量，因此该活跃类保留；已弃用的 `UFPSArmsAnimInstance` 源文件早已不存在，本轮删除其最后一条 CoreRedirect。
+- UnrealEditor-Cmd 移动 AnimationSequence 时触发 UE 5.7 `AnimationData` shared-pointer 断言，后续所有资产写入改在正常编辑器完成；正常编辑器重复 Python 编译依赖蓝图另触发一次 BlueprintEditorLibrary 崩溃，资产均已在此前保存。Development Editor / Win64 冷构建成功。
+
+## 2026-08-03 session180：迁移后冷启动与 PIE 补验
+
+- DebugGame 编辑器冷启动无 AnimBP/资产加载错误；AssetRegistry 回读确认 `TABP_CharacterBase` 仅被 `ABP_CharacterBase` 引用，最终 FP AnimBP 依赖新模板和 CharacterBase 手臂 Skeleton，最终 Body AnimBP 依赖 `TABP_BodyLocomotion` 与已迁移 Body 动画，两者均被 `BP_MaintenanceWorker` 引用。
+- `TheManTest.Player.Viewmodel.FramingCapture` 实际运行并返回 1/1 Success，角色生成、相机/FOV、Viewmodel 层级与武器挂点断言通过。
+- PIE 捕获到装备溶解对空 `StaticMeshOverlay` 创建 MID 的 invalid material index 警告；`AEquipmentBase::PlayEquipEffect()` 现跳过未指定 Static/Skeletal Mesh 资产的 helper component。Development Editor / Win64 完整编译、链接成功。
+- 非本轮回归：`BP_MaintenanceWorker` AssetRegistry 仍报告不存在的 `/Game/Characters/MaintenanceWorker/Blueprint/BP_MaintenanceWorker_Old` 历史依赖；RepairGun Linked Anim Layer 仍报告当前 Skeleton 无 `AimSocket`。两者未引发本次自动化失败，后续应各自清理/配置。
+
+## 2026-08-03 session181：修复第一人称手臂动画被剥离回归
+
+- 撤销 session179/180 关于模板链已成功的错误结论。完整原版 AnimBP reparent 到空 `TABP_CharacterBase` 后只剩参考姿势输出；此前 FramingCapture 只验证构图，没有验证骨骼动态。
+- 从写入前检查点恢复完整原版 13 个第一人称资产，并通过正常编辑器 AssetTools 迁到 CharacterBase 正式路径。最终 `ABP_CharacterBase` 保留原 AnimInstance 父类、完整 AnimGraph/状态机和蓝图变量，没有再执行 reparent。
+- 修复 `BP_MaintenanceWorker.ArmsViewMesh` 的 Mesh/AnimClass 均为 None 的第二处回归，明确绑定共享手臂 Mesh 与 `ABP_CharacterBase_C`，编译保存角色蓝图。
+- AssetRegistry 验证最终 AnimBP 依赖 WalkRun BlendSpace、Idle/Jump/Still 动画和正式 Skeleton。普通 PIE 真 A 键输入为 `Is_Moving=True`、Speed≈550；冷重启后再次为 True、Speed≈750，hand_r/hand_l 均为动态非参考 Pose。截图：`Saved/Screenshots/WindowsEditor/TMT_OriginalAnimBP_Walk_Cold.png`。

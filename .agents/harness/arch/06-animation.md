@@ -16,12 +16,14 @@
 
 | 文件 | 关键内容 |
 |---|---|
-| `Source/TheManTest/Public/Characters/CharacterBase/FPSCharacterBase/Animation/FPSCharacterAnimInstance.h` | 玩家动画实例（FEAT-041 由 `UFPSArmsAnimInstance` 改名）。挂在 **`GetMesh()`**，驱动身体/影子/腿三件套共享的全身姿势。session63 改为 UE 模板式普通 locomotion：Idle 与 Walk/Run BlendSpace 按 `Speed` / `Direction` 直接混合，不再做专门停步动画。当前子类只在基类变量之外补 `AccelDirection` / `bHasAcceleration`，保留为玩家专属扩展点。DefaultEngine.ini 有 CoreRedirect 保旧 ABP 父类链接 |
+| `Source/TheManTest/Public/Characters/CharacterBase/Animation/CharacterBaseAnimInstance.h` | FEAT-074 预留的第一人称强类型 C++ 数据源。当前完整原版 AnimBP 尚未安全迁入该父类，因此 `AFPSCharacterBase` 对它继续使用兼容反射写值 |
+| `Source/TheManTest/Public/Characters/CharacterBase/FPSCharacterBase/Animation/FPSCharacterAnimInstance.h` | 身体 locomotion 模板仍在使用的玩家动画实例。继承共享 Locomotion 变量并提供 `AccelDirection` / `bHasAcceleration` 及当前身体模板仍引用的切枪 Pose 变量；不是弃用手臂类。旧 `UFPSArmsAnimInstance` 源码和 CoreRedirect 均已删除 |
 | `Source/TheManTest/Public/Weapons/_Shared/Animation/EquipmentAnimInstance.h` | 装备/武器动画层通用父类。输出 Speed / Direction / Velocity_Z / bIsFalling，供通用装备上半身 Idle/Walk/Run/Jump 动画层使用。FEAT-046 session75 回退为普通 1D BlendSpace 方案后，不再暴露 Start/End 状态机专用临时变量 |
 | `Source/TheManTest/Public/Weapons/_Shared/Firearms/FirearmAnimInstance.h` | 4 个 AimIK 变量：AimSourceLocalTransform / AimTargetComponentSpace / bHasValidAimTarget / bIsAiming |
 
 **玩家 locomotion（session63 简化）：**
 
+- FEAT-074 当前有效第一人称资产是 `/Game/Characters/CharacterBase/Animations/Skeleton/ABP_CharacterBase`：它保持 VFXPack 原版 AnimGraph、状态机、蓝图变量和原 AnimInstance 父类。`TABP_CharacterBase` 暂未进入运行链；直接 reparent 到该空模板会剥离 AnimGraph，禁止重复此操作。
 - FEAT-074 MaintenanceWorker 特例：`CharacterMesh0` 与 `ArmsViewMesh` 同时使用整理后的原版 VFXPack 第一人称 AnimBP，C++ 向两者同步写原变量。原 `Walk_Run_1D` 是 Speed 一维轴；Body Sway 目标为 Side=`Clamp(MoveRight+MouseX)` 与 Forward=`Clamp(-MoveForward-10×LookUp)`，Walk/Sprint 插值速度分别为 2/8。原 AnimBP EventGraph 随后还会应用 authored `Lean_Sides_Offset=8` / `Look_Up_Offset=2`；由于该 EventGraph 的示例角色硬 Cast 已被移除，C++ 写 AnimBP 时必须保留这两个倍率。鼠标轴按帧消费，移动输入 Completed/Canceled 时目标清零。A/D 不额外平移或旋转 `ViewmodelRoot`。原版冲刺层级是 `FPS_Camera -> BodyRotator(相机原点) -> SK_ArmMesh(位置偏移)`；当前必须同样让零位置的 `ViewmodelRoot` 在 0.2s 内压至 Pitch -12.5°，并让 `ArmsViewMesh` 持有 SK_ArmMesh 偏移，不能把偏移放到旋转节点。Shadow/Legs 仍 Leader=`CharacterMesh0`。
 - 不再使用 `StopAnimIndex` / `bShouldStop` / `bShouldMove` / 脚相位 / 延迟停 / 保持原速滑行。
 - ABP 应采用最小状态机：`Idle <-> WalkRun BlendSpace`，常用条件为 `Speed > 3` 与 `Speed <= 3`；跳跃可继续用 `bIsFalling` / `Velocity_Z`。

@@ -21,10 +21,13 @@
 
 | 资产 / 类 | 路径 | 作用 |
 |---|---|---|
-| `ABP_BodyLocomotion` | `Content/Characters/CharacterBase/Animations/Logic/` | 当前玩家主 AnimBP；`GetMesh()` 与 `ArmsViewMesh` 可各自使用该主 ABP，并接收同一玩家 Skeleton 上的武器 Linked Anim Layer |
+| `TABP_BodyLocomotion` | `Content/Characters/CharacterBase/Animations/Logic/` | 身体 locomotion 无骨架模板；最终身体子类现整理到 `Animations/Skeleton/ABP_CharacterBase_Body` |
+| `TABP_CharacterBase` | `Content/Characters/CharacterBase/Animations/Template/` | FEAT-074 预留无骨架模板，目前不在运行继承链中；不得把完整原版 AnimBP 直接 reparent 到该空模板 |
+| `ABP_CharacterBase` | `Content/Characters/CharacterBase/Animations/Skeleton/` | 当前有效的完整原版 VFXPack AnimBP；保留原 AnimInstance 父类、AnimGraph、状态机和蓝图变量，由 MaintenanceWorker 的 ArmsViewMesh 引用 |
 | `ALI_WeaponAnim` | `Content/Weapons/_Shared/Animations/Interface/` | 武器动画层接口，定义两个层：`WeaponAimOffset`、`WeaponUpperBody` |
 | `TABP_Firearm_UpperBodyBase` | `Content/Weapons/_Shared/Animations/Logic/` | 当前枪械上半身 Template AnimBP，实现 `ALI_WeaponAnim`；具体玩家骨架层继续与玩家 Skeleton 兼容 |
-| `UFPSCharacterAnimInstance` | `Source/.../Characters/CharacterBase/FPSCharacterBase/Animation/FPSCharacterAnimInstance.h` | 玩家 ABP 的 C++ 父类（FEAT-041 由 `UFPSArmsAnimInstance` 改名），持有 Locomotion 变量（继承基类）；CoreRedirect 保旧链接 |
+| `UCharacterBaseAnimInstance` | `Source/.../Characters/CharacterBase/Animation/CharacterBaseAnimInstance.h` | 第一人称模板的五个原版 VFXPack 驱动变量及强类型更新入口 |
+| `UFPSCharacterAnimInstance` | `Source/.../Characters/CharacterBase/FPSCharacterBase/Animation/FPSCharacterAnimInstance.h` | 身体 locomotion 模板仍在使用的 C++ 父类；旧 `UFPSArmsAnimInstance` 已无源码和 CoreRedirect |
 | `UFirearmAnimInstance` | `Source/.../Equipment/Firearms/FirearmAnimInstance.h` | 当前枪械动画层模板 `TABP_Firearm_UpperBodyBase` 的 C++ 父类，持有四个 AimIK 变量 |
 
 > 敌人 ABP（`ABP_HumanoidEnemy`）见下方“敌人动画架构”节及 `11-enemy-ai.md`。
