@@ -22,7 +22,7 @@
 
 **玩家 locomotion（session63 简化）：**
 
-- FEAT-074 MaintenanceWorker 特例：`CharacterMesh0` 与 `ArmsViewMesh` 同时使用整理后的原版 VFXPack 第一人称 AnimBP，C++ 向两者同步写原变量。原 `Walk_Run_1D` 是 Speed 一维轴；A/D 姿态由 `Lean_Sides_Amount` 驱动，目标为局部侧向速度归一化后的 `[-1,1]`，Walk/Sprint 插值速度分别为 2/8。Shadow/Legs 仍 Leader=`CharacterMesh0`。
+- FEAT-074 MaintenanceWorker 特例：`CharacterMesh0` 与 `ArmsViewMesh` 同时使用整理后的原版 VFXPack 第一人称 AnimBP，C++ 向两者同步写原变量。原 `Walk_Run_1D` 是 Speed 一维轴；A/D 姿态由 Enhanced Input 原始侧向轴 Clamp 到 `[-1,1]` 后写入 `Lean_Sides_Amount`，W/S 写入 `Look_Up_Amount`，Walk/Sprint 插值速度分别为 2/8。输入 Completed/Canceled 时目标清零。Shadow/Legs 仍 Leader=`CharacterMesh0`。
 - 不再使用 `StopAnimIndex` / `bShouldStop` / `bShouldMove` / 脚相位 / 延迟停 / 保持原速滑行。
 - ABP 应采用最小状态机：`Idle <-> WalkRun BlendSpace`，常用条件为 `Speed > 3` 与 `Speed <= 3`；跳跃可继续用 `bIsFalling` / `Velocity_Z`。
 - `UFPSCharacterAnimInstance` 继承 `UBaseLocomotionAnimInstance`，保留 `AccelDirection` / `bHasAcceleration` 给起步 Lean 或后续玩家专属动画使用。若 ABP 不需要 Lean，可以完全不读这两个变量。

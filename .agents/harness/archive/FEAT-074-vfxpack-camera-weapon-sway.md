@@ -147,3 +147,44 @@
 - C++ 现在向第一/第三人称两个原版 AnimInstance 同步写入 `Is_Moving`、`Is_InAir`、`Character_Speed`、`Lean_Sides_Amount`、`Look_Up_Down_Amount`。
 - PIE 右移实测 Lean=`+0.9782058`，左移=`-0.9782051`；两侧速度均 550。两个 Mesh 的 AnimClass 相同，`hand_r` 组件空间旋转/位移逐项一致（仅浮点百万分位误差）；Shadow Leader 冷回读为 `CharacterMesh0`。
 - 证据截图：`Saved/Screenshots/WindowsEditor/TMT_VFXPack_StrafeRight.png`、`TMT_VFXPack_StrafeLeft.png`。Development Editor / Win64 冷构建成功；FramingCapture 1/1 Success；三个相关蓝图编译并保存，全部 Dirty Package 已保存。
+
+## 2026-08-02 session157：修复移动倾斜驱动
+
+- 用户前台确认 A/D 没有可见倾斜，撤销 session156 仅凭 `Lean_Sides_Amount` 数值就判定视觉有效的结论。
+- 重新导出原版与主项目正式 AnimBP：原版通过 `spine_03` Additive Roll/Pitch 和 `hand_l` 0.5× Additive Roll 实现枪械随手臂倾斜；正式资产中的节点与连接仍存在。
+- C++ 不再从 CharacterMovement 速度反推方向输入，改为缓存 Enhanced Input 原始二维移动轴；普通移动/冲刺仍按原版 2/8 的 `FInterpTo` 速度，输入 Completed/Canceled 时清零并平滑回正。
+- 修正前后倾斜变量名：错误的 `Look_Up_Down_Amount` 改为 AnimBP 实际读取的 `Look_Up_Amount`。
+- `TheManTestEditor Win64 Development` 冷构建成功。由于最终可见倾斜属于前台观感，仍待用户 PIE 复核 A/D/W/S；不得再仅以变量数值作为验收证据。
+## 2026-08-02 session158
+
+- 运行时探针确认 A 输入期间两个第一人称相关 AnimInstance 的 `Lean_Sides_Amount=-1.0`，原 `Modify Bone` 链确实改变 `spine_03/hand_l/hand_r`，此前“完全没倾斜”的视觉结果来自原骨骼修正只有最大 1°。
+- 复核原角色 `BodyRotator` 后确认其 Timeline 是冲刺/收枪过渡，不是左右移动倾斜来源。
+- 在保留原 AnimBP 细微骨骼修正、原 2/8 插值速度和输入回正逻辑的基础上，将 `CurrentVFXLeanSides` 同时应用到 `ViewmodelRoot` Roll，满输入幅度 6°，以匹配当前 RepairGun/FOV 下可辨识的枪械侧倾。
+- `FPSCharacterBase.cpp` 编译成功；Development Editor 冷构建链接阶段因当前 UnrealEditor 占用 `UnrealEditor-TheManTest.dll` 失败，关闭编辑器后需重跑冷构建并用 A/D 前台确认方向和幅度。
+## 2026-08-02 session159
+
+- 根据用户前台观感反馈，将移动枪械根节点最大 Roll 从 6° 下调为 3°；不改变原 2/8 插值速度、输入回正或 AnimBP 骨骼细微修正。
+- 当前 UnrealEditor 正在运行，需关闭后冷构建加载新幅度。
+## 2026-08-02 session160
+
+- 直接读取已迁移原版 CameraShake CDO：Walk RotOscillation Pitch/Yaw/Roll 均为 0.2°、原调用 Scale=0.5；Run Pitch=0.75°、Yaw=0.2°、Roll=0°。CameraShake 不是 A/D 定向侧倾的主要来源。
+- 原版 A/D 定向侧倾仍以 AnimBP 的 `spine_03` 最大 1° Roll 为主，`hand_l` 为 0.5 倍；`BodyRotator` 仅处理冲刺/收枪，Run 动画只提供周期摆动。
+- 将为当前 RepairGun/FOV 补可见性的额外 `ViewmodelRoot` 最大 Roll 从 3° 下调到 1°，避免明显超过原版。
+## 2026-08-02 session161
+
+- 用户确认 1° 补偿偏弱，指定将额外 `ViewmodelRoot` 最大 Roll 调整为 2°；其余侧倾链路参数不变。
+## 2026-08-02 session162
+
+- 复核原 AnimBP 导出：定向倾斜确实由 `spine_03` Additive Roll 驱动，随后 `hand_l` 叠加 0.5 倍 Roll；两节点均未覆盖 `RotationSpace`，采用 Modify Bone 默认 Component Space。当前原节点仍完整运行。
+- 当前额外 2° `ViewmodelRoot` Roll 因轴心在相机子级根部会产生可见弧形位移；按用户要求保留，并与原骨骼旋转同时叠加。
+- 将冲刺视觉选择从 `bIsSprinting`（Shift 意图）改为实际 `Velocity.Size2D()`：在 `WalkSpeed..SprintSpeed` 间计算连续 `SprintVisualAlpha`，Body Sway 插值速度 2..8 连续变化，Running CameraShake 于 alpha>=0.5 切换。移动速度未达到阈值时，即使按住 Shift 也不进入冲刺视觉。
+## 2026-08-02 session163
+
+- 用户复核发现 session162 后 Shift 无压枪反应；根因是此前只将 Body Sway 插值与 CameraShake 改为速度驱动，未在当前项目恢复原版 `BodyRotator` 冲刺旋转。
+- 从原 `FirstPersonCharacter` 图中提取精确参数：`Timeline_2` 输出 Alpha，`RLerp` 从 Identity 到 `Rotator(Pitch=-12.5°, Yaw=0, Roll=0)`，再写入 BodyRotator Relative Rotation。
+- 当前等价实现将 `SprintLoweringRotation.Pitch=-12.5° * SprintVisualAlpha` 与现有 ViewmodelOffset、左右 2° Roll 相加；alpha 由实际 `Velocity.Size2D()` 在 550..750 映射，原地 Shift 不压枪，加速/减速连续过渡。
+## 2026-08-02 session164
+
+- 架构按原版职责重排：C++ 只向 AnimBP 传 `Lean_Sides_Amount`、`Look_Up_Amount` 和速度；删除 C++ 对 `ViewmodelRoot` 的移动 Roll 与 Sprint Pitch 直接旋转。
+- 冲刺速度比例产生的 -12.5° 压枪值并入 `Look_Up_Amount`，由现有原版 `spine_03` Additive Modify Bone 在 AnimBP 内执行；A/D 原版 Roll 链保持不变。
+- 用户认可的额外“左右偏移”作为项目补充保留，但改为 C++ 在动画 Pose 后叠加 `ViewmodelRoot` Y 方向最大 5cm 位置偏移，不再使用组件 Roll。

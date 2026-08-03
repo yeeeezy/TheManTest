@@ -2,13 +2,31 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-02-session156
+**最后更新：** 2026-08-02-session164
 
 **当前功能：** FEAT-074 — VFXPack第一人称动画替换、HeadBob、武器摆动与RepairGun射击震屏
 
 **状态：** in_progress
 
 ## 本轮完成
+
+- session164：按用户要求将原版旋转职责归还 AnimBP。C++ 不再直接叠加 A/D Roll 或冲刺 Pitch；A/D 继续只写 `Lean_Sides_Amount`，冲刺按实际速度计算后并入 `Look_Up_Amount`（最多 -12.5°），由原 AnimBP 的 `spine_03 Modify Bone` 执行。此前用户认可的附加效果改为 C++ 最后叠加最多 5cm 的纯 Y 向左右位置偏移，不再通过远轴心 Roll 制造假平移。
+
+- session163：修正 session162 只切换 Body Sway/CameraShake、未恢复真正冲刺压枪的问题。原版 `BodyRotator Timeline_2` 已确认使用 `RLerp(A=Identity, B=Pitch -12.5°)`；现将 `-12.5° * SprintVisualAlpha` 叠到 `ViewmodelRoot` Pitch，按实际水平速度在 WalkSpeed 550 到 SprintSpeed 750 间连续压低/抬回。左右移动原骨骼链及额外 2° Roll 保留。
+
+- session162：再次核对原版侧倾节点：`spine_03` 与 `hand_l` 均为 Additive Roll，`RotationSpace` 未覆盖、采用 Modify Bone 默认 Component Space；枪随 `hand_r` 后代链绕脊柱轴心旋转。保留该原链及当前 2° `ViewmodelRoot` 补偿。冲刺视觉从 Shift 意图状态改为实际水平速度驱动：`WalkSpeed..SprintSpeed` 连续映射 0..1，Body Sway 插值速度由 2 连续过渡到 8，Running CameraShake 在速度比例达到 0.5 后切换；原地按 Shift 不再触发冲刺视觉。
+
+- session161：按用户前台观感，将额外 `ViewmodelRoot` 最大移动 Roll 从 1° 微调为 2°；原 AnimBP 骨骼修正、2/8 插值速度与回正逻辑均不变。
+
+- session160：重新核查原版完整侧倾来源。原 AnimBP 的定向 A/D 修正为 `spine_03` Roll 最大 1°、`hand_l` 再取 0.5 倍；Walking CameraShake Roll 振幅 0.2° 且调用 Scale=0.5（实际约 0.1°），Running CameraShake Roll=0°；`BodyRotator` 是冲刺/收枪过渡，Run 动画摆动不区分左右方向。因此撤销过强的自定义幅度，将额外 `ViewmodelRoot` Roll 从 3° 收敛为 1°，只用于补足当前构图下原骨骼侧倾的可见性。
+
+- session159：用户前台确认 6° 左右移动枪械倾斜过强；最大 `ViewmodelRoot` Roll 收敛为 3°，插值速度、松键回正与原 AnimBP 1° 骨骼修正保持不变。待关闭编辑器后冷构建复核。
+
+- session158：PIE 实测确认 `Lean_Sides_Amount` 在 A 输入时达到 `-1.0`，`spine_03/hand_l/hand_r` Pose 均发生变化，证明原 AnimBP 链路有效；但原骨骼 Roll 最大仅 1°，在当前 RepairGun/FOV 构图下肉眼不可辨。保留原骨骼修正，并新增同一平滑侧移量驱动 `ViewmodelRoot` Roll（满输入 6°），使左右移动枪械倾斜清楚可见。C++ 编译通过，冷构建仅因运行中的 UnrealEditor 锁定 DLL 而在链接阶段失败，需关闭编辑器后重跑并前台复核。
+
+- 修复 VFXPack 移动倾斜驱动：不再用 CharacterMovement 速度归一化近似输入，改为缓存 Enhanced Input 的原始 A/D/W/S 轴，普通移动/冲刺继续按原版 2/8 插值，Completed/Canceled 后平滑回正。
+- 修正前后倾斜写入名：`Look_Up_Down_Amount` 改为原版 AnimBP 实际读取的 `Look_Up_Amount`。
+- 只读导出正式 `ABP_MaintenanceWorker_FirstPerson_Original`，确认 `spine_03` Additive Roll/Pitch 与 `hand_l` 0.5× Roll Modify Bone 均保留且连接；Development Editor / Win64 冷构建成功。待用户前台确认 A/D/W/S 可见倾斜。
 
 - 第一阶段 HeadBob、Viewmodel sway 与 RepairGun CameraShake 已完成并保存在检查点 `b7ff993`。
 - FPSShooter1 中完成 68 骨逐骨/参考姿势一致性验证；无 IK 重定向，VFXPack Skeleton 已成为 MaintenanceWorker 身体、腿与动画统一 Skeleton。

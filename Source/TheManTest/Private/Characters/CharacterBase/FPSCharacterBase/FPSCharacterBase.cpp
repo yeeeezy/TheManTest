@@ -322,6 +322,8 @@ void AFPSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	if (PC->GetMoveAction())
 	{
 		EIC->BindAction(PC->GetMoveAction(), ETriggerEvent::Triggered, this, &AFPSCharacterBase::Move);
+		EIC->BindAction(PC->GetMoveAction(), ETriggerEvent::Completed, this, &AFPSCharacterBase::StopMove);
+		EIC->BindAction(PC->GetMoveAction(), ETriggerEvent::Canceled, this, &AFPSCharacterBase::StopMove);
 	}
 	if (PC->GetLookAction())
 		EIC->BindAction(PC->GetLookAction(), ETriggerEvent::Triggered, this, &AFPSCharacterBase::Look);
@@ -377,11 +379,17 @@ void AFPSCharacterBase::Move(const FInputActionValue& Value)
 {
 	if (!Controller) { return; }
 	const FVector2D V = Value.Get<FVector2D>();
+	CurrentVFXMoveInput = V;
 	if (V.IsNearlyZero()) { return; }
 
 	const FRotator YawRotation(0, Controller->GetControlRotation().Yaw, 0);
 	AddMovementInput(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X), V.Y);
 	AddMovementInput(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y), V.X);
+}
+
+void AFPSCharacterBase::StopMove(const FInputActionValue&)
+{
+	CurrentVFXMoveInput = FVector2D::ZeroVector;
 }
 
 void AFPSCharacterBase::Look(const FInputActionValue& Value)
@@ -439,6 +447,13 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	const FVector AnimationVelocity = GetVelocity();
+	const double CharacterSpeed = AnimationVelocity.Size();
+	const float GroundSpeed = AnimationVelocity.Size2D();
+	const float SprintSpeedRange = FMath::Max(SprintSpeed - WalkSpeed, 1.f);
+	const float SprintVisualAlpha = FMath::Clamp((GroundSpeed - WalkSpeed) / SprintSpeedRange, 0.f, 1.f);
+	const bool bAtSprintVisualSpeed = SprintVisualAlpha >= 0.5f;
+
 	// 身体保持直立并直接跟随 Pawn yaw；相机俯仰不传给身体组件。
 	if (BodyRoot)
 	{
@@ -467,23 +482,25 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 	{
 		// VFXPack FirstPerson_AnimBP 原 Event Blueprint Update Animation 的等价逻辑。
 		// 直接写原变量，保留其原 StateMachine / BlendSpace 资产，不另造动画状态机。
-		const FVector AnimationVelocity = GetVelocity();
-		const double CharacterSpeed = AnimationVelocity.Size();
-		const float MaxMoveSpeed = FMath::Max(GetCharacterMovement()->MaxWalkSpeed, 1.f);
-		const FVector LocalVelocity = GetActorTransform().InverseTransformVectorNoScale(AnimationVelocity);
-		const float SideInput = FMath::Clamp(LocalVelocity.Y / MaxMoveSpeed, -1.f, 1.f);
-		const float ForwardInput = FMath::Clamp(LocalVelocity.X / MaxMoveSpeed, -1.f, 1.f);
-		const float BodySwayInterpSpeed = bIsSprinting ? 8.f : 2.f;
+		// Match FirstPersonCharacter.Body_Sway: drive the lean from the raw movement axes,
+		// not CharacterMovement velocity. This gives the full +/-1 target immediately while
+		// acceleration and braking are still ramping, then FInterpTo supplies the original ease.
+		const float SideInput = FMath::Clamp(CurrentVFXMoveInput.X, -1.f, 1.f);
+		const float ForwardInput = FMath::Clamp(CurrentVFXMoveInput.Y, -1.f, 1.f);
+		// Visual sprint response follows achieved ground speed, not the Shift intent.
+		const float BodySwayInterpSpeed = FMath::Lerp(2.f, 8.f, SprintVisualAlpha);
 		CurrentVFXLeanSides = FMath::FInterpTo(CurrentVFXLeanSides, SideInput, DeltaTime, BodySwayInterpSpeed);
 		CurrentVFXLookUpDown = FMath::FInterpTo(CurrentVFXLookUpDown, -ForwardInput, DeltaTime, BodySwayInterpSpeed);
 
-		auto UpdateVFXPackAnimInstance = [this, CharacterSpeed](UAnimInstance* AnimInstance)
+		auto UpdateVFXPackAnimInstance = [this, CharacterSpeed, SprintVisualAlpha](UAnimInstance* AnimInstance)
 		{
 			SetAnimBool(AnimInstance, TEXT("Is_Moving"), CharacterSpeed > 0.0);
 			SetAnimBool(AnimInstance, TEXT("Is_InAir"), GetCharacterMovement()->IsFalling());
 			SetAnimNumber(AnimInstance, TEXT("Character_Speed"), CharacterSpeed);
 			SetAnimNumber(AnimInstance, TEXT("Lean_Sides_Amount"), CurrentVFXLeanSides);
-			SetAnimNumber(AnimInstance, TEXT("Look_Up_Down_Amount"), CurrentVFXLookUpDown);
+			// The AnimBP's spine_03 Modify Bone owns pitch. Feed the source sprint
+			// lowering angle through the animation parameter instead of rotating a scene component.
+			SetAnimNumber(AnimInstance, TEXT("Look_Up_Amount"), CurrentVFXLookUpDown - 12.5f * SprintVisualAlpha);
 		};
 
 		// 恢复项目原有的第一/第三人称同一动画源：两个 Mesh 使用同一个 VFXPack
@@ -491,7 +508,10 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		UpdateVFXPackAnimInstance(ArmsViewMesh->GetAnimInstance());
 		UpdateVFXPackAnimInstance(GetMesh() ? GetMesh()->GetAnimInstance() : nullptr);
 
-		ViewmodelRoot->SetRelativeLocation(ViewmodelOffsetLocation);
+		// Project-specific supplement retained after the source AnimBP pose: a small
+		// lateral translation only. All source-style pitch/roll now stays in the AnimBP.
+		const FVector MovementLateralOffset(0.f, CurrentVFXLeanSides * VFXMovementWeaponLateralOffsetCm, 0.f);
+		ViewmodelRoot->SetRelativeLocation(ViewmodelOffsetLocation + MovementLateralOffset);
 		ViewmodelRoot->SetRelativeRotation(ViewmodelOffsetRotation);
 		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
 		CurrentArmsPitch = 0.f;
@@ -506,8 +526,8 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		const bool bIsMoving = GetCharacterMovement()->Velocity.Size() > 0.f;
 		if (bIsMoving && GetCharacterMovement()->IsMovingOnGround())
 		{
-			DesiredShake = bIsSprinting ? RunningCameraShake : WalkingCameraShake;
-			DesiredScale = bIsSprinting ? 1.f : 0.5f;
+			DesiredShake = bAtSprintVisualSpeed ? RunningCameraShake : WalkingCameraShake;
+			DesiredScale = bAtSprintVisualSpeed ? 1.f : 0.5f;
 		}
 
 		if (DesiredShake)

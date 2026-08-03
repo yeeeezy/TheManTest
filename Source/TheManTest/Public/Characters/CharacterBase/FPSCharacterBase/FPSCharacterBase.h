@@ -32,6 +32,7 @@ public:
 
 	// 鐢?Controller 鐨?InputComponent 鎴?Character 鐨?SetupPlayerInputComponent 椹卞姩
 	void Move(const FInputActionValue& Value);
+	void StopMove(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void SwitchEquipment(const FInputActionValue& Value);
 	void PrimaryFire();
@@ -175,6 +176,8 @@ private:
 	float CurrentArmsPitch = 0.f;
 	float CurrentVFXLeanSides = 0.f;
 	float CurrentVFXLookUpDown = 0.f;
+	FVector2D CurrentVFXMoveInput = FVector2D::ZeroVector;
+	static constexpr float VFXMovementWeaponLateralOffsetCm = 5.f;
 
 	float RecoilPitchVelocity = 0.f;
 	float RecoilYawVelocity   = 0.f;
