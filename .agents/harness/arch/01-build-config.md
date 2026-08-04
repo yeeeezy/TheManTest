@@ -8,3 +8,8 @@
 | `Source/TheManTest/TheManTest.Build.cs` | 模块依赖（EnhancedInput、GameplayAbilities、GameplayTags、BBBAimIK、Niagara、AIModule、NavigationSystem、**UMG**(选角色 UI)、AnimGraphRuntime(装备动画方向计算)、CinematicCamera(选角 Cine Camera 焦距视差缩放)） |
 | `Source/TheManTest.Target.cs` | 游戏目标配置 |
 | `Source/TheManTestEditor.Target.cs` | 编辑器目标配置 |
+
+## 2026-08-04 Locomotor
+
+- `TheManTest.uproject` 启用引擎实验性 `Locomotor` 插件。
+- `TheManTest.Build.cs` 增加 `Locomotor` 模块，用于 Nightmare FlyingBug2 的 `FVectorDamper` 程序化速度平滑。

@@ -1,8 +1,18 @@
 # FEAT-074 — VFXPack第一人称动画替换、HeadBob、武器摆动与RepairGun射击震屏
 
-**状态：** in_progress
+**状态：** done
 
 **创建：** 2026-08-01
+
+**关闭：** 2026-08-04
+
+## 2026-08-04 最终验收
+
+- MaintenanceWorker 的 `CharacterMesh0`、`ArmsViewMesh`、`ShadowBodyMesh`、`LegsMesh` 统一使用最终骨架类 `ABP_CharacterBase_Body_C`；Shadow/Legs 保持 Leader=`CharacterMesh0`。装备系统向角色全部 SkeletalMesh 实例链接同一个 RepairGun 动画层，PIE 逐 Mesh/逐骨读回通过。
+- 初始装备链接动画层后，在首个渲染帧前对身体和第一人称 Mesh 做一次零时长姿势评估，消除基础入口 Pose 切入持枪 Idle 造成的开局下压。
+- 装备显现严格恢复 VFXPack `Attach And Dissolve In Weapon`：参数 `Amount (S)`，0.5 秒 cubic Hermite，1→0，首关键帧离开切线 `-5.434987`；运行时 RepairGun MID 结束值读回 0。
+- 原版相机 FOV 保持 77°；ViewmodelRoot 运行时位置/旋转均为零，Arms authored Transform 保持 `(-18.107912,18.852108,-150.00795)`。
+- 删除 0 引用的旧 `ABP_CharacterBase`；最终五个相关蓝图均在编辑器编译保存，目标目录资产验证全部通过；`TheManTest.Player.Viewmodel.FramingCapture` 1/1 Success；Development Editor 冷构建成功，冷启动日志无 Blueprint/Linker/Ensure/Accessed None/Invalid material index 错误。
 
 ## 来源审计
 

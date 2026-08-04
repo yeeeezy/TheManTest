@@ -217,6 +217,20 @@ void AFPSCharacterBase::BeginPlay()
 		// FEAT-042：武器挂到独立 FP 手臂 ArmsViewMesh（相机子级 viewmodel），不再挂 MM 宿主 GetMesh()。
 		EquipmentManager->AttachTargetMesh = ArmsViewMesh;
 		EquipmentManager->InitializeEquipment(InitialEquipmentClasses);
+
+		// InitialEquipment links the weapon animation layer during BeginPlay. Evaluate the
+		// completed graph before the first rendered frame so the viewmodel never exposes
+		// the body-only entry pose and then appears to dip into the rifle idle pose.
+		auto PrimeInitialWeaponPose = [](USkeletalMeshComponent* MeshComponent)
+		{
+			if (MeshComponent && MeshComponent->GetAnimInstance())
+			{
+				MeshComponent->TickAnimation(0.f, false);
+				MeshComponent->RefreshBoneTransforms();
+			}
+		};
+		PrimeInitialWeaponPose(GetMesh());
+		PrimeInitialWeaponPose(ArmsViewMesh);
 	}
 
 	// FEAT-038：影子/腿共用 GetMesh() 的姿势（Leader/Follower），动画只在 GetMesh() 评估一次。

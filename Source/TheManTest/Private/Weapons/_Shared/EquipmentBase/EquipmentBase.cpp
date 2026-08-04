@@ -14,9 +14,23 @@
 namespace
 {
     const FName EquipDissolveParameter(TEXT("Amount (S)"));
-    constexpr float EquipDissolveDuration = 0.45f;
+    // Exact FirstPersonCharacter Timeline_3 values from the source VFXPack.
+    // The embedded curve is a 0.5 s cubic Hermite from 1 to 0, with a user
+    // leave tangent of -5.434987 at the first key and a flat second key.
+    constexpr float EquipDissolveDuration = 0.5f;
     constexpr float EquipDissolveHiddenValue = 1.f;
-    constexpr float EquipDissolveVisibleValue = -1.f;
+    constexpr float EquipDissolveStartTangent = -5.434987f;
+
+    float EvaluateSourceEquipDissolve(float TimeSeconds)
+    {
+        const float Alpha = FMath::Clamp(TimeSeconds / EquipDissolveDuration, 0.f, 1.f);
+        const float AlphaSquared = Alpha * Alpha;
+        const float AlphaCubed = AlphaSquared * Alpha;
+        const float H00 = 2.f * AlphaCubed - 3.f * AlphaSquared + 1.f;
+        const float H10 = AlphaCubed - 2.f * AlphaSquared + Alpha;
+        return H00 * EquipDissolveHiddenValue
+            + H10 * EquipDissolveDuration * EquipDissolveStartTangent;
+    }
 }
 
 AEquipmentBase::AEquipmentBase()
@@ -65,10 +79,7 @@ void AEquipmentBase::Tick(float DeltaTime)
 
     EquipEffectElapsed = FMath::Min(EquipEffectElapsed + DeltaTime, EquipDissolveDuration);
     const float Alpha = EquipDissolveDuration > 0.f ? EquipEffectElapsed / EquipDissolveDuration : 1.f;
-    const float DissolveAmount = FMath::Lerp(
-        EquipDissolveHiddenValue,
-        EquipDissolveVisibleValue,
-        FMath::SmoothStep(0.f, 1.f, Alpha));
+    const float DissolveAmount = EvaluateSourceEquipDissolve(EquipEffectElapsed);
     for (UMaterialInstanceDynamic* Material : EquipEffectMaterials)
     {
         if (Material)
@@ -83,13 +94,18 @@ static void GetAnimLayerMeshes(AActor* Owner, TArray<USkeletalMeshComponent*>& O
 {
     if (AFPSCharacterBase* FPSChar = Cast<AFPSCharacterBase>(Owner))
     {
-        if (FPSChar->GetArmsMesh())
+        // The first-person arms, hidden full body, shadow body, and visible legs
+        // all run the shared body AnimBP. Link the equipped weapon layer to every
+        // character skeletal mesh so their instances stay on the same animation
+        // architecture and cannot silently fall back to an unarmed/reference pose.
+        TArray<USkeletalMeshComponent*> CharacterMeshes;
+        FPSChar->GetComponents<USkeletalMeshComponent>(CharacterMeshes);
+        for (USkeletalMeshComponent* CharacterMesh : CharacterMeshes)
         {
-            OutMeshes.Add(FPSChar->GetArmsMesh());
-        }
-        if (FPSChar->GetMesh())
-        {
-            OutMeshes.AddUnique(FPSChar->GetMesh());
+            if (CharacterMesh)
+            {
+                OutMeshes.AddUnique(CharacterMesh);
+            }
         }
         return;
     }

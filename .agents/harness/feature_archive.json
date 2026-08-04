@@ -747,6 +747,20 @@
                          "archive_file": "archive/FEAT-067-repairgun-enemy-muzzle-vfx.md", "created": "2026-07-31", "updated": "2026-07-31-session128-complete",
                          "done_criteria": ["源 ZIP/工程验证 ✓", "仅迁移两套系统与依赖 ✓", "无供应商目录残留 ✓", "RepairGun/Enemy 射击接入 ✓", "构建与自动化验证 ✓"],
                          "verification_evidence": "重新解压源工程后 UE 5.7 加载成功；迁移 46 个依赖资产；NS_RepairGun_Muzzle 与 NS_HumanoidRifle_Muzzle 可加载，CDO 默认引用断言通过；FEAT067FinalRegression4.log 8/8 Success。"
+                     },
+                     {
+                         "id": "FEAT-074", "name": "VFXPack第一人称动画替换、HeadBob、武器摆动与RepairGun射击震屏", "status": "done",
+                         "description": "统一玩家身体、第一人称、影子和腿部动画架构；精确复刻VFXPack移动/冲刺与装备溶解表现。",
+                         "archive_file": "archive/FEAT-074-vfxpack-camera-weapon-sway.md", "created": "2026-08-01", "updated": "2026-08-04-session182-complete",
+                         "done_criteria": ["四个玩家Mesh统一最终Body AnimBP且武器层同步 ✓", "影子/腿部Leader与动态Pose验证 ✓", "开局持枪无入口Pose下压 ✓", "VFXPack装备溶解精确曲线 ✓", "构建、资产验证、PIE与FramingCapture通过 ✓"],
+                         "verification_evidence": "Development Editor冷构建成功；五个目标蓝图编译保存；PIE四Mesh AnimClass/Leader/逐骨读回通过；RepairGun MID Amount (S)结束值0；FramingCapture 1/1 Success；冷日志无目标错误。"
+                     },
+                     {
+                         "id": "FEAT-075", "name": "Nightmare FlyingBug2程序化游荡怪", "status": "done",
+                         "description": "基于空Nightmare C++基类和TMIIR原生FlyingBug2最终资产，使用Locomotor速度阻尼实现三维随机游荡。",
+                         "archive_file": "archive/FEAT-075-nightmare-flying-bug.md", "created": "2026-08-04", "updated": "2026-08-04-session182-complete",
+                         "done_criteria": ["空Nightmare基类与具体FlyingBug2子类 ✓", "Locomotor程序化三维游荡 ✓", "原生最终资产语义整理且无重定向工作资产 ✓", "运行时循环动画、移动与骨骼变化验证 ✓", "构建与资产验证通过 ✓"],
+                         "verification_evidence": "PIE读回MOVE_Flying、约220cm/s且位置持续变化；SingleNode运行时资产为walk1；0.7秒间隔Hips/tail骨骼变换变化；最终10资产、0 Redirector；目录验证通过。"
                      }
                  ],
     "_说明":  "已完成功能的只读历史索引。通常无需在会话启动时读取；需要查询历史功能时按 ID 定向读取。"

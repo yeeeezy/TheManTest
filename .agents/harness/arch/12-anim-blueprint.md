@@ -386,3 +386,10 @@ Cache_Locomotion → WeaponUpperBody → Slot"UpperBody" → WeaponAimOffset →
 - session157 修正：前后倾斜的原版 AnimBP 变量实际名为 `Look_Up_Amount`，不是 `Look_Up_Down_Amount`。方向倾斜必须缓存 Enhanced Input 原始移动轴，A/D → `Lean_Sides_Amount`、W/S → `Look_Up_Amount`；不得只用 CharacterMovement 速度反推后就以变量数值代替最终姿势验收。正式 AnimGraph 为 `spine_03` Additive Roll/Pitch，加上 `hand_l` 的 0.5× Additive Roll。
 - session165：取消项目补充的 5cm `ViewmodelRoot` Y 向横移；A/D 最终视觉只来自上述 AnimBP 骨骼链，构图根节点不再随侧移输入改变位置或旋转。
 - session166：冲刺恢复原蓝图职责：按键意图驱动 0.2s 可逆时间线，同时插值 MaxWalkSpeed 550→750 并旋转 `BodyRotator` 等价节点 `ViewmodelRoot` Pitch 0→-12.5°；不再把压枪角写入 `spine_03` 的 `Look_Up_Amount`。
+
+## 2026-08-04 玩家最终统一链
+
+- MaintenanceWorker 四个 SkeletalMesh 均指定 `ABP_CharacterBase_Body` 最终骨架子类；Shadow/Legs Leader=`CharacterMesh0`。
+- RepairGun 层在装备时链接到全部角色 SkeletalMesh，避免任一 Mesh 回落到无武器/参考姿势。
+- 初始装备完成链接后，在首个渲染帧前对 CharacterMesh0 与 ArmsViewMesh 执行零时长动画评估，避免冷启动入口 Pose 闪帧。
+- 无引用旧 `ABP_CharacterBase` 已删除；正式运行类仅保留模板 `TABP_BodyLocomotion` → 最终 `ABP_CharacterBase_Body` → RepairGun Linked Layer。

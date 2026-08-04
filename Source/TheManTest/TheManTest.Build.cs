@@ -8,7 +8,7 @@ public class TheManTest : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "GameplayAbilities", "GameplayTags", "GameplayTasks", "BBBAimIK", "Niagara", "AIModule", "NavigationSystem", "UMG", "AnimGraphRuntime", "CinematicCamera", });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "GameplayAbilities", "GameplayTags", "GameplayTasks", "BBBAimIK", "Niagara", "AIModule", "NavigationSystem", "UMG", "AnimGraphRuntime", "CinematicCamera", "Locomotor", });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 		if (Target.bBuildEditor)

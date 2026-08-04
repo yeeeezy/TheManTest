@@ -32,6 +32,10 @@
 		{
 			"Name": "McpAutomationBridge",
 			"Enabled": true
+		},
+		{
+			"Name": "Locomotor",
+			"Enabled": true
 		}
 	]
 }

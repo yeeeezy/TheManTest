@@ -47,3 +47,8 @@ FEAT-074 起，玩家枪口统一由 `AFirearm::GetMuzzleWorldTransform()` 解�
 - `AFirearm::Equip()` 在基类完成 Link 后，给 `ArmsViewMesh` 和 `GetMesh()` 上已链接的 `UFirearmAnimInstance` 都写入 `MuzzleLocalTransform`。
 - `ShadowBodyMesh` / `LegsMesh` 仍跟随 `GetMesh()`，因此身体武器层和 AimIK 会自然进入影子/腿共享姿势。
 - 不使用 Copy Pose From Mesh；武器切换仍靠同一个 `EquipmentAnimLayerClass`。
+
+## 2026-08-04 装备显现与统一动画层
+
+- VFXPack 装备显现由 `AEquipmentBase` 固定实现：MID 参数 `Amount (S)`，0.5 秒 cubic Hermite 1→0，首切线 -5.434987。
+- FPS 角色装备/卸下时，武器 Linked Anim Layer 链接到角色所有 SkeletalMesh AnimInstance；Shadow/Legs 即使是 Leader follower 也保持同一最终 AnimClass 架构。

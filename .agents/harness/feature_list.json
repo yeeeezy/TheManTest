@@ -1,28 +1,9 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-03-session181",
-    "active_feature":  "FEAT-074",
+    "last_updated":  "2026-08-04-session182",
+    "active_feature":  null,
     "archive_file":  "feature_archive.json",
     "features":  [
-                     {
-                         "id":  "FEAT-074",
-                         "name":  "VFXPack第一人称动画替换、HeadBob、武器摆动与RepairGun射击震屏",
-                         "status":  "in_progress",
-                         "description":  "采用VFXPack手臂骨架、网格和第一人称动画观感替换MaintenanceWorker视觉动画，同时保留本项目武器/GAS/弹道；复现行走/奔跑HeadBob、程序化武器摆动，并为RepairGun接入Sniper Scout同款射击Camera Shake。所有骨架适配与重定向只在FPSShooter1完成，主项目仅接收最终资产。",
-                         "archive_file":  "archive/FEAT-074-vfxpack-camera-weapon-sway.md",
-                         "created":  "2026-08-01",
-                         "updated":  "2026-08-03-session181",
-                         "done_criteria":  [
-                                               "Walking/Running Camera Shake精确迁入共享角色目录，并按落地移动状态启动、切换和停止",
-                                               "现有第一人称Viewmodel视觉层恢复视角摆动并增加移动方向偏移，不改变相机权威、枪口弹道或碰撞",
-                                               "RepairGun使用Sniper Scout的CamShake_Fire_Medium精确参数，其他武器默认不受影响",
-                                               "不保留VFXPack供应商目录、示例角色或无关依赖，Redirector检查通过",
-                                               "VFXPack目标骨架、第一人称手臂网格/动画及适配后的全身腿部动画从FPSShooter1以最终资产形式迁入，主项目不含IK Rig、IK Retargeter、源骨架或工作目录",
-                                               "现有RepairGun、装备/GAS/弹道和Linked Anim Layer架构保持有效",
-                                               "Development Editor编译、蓝图/资产验证及PIE行走奔跑跳跃开火验证通过"
-                                           ],
-                         "verification_evidence":  "2026-08-01-session145：FPSShooter1逐骨验证两套Skeleton均为68骨且名称/顺序/参考姿势完全一致，采用无损Skeleton合并且未创建IK资产；MaintenanceWorker全身/腿Mesh与20套body locomotion统一引用VFXPack最终Skeleton。2026-08-02-session157：正式AnimBP导出确认原版spine_03全量Roll/Pitch与hand_l半量Roll Modify Bone仍在输出链；Body Sway改为Enhanced Input原始移动轴直接驱动并在Completed/Canceled清零，修正前后倾斜变量名为Look_Up_Amount；Development Editor冷构建成功。2026-08-03-session165：按用户决定删除额外5cm ViewmodelRoot横移，仅保留原AnimBP骨骼倾斜；基础FOV改为110°并移除BeginPlay硬覆盖；Development Editor完整编译链接成功。2026-08-03-session166：按原蓝图恢复MoveRight+MouseX与-MoveForward-10×LookUp的Body Sway，冲刺以0.2秒可逆过渡同步驱动速度550→750和BodyRotator等价枢轴Pitch 0→-12.5°，无5cm横移；Development Editor编译成功，待PIE观感复核。"
-                     },
                      {
                          "id":  "FEAT-071",
                          "name":  "Phantom Boss伤害与命中容错平衡",

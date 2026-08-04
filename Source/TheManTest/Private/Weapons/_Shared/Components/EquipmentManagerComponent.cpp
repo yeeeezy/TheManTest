@@ -206,7 +206,7 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
                             {
                                 bVisualSwapPending = false;
                             }),
-                            0.45f,
+                            0.5f,
                             false);
                         return;
                     }
