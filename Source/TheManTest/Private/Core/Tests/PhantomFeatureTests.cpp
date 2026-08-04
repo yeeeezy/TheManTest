@@ -24,7 +24,6 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "ControlRigComponent.h"
 #include "Engine/Blueprint.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
@@ -797,7 +796,7 @@ static bool SaveSceneCapture(UWorld* World, AActor* Owner, const FVector& Camera
 	UPointLightComponent* EvidenceLight = NewObject<UPointLightComponent>(Owner);
 	EvidenceLight->RegisterComponentWithWorld(World);
 	EvidenceLight->SetWorldLocation(CameraLocation + FVector(0.f, 0.f, 120.f));
-	EvidenceLight->SetIntensity(45000.f);
+	EvidenceLight->SetIntensity(2000000.f);
 	EvidenceLight->SetAttenuationRadius(1200.f);
 	Capture->CaptureScene();
 	TArray<FColor> Pixels;
@@ -912,8 +911,14 @@ public:
 				FootMinZ.Add(BoneName, Initial.Z);
 				FootMaxZ.Add(BoneName, Initial.Z);
 				FootTravel.Add(BoneName, 0.f);
-				RigFootTravel.Add(BoneName, 0.f);
 			}
+			for (int32 PairIndex = 0; PairIndex < 3; ++PairIndex)
+			{
+				const float InitialDelta = PreviousFootLocations.FindChecked(FootBones[PairIndex * 2]).X
+					- PreviousFootLocations.FindChecked(FootBones[PairIndex * 2 + 1]).X;
+				PairSeparationSigns[PairIndex] = InitialDelta >= 0.f ? 1.f : -1.f;
+			}
+			PreviousHeadLocation = Bug->GetMesh()->GetSocketTransform(HeadMotionBone, RTS_Component).GetLocation();
 			StartTime = World->GetTimeSeconds();
 			return false;
 		}
@@ -928,19 +933,55 @@ public:
 			FootMaxZ.FindChecked(BoneName) = FMath::Max(FootMaxZ.FindRef(BoneName), Current.Z);
 			PreviousFootLocations.Add(BoneName, Current);
 		}
-		if (UControlRigComponent* Rig = Bug->FindComponentByClass<UControlRigComponent>())
+		if (ElapsedForPoseAudit() > 2.f)
 		{
+			TArray<float> Heights;
+			int32 CurrentGroundedFeet = 0;
 			for (const FName BoneName : GetFootBones())
 			{
-				const FVector Current = Rig->GetBoneTransform(
-					BoneName, EControlRigComponentSpace::RigSpace).GetLocation();
-				if (const FVector* Previous = PreviousRigFootLocations.Find(BoneName))
+				Heights.Add(Bug->GetMesh()->GetSocketTransform(BoneName, RTS_Component).GetLocation().Z);
+				const FVector FootWorld = Bug->GetMesh()->GetSocketLocation(BoneName);
+				FHitResult FootGroundHit;
+				FCollisionQueryParams FootTraceParams(SCENE_QUERY_STAT(NightmareFootGroundAudit), false, Bug);
+				if (World->LineTraceSingleByChannel(FootGroundHit, FootWorld + FVector(0.f, 0.f, 10.f),
+					FootWorld - FVector(0.f, 0.f, 180.f), ECC_Visibility, FootTraceParams))
 				{
-					RigFootTravel.FindOrAdd(BoneName) += FVector::Distance(*Previous, Current);
+					const float Clearance = FMath::Max(0.f, FootWorld.Z - FootGroundHit.ImpactPoint.Z);
+					MaximumGroundClearance.FindOrAdd(BoneName) = FMath::Max(
+						MaximumGroundClearance.FindRef(BoneName), Clearance);
+					CurrentGroundedFeet += Clearance <= 22.f ? 1 : 0;
 				}
-				PreviousRigFootLocations.Add(BoneName, Current);
+			}
+			MinimumActuallyGroundedFeet = FMath::Min(MinimumActuallyGroundedFeet, CurrentGroundedFeet);
+			float Lowest = TNumericLimits<float>::Max();
+			float Highest = TNumericLimits<float>::Lowest();
+			for (const float Height : Heights)
+			{
+				Lowest = FMath::Min(Lowest, Height);
+				Highest = FMath::Max(Highest, Height);
+			}
+			int32 LowFeet = 0;
+			for (const float Height : Heights)
+			{
+				// The terminal joint sits inside a roughly 35 cm pointed mesh tip.
+				LowFeet += Height <= Lowest + 36.f ? 1 : 0;
+			}
+			MinimumSimultaneousLowFeet = FMath::Min(MinimumSimultaneousLowFeet, LowFeet);
+			MaximumInstantaneousHeightSpread = FMath::Max(MaximumInstantaneousHeightSpread,
+				Highest - Lowest);
+
+			for (int32 PairIndex = 0; PairIndex < 3; ++PairIndex)
+			{
+				const TArray<FName> Feet = GetFootBones();
+				const float PairDelta = Bug->GetMesh()->GetSocketTransform(Feet[PairIndex * 2], RTS_Component).GetLocation().X
+					- Bug->GetMesh()->GetSocketTransform(Feet[PairIndex * 2 + 1], RTS_Component).GetLocation().X;
+				MinimumSignedPairSeparation[PairIndex] = FMath::Min(MinimumSignedPairSeparation[PairIndex],
+					PairDelta * PairSeparationSigns[PairIndex]);
 			}
 		}
+		const FVector CurrentHeadLocation = Bug->GetMesh()->GetSocketTransform(HeadMotionBone, RTS_Component).GetLocation();
+		HeadTravel += FVector::Distance(PreviousHeadLocation, CurrentHeadLocation);
+		PreviousHeadLocation = CurrentHeadLocation;
 		const float Elapsed = World->GetTimeSeconds() - StartTime;
 		if (EvidenceFrameIndex < 4 && Elapsed >= 10.f + (0.25f * EvidenceFrameIndex))
 		{
@@ -960,16 +1001,34 @@ public:
 		for (const FName BoneName : GetFootBones())
 		{
 			const float ComponentTravel = FootTravel.FindRef(BoneName);
-			const float RigTravel = RigFootTravel.FindRef(BoneName);
 			const float VerticalRange = FootMaxZ.FindRef(BoneName) - FootMinZ.FindRef(BoneName);
-			Test->AddInfo(FString::Printf(TEXT("Foot %s: component travel %.1f cm, rig travel %.1f cm, vertical range %.1f cm"),
-				*BoneName.ToString(), ComponentTravel, RigTravel, VerticalRange));
+			Test->AddInfo(FString::Printf(TEXT("Foot %s: component travel %.1f cm, vertical range %.1f cm"),
+				*BoneName.ToString(), ComponentTravel, VerticalRange));
 			Test->TestTrue(FString::Printf(TEXT("%s has independent component-space motion"), *BoneName.ToString()),
 				ComponentTravel > 20.f);
-			Test->TestTrue(FString::Printf(TEXT("%s receives an independent Control Rig trajectory"), *BoneName.ToString()),
-				RigTravel > 20.f);
 			Test->TestTrue(FString::Printf(TEXT("%s visibly lifts and plants"), *BoneName.ToString()),
 				VerticalRange > 2.5f);
+		}
+		Test->AddInfo(FString::Printf(TEXT("Authored head/tentacle travel: %.1f cm"), HeadTravel));
+		Test->TestTrue(TEXT("Walk source pose preserves animated head and tentacles"), HeadTravel > 5.f);
+		Test->AddInfo(FString::Printf(TEXT("Crab stance: minimum low feet %d/6, maximum height spread %.1f cm"),
+			MinimumSimultaneousLowFeet, MaximumInstantaneousHeightSpread));
+		Test->AddInfo(FString::Printf(TEXT("Ground traces: minimum planted tips %d/6"), MinimumActuallyGroundedFeet));
+		for (const FName BoneName : GetFootBones())
+		{
+			Test->AddInfo(FString::Printf(TEXT("Ground clearance %s: max %.1f cm"),
+				*BoneName.ToString(), MaximumGroundClearance.FindRef(BoneName)));
+		}
+		// Terminal bones sit inside the long pointed geometry, so their trace distance
+		// is diagnostic only; relative terminal height is the stable contact criterion.
+		Test->TestTrue(TEXT("Crab stance keeps at least one tripod in the low support band at every audited frame"),
+			MinimumSimultaneousLowFeet >= 3);
+		Test->TestTrue(TEXT("No support leg is thrown into a high crossed pose"),
+			MaximumInstantaneousHeightSpread < 60.f);
+		for (int32 PairIndex = 0; PairIndex < 3; ++PairIndex)
+		{
+			Test->TestTrue(FString::Printf(TEXT("Support pair %d never crosses or overlaps"), PairIndex),
+				MinimumSignedPairSeparation[PairIndex] > 20.f);
 		}
 		const FVector Target = Bug->GetActorLocation() + FVector(0.f, 0.f, 35.f);
 		Test->TestTrue(TEXT("Nightmare crawl evidence screenshot saved"), SaveSceneCapture(
@@ -978,6 +1037,11 @@ public:
 		return true;
 	}
 private:
+	float ElapsedForPoseAudit() const
+	{
+		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+		return World ? World->GetTimeSeconds() - StartTime : 0.f;
+	}
 	static TArray<FName> GetFootBones()
 	{
 		return { TEXT("tent_large_forward3_left5"), TEXT("tent_large_forward3_right5"),
@@ -989,12 +1053,19 @@ private:
 	float StartTime = 0.f;
 	FVector StartLocation = FVector::ZeroVector;
 	TMap<FName, FVector> PreviousFootLocations;
-	TMap<FName, FVector> PreviousRigFootLocations;
 	TMap<FName, float> FootTravel;
-	TMap<FName, float> RigFootTravel;
 	TMap<FName, float> FootMinZ;
 	TMap<FName, float> FootMaxZ;
+	const FName HeadMotionBone = TEXT("tent_low1_left3");
+	FVector PreviousHeadLocation = FVector::ZeroVector;
+	float HeadTravel = 0.f;
 	int32 EvidenceFrameIndex = 0;
+	int32 MinimumSimultaneousLowFeet = 6;
+	int32 MinimumActuallyGroundedFeet = 6;
+	float MaximumInstantaneousHeightSpread = 0.f;
+	TMap<FName, float> MaximumGroundClearance;
+	float PairSeparationSigns[3] = { 1.f, 1.f, 1.f };
+	float MinimumSignedPairSeparation[3] = { TNumericLimits<float>::Max(), TNumericLimits<float>::Max(), TNumericLimits<float>::Max() };
 	TWeakObjectPtr<ANightmareFlyingBug> SpawnedBug;
 };
 

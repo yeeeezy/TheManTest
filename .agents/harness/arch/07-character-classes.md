@@ -30,4 +30,5 @@
 - `ANightmareFlyingBug : ANightmareEnemy` 位于 `Enemy/Nightmare/FlyingBug2/`，使用 `MOVE_Walking`、运行时 `UControlRigComponent` 执行 Locomotor + FullBodyIK 多足链、`FVectorDamper` 平滑速度和地面法线对齐完成贴地爬行。SkeletalMesh 的 `Default Animating Rig` 仅用于编辑器预览，不能替代运行时组件映射。
 - 碰撞胶囊始终世界竖直；Actor 只跟随地表切线 Yaw，`CharacterMesh0` 单独跟随地表 Pitch/Roll。Control Rig 在移动/地表对齐后显式 Update，并刷新最终骨骼，确保六条接地腿输出同帧进入渲染 Pose。
 - FEAT-076 经骨骼层级与参考姿势全局高度复核，FlyingBug2 是六条接地腿的生物；`tent_low*` 位于头部，禁止作为 Feet。Locomotor 使用两组三足交替组（PhaseOffset `0/0.5`），六个 FeetTransform 逐项进入六个 FullBodyIK Effector。
+- FlyingBug2 运行时动画链为 `Anim_Nightmare_bug2_walk1 -> AnimGraph Control Rig -> Output Pose`。原 Walk 是完整 Source Pose，保留头、触须、躯干与尾部动作并向 FBIK 提供自然关节弯曲初值；禁止恢复外置 `UControlRigComponent` 完整骨架 Output 覆盖。
 - 具体蓝图 `/Game/Enemy/Nightmare/FlyingBug2/Blueprint/BP_NightmareFlyingBug2` 配置最终 Mesh 与 `RoamAnimation`；C++ BeginPlay 显式循环播放动画。

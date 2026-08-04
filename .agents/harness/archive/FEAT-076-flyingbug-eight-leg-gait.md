@@ -68,3 +68,17 @@
 | Control Rig/蓝图编译 | 2026-08-04 | Success | 当前编辑器重编译保存，随后独立冷回读 |
 | PIE 平地六足逐腿验证 | 2026-08-04 | Success | 六条真实接地腿分别断言 |
 | PIE 起伏路线六足验证 | 2026-08-04 | Success | 冷启动坡地验证 |
+
+### 2026-08-04 session190 — Walk Source Pose 混合
+
+- 按用户最新截图建立 `Anim_Nightmare_bug2_walk1 -> Control Rig -> Output Pose` 专用 AnimBP，撤销外置 ControlRigComponent 完整骨架覆盖。
+- 平地冷启动验证六足继续抬落，头部触须 `tent_low1_left3` 累计运动 208.8cm；坡地验证 Success。
+- 为避免 FBIK 翻过原 Walk 的自然弯曲面，六个主弯曲关节已配置 AngularStiffness=0.78 并成功写盘。六个 Effector 的 RotationAlpha 降为 0：Locomotor 只修正位置，尖足和关节朝向由原 Walk Source Pose 保留。平地/坡地冷启动均 Success。
+
+### 2026-08-04 session191 — 蟹形支撑姿态严格复审
+
+- 用户截图揭示 session190 的通过标准不足：运行时最低仅 2/6 足端处于低位，瞬时高差 162.1cm，前支撑腿被 FBIK 拉到约 124cm 的异常垂直范围。
+- AnimBP 改为双 Walk Source：头、颈、躯干与非支撑附肢循环原 Walk；六条支撑链取 Walk 的全足低位帧，再交给 Control Rig，避免 authored 抬腿与 Locomotor 二次抬腿叠加。
+- 六个足端仍全部登记在 Locomotor/FBIK。前支撑对 PositionAlpha=0.2，避免完全静止同时抑制旧 FBIK 拉飞；后四腿 PositionAlpha=1.0。步高降为4、空中占比0.22、MaxCollisionHeight=18、BobOffset=-35；RotationAlpha 保持0，保留原 Walk 朝向。
+- 新增逐帧蟹形断言：每帧至少一组三足处于尖足低位支撑带、六足最大高差小于60cm、三对左右足不得交叉；继续逐腿检查独立运动与头部混合。
+- `GroundedCrabFinalCrawl2.log` 与 `GroundedCrabFinalCrawlRepeat.log` 连续 Success：最低低位足3/6、最大高差56.0/56.5cm、头触须运动203.9/203.8cm；`GroundedCrabFinalSlope2.log` Success。亮场截图 `Saved/Screenshots/WindowsEditor/TMT_NightmareLocomotor_Crawl.png` 已人工复核，仍待用户前台主观确认。

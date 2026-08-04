@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-04-session189
+**最后更新：** 2026-08-04-session191
 
 **当前功能：** FEAT-076 — FlyingBug2 六足交替步态修正
 
@@ -10,7 +10,7 @@
 
 ## 当前待办
 
-- 前台复核两组三足 `0/0.5` 交替步态是否符合 FlyingBug2 六条真实接地腿的观感。
+- 前台复核亮场蟹形六足姿态、尖足触地观感与头身 Walk 混合；自动化与人工截图审查已通过，仍保留用户主观验收。
 
 ## FEAT-076 本轮进展
 
@@ -19,6 +19,9 @@
 - 自动化已升级为八条腿逐项检查 component/Rig 位移与抬落范围，并输出四张连续相位截图。
 - session188 的八足结论作废：`tent_low*` 实为头部触须，旧自动化只证明头部骨骼移动。
 - 已按参考姿势全局高度确认六条真实接地腿，建立两组三足交替 Foot Set，并将 FullBodyIK 收敛为六个对应 Effector；冷启动回读无断链，平地逐腿与坡地自动化均 Success。日志为 `SixLegGaitColdRound1.log`、`SixLegSlopeColdRound1.log`。
+- 已按用户最新截图创建 `ABP_NightmareFlyingBug2_WalkLocomotor`：`Anim_Nightmare_bug2_walk1 -> Control Rig -> Output Pose`。移除外置 ControlRigComponent 整骨架覆盖；平地验证六足继续抬落且头部/触须累计运动 208.8cm，坡地验证 Success。日志 `WalkSourcePoseColdRound2.log`、`WalkSourcePoseSlopeColdRound1.log`。
+- DebugGame 编辑器关闭后，六个主弯曲关节的 FBIK AngularStiffness 已成功写盘；六个 Effector 的 RotationAlpha 改为 0，仅由 Locomotor 修正位置并保留原 Walk 的尖足朝向。平地与坡地冷启动均 Success，日志 `WalkBlendPositionOnlyCold1.log`、`WalkBlendPositionOnlySlopeCold1.log`。
+- session191：撤销“旧自动化成功即姿态正确”的结论。严格审查确认旧链最低仅 2/6 低位、六足高差 162cm。专用 AnimBP 改为原 Walk 头身循环 + 六腿接地帧分层，再进入 Locomotor；前支撑对 FBIK PositionAlpha=0.2，后四腿=1.0，步高4、空中占比0.22、骨盆 BobOffset=-35。最终两轮平地 Success（最低3/6低位、最大高差约56cm、头触须运动约204cm），坡地 Success；亮场截图已人工复核，待用户前台确认。
 
 ## 本轮完成
 

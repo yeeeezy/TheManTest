@@ -34,3 +34,15 @@ for name in terminal_candidates:
         print('TMT_GLOBAL', name, hierarchy.get_global_transform(key, True))
     except Exception as exc:
         print('TMT_GLOBAL_ERROR', name, exc)
+
+for name in ['root', 'Root', 'Hips',
+             'tent_large_forward3_left1', 'tent_large_forward3_right1',
+             'tent_large_back2_left1', 'tent_large_back2_right1',
+             'tent_large_back_left1', 'tent_large_back_right1']:
+    key = unreal.RigElementKey(type=unreal.RigElementType.BONE, name=name)
+    try:
+        print('TMT_ROOT_AUDIT', name,
+              'parent', hierarchy.get_first_parent(key),
+              'initial', hierarchy.get_global_transform(key, True))
+    except Exception as exc:
+        print('TMT_ROOT_AUDIT_ERROR', name, exc)

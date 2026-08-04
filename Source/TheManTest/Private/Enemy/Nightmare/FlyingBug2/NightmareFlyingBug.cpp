@@ -1,8 +1,7 @@
 #include "Enemy/Nightmare/FlyingBug2/NightmareFlyingBug.h"
 
 #include "Animation/AnimSequence.h"
-#include "ControlRig.h"
-#include "ControlRigComponent.h"
+#include "Animation/AnimInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -19,20 +18,15 @@ ANightmareFlyingBug::ANightmareFlyingBug()
 	Movement->bOrientRotationToMovement = false;
 	Movement->RotationRate = FRotator(0.f, 220.f, 0.f);
 
-	ProceduralLocomotor = CreateDefaultSubobject<UControlRigComponent>(TEXT("ProceduralLocomotor"));
-	// Keep the rig host outside the mapped mesh's attachment chain. Parenting the rig
-	// component to the mesh while also mapping that mesh creates a tick dependency cycle.
-	ProceduralLocomotor->SetupAttachment(RootComponent);
-	// ANightmareFlyingBug ticks the rig explicitly after movement/surface alignment so
-	// the mapped skeletal output is refreshed in the same frame and cannot lag behind.
-	ProceduralLocomotor->bUpdateRigOnTick = false;
-	ProceduralLocomotor->bEnableLazyEvaluation = false;
-	ProceduralLocomotor->bResetTransformBeforeTick = false;
-	static ConstructorHelpers::FClassFinder<UControlRig> LocomotorRigClass(
-		TEXT("/Game/Enemy/Nightmare/FlyingBug2/Animations/ControlRig/CR_NightmareFlyingBug2_Locomotor"));
-	if (LocomotorRigClass.Succeeded())
+	// The authored walk is the source pose and the embedded Control Rig only corrects
+	// the six ground-contact legs. This preserves head/tentacle motion and gives FBIK
+	// the authored joint bend directions as its starting pose.
+	static ConstructorHelpers::FClassFinder<UAnimInstance> LocomotorAnimClass(
+		TEXT("/Game/Enemy/Nightmare/FlyingBug2/Animations/Logic/ABP_NightmareFlyingBug2_WalkLocomotor"));
+	if (LocomotorAnimClass.Succeeded())
 	{
-		ProceduralLocomotor->ControlRigClass = LocomotorRigClass.Class;
+		GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+		GetMesh()->SetAnimInstanceClass(LocomotorAnimClass.Class);
 	}
 }
 
@@ -43,23 +37,15 @@ void ANightmareFlyingBug::BeginPlay()
 	RoamOrigin = GetActorLocation();
 	VelocityDamper.Reset(FVector::ZeroVector);
 	GroundNormalDamper.Reset(FVector::UpVector);
+	AuthoredMeshRelativeRotation = GetMesh()->GetRelativeRotation().Quaternion();
 	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	if (UClass* WalkLocomotorClass = LoadClass<UAnimInstance>(nullptr,
+		TEXT("/Game/Enemy/Nightmare/FlyingBug2/Animations/Logic/ABP_NightmareFlyingBug2_WalkLocomotor.ABP_NightmareFlyingBug2_WalkLocomotor_C")))
+	{
+		GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+		GetMesh()->SetAnimInstanceClass(WalkLocomotorClass);
+	}
 
-	// Do not rely on the editor preview state of Animation Single Node. The concrete
-	// Blueprint supplies the finalized native sequence and runtime starts it explicitly.
-	if (RoamAnimation)
-	{
-		GetMesh()->PlayAnimation(RoamAnimation, true);
-	}
-	if (ProceduralLocomotor && ProceduralLocomotor->ControlRigClass)
-	{
-		// The SkeletalMesh "Default Animating Rig" field is editor preview only. Runtime
-		// must explicitly map the complete mesh so Locomotor/FullBodyIK outputs reach bones.
-		ProceduralLocomotor->ClearMappedElements();
-		ProceduralLocomotor->AddMappedCompleteSkeletalMesh(
-			GetMesh(), EControlRigComponentMapDirection::Output);
-		ProceduralLocomotor->Initialize();
-	}
 	ChooseNextDestination();
 }
 
@@ -100,16 +86,13 @@ void ANightmareFlyingBug::Tick(float DeltaSeconds)
 			// makes the capsule wedge into convex/concave slope seams. Only yaw belongs to
 			// the actor; the visual mesh follows the full ground-normal orientation.
 			SetActorRotation(FRotator(0.f, SurfaceRotation.Yaw, 0.f));
-			GetMesh()->SetWorldRotation(SurfaceRotation);
+			// Preserve the skeletal mesh import/Blueprint orientation. Applying the
+			// surface frame directly discarded that authored basis on flat ground,
+			// stood this creature up, and made Locomotor solve feet in the wrong frame.
+			GetMesh()->SetWorldRotation(SurfaceRotation.Quaternion() * AuthoredMeshRelativeRotation);
 		}
 	}
 
-	if (ProceduralLocomotor && ProceduralLocomotor->CanExecute())
-	{
-		ProceduralLocomotor->Update(DeltaSeconds);
-		GetMesh()->TickAnimation(DeltaSeconds, false);
-		GetMesh()->RefreshBoneTransforms();
-	}
 }
 
 void ANightmareFlyingBug::ChooseNextDestination()
