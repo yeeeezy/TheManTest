@@ -49,14 +49,21 @@ AEquipmentBase::AEquipmentBase()
     StaticMesh->SetupAttachment(RootComponent);
     StaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     // FEAT-042：武器投影打开，让地上影子手里有枪（配合 FEAT-038 全身投影 ShadowBodyMesh）
-    StaticMesh->CastShadow = true;
-    StaticMesh->bCastDynamicShadow = true;
+    StaticMesh->CastShadow = false;
+    StaticMesh->bCastDynamicShadow = false;
+
+    ShadowStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ShadowStaticMesh"));
+    ShadowStaticMesh->SetupAttachment(RootComponent);
+    ShadowStaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    ShadowStaticMesh->SetHiddenInGame(true);
+    ShadowStaticMesh->CastShadow = true;
+    ShadowStaticMesh->bCastHiddenShadow = true;
 
     SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMesh"));
     SkeletalMesh->SetupAttachment(RootComponent);
     SkeletalMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-    SkeletalMesh->CastShadow = true;
-    SkeletalMesh->bCastDynamicShadow = true;
+    SkeletalMesh->CastShadow = false;
+    SkeletalMesh->bCastDynamicShadow = false;
 
     EquipmentLight = CreateDefaultSubobject<URectLightComponent>(TEXT("EquipmentLight"));
     EquipmentLight->SetupAttachment(RootComponent);
@@ -123,6 +130,18 @@ void AEquipmentBase::Equip(AActor* NewOwner)
     SetOwner(NewOwner);
 
     if (!NewOwner) { return; }
+
+    if (AFPSCharacterBase* FPSChar = Cast<AFPSCharacterBase>(NewOwner))
+    {
+        ShadowStaticMesh->SetStaticMesh(StaticMesh->GetStaticMesh());
+        for (int32 MaterialIndex = 0; MaterialIndex < StaticMesh->GetNumMaterials(); ++MaterialIndex)
+        {
+            ShadowStaticMesh->SetMaterial(MaterialIndex, StaticMesh->GetMaterial(MaterialIndex));
+        }
+        ShadowStaticMesh->AttachToComponent(
+            FPSChar->GetShadowBodyMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, EquipSocketName);
+        ShadowStaticMesh->SetRelativeTransform(StaticMesh->GetRelativeTransform());
+    }
     TArray<USkeletalMeshComponent*> AnimMeshes;
     GetAnimLayerMeshes(NewOwner, AnimMeshes);
 
@@ -203,6 +222,12 @@ void AEquipmentBase::PlayEquipEffect()
 void AEquipmentBase::Unequip()
 {
     AActor* CurrentOwner = GetOwner();
+
+    if (ShadowStaticMesh)
+    {
+        ShadowStaticMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+        ShadowStaticMesh->SetStaticMesh(nullptr);
+    }
 
     if (CurrentOwner)
     {

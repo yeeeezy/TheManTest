@@ -67,7 +67,12 @@ void ANightmareFlyingBug::Tick(float DeltaSeconds)
 			SmoothNormal).GetSafeNormal();
 		if (!Forward.IsNearlyZero())
 		{
-			SetActorRotation(FRotationMatrix::MakeFromXZ(Forward, SmoothNormal).Rotator());
+			const FRotator SurfaceRotation = FRotationMatrix::MakeFromXZ(Forward, SmoothNormal).Rotator();
+			// ACharacter's collision capsule must remain vertical. Tilting the whole actor
+			// makes the capsule wedge into convex/concave slope seams. Only yaw belongs to
+			// the actor; the visual mesh follows the full ground-normal orientation.
+			SetActorRotation(FRotator(0.f, SurfaceRotation.Yaw, 0.f));
+			GetMesh()->SetWorldRotation(SurfaceRotation);
 		}
 	}
 }

@@ -846,15 +846,16 @@ bool FShadowUpperBodyEvidenceCommand::Update()
 	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
 	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
 	AFPSCharacterBase* Player = PC ? Cast<AFPSCharacterBase>(PC->GetPawn()) : nullptr;
-	if (!Player || !Player->GetArmsMesh() || !Player->GetShadowUpperBodyMesh()) return false;
-	Test->TestEqual(TEXT("Shadow upper body follows ArmsViewMesh"),
-		Player->GetShadowUpperBodyMesh()->GetBaseComponent(),
-		static_cast<const USkinnedMeshComponent*>(Player->GetArmsMesh()));
-	Test->TestEqual(TEXT("Shadow upper body uses the same skeletal mesh as ArmsViewMesh"),
-		Player->GetShadowUpperBodyMesh()->GetSkeletalMeshAsset(), Player->GetArmsMesh()->GetSkeletalMeshAsset());
-	Test->TestTrue(TEXT("Shadow upper-body hand pose matches ArmsViewMesh"),
-		Player->GetShadowUpperBodyMesh()->GetSocketTransform(TEXT("hand_r"), RTS_Component).Equals(
-			Player->GetArmsMesh()->GetSocketTransform(TEXT("hand_r"), RTS_Component), 0.1f));
+	if (!Player || !Player->GetShadowBodyMesh() || !Player->GetShadowUpperBodyMesh()) return false;
+	Test->TestEqual(TEXT("Deprecated split upper-body shadow has no mesh"),
+		Player->GetShadowUpperBodyMesh()->GetSkeletalMeshAsset(), static_cast<USkeletalMesh*>(nullptr));
+	Test->TestFalse(TEXT("Deprecated split upper-body shadow cannot cast"),
+		Player->GetShadowUpperBodyMesh()->CastShadow);
+	Test->TestEqual(TEXT("Complete shadow body follows the body animation source"),
+		Player->GetShadowBodyMesh()->GetBaseComponent(),
+		static_cast<const USkinnedMeshComponent*>(Player->GetMesh()));
+	Test->TestTrue(TEXT("Complete shadow body is hidden geometry that still casts"),
+		Player->GetShadowBodyMesh()->bHiddenInGame && Player->GetShadowBodyMesh()->bCastHiddenShadow);
 	const FVector Target = Player->GetActorLocation() + FVector(0.f, 0.f, 80.f);
 	Test->TestTrue(TEXT("Shadow upper-body evidence screenshot saved"), SaveSceneCapture(
 		World, Player, Target + FVector(-260.f, 260.f, 260.f), Target,
@@ -875,17 +876,28 @@ public:
 		{
 			UClass* BugClass = LoadClass<ANightmareFlyingBug>(nullptr,
 				TEXT("/Game/Enemy/Nightmare/FlyingBug2/Blueprint/BP_NightmareFlyingBug2.BP_NightmareFlyingBug2_C"));
-			APlayerController* PC = World->GetFirstPlayerController();
-			FVector SpawnLocation = PC && PC->GetPawn()
-				? PC->GetPawn()->GetActorLocation() + FVector(600.f, 300.f, 300.f) : FVector(0.f, 0.f, 300.f);
+			FVector SpawnLocation(10000.f, -10000.f, 300.f);
+			FVector RouteEnd(11800.f, -10000.f, 350.f);
+			for (TActorIterator<AStaticMeshActor> It(World); It; ++It)
+			{
+				if (It->GetActorLabel() == TEXT("Validation_FlyingBugTerrain_Start"))
+				{
+					SpawnLocation = It->GetActorLocation() + FVector(0.f, 0.f, 180.f);
+				}
+				else if (It->GetActorLabel() == TEXT("Validation_FlyingBugTerrain_End"))
+				{
+					RouteEnd = It->GetActorLocation() + FVector(0.f, 0.f, 100.f);
+				}
+			}
 			FHitResult GroundHit;
 			if (World->LineTraceSingleByChannel(GroundHit, SpawnLocation + FVector(0.f, 0.f, 600.f),
 				SpawnLocation - FVector(0.f, 0.f, 1200.f), ECC_Visibility))
 			{
-				SpawnLocation.Z = GroundHit.ImpactPoint.Z + 100.f;
+				SpawnLocation.Z = GroundHit.ImpactPoint.Z + 240.f;
 			}
 			Bug = BugClass ? World->SpawnActor<ANightmareFlyingBug>(BugClass, SpawnLocation, FRotator::ZeroRotator) : nullptr;
 			SpawnedBug = Bug;
+			if (Bug) { Bug->SetRoamDestinationForTesting(RouteEnd); }
 		}
 		if (!Bug) return false;
 		if (!bStarted)
@@ -895,12 +907,14 @@ public:
 			StartTime = World->GetTimeSeconds();
 			return false;
 		}
-		if (World->GetTimeSeconds() - StartTime < 2.f) return false;
+		if (World->GetTimeSeconds() - StartTime < 18.f) return false;
 		Test->TestEqual(TEXT("Nightmare uses walking movement"), Bug->GetCharacterMovement()->MovementMode, MOVE_Walking);
+		Test->AddInfo(FString::Printf(TEXT("Rugged route planar distance: %.1f cm"),
+			FVector::Dist2D(StartLocation, Bug->GetActorLocation())));
 		Test->TestTrue(TEXT("Nightmare moved while crawling"),
-			FVector::Dist2D(StartLocation, Bug->GetActorLocation()) > 20.f);
-		Test->TestTrue(TEXT("Nightmare mesh remains upright relative to actor"),
-			FVector::DotProduct(Bug->GetMesh()->GetUpVector(), Bug->GetActorUpVector()) > 0.99f);
+			FVector::Dist2D(StartLocation, Bug->GetActorLocation()) > 1200.f);
+		Test->TestTrue(TEXT("Nightmare mesh remains back-up across rugged terrain"),
+			FVector::DotProduct(Bug->GetMesh()->GetUpVector(), FVector::UpVector) > 0.75f);
 		const FVector Target = Bug->GetActorLocation() + FVector(0.f, 0.f, 35.f);
 		Test->TestTrue(TEXT("Nightmare crawl evidence screenshot saved"), SaveSceneCapture(
 			World, Bug, Target + FVector(-520.f, 360.f, 260.f), Target,
@@ -952,9 +966,12 @@ public:
 		const FVector RampNormal = RampRotation.RotateVector(FVector::UpVector);
 		Test->TestEqual(TEXT("Nightmare remains walking on slope"), Bug->GetCharacterMovement()->MovementMode, MOVE_Walking);
 		Test->TestTrue(TEXT("Nightmare crawls along slope"), FVector::Dist(StartLocation, Bug->GetActorLocation()) > 20.f);
-		Test->TestTrue(TEXT("Nightmare aligns its up axis to slope"), FVector::DotProduct(Bug->GetActorUpVector(), RampNormal) > 0.9f);
+		Test->TestTrue(TEXT("Nightmare collision actor remains upright on slope"),
+			FVector::DotProduct(Bug->GetActorUpVector(), FVector::UpVector) > 0.99f);
+		Test->TestTrue(TEXT("Nightmare visual mesh aligns to slope"),
+			FVector::DotProduct(Bug->GetMesh()->GetUpVector(), RampNormal) > 0.9f);
 		Test->TestTrue(TEXT("Nightmare mesh stays upright on slope"),
-			FVector::DotProduct(Bug->GetMesh()->GetUpVector(), Bug->GetActorUpVector()) > 0.99f);
+			FVector::DotProduct(Bug->GetMesh()->GetUpVector(), RampNormal) > 0.9f);
 		const FVector Target = Bug->GetActorLocation() + FVector(0.f, 0.f, 40.f);
 		Test->TestTrue(TEXT("Nightmare slope evidence screenshot saved"), SaveSceneCapture(
 			World, Bug.Get(), Target + FVector(-520.f, 420.f, 280.f), Target,

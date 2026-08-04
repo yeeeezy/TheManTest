@@ -1,19 +1,9 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-04-session184",
+    "last_updated":  "2026-08-04-session185",
     "source_file":  "feature_list.json",
     "status_scope":  "done",
     "features":  [
-                     {
-                         "id":  "FEAT-075",
-                         "name":  "Nightmare FlyingBug2 Locomotor贴地爬行与敌人/影子结构修正",
-                         "status":  "done",
-                         "description":  "撤销错误的Flying三维游荡，使用Locomotor Control Rig多足链实现贴地爬行；统一Enemy目录；玩家影子上半身同步第一人称手臂最终Pose。",
-                         "archive_file":  "archive/FEAT-075-nightmare-flying-bug.md",
-                         "created":  "2026-08-04",
-                         "updated":  "2026-08-04-session184",
-                         "verification_evidence":  "Development Editor构建成功；平地与18度坡面自动化均Success，验证MOVE_Walking、实际位移与坡面法线对齐；ShadowUpperBody验证LeaderPose、同Mesh与hand_r组件Pose一致；Enemy冷加载验证目标目录175项、旧目录0、Redirector 0，Phantom/Nightmare/Locomotor Rig均可加载；截图与日志保存于Saved。"
-                     },
                      {
                          "id":  "FEAT-073",
                          "name":  "子弹命中警觉与RepairGun减速",

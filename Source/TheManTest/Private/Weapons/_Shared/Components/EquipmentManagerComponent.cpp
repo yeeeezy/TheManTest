@@ -80,7 +80,9 @@ void UEquipmentManagerComponent::InitializeEquipment(const TArray<TSubclassOf<AE
         if (AEquipmentBase* FirstEquipment = Inventory[CurrentEquipmentIndex])
         {
             FirstEquipment->Equip(OwnerCharacter);
-            FirstEquipment->SetActorHiddenInGame(false);
+            // The first rendered weapon frame must already have the VFXPack dissolve
+            // material initialized. PlayInitialEquipEffect reveals it next tick.
+            FirstEquipment->SetActorHiddenInGame(true);
             FirstEquipment->SetActorEnableCollision(true);
             FirstEquipment->SetActorTickEnabled(true);
             
@@ -182,8 +184,8 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
                 {
                     if (EquipmentToPlay.IsValid() && GetCurrentEquipment() == EquipmentToPlay.Get())
                     {
-                        EquipmentToPlay->SetActorHiddenInGame(false);
                         EquipmentToPlay->PlayEquipEffect();
+                        EquipmentToPlay->SetActorHiddenInGame(false);
 
 						// 新旧第一人称枪体在同一像素区域原子替换时，TAA/TSR 仍可能保留
 						// 上一枪的颜色历史。标记一次无位移 Camera Cut，只清空该帧时域历史，

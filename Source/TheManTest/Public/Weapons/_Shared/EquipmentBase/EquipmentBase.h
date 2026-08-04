@@ -65,6 +65,11 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Equipment|Components")
     UStaticMeshComponent* StaticMesh;
 
+    // Shadow-only copy attached to the third-person body hand. The visible weapon is
+    // camera-space viewmodel geometry and must never be used as the world-space shadow.
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Equipment|Components")
+    UStaticMeshComponent* ShadowStaticMesh;
+
     // 🌟 修正：更名为骨骼模型组件 (适用于枪械、弓箭等需要播放自身动画的武器)
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Equipment|Components")
     USkeletalMeshComponent* SkeletalMesh;

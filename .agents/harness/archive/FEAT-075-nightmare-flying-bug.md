@@ -1,8 +1,23 @@
 # FEAT-075 — Nightmare FlyingBug2 Locomotor 贴地爬行与结构修正
 
-**状态：** done
+**状态：** in_progress
 
-**关闭：** 2026-08-04 session184
+**重新打开：** 2026-08-04 session185
+
+## session185 错误验收纠正
+
+- session184 的视觉验收无效：`CharacterMesh0` 被保存为 `Pitch=-90°`，实际截图中 FlyingBug2 侧倒；玩家影子截图显示漂浮白色上半身和分离枪体。
+- FlyingBug2 蓝图 Mesh 已先恢复 `Pitch=0°`，冷回读及平地/单坡 `Mesh Up · Actor Up > 0.99` 断言通过。
+- 当前仍未完成：明显高低起伏区域连续爬行、玩家完整影子动画、VFXPack 枪械出现效果精确复刻与多轮冷启动画面验收。
+
+## session185 实施与复验
+
+- `TestMap` 新增远端七段连续验证区：平地、15°升坡、坡顶、15°降坡、凹地、12°横坡和终点。
+- 修复 Character 爬坡结构：碰撞胶囊始终保持世界竖直，Actor 只跟随移动 Yaw；`CharacterMesh0` 单独按地面法线 Pitch/Roll，避免胶囊在坡缝侧倾卡死。
+- 起伏路线最终三轮冷启动均 Success，18 秒平面位移分别为 `2104.1 / 2104.5 / 2102.4 cm`；Mesh 保持背朝上。
+- 删除错误的 ShadowUpperBody 运行链：组件无 Mesh 且不投影；完整 `ShadowBodyMesh` 作为唯一身体影子并跟随 `CharacterMesh0`。可见 Viewmodel 枪体不再投影，新增附着完整身体 `GripPoint` 的 shadow-only 枪体。
+- 枪械出现时序改为先创建 MID 并写入 VFXPack `Amount (S)=1`，再显示 Actor；避免首帧完整枪体先弹出。保留原 `0.5s` Hermite `1→0` 与起点切线 `-5.434987`。
+- Shadow 与 Viewmodel 自动化各三轮 Success；仍需用户前台实际观察 Idle/WASD/冲刺/开火影子和开局/快速切枪出现效果后才能关闭功能。
 
 ## 实现
 

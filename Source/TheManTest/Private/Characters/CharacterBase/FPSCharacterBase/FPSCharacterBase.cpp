@@ -125,6 +125,7 @@ AFPSCharacterBase::AFPSCharacterBase()
 	ShadowBodyMesh->SetupAttachment(BodyRoot);
 	ShadowBodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ShadowBodyMesh->SetOwnerNoSee(true);        // 对自己隐藏
+	ShadowBodyMesh->SetHiddenInGame(true);
 	ShadowBodyMesh->CastShadow = true;
 	ShadowBodyMesh->bCastHiddenShadow = true;   // 即使对玩家不可见也投影 → 完整人形影子
 	ShadowBodyMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
@@ -133,8 +134,9 @@ AFPSCharacterBase::AFPSCharacterBase()
 	ShadowUpperBodyMesh->SetupAttachment(BodyRoot);
 	ShadowUpperBodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ShadowUpperBodyMesh->SetOwnerNoSee(true);
-	ShadowUpperBodyMesh->CastShadow = true;
-	ShadowUpperBodyMesh->bCastHiddenShadow = true;
+	ShadowUpperBodyMesh->SetHiddenInGame(true);
+	ShadowUpperBodyMesh->CastShadow = false;
+	ShadowUpperBodyMesh->bCastHiddenShadow = false;
 	ShadowUpperBodyMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 
 	LegsMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("LegsMesh"));
@@ -245,27 +247,14 @@ void AFPSCharacterBase::BeginPlay()
 	if (ShadowBodyMesh) { ShadowBodyMesh->SetLeaderPoseComponent(GetMesh()); }
 	if (ShadowUpperBodyMesh)
 	{
-		ShadowUpperBodyMesh->SetSkeletalMesh(ArmsViewMesh ? ArmsViewMesh->GetSkeletalMeshAsset() : nullptr);
-		ShadowUpperBodyMesh->SetLeaderPoseComponent(ArmsViewMesh);
+		ShadowUpperBodyMesh->SetSkeletalMesh(nullptr);
+		ShadowUpperBodyMesh->SetLeaderPoseComponent(nullptr);
 	}
 	if (LegsMesh)       { LegsMesh->SetLeaderPoseComponent(GetMesh()); }
 	// FEAT-038/042：渲染分离——FP 手臂藏非手臂段（作用到 ArmsViewMesh）、腿藏躯干以上段（只改渲染不碰姿势）。
 	// 物理拆好的 Arms/Legs mesh 本身已只含对应几何时，对应数组留空即可。
 	HideMeshMaterialSlots(ArmsViewMesh, ArmsHiddenSections);
 	HideMeshMaterialSlots(LegsMesh, LegsHiddenSections);
-	HideMeshMaterialSlots(ShadowUpperBodyMesh, ArmsHiddenSections);
-	if (ShadowBodyMesh)
-	{
-		TArray<int32> UpperBodySections;
-		for (int32 SectionIndex = 0; SectionIndex < ShadowBodyMesh->GetNumMaterials(); ++SectionIndex)
-		{
-			if (!ArmsHiddenSections.Contains(SectionIndex))
-			{
-				UpperBodySections.Add(SectionIndex);
-			}
-		}
-		HideMeshMaterialSlots(ShadowBodyMesh, UpperBodySections);
-	}
 
 	// 角色与装备保持首帧可见；只把拔枪 Montage 延迟到下一帧，等待 AnimInstance
 	// 完成初始化。不要在这里隐藏整套 Mesh，否则进入地图时会出现一帧“角色未加载”的空白。
@@ -282,6 +271,7 @@ void AFPSCharacterBase::PlayInitialEquipEffect()
 		if (AEquipmentBase* Current = EquipmentManager->GetCurrentEquipment())
 		{
 			Current->PlayEquipEffect();
+			Current->SetActorHiddenInGame(false);
 		}
 	}
 }
