@@ -6,6 +6,7 @@
 #include "NightmareFlyingBug.generated.h"
 
 class UAnimSequence;
+class UControlRigComponent;
 
 /** Concrete Nightmare bug that crawls over walkable ground. */
 UCLASS(Blueprintable)
@@ -45,6 +46,10 @@ protected:
 	/** Finalized native bug animation assigned by the concrete Blueprint. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Nightmare|Animation")
 	TObjectPtr<UAnimSequence> RoamAnimation;
+
+	/** Executes the Locomotor Control Rig and writes its procedural feet back to the mesh. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Nightmare|Animation")
+	TObjectPtr<UControlRigComponent> ProceduralLocomotor;
 
 private:
 	void ChooseNextDestination();

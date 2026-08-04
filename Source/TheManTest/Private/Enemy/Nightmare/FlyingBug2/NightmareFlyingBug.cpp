@@ -1,7 +1,10 @@
 #include "Enemy/Nightmare/FlyingBug2/NightmareFlyingBug.h"
 
 #include "Animation/AnimSequence.h"
+#include "ControlRig.h"
+#include "ControlRigComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "UObject/ConstructorHelpers.h"
 
 ANightmareFlyingBug::ANightmareFlyingBug()
 {
@@ -15,6 +18,22 @@ ANightmareFlyingBug::ANightmareFlyingBug()
 	Movement->bRunPhysicsWithNoController = true;
 	Movement->bOrientRotationToMovement = false;
 	Movement->RotationRate = FRotator(0.f, 220.f, 0.f);
+
+	ProceduralLocomotor = CreateDefaultSubobject<UControlRigComponent>(TEXT("ProceduralLocomotor"));
+	// Keep the rig host outside the mapped mesh's attachment chain. Parenting the rig
+	// component to the mesh while also mapping that mesh creates a tick dependency cycle.
+	ProceduralLocomotor->SetupAttachment(RootComponent);
+	// ANightmareFlyingBug ticks the rig explicitly after movement/surface alignment so
+	// the mapped skeletal output is refreshed in the same frame and cannot lag behind.
+	ProceduralLocomotor->bUpdateRigOnTick = false;
+	ProceduralLocomotor->bEnableLazyEvaluation = false;
+	ProceduralLocomotor->bResetTransformBeforeTick = false;
+	static ConstructorHelpers::FClassFinder<UControlRig> LocomotorRigClass(
+		TEXT("/Game/Enemy/Nightmare/FlyingBug2/Animations/ControlRig/CR_NightmareFlyingBug2_Locomotor"));
+	if (LocomotorRigClass.Succeeded())
+	{
+		ProceduralLocomotor->ControlRigClass = LocomotorRigClass.Class;
+	}
 }
 
 void ANightmareFlyingBug::BeginPlay()
@@ -31,6 +50,15 @@ void ANightmareFlyingBug::BeginPlay()
 	if (RoamAnimation)
 	{
 		GetMesh()->PlayAnimation(RoamAnimation, true);
+	}
+	if (ProceduralLocomotor && ProceduralLocomotor->ControlRigClass)
+	{
+		// The SkeletalMesh "Default Animating Rig" field is editor preview only. Runtime
+		// must explicitly map the complete mesh so Locomotor/FullBodyIK outputs reach bones.
+		ProceduralLocomotor->ClearMappedElements();
+		ProceduralLocomotor->AddMappedCompleteSkeletalMesh(
+			GetMesh(), EControlRigComponentMapDirection::Output);
+		ProceduralLocomotor->Initialize();
 	}
 	ChooseNextDestination();
 }
@@ -74,6 +102,13 @@ void ANightmareFlyingBug::Tick(float DeltaSeconds)
 			SetActorRotation(FRotator(0.f, SurfaceRotation.Yaw, 0.f));
 			GetMesh()->SetWorldRotation(SurfaceRotation);
 		}
+	}
+
+	if (ProceduralLocomotor && ProceduralLocomotor->CanExecute())
+	{
+		ProceduralLocomotor->Update(DeltaSeconds);
+		GetMesh()->TickAnimation(DeltaSeconds, false);
+		GetMesh()->RefreshBoneTransforms();
 	}
 }
 

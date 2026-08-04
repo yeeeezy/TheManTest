@@ -2,13 +2,15 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-04-session185
+**最后更新：** 2026-08-04-session186-complete
 
-**当前功能：** FEAT-075 — FlyingBug2 起伏地形爬行、玩家影子与 VFXPack 枪械出现效果复验
+**当前功能：** 无；FEAT-075 已完成并归档
 
-**状态：** in_progress
+**状态：** done
 
 ## 本轮完成
+
+- session186：纠正用户截图中的两项真实回归。FlyingBug2 现由运行时 ControlRigComponent 执行 Locomotor + FullBodyIK，自动化逐帧证明最终八足骨骼运动；三轮起伏路线均 Success。玩家影子收敛为唯一完整动画宿主 CharacterMesh0，清空重复 ShadowBody/ShadowUpperBody；VFXPack `Amount (S)` 曲线新增运行时逐帧读回断言。Development Editor 冷构建成功，Player 影子/VFX/Framing 最终两轮各 3/3 Success。FEAT-075 已归档。
 
 - session185：纠正 session184 错误视觉验收。FlyingBug2 `CharacterMesh0` 从错误 `Pitch=-90°` 恢复为 `0°`，冷回读成功；新增 Mesh Up/Actor Up 方向断言，Development Editor 编译及平地、18°单坡测试 Success。用户要求继续建立明显起伏验证区、修复玩家影子动画并恢复与 VFXPack 一致的枪械出现效果，多轮实际画面通过前不得关闭功能。
 - session185：`TestMap` 已建立七段连续起伏验证区；修复倾斜碰撞胶囊卡坡后，FlyingBug2 三轮冷启动连续爬行均 Success（约 2102~2105cm/18s）。影子改为完整身体单一来源并禁用错误 ShadowUpperBody；Viewmodel 枪体停投影，新增身体 GripPoint shadow-only 枪体。VFXPack 出现效果改为先写 `Amount (S)=1` 再显现，保留 0.5s 原曲线。Shadow/Viewmodel 各三轮 Success；待用户前台实际观感复核，当前仍为 in_progress。

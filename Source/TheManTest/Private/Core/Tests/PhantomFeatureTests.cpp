@@ -24,6 +24,7 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "ControlRigComponent.h"
 #include "Engine/Blueprint.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
@@ -851,11 +852,10 @@ bool FShadowUpperBodyEvidenceCommand::Update()
 		Player->GetShadowUpperBodyMesh()->GetSkeletalMeshAsset(), static_cast<USkeletalMesh*>(nullptr));
 	Test->TestFalse(TEXT("Deprecated split upper-body shadow cannot cast"),
 		Player->GetShadowUpperBodyMesh()->CastShadow);
-	Test->TestEqual(TEXT("Complete shadow body follows the body animation source"),
-		Player->GetShadowBodyMesh()->GetBaseComponent(),
-		static_cast<const USkinnedMeshComponent*>(Player->GetMesh()));
-	Test->TestTrue(TEXT("Complete shadow body is hidden geometry that still casts"),
-		Player->GetShadowBodyMesh()->bHiddenInGame && Player->GetShadowBodyMesh()->bCastHiddenShadow);
+	Test->TestEqual(TEXT("Deprecated duplicate shadow body has no mesh"),
+		Player->GetShadowBodyMesh()->GetSkeletalMeshAsset(), static_cast<USkeletalMesh*>(nullptr));
+	Test->TestTrue(TEXT("Authoritative animated body casts its own hidden shadow"),
+		Player->GetMesh()->CastShadow && Player->GetMesh()->bCastHiddenShadow);
 	const FVector Target = Player->GetActorLocation() + FVector(0.f, 0.f, 80.f);
 	Test->TestTrue(TEXT("Shadow upper-body evidence screenshot saved"), SaveSceneCapture(
 		World, Player, Target + FVector(-260.f, 260.f, 260.f), Target,
@@ -904,8 +904,36 @@ public:
 		{
 			bStarted = true;
 			StartLocation = Bug->GetActorLocation();
+			const TArray<FName> FootBones = GetFootBones();
+			for (const FName BoneName : FootBones)
+			{
+				PreviousFootLocations.Add(BoneName,
+					Bug->GetMesh()->GetSocketTransform(BoneName, RTS_Component).GetLocation());
+			}
 			StartTime = World->GetTimeSeconds();
 			return false;
+		}
+		for (const FName BoneName : GetFootBones())
+		{
+			const FVector Current = Bug->GetMesh()->GetSocketTransform(BoneName, RTS_Component).GetLocation();
+			if (const FVector* Previous = PreviousFootLocations.Find(BoneName))
+			{
+				AccumulatedProceduralFootTravel += FVector::Distance(*Previous, Current);
+			}
+			PreviousFootLocations.Add(BoneName, Current);
+		}
+		if (UControlRigComponent* Rig = Bug->FindComponentByClass<UControlRigComponent>())
+		{
+			for (const FName BoneName : GetFootBones())
+			{
+				const FVector Current = Rig->GetBoneTransform(
+					BoneName, EControlRigComponentSpace::RigSpace).GetLocation();
+				if (const FVector* Previous = PreviousRigFootLocations.Find(BoneName))
+				{
+					AccumulatedRigFootTravel += FVector::Distance(*Previous, Current);
+				}
+				PreviousRigFootLocations.Add(BoneName, Current);
+			}
 		}
 		if (World->GetTimeSeconds() - StartTime < 18.f) return false;
 		Test->TestEqual(TEXT("Nightmare uses walking movement"), Bug->GetCharacterMovement()->MovementMode, MOVE_Walking);
@@ -915,6 +943,12 @@ public:
 			FVector::Dist2D(StartLocation, Bug->GetActorLocation()) > 1200.f);
 		Test->TestTrue(TEXT("Nightmare mesh remains back-up across rugged terrain"),
 			FVector::DotProduct(Bug->GetMesh()->GetUpVector(), FVector::UpVector) > 0.75f);
+		Test->AddInfo(FString::Printf(TEXT("Procedural feet accumulated component-space travel: %.1f cm"),
+			AccumulatedProceduralFootTravel));
+		Test->AddInfo(FString::Printf(TEXT("Control Rig feet accumulated rig-space travel: %.1f cm"),
+			AccumulatedRigFootTravel));
+		Test->TestTrue(TEXT("Eight leg endpoints are procedurally animated instead of sliding"),
+			AccumulatedProceduralFootTravel > 200.f);
 		const FVector Target = Bug->GetActorLocation() + FVector(0.f, 0.f, 35.f);
 		Test->TestTrue(TEXT("Nightmare crawl evidence screenshot saved"), SaveSceneCapture(
 			World, Bug, Target + FVector(-520.f, 360.f, 260.f), Target,
@@ -922,11 +956,57 @@ public:
 		return true;
 	}
 private:
+	static TArray<FName> GetFootBones()
+	{
+		return { TEXT("tent_low1_left3"), TEXT("tent_low1_right3"),
+			TEXT("tent_low2_left4"), TEXT("tent_low2_right4"),
+			TEXT("tent_low3_left3"), TEXT("tent_low3_right3"),
+			TEXT("tent_low4_left4"), TEXT("tent_low4_right4") };
+	}
 	FAutomationTestBase* Test = nullptr;
 	bool bStarted = false;
 	float StartTime = 0.f;
 	FVector StartLocation = FVector::ZeroVector;
+	TMap<FName, FVector> PreviousFootLocations;
+	TMap<FName, FVector> PreviousRigFootLocations;
+	float AccumulatedProceduralFootTravel = 0.f;
+	float AccumulatedRigFootTravel = 0.f;
 	TWeakObjectPtr<ANightmareFlyingBug> SpawnedBug;
+};
+
+class FEquipDissolveEvidenceCommand final : public IAutomationLatentCommand
+{
+public:
+	explicit FEquipDissolveEvidenceCommand(FAutomationTestBase* InTest) : Test(InTest) {}
+	virtual bool Update() override
+	{
+		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+		APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		AFPSCharacterBase* Player = PC ? Cast<AFPSCharacterBase>(PC->GetPawn()) : nullptr;
+		AEquipmentBase* Equipment = Player && Player->GetEquipmentManager()
+			? Player->GetEquipmentManager()->GetCurrentEquipment() : nullptr;
+		if (!Equipment) return false;
+		const float Time = Equipment->GetEquipEffectElapsedForTesting();
+		const float Value = Equipment->GetEquipEffectValueForTesting();
+		if (Value == TNumericLimits<float>::Lowest()) return false;
+		const float Alpha = FMath::Clamp(Time / 0.5f, 0.f, 1.f);
+		const float H00 = 2.f * Alpha * Alpha * Alpha - 3.f * Alpha * Alpha + 1.f;
+		const float H10 = Alpha * Alpha * Alpha - 2.f * Alpha * Alpha + Alpha;
+		const float Expected = H00 + H10 * 0.5f * -5.434987f;
+		Test->TestTrue(TEXT("Runtime Amount (S) follows exact VFXPack Hermite curve"),
+			FMath::IsNearlyEqual(Value, Expected, 0.03f));
+		++SampleCount;
+		bSawEarly |= Time <= 0.16f;
+		if (Time < 0.5f) return false;
+		Test->TestTrue(TEXT("Equip VFX sampled near start"), bSawEarly);
+		Test->TestTrue(TEXT("Equip VFX curve was sampled over multiple runtime frames"), SampleCount >= 2);
+		Test->TestTrue(TEXT("Equip VFX finishes at Amount (S)=0"), FMath::IsNearlyZero(Value, 0.01f));
+		return true;
+	}
+private:
+	FAutomationTestBase* Test = nullptr;
+	bool bSawEarly = false;
+	int32 SampleCount = 0;
 };
 
 class FNightmareSlopeEvidenceCommand final : public IAutomationLatentCommand
@@ -1017,8 +1097,10 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 		Test->TestEqual(TEXT("First- and third-person meshes use the same VFXPack AnimBP class"),
 			Player->GetMesh()->GetAnimInstance()->GetClass(), Player->GetArmsMesh()->GetAnimInstance()->GetClass());
 	}
-	Test->TestEqual(TEXT("Shadow body follows the third-person animation source"),
-		Player->GetShadowBodyMesh()->GetBaseComponent(), static_cast<const USkinnedMeshComponent*>(Player->GetMesh()));
+	Test->TestEqual(TEXT("Deprecated duplicate shadow body stays empty"),
+		Player->GetShadowBodyMesh()->GetSkeletalMeshAsset(), static_cast<USkeletalMesh*>(nullptr));
+	Test->TestTrue(TEXT("Animated CharacterMesh0 owns the complete hidden shadow"),
+		Player->GetMesh()->CastShadow && Player->GetMesh()->bCastHiddenShadow);
 
 	UEquipmentManagerComponent* EquipmentManager = Player->GetEquipmentManager();
 	AEquipmentBase* Equipment = EquipmentManager ? EquipmentManager->GetCurrentEquipment() : nullptr;
@@ -1079,6 +1161,19 @@ bool FShadowUpperBodyEvidenceTest::RunTest(const FString& Parameters)
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FShadowUpperBodyEvidenceCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FEquipDissolveEvidenceTest,
+	"TheManTest.Player.Viewmodel.EquipDissolveEvidence",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEquipDissolveEvidenceTest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FEquipDissolveEvidenceCommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }

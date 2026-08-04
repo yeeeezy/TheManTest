@@ -1,6 +1,6 @@
 # FEAT-075 — Nightmare FlyingBug2 Locomotor 贴地爬行与结构修正
 
-**状态：** in_progress
+**状态：** done
 
 **重新打开：** 2026-08-04 session185
 
@@ -18,6 +18,15 @@
 - 删除错误的 ShadowUpperBody 运行链：组件无 Mesh 且不投影；完整 `ShadowBodyMesh` 作为唯一身体影子并跟随 `CharacterMesh0`。可见 Viewmodel 枪体不再投影，新增附着完整身体 `GripPoint` 的 shadow-only 枪体。
 - 枪械出现时序改为先创建 MID 并写入 VFXPack `Amount (S)=1`，再显示 Actor；避免首帧完整枪体先弹出。保留原 `0.5s` Hermite `1→0` 与起点切线 `-5.434987`。
 - Shadow 与 Viewmodel 自动化各三轮 Success；仍需用户前台实际观察 Idle/WASD/冲刺/开火影子和开局/快速切枪出现效果后才能关闭功能。
+
+## session186 最终修复与验收
+
+- 用户截图确认旧验收无效：玩家重复上半身旋转 90° 且无动画；FlyingBug2 腿完全静止、仅 Actor 漂移。
+- 根因：SkeletalMesh 的 `Default Animating Rig` 只服务编辑器预览，运行时从未执行 `CR_NightmareFlyingBug2_Locomotor`。新增运行时 `UControlRigComponent`，显式映射完整 SkeletalMesh，并在 Actor 移动/地表对齐后执行 Rig、刷新最终骨骼。
+- 自动化改为逐帧累计八个足端的组件空间运动，不再以 Actor 位移冒充步态。三轮累计值为 `21873.5 / 21884.6 / 21983.1 cm`，起伏路线位移 `2102.6 / 2101.5 / 2102.9 cm`，均 Success。
+- 玩家影子删除重复运行链：`CharacterMesh0` 本身是完整且持续评估动画的隐藏宿主，现由它直接 `CastHiddenShadow`；旧 ShadowBody/ShadowUpperBody 均清空，shadow-only 枪体附着同一身体 `GripPoint`，消除 90° 错轴与重复枪体。
+- 新增运行时 VFX 断言，逐帧读取 MID `Amount (S)`，验证 0.5 秒 cubic Hermite `1→0`、起点切线 `-5.434987` 与首帧先初始化后显示。Player 影子/VFX/Framing 两个最终冷启动轮次均 3/3 Success。
+- Development Editor / Win64 冷构建成功。最终日志：`ProceduralLegRuntime4.log`、`ProceduralLegFinalRound2.log`、`ProceduralLegFinalRound3.log`、`PlayerShadowVFXFinalRound2.log`、`PlayerShadowVFXFinalRound3.log`。
 
 ## 实现
 

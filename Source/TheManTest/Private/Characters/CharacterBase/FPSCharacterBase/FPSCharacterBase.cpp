@@ -79,7 +79,8 @@ AFPSCharacterBase::AFPSCharacterBase()
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetOwnerNoSee(true);
 	GetMesh()->bCastDynamicShadow = false;
-	GetMesh()->CastShadow = false;
+	GetMesh()->CastShadow = true;
+	GetMesh()->bCastHiddenShadow = true;
 	// 默认 OnlyTickPoseWhenRendered：隐藏时骨骼姿势不评估，导致切角色第一帧停在参考姿势
 	// （武器卡在左下角再飘到正确位置）。强制始终评估姿势，使首帧 socket 即就位。
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
@@ -244,7 +245,16 @@ void AFPSCharacterBase::BeginPlay()
 	}
 
 	// FEAT-038：影子/腿共用 GetMesh() 的姿势（Leader/Follower），动画只在 GetMesh() 评估一次。
-	if (ShadowBodyMesh) { ShadowBodyMesh->SetLeaderPoseComponent(GetMesh()); }
+	// CharacterMesh0 already owns the authoritative, fully animated body pose. Let that
+	// hidden mesh cast the shadow directly; a duplicate follower can preserve stale BP
+	// transforms and is the source of the 90-degree/duplicate upper-body silhouette.
+	if (ShadowBodyMesh)
+	{
+		ShadowBodyMesh->SetSkeletalMesh(nullptr);
+		ShadowBodyMesh->SetLeaderPoseComponent(nullptr);
+		ShadowBodyMesh->CastShadow = false;
+		ShadowBodyMesh->bCastHiddenShadow = false;
+	}
 	if (ShadowUpperBodyMesh)
 	{
 		ShadowUpperBodyMesh->SetSkeletalMesh(nullptr);

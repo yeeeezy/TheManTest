@@ -5,6 +5,17 @@
     "status_scope":  "done",
     "features":  [
                      {
+                         "id": "FEAT-075",
+                         "name": "Nightmare FlyingBug2 Locomotor贴地爬行与敌人/影子结构修正",
+                         "status": "done",
+                         "description": "FlyingBug2运行时执行Locomotor程序八足步态并爬越连续起伏地形；玩家影子收敛为唯一动画身体；RepairGun显现精确复刻VFXPack曲线。",
+                         "archive_file": "archive/FEAT-075-nightmare-flying-bug.md",
+                         "created": "2026-08-04",
+                         "updated": "2026-08-04-session186-complete",
+                         "done_criteria": ["连续起伏路线姿态与程序腿运动三轮通过 ✓", "玩家完整动画影子无重复错轴Mesh ✓", "VFXPack Amount (S)运行时曲线多轮通过 ✓", "Development Editor冷构建与多轮PIE截图通过 ✓"],
+                         "verification_evidence": "三轮18秒起伏路线位移2101.5~2102.9cm，最终八足组件空间累计运动21873.5/21884.6/21983.1cm；Player三项自动化后两轮各3/3 Success；Development Editor Succeeded。"
+                     },
+                     {
                          "id":  "FEAT-073",
                          "name":  "子弹命中警觉与RepairGun减速",
                          "status":  "done",

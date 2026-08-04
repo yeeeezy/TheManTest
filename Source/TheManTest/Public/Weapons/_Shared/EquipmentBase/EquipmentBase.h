@@ -105,6 +105,12 @@ public:
     FORCEINLINE FName GetHolsterSocketName() const { return HolsterSocketName; }
     FORCEINLINE UAnimMontage* GetEquipMontage() const { return EquipMontage; }
 
+#if WITH_DEV_AUTOMATION_TESTS
+    float GetEquipEffectElapsedForTesting() const { return EquipEffectElapsed; }
+    float GetEquipEffectValueForTesting() const;
+    bool IsEquipEffectActiveForTesting() const { return bEquipEffectActive; }
+#endif
+
 private:
     UPROPERTY(Transient)
     TArray<TObjectPtr<UMaterialInstanceDynamic>> EquipEffectMaterials;

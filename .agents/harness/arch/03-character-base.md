@@ -22,12 +22,12 @@ Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE
 │       └─ ArmsViewMesh = 持有原版 SK_ArmMesh 相对位置/旋转的独立 FP 手臂+武器挂载目标
 ├─ GetMesh()  = GASP/MM Leader+动画宿主+根运动源，OwnerNoSee，CastShadow=false
 └─ BodyRoot (SceneComponent, 绝对旋转, Tick 每帧只取 Yaw → 直立；相对 Location X=-30 往后)
-    ├─ ShadowBodyMesh = Follower，全身，OwnerNoSee + bCastHiddenShadow（只投影）
+    ├─ ShadowBodyMesh = 已弃用空组件；完整影子直接由 GetMesh() CastHiddenShadow
     └─ LegsMesh       = Follower，只渲染腿材质段，OnlyOwnerSee，无影
 ```
 - session89 起暂停原地转身方案：`bUseControllerRotationYaw=true`，Pawn 直接跟随 Controller yaw；`BodyRoot` 每帧直接使用 Actor yaw 并保持 Pitch/Roll 为 0。旧 `BodyVisualYaw` 滞后、固定 45 度转步和动画曲线驱动代码均已删除，后续转体作为独立方案重新设计。
 - 三 mesh 须引用**同一 Skeleton**；几何分离只用材质段（`ShowMaterialSection`）/OpacityMask，**禁用 HideBoneByName**（会改共享姿势）。本项目实际用「物理拆 mesh」（Blender 拆 Arms/Legs，原整块当 Shadow），`ArmsHiddenSections/LegsHiddenSections` 留空。
-- 蓝图侧：Shadow/Legs 组件相对变换需 Yaw=-90 + Z=-CapsuleHalfHeight(=-88)（同默认 GetMesh() 摆法）。
+- 蓝图侧：Legs 组件相对变换需 Yaw=-90 + Z=-CapsuleHalfHeight(=-88)（同默认 GetMesh() 摆法）。ShadowBody/ShadowUpperBody 不再持有 Mesh，避免蓝图旧 Transform 形成错轴重复身体。
 - 蓝图侧 **Mesh（GetMesh()）组件**：指定全身骨架 mesh + locomotion AnimClass + 相对 Transform；**Cast Shadow 取消勾选**（BP 勾选会覆盖 C++ 的 false，造成手臂形状影子与 ShadowBodyMesh 穿帮）。`OnlyOwnerSee` 已由 C++ 设——故编辑器视口（无 owner）看不见手臂，PIE 里可见，属正常。
 
 **根运动历史决策（FEAT-039，已被 FEAT-042/session62 的独立 Viewmodel 方案取代）：**

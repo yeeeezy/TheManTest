@@ -1,25 +1,9 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-04-session185",
-    "active_feature":  "FEAT-075",
+    "last_updated":  "2026-08-04-session186-complete",
+    "active_feature":  null,
     "archive_file":  "feature_archive.json",
     "features":  [
-                     {
-                         "id":  "FEAT-075",
-                         "name":  "Nightmare FlyingBug2 Locomotor贴地爬行与敌人/影子结构修正",
-                         "status":  "in_progress",
-                         "description":  "在明显高低起伏验证区反复验证FlyingBug2贴地爬行；修复玩家影子动画；精确恢复VFXPack枪械出现特效。",
-                         "archive_file":  "archive/FEAT-075-nightmare-flying-bug.md",
-                         "created":  "2026-08-04",
-                         "updated":  "2026-08-04-session185",
-                         "done_criteria":  [
-                                               "FlyingBug2在连续凸坡、凹坡、横坡和折坡区域多轮爬行时保持背朝上、腹部朝地且无侧翻穿地",
-                                               "玩家Idle、WASD、冲刺、转向和开火时地面影子为连续完整持枪人形，画面中无额外可见Mesh",
-                                               "开局、切回RepairGun和快速连续切枪时枪械出现效果与VFXPack原版材质参数、曲线和时序一致",
-                                               "Development Editor编译、相关蓝图保存、冷启动多轮PIE和实际截图验收通过"
-                                           ],
-                         "verification_evidence":  "session185：纠正原Mesh Pitch=-90度与漂浮ShadowUpperBody。TestMap七段起伏路线三轮冷启动Success，18秒位移2104.1/2104.5/2102.4cm；胶囊竖直、Mesh贴合法线。影子与Viewmodel自动化各三轮Success；VFXPack Amount(S) 0.5s Hermite效果改为先初始化后显示。仍待用户前台实际观感复核，未关闭。"
-                     },
                      {
                          "id":  "FEAT-071",
                          "name":  "Phantom Boss伤害与命中容错平衡",

@@ -51,4 +51,4 @@ FEAT-074 起，玩家枪口统一由 `AFirearm::GetMuzzleWorldTransform()` 解�
 ## 2026-08-04 装备显现与统一动画层
 
 - VFXPack 装备显现由 `AEquipmentBase` 固定实现：MID 参数 `Amount (S)`，0.5 秒 cubic Hermite 1→0，首切线 -5.434987。
-- FPS 角色装备/卸下时，武器 Linked Anim Layer 链接到角色所有 SkeletalMesh AnimInstance；Shadow/Legs 即使是 Leader follower 也保持同一最终 AnimClass 架构。
+- FPS 角色装备/卸下时，武器 Linked Anim Layer 链接到角色所有 SkeletalMesh AnimInstance；Shadow/Legs 即使是 Leader follower 也保持同一最终 AnimClass 架构。FEAT-075 最终由隐藏的完整 `CharacterMesh0` 直接 CastHiddenShadow；重复 ShadowBody/ShadowUpperBody 为空。shadow-only 静态枪体附着 `CharacterMesh0` 的 `GripPoint`，不可附着已弃用 ShadowBody。

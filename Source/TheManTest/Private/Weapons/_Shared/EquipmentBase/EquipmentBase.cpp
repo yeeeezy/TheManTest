@@ -138,8 +138,10 @@ void AEquipmentBase::Equip(AActor* NewOwner)
         {
             ShadowStaticMesh->SetMaterial(MaterialIndex, StaticMesh->GetMaterial(MaterialIndex));
         }
+        // Attach the shadow-only gun to the same authoritative animated body that now
+        // casts the character shadow. Do not attach to the retired duplicate follower.
         ShadowStaticMesh->AttachToComponent(
-            FPSChar->GetShadowBodyMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, EquipSocketName);
+            FPSChar->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, EquipSocketName);
         ShadowStaticMesh->SetRelativeTransform(StaticMesh->GetRelativeTransform());
     }
     TArray<USkeletalMeshComponent*> AnimMeshes;
@@ -254,3 +256,18 @@ void AEquipmentBase::Unequip()
 
     SetOwner(nullptr);
 }
+
+#if WITH_DEV_AUTOMATION_TESTS
+float AEquipmentBase::GetEquipEffectValueForTesting() const
+{
+    float Value = TNumericLimits<float>::Lowest();
+    for (const UMaterialInstanceDynamic* Material : EquipEffectMaterials)
+    {
+        if (Material && Material->GetScalarParameterValue(EquipDissolveParameter, Value))
+        {
+            return Value;
+        }
+    }
+    return TNumericLimits<float>::Lowest();
+}
+#endif
