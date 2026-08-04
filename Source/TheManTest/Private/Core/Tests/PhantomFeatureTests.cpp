@@ -907,8 +907,12 @@ public:
 			const TArray<FName> FootBones = GetFootBones();
 			for (const FName BoneName : FootBones)
 			{
-				PreviousFootLocations.Add(BoneName,
-					Bug->GetMesh()->GetSocketTransform(BoneName, RTS_Component).GetLocation());
+				const FVector Initial = Bug->GetMesh()->GetSocketTransform(BoneName, RTS_Component).GetLocation();
+				PreviousFootLocations.Add(BoneName, Initial);
+				FootMinZ.Add(BoneName, Initial.Z);
+				FootMaxZ.Add(BoneName, Initial.Z);
+				FootTravel.Add(BoneName, 0.f);
+				RigFootTravel.Add(BoneName, 0.f);
 			}
 			StartTime = World->GetTimeSeconds();
 			return false;
@@ -918,8 +922,10 @@ public:
 			const FVector Current = Bug->GetMesh()->GetSocketTransform(BoneName, RTS_Component).GetLocation();
 			if (const FVector* Previous = PreviousFootLocations.Find(BoneName))
 			{
-				AccumulatedProceduralFootTravel += FVector::Distance(*Previous, Current);
+				FootTravel.FindOrAdd(BoneName) += FVector::Distance(*Previous, Current);
 			}
+			FootMinZ.FindChecked(BoneName) = FMath::Min(FootMinZ.FindRef(BoneName), Current.Z);
+			FootMaxZ.FindChecked(BoneName) = FMath::Max(FootMaxZ.FindRef(BoneName), Current.Z);
 			PreviousFootLocations.Add(BoneName, Current);
 		}
 		if (UControlRigComponent* Rig = Bug->FindComponentByClass<UControlRigComponent>())
@@ -930,12 +936,20 @@ public:
 					BoneName, EControlRigComponentSpace::RigSpace).GetLocation();
 				if (const FVector* Previous = PreviousRigFootLocations.Find(BoneName))
 				{
-					AccumulatedRigFootTravel += FVector::Distance(*Previous, Current);
+					RigFootTravel.FindOrAdd(BoneName) += FVector::Distance(*Previous, Current);
 				}
 				PreviousRigFootLocations.Add(BoneName, Current);
 			}
 		}
-		if (World->GetTimeSeconds() - StartTime < 18.f) return false;
+		const float Elapsed = World->GetTimeSeconds() - StartTime;
+		if (EvidenceFrameIndex < 4 && Elapsed >= 10.f + (0.25f * EvidenceFrameIndex))
+		{
+			const FVector FrameTarget = Bug->GetActorLocation() + FVector(0.f, 0.f, 35.f);
+			SaveSceneCapture(World, Bug, FrameTarget + FVector(-520.f, 360.f, 260.f), FrameTarget,
+				*FString::Printf(TEXT("TMT_NightmareEightLeg_Phase%d.png"), EvidenceFrameIndex));
+			++EvidenceFrameIndex;
+		}
+		if (Elapsed < 18.f) return false;
 		Test->TestEqual(TEXT("Nightmare uses walking movement"), Bug->GetCharacterMovement()->MovementMode, MOVE_Walking);
 		Test->AddInfo(FString::Printf(TEXT("Rugged route planar distance: %.1f cm"),
 			FVector::Dist2D(StartLocation, Bug->GetActorLocation())));
@@ -943,12 +957,20 @@ public:
 			FVector::Dist2D(StartLocation, Bug->GetActorLocation()) > 1200.f);
 		Test->TestTrue(TEXT("Nightmare mesh remains back-up across rugged terrain"),
 			FVector::DotProduct(Bug->GetMesh()->GetUpVector(), FVector::UpVector) > 0.75f);
-		Test->AddInfo(FString::Printf(TEXT("Procedural feet accumulated component-space travel: %.1f cm"),
-			AccumulatedProceduralFootTravel));
-		Test->AddInfo(FString::Printf(TEXT("Control Rig feet accumulated rig-space travel: %.1f cm"),
-			AccumulatedRigFootTravel));
-		Test->TestTrue(TEXT("Eight leg endpoints are procedurally animated instead of sliding"),
-			AccumulatedProceduralFootTravel > 200.f);
+		for (const FName BoneName : GetFootBones())
+		{
+			const float ComponentTravel = FootTravel.FindRef(BoneName);
+			const float RigTravel = RigFootTravel.FindRef(BoneName);
+			const float VerticalRange = FootMaxZ.FindRef(BoneName) - FootMinZ.FindRef(BoneName);
+			Test->AddInfo(FString::Printf(TEXT("Foot %s: component travel %.1f cm, rig travel %.1f cm, vertical range %.1f cm"),
+				*BoneName.ToString(), ComponentTravel, RigTravel, VerticalRange));
+			Test->TestTrue(FString::Printf(TEXT("%s has independent component-space motion"), *BoneName.ToString()),
+				ComponentTravel > 20.f);
+			Test->TestTrue(FString::Printf(TEXT("%s receives an independent Control Rig trajectory"), *BoneName.ToString()),
+				RigTravel > 20.f);
+			Test->TestTrue(FString::Printf(TEXT("%s visibly lifts and plants"), *BoneName.ToString()),
+				VerticalRange > 2.5f);
+		}
 		const FVector Target = Bug->GetActorLocation() + FVector(0.f, 0.f, 35.f);
 		Test->TestTrue(TEXT("Nightmare crawl evidence screenshot saved"), SaveSceneCapture(
 			World, Bug, Target + FVector(-520.f, 360.f, 260.f), Target,
@@ -958,10 +980,9 @@ public:
 private:
 	static TArray<FName> GetFootBones()
 	{
-		return { TEXT("tent_low1_left3"), TEXT("tent_low1_right3"),
-			TEXT("tent_low2_left4"), TEXT("tent_low2_right4"),
-			TEXT("tent_low3_left3"), TEXT("tent_low3_right3"),
-			TEXT("tent_low4_left4"), TEXT("tent_low4_right4") };
+		return { TEXT("tent_large_forward3_left5"), TEXT("tent_large_forward3_right5"),
+			TEXT("tent_large_back2_left5"), TEXT("tent_large_back2_right5"),
+			TEXT("tent_large_back_left5"), TEXT("tent_large_back_right5") };
 	}
 	FAutomationTestBase* Test = nullptr;
 	bool bStarted = false;
@@ -969,8 +990,11 @@ private:
 	FVector StartLocation = FVector::ZeroVector;
 	TMap<FName, FVector> PreviousFootLocations;
 	TMap<FName, FVector> PreviousRigFootLocations;
-	float AccumulatedProceduralFootTravel = 0.f;
-	float AccumulatedRigFootTravel = 0.f;
+	TMap<FName, float> FootTravel;
+	TMap<FName, float> RigFootTravel;
+	TMap<FName, float> FootMinZ;
+	TMap<FName, float> FootMaxZ;
+	int32 EvidenceFrameIndex = 0;
 	TWeakObjectPtr<ANightmareFlyingBug> SpawnedBug;
 };
 

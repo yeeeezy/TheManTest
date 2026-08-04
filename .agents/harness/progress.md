@@ -2,11 +2,23 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-04-session186-complete
+**最后更新：** 2026-08-04-session189
 
-**当前功能：** 无；FEAT-075 已完成并归档
+**当前功能：** FEAT-076 — FlyingBug2 六足交替步态修正
 
-**状态：** done
+**状态：** in_progress
+
+## 当前待办
+
+- 前台复核两组三足 `0/0.5` 交替步态是否符合 FlyingBug2 六条真实接地腿的观感。
+
+## FEAT-076 本轮进展
+
+- 参考用户教程截图，确认正确结构为四个 Foot Set → 八个 FeetTransform → 八个 FullBodyIK Effector。
+- 已将误配的头部 `tent_low*` 清除，改为六条真实接地腿的两组三足组，PhaseOffset=`0/0.5`；Control Rig 重编译保存成功。
+- 自动化已升级为八条腿逐项检查 component/Rig 位移与抬落范围，并输出四张连续相位截图。
+- session188 的八足结论作废：`tent_low*` 实为头部触须，旧自动化只证明头部骨骼移动。
+- 已按参考姿势全局高度确认六条真实接地腿，建立两组三足交替 Foot Set，并将 FullBodyIK 收敛为六个对应 Effector；冷启动回读无断链，平地逐腿与坡地自动化均 Success。日志为 `SixLegGaitColdRound1.log`、`SixLegSlopeColdRound1.log`。
 
 ## 本轮完成
 
