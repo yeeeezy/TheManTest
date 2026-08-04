@@ -4,14 +4,14 @@
 
 **最后更新：** 2026-08-04-session182
 
-**当前功能：** 无（FEAT-074 与 FEAT-075 已完成，详见各自 archive）
+**当前功能：** 无（FEAT-075 修正验收完成，详见 archive）
 
 **状态：** done
 
 ## 本轮完成
 
 - session182：玩家四个 Mesh 统一为 `ABP_CharacterBase_Body_C`，装备层向全部 Mesh 链接；Shadow/Legs Leader 正确。初始装备后首帧预评估消除枪下压。装备显现按 VFXPack 精确恢复 `Amount (S)` 0.5 秒 cubic Hermite 1→0（切线 -5.434987）。删除无引用旧 `ABP_CharacterBase`。
-- session182：完成 FEAT-075 Nightmare FlyingBug2：空 Nightmare 基类 + 具体 C++ 子类，Locomotor `FVectorDamper` 程序化三维游荡；TMIIR 原生最终资产整理至 `/Game/Enemy/Nightmare/FlyingBug2`，运行时显式循环 walk1。PIE 速度/位移和两次骨骼采样均通过，供应商目录、Redirector 和未使用动画已清理。
+- session184：修正 FEAT-075：Nightmare 改为 `MOVE_Walking` + Locomotor/FullBodyIK 八足贴地爬行，平地与 18° 坡面自动化通过；Enemy 目录统一且旧目录/Redirector 清零；玩家 ShadowUpperBody Leader Pose 同步 Arms 最终 Pose，运行时骨骼一致性与截图验证通过。
 - session182：Development Editor 冷构建成功；五个目标蓝图编译保存；四个目标目录资产验证全部有效；`TheManTest.Player.Viewmodel.FramingCapture` 1/1 Success；冷启动日志未发现 Blueprint/Linker/Ensure/Accessed None/Invalid material index 错误。
 
 - session181：修复 session179/180 未通过动画验证造成的回归。完整原版 VFXPack AnimBP 和 12 个依赖资产已从检查点恢复并用 AssetTools 迁入 CharacterBase；最终 ABP 保留完整原父类/AnimGraph，不再继承空模板。`ArmsViewMesh` 已重新绑定正式 Mesh 与 `ABP_CharacterBase_C`。普通 PIE 与冷重启 PIE 均用真实 A 键验证 `Is_Moving=True`、Speed 550/750 且双手为动态非参考 Pose；游戏视口截图确认枪和持枪手恢复。`TABP_CharacterBase` 目前仅预留，不在运行链。

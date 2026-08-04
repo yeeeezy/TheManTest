@@ -129,6 +129,14 @@ AFPSCharacterBase::AFPSCharacterBase()
 	ShadowBodyMesh->bCastHiddenShadow = true;   // 即使对玩家不可见也投影 → 完整人形影子
 	ShadowBodyMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 
+	ShadowUpperBodyMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ShadowUpperBodyMesh"));
+	ShadowUpperBodyMesh->SetupAttachment(BodyRoot);
+	ShadowUpperBodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ShadowUpperBodyMesh->SetOwnerNoSee(true);
+	ShadowUpperBodyMesh->CastShadow = true;
+	ShadowUpperBodyMesh->bCastHiddenShadow = true;
+	ShadowUpperBodyMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+
 	LegsMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("LegsMesh"));
 	LegsMesh->SetupAttachment(BodyRoot);
 	LegsMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -235,11 +243,29 @@ void AFPSCharacterBase::BeginPlay()
 
 	// FEAT-038：影子/腿共用 GetMesh() 的姿势（Leader/Follower），动画只在 GetMesh() 评估一次。
 	if (ShadowBodyMesh) { ShadowBodyMesh->SetLeaderPoseComponent(GetMesh()); }
+	if (ShadowUpperBodyMesh)
+	{
+		ShadowUpperBodyMesh->SetSkeletalMesh(ArmsViewMesh ? ArmsViewMesh->GetSkeletalMeshAsset() : nullptr);
+		ShadowUpperBodyMesh->SetLeaderPoseComponent(ArmsViewMesh);
+	}
 	if (LegsMesh)       { LegsMesh->SetLeaderPoseComponent(GetMesh()); }
 	// FEAT-038/042：渲染分离——FP 手臂藏非手臂段（作用到 ArmsViewMesh）、腿藏躯干以上段（只改渲染不碰姿势）。
 	// 物理拆好的 Arms/Legs mesh 本身已只含对应几何时，对应数组留空即可。
 	HideMeshMaterialSlots(ArmsViewMesh, ArmsHiddenSections);
 	HideMeshMaterialSlots(LegsMesh, LegsHiddenSections);
+	HideMeshMaterialSlots(ShadowUpperBodyMesh, ArmsHiddenSections);
+	if (ShadowBodyMesh)
+	{
+		TArray<int32> UpperBodySections;
+		for (int32 SectionIndex = 0; SectionIndex < ShadowBodyMesh->GetNumMaterials(); ++SectionIndex)
+		{
+			if (!ArmsHiddenSections.Contains(SectionIndex))
+			{
+				UpperBodySections.Add(SectionIndex);
+			}
+		}
+		HideMeshMaterialSlots(ShadowBodyMesh, UpperBodySections);
+	}
 
 	// 角色与装备保持首帧可见；只把拔枪 Montage 延迟到下一帧，等待 AnimInstance
 	// 完成初始化。不要在这里隐藏整套 Mesh，否则进入地图时会出现一帧“角色未加载”的空白。

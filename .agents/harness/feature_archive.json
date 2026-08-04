@@ -1,9 +1,19 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-01-session143",
+    "last_updated":  "2026-08-04-session184",
     "source_file":  "feature_list.json",
     "status_scope":  "done",
     "features":  [
+                     {
+                         "id":  "FEAT-075",
+                         "name":  "Nightmare FlyingBug2 Locomotor贴地爬行与敌人/影子结构修正",
+                         "status":  "done",
+                         "description":  "撤销错误的Flying三维游荡，使用Locomotor Control Rig多足链实现贴地爬行；统一Enemy目录；玩家影子上半身同步第一人称手臂最终Pose。",
+                         "archive_file":  "archive/FEAT-075-nightmare-flying-bug.md",
+                         "created":  "2026-08-04",
+                         "updated":  "2026-08-04-session184",
+                         "verification_evidence":  "Development Editor构建成功；平地与18度坡面自动化均Success，验证MOVE_Walking、实际位移与坡面法线对齐；ShadowUpperBody验证LeaderPose、同Mesh与hand_r组件Pose一致；Enemy冷加载验证目标目录175项、旧目录0、Redirector 0，Phantom/Nightmare/Locomotor Rig均可加载；截图与日志保存于Saved。"
+                     },
                      {
                          "id":  "FEAT-073",
                          "name":  "子弹命中警觉与RepairGun减速",
@@ -754,13 +764,6 @@
                          "archive_file": "archive/FEAT-074-vfxpack-camera-weapon-sway.md", "created": "2026-08-01", "updated": "2026-08-04-session182-complete",
                          "done_criteria": ["四个玩家Mesh统一最终Body AnimBP且武器层同步 ✓", "影子/腿部Leader与动态Pose验证 ✓", "开局持枪无入口Pose下压 ✓", "VFXPack装备溶解精确曲线 ✓", "构建、资产验证、PIE与FramingCapture通过 ✓"],
                          "verification_evidence": "Development Editor冷构建成功；五个目标蓝图编译保存；PIE四Mesh AnimClass/Leader/逐骨读回通过；RepairGun MID Amount (S)结束值0；FramingCapture 1/1 Success；冷日志无目标错误。"
-                     },
-                     {
-                         "id": "FEAT-075", "name": "Nightmare FlyingBug2程序化游荡怪", "status": "done",
-                         "description": "基于空Nightmare C++基类和TMIIR原生FlyingBug2最终资产，使用Locomotor速度阻尼实现三维随机游荡。",
-                         "archive_file": "archive/FEAT-075-nightmare-flying-bug.md", "created": "2026-08-04", "updated": "2026-08-04-session182-complete",
-                         "done_criteria": ["空Nightmare基类与具体FlyingBug2子类 ✓", "Locomotor程序化三维游荡 ✓", "原生最终资产语义整理且无重定向工作资产 ✓", "运行时循环动画、移动与骨骼变化验证 ✓", "构建与资产验证通过 ✓"],
-                         "verification_evidence": "PIE读回MOVE_Flying、约220cm/s且位置持续变化；SingleNode运行时资产为walk1；0.7秒间隔Hips/tail骨骼变换变化；最终10资产、0 Redirector；目录验证通过。"
                      }
                  ],
     "_说明":  "已完成功能的只读历史索引。通常无需在会话启动时读取；需要查询历史功能时按 ID 定向读取。"

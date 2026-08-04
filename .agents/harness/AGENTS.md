@@ -46,7 +46,7 @@ TheManTest — UE 5.7.4 单人游戏项目。C++ 负责数据结构、GAS 配置
 
 - **迁入后按项目语义整理。** 从素材包或外部 Unreal 项目迁入的正式资产，不得保留供应商、商城包或示例工程目录作为项目内长期路径；必须通过 Unreal AssetTools 按本项目功能归属移动到对应系统、角色、武器或共享目录。
 - **只使用项目自己的语义目录。** 顶层固定使用项目既有的 `Actors`、`Characters`、`Core`、`Maps`、`Environment`、`Weapons`、`Enemy`、`UI`；不得新增供应商名、素材包名、迁移暂存名或笼统的顶层 `Effects`。引擎管理目录（如 `__ExternalActors__`）不受此条影响。
-- **功能归属优先，资产类型次之。** 专属资源放在具体所有者目录下，例如 RepairGun 特效放 `/Game/Weapons/RepairGun/Effects/`，Phantom 特效放 `/Game/Enemy/Phantom/Effects/`；然后再拆分 `Systems`、`Materials`、`Textures`、`Niagara`、`Meshes` 等类型子目录。
+- **功能归属优先，资产类型次之。** 专属资源放在具体所有者目录下，例如 RepairGun 特效放 `/Game/Weapons/RepairGun/Effects/`，Phantom 特效放 `/Game/Enemy/Humanoid/Phantom/Effects/`；然后再拆分 `Systems`、`Materials`、`Textures`、`Niagara`、`Meshes` 等类型子目录。
 - **共享必须有实际证据。** 只有至少两个已存在使用方共同引用的资源才进入最近共同语义根的 `_Shared`；跨顶层系统共用的基础资源进入 `/Game/Core/_Shared/`。不得为了省事先建共享目录再把整包素材塞入。
 - **资产按用途命名。** 正式资产使用项目语义名称和 UE 前缀（`M_` / `MI_` / `MF_` / `T_` 等），不得继续使用素材包名称作为功能命名。迁入后必须验证依赖、引用和本次目录范围内的 Redirector。
 - **导入收尾必须清场。** 每次导入/迁移完成后检查并清理供应商目录、空目录、迁移工作目录和 Redirector；旧路径不得仅因“已经空了”而长期保留。

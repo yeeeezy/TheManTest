@@ -10,6 +10,7 @@
 #include "Weapons/_Shared/Components/EquipmentManagerComponent.h"
 #include "Weapons/_Shared/EquipmentBase/EquipmentBase.h"
 #include "Enemy/Humanoid/Phantom/Phantom.h"
+#include "Enemy/Nightmare/FlyingBug2/NightmareFlyingBug.h"
 #include "Enemy/Cover/EnemyCoverPoint.h"
 #include "Actors/PatrolPoint.h"
 #include "Enemy/_Shared/GAS/Abilities/GA_EnemyShoot.h"
@@ -21,11 +22,13 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISense_Sight.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Blueprint.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
+#include "Engine/StaticMeshActor.h"
 #include "EngineUtils.h"
 #include "UObject/UObjectIterator.h"
 #include "Tests/AutomationEditorCommon.h"
@@ -35,6 +38,7 @@
 #include "Misc/FileHelper.h"
 #include "ImageUtils.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "Components/PointLightComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Animation/AnimBlueprint.h"
@@ -55,7 +59,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomAnimationOverridesTest,
 bool FPhantomAnimationOverridesTest::RunTest(const FString& Parameters)
 {
 	UAnimBlueprint* Child = LoadObject<UAnimBlueprint>(nullptr,
-		TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/Logic/ABP_Phantom_OriginalRifle.ABP_Phantom_OriginalRifle"));
+		TEXT("/Game/Enemy/Humanoid/Phantom/OriginalRifle/Animations/Logic/ABP_Phantom_OriginalRifle.ABP_Phantom_OriginalRifle"));
 	TestNotNull(TEXT("Phantom child AnimBP"), Child);
 	if (!Child) return false;
 
@@ -66,11 +70,11 @@ bool FPhantomAnimationOverridesTest::RunTest(const FString& Parameters)
 		if (Override.NewAsset) OverridePaths.Add(Override.NewAsset->GetPathName());
 	}
 	auto HasOverride = [&OverridePaths](const TCHAR* Path) { return OverridePaths.Contains(Path); };
-	TestTrue(TEXT("Relaxed idle override"), HasOverride(TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/W2_Stand_Relaxed_Idle_IP.W2_Stand_Relaxed_Idle_IP")));
-	TestTrue(TEXT("Patrol directional BlendSpace override"), HasOverride(TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_RelaxedPatrol2D.BS_Phantom_RelaxedPatrol2D")));
-	TestTrue(TEXT("Aim directional BlendSpace override"), HasOverride(TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_AimLocomotion.BS_Phantom_AimLocomotion")));
+	TestTrue(TEXT("Relaxed idle override"), HasOverride(TEXT("/Game/Enemy/Humanoid/Phantom/OriginalRifle/Animations/W2_Stand_Relaxed_Idle_IP.W2_Stand_Relaxed_Idle_IP")));
+	TestTrue(TEXT("Patrol directional BlendSpace override"), HasOverride(TEXT("/Game/Enemy/Humanoid/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_RelaxedPatrol2D.BS_Phantom_RelaxedPatrol2D")));
+	TestTrue(TEXT("Aim directional BlendSpace override"), HasOverride(TEXT("/Game/Enemy/Humanoid/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_AimLocomotion.BS_Phantom_AimLocomotion")));
 	if (UBlendSpace* Patrol = LoadObject<UBlendSpace>(nullptr,
-		TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_RelaxedPatrol2D.BS_Phantom_RelaxedPatrol2D")))
+		TEXT("/Game/Enemy/Humanoid/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_RelaxedPatrol2D.BS_Phantom_RelaxedPatrol2D")))
 	{
 		TestEqual(TEXT("Patrol BlendSpace X axis is Speed"), Patrol->GetBlendParameter(0).DisplayName, FString(TEXT("Speed")));
 		TestEqual(TEXT("Patrol BlendSpace Y axis is Direction"), Patrol->GetBlendParameter(1).DisplayName, FString(TEXT("Direction")));
@@ -85,7 +89,7 @@ bool FPhantomAnimationOverridesTest::RunTest(const FString& Parameters)
 		}
 	}
 	if (UAnimSequence* Idle = LoadObject<UAnimSequence>(nullptr,
-		TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/W2_Stand_Relaxed_Idle_IP.W2_Stand_Relaxed_Idle_IP")))
+		TEXT("/Game/Enemy/Humanoid/Phantom/OriginalRifle/Animations/W2_Stand_Relaxed_Idle_IP.W2_Stand_Relaxed_Idle_IP")))
 	{
 		const USkeleton* Skeleton = Idle->GetSkeleton();
 		const int32 UpperArmIndex = Skeleton ? Skeleton->GetReferenceSkeleton().FindBoneIndex(TEXT("upperarm_l")) : INDEX_NONE;
@@ -103,11 +107,11 @@ bool FPhantomAnimationOverridesTest::RunTest(const FString& Parameters)
 	for (int32 Index = 1; Index <= 4; ++Index)
 	{
 		TestTrue(*FString::Printf(TEXT("Patrol scan variant %d override"), Index),
-			HasOverride(*FString::Printf(TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/W2_Stand_Relaxed_Fgt_v%d_IP.W2_Stand_Relaxed_Fgt_v%d_IP"), Index, Index)));
+			HasOverride(*FString::Printf(TEXT("/Game/Enemy/Humanoid/Phantom/OriginalRifle/Animations/W2_Stand_Relaxed_Fgt_v%d_IP.W2_Stand_Relaxed_Fgt_v%d_IP"), Index, Index)));
 	}
 
 	UBlendSpace* Aim = LoadObject<UBlendSpace>(nullptr,
-		TEXT("/Game/Enemy/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_AimLocomotion.BS_Phantom_AimLocomotion"));
+		TEXT("/Game/Enemy/Humanoid/Phantom/OriginalRifle/Animations/BlendSpace/BS_Phantom_AimLocomotion.BS_Phantom_AimLocomotion"));
 	TestNotNull(TEXT("Aim 2D BlendSpace"), Aim);
 	if (UBlendSpace* AimBlendSpace = Cast<UBlendSpace>(Aim))
 	{
@@ -186,19 +190,19 @@ bool FPhantomReusableCombatTest::RunTest(const FString& Parameters)
 	TestNotNull(TEXT("Cover actor blueprint"), LoadObject<UBlueprint>(nullptr,
 		TEXT("/Game/Enemy/_Shared/Cover/BP_EnemyCoverPoint.BP_EnemyCoverPoint")));
 	TestNotNull(TEXT("Burst ability"), LoadObject<UBlueprint>(nullptr,
-		TEXT("/Game/Enemy/Phantom/GAS/GameplayAbility/BGA_PhantomBurst.BGA_PhantomBurst")));
+		TEXT("/Game/Enemy/Humanoid/Phantom/GAS/GameplayAbility/BGA_PhantomBurst.BGA_PhantomBurst")));
 	TestNotNull(TEXT("Suppressive ability"), LoadObject<UBlueprint>(nullptr,
-		TEXT("/Game/Enemy/Phantom/GAS/GameplayAbility/BGA_PhantomSuppressiveFire.BGA_PhantomSuppressiveFire")));
+		TEXT("/Game/Enemy/Humanoid/Phantom/GAS/GameplayAbility/BGA_PhantomSuppressiveFire.BGA_PhantomSuppressiveFire")));
 	TestNotNull(TEXT("Reload ability"), LoadObject<UBlueprint>(nullptr,
-		TEXT("/Game/Enemy/Phantom/GAS/GameplayAbility/BGA_PhantomReload.BGA_PhantomReload")));
+		TEXT("/Game/Enemy/Humanoid/Phantom/GAS/GameplayAbility/BGA_PhantomReload.BGA_PhantomReload")));
 	TestNotNull(TEXT("Cover ability"), LoadObject<UBlueprint>(nullptr,
-		TEXT("/Game/Enemy/Phantom/GAS/GameplayAbility/BGA_PhantomTakeCover.BGA_PhantomTakeCover")));
+		TEXT("/Game/Enemy/Humanoid/Phantom/GAS/GameplayAbility/BGA_PhantomTakeCover.BGA_PhantomTakeCover")));
 	TestNotNull(TEXT("Barrage ability"), LoadObject<UBlueprint>(nullptr,
-		TEXT("/Game/Enemy/Phantom/GAS/GameplayAbility/BGA_PhantomAreaBarrage.BGA_PhantomAreaBarrage")));
+		TEXT("/Game/Enemy/Humanoid/Phantom/GAS/GameplayAbility/BGA_PhantomAreaBarrage.BGA_PhantomAreaBarrage")));
 	UNiagaraSystem* RepairMuzzle = LoadObject<UNiagaraSystem>(nullptr,
 		TEXT("/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_Muzzle.NS_RepairGun_Muzzle"));
 	UNiagaraSystem* HumanoidMuzzle = LoadObject<UNiagaraSystem>(nullptr,
-		TEXT("/Game/Enemy/Phantom/Effects/Muzzle/Systems/NS_HumanoidRifle_Muzzle.NS_HumanoidRifle_Muzzle"));
+		TEXT("/Game/Enemy/Humanoid/Phantom/Effects/Muzzle/Systems/NS_HumanoidRifle_Muzzle.NS_HumanoidRifle_Muzzle"));
 	TestNotNull(TEXT("RepairGun semantic muzzle system"), RepairMuzzle);
 	TestNotNull(TEXT("Humanoid rifle semantic muzzle system"), HumanoidMuzzle);
 	if (UClass* RepairClass = LoadClass<AFirearm>(nullptr,
@@ -209,7 +213,7 @@ bool FPhantomReusableCombatTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("RepairGun muzzle effect has a visible production scale"), RepairCDO->MuzzleEffectScale.GetMin() >= 0.8f);
 	}
 	if (UClass* BurstClass = LoadClass<UGA_EnemyShoot>(nullptr,
-		TEXT("/Game/Enemy/Phantom/GAS/GameplayAbility/BGA_PhantomBurst.BGA_PhantomBurst_C")))
+		TEXT("/Game/Enemy/Humanoid/Phantom/GAS/GameplayAbility/BGA_PhantomBurst.BGA_PhantomBurst_C")))
 	{
 		const UGA_EnemyShoot* BurstCDO = BurstClass->GetDefaultObject<UGA_EnemyShoot>();
 		TestEqual(TEXT("Humanoid burst inherits the shared physical muzzle default"), BurstCDO->GetMuzzleEffect(), HumanoidMuzzle);
@@ -239,7 +243,7 @@ bool FPhantomReusableCombatTest::RunTest(const FString& Parameters)
 		}
 
 		UClass* PhantomClass = LoadClass<APhantom>(nullptr,
-			TEXT("/Game/Enemy/Phantom/Blueprint/BP_Phantom.BP_Phantom_C"));
+			TEXT("/Game/Enemy/Humanoid/Phantom/Blueprint/BP_Phantom.BP_Phantom_C"));
 		APhantom* Phantom = World->SpawnActor<APhantom>(PhantomClass ? PhantomClass : APhantom::StaticClass(),
 			FVector(200.f, 0.f, 0.f), FRotator::ZeroRotator, SpawnParameters);
 		TestNotNull(TEXT("Phantom spawned"), Phantom);
@@ -294,7 +298,7 @@ bool FValidatePhantomPIECommand::Update()
 	FActorSpawnParameters Params;
 	Params.ObjectFlags = RF_Transient;
 	UClass* PhantomClass = LoadClass<APhantom>(nullptr,
-		TEXT("/Game/Enemy/Phantom/Blueprint/BP_Phantom.BP_Phantom_C"));
+		TEXT("/Game/Enemy/Humanoid/Phantom/Blueprint/BP_Phantom.BP_Phantom_C"));
 	APhantom* Phantom = World->SpawnActor<APhantom>(PhantomClass,
 		FVector(0.f, 0.f, 150.f), FRotator::ZeroRotator, Params);
 	Test->TestNotNull(TEXT("PIE Phantom spawned"), Phantom);
@@ -306,11 +310,11 @@ bool FValidatePhantomPIECommand::Update()
 			Phantom->GetMagazineComponent()->GetCurrentAmmo(), 20);
 		Phantom->AimTargetWorld = Phantom->GetActorLocation() + FVector(1000.f, 0.f, 0.f);
 		UClass* BurstClass = LoadClass<UGameplayAbility>(nullptr,
-			TEXT("/Game/Enemy/Phantom/GAS/GameplayAbility/BGA_PhantomBurst.BGA_PhantomBurst_C"));
+			TEXT("/Game/Enemy/Humanoid/Phantom/GAS/GameplayAbility/BGA_PhantomBurst.BGA_PhantomBurst_C"));
 		Test->TestTrue(TEXT("PIE Phantom burst ability activates"), BurstClass &&
 			Phantom->GetAbilitySystemComponent()->TryActivateAbilityByClass(BurstClass));
 		UNiagaraSystem* EnemyMuzzle = LoadObject<UNiagaraSystem>(nullptr,
-			TEXT("/Game/Enemy/Phantom/Effects/Muzzle/Systems/NS_HumanoidRifle_Muzzle.NS_HumanoidRifle_Muzzle"));
+			TEXT("/Game/Enemy/Humanoid/Phantom/Effects/Muzzle/Systems/NS_HumanoidRifle_Muzzle.NS_HumanoidRifle_Muzzle"));
 		bool bEnemyMuzzleSpawned = false;
 		for (TObjectIterator<UNiagaraComponent> It; It; ++It)
 		{
@@ -347,7 +351,7 @@ public:
 			if (!Player) return false;
 			TargetLocation = Player->GetActorLocation();
 			UClass* PhantomClass = LoadClass<APhantom>(nullptr,
-				TEXT("/Game/Enemy/Phantom/Blueprint/BP_Phantom.BP_Phantom_C"));
+				TEXT("/Game/Enemy/Humanoid/Phantom/Blueprint/BP_Phantom.BP_Phantom_C"));
 			FActorSpawnParameters Params;
 			Params.ObjectFlags = RF_Transient;
 			APhantom* Spawned = World->SpawnActor<APhantom>(PhantomClass,
@@ -772,6 +776,40 @@ bool FPhantomTacticalApproachPIETest::RunTest(const FString& Parameters)
 }
 
 DEFINE_LATENT_AUTOMATION_COMMAND(FPlayerFramingScreenshotCommand);
+
+static bool SaveSceneCapture(UWorld* World, AActor* Owner, const FVector& CameraLocation,
+	const FVector& TargetLocation, const FString& FileName)
+{
+	if (!World || !Owner) return false;
+	UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>();
+	RenderTarget->RenderTargetFormat = RTF_RGBA8;
+	RenderTarget->InitAutoFormat(1920, 1080);
+	RenderTarget->UpdateResourceImmediate(true);
+	USceneCaptureComponent2D* Capture = NewObject<USceneCaptureComponent2D>(Owner);
+	Capture->RegisterComponentWithWorld(World);
+	Capture->SetWorldLocationAndRotation(CameraLocation, (TargetLocation - CameraLocation).Rotation());
+	Capture->FOVAngle = 65.f;
+	Capture->CaptureSource = SCS_FinalColorLDR;
+	Capture->TextureTarget = RenderTarget;
+	Capture->bCaptureEveryFrame = false;
+	Capture->bCaptureOnMovement = false;
+	UPointLightComponent* EvidenceLight = NewObject<UPointLightComponent>(Owner);
+	EvidenceLight->RegisterComponentWithWorld(World);
+	EvidenceLight->SetWorldLocation(CameraLocation + FVector(0.f, 0.f, 120.f));
+	EvidenceLight->SetIntensity(45000.f);
+	EvidenceLight->SetAttenuationRadius(1200.f);
+	Capture->CaptureScene();
+	TArray<FColor> Pixels;
+	if (!RenderTarget->GameThread_GetRenderTargetResource()->ReadPixels(Pixels)) return false;
+	TArray64<uint8> PNGData;
+	FImageUtils::PNGCompressImageArray(1920, 1080, Pixels, PNGData);
+	const bool bSaved = FFileHelper::SaveArrayToFile(PNGData,
+		*FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("Screenshots/WindowsEditor"), FileName));
+	EvidenceLight->DestroyComponent();
+	Capture->DestroyComponent();
+	return bSaved;
+}
+
 bool FPlayerFramingScreenshotCommand::Update()
 {
 	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
@@ -801,6 +839,133 @@ bool FPlayerFramingScreenshotCommand::Update()
 	Capture->DestroyComponent();
 	return bSaved;
 }
+
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FShadowUpperBodyEvidenceCommand, FAutomationTestBase*, Test);
+bool FShadowUpperBodyEvidenceCommand::Update()
+{
+	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	AFPSCharacterBase* Player = PC ? Cast<AFPSCharacterBase>(PC->GetPawn()) : nullptr;
+	if (!Player || !Player->GetArmsMesh() || !Player->GetShadowUpperBodyMesh()) return false;
+	Test->TestEqual(TEXT("Shadow upper body follows ArmsViewMesh"),
+		Player->GetShadowUpperBodyMesh()->GetBaseComponent(),
+		static_cast<const USkinnedMeshComponent*>(Player->GetArmsMesh()));
+	Test->TestEqual(TEXT("Shadow upper body uses the same skeletal mesh as ArmsViewMesh"),
+		Player->GetShadowUpperBodyMesh()->GetSkeletalMeshAsset(), Player->GetArmsMesh()->GetSkeletalMeshAsset());
+	Test->TestTrue(TEXT("Shadow upper-body hand pose matches ArmsViewMesh"),
+		Player->GetShadowUpperBodyMesh()->GetSocketTransform(TEXT("hand_r"), RTS_Component).Equals(
+			Player->GetArmsMesh()->GetSocketTransform(TEXT("hand_r"), RTS_Component), 0.1f));
+	const FVector Target = Player->GetActorLocation() + FVector(0.f, 0.f, 80.f);
+	Test->TestTrue(TEXT("Shadow upper-body evidence screenshot saved"), SaveSceneCapture(
+		World, Player, Target + FVector(-260.f, 260.f, 260.f), Target,
+		TEXT("TMT_ShadowUpperBody_Runtime.png")));
+	return true;
+}
+
+class FNightmareCrawlEvidenceCommand final : public IAutomationLatentCommand
+{
+public:
+	explicit FNightmareCrawlEvidenceCommand(FAutomationTestBase* InTest) : Test(InTest) {}
+	virtual bool Update() override
+	{
+		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+		if (!World) return false;
+		ANightmareFlyingBug* Bug = SpawnedBug.Get();
+		if (!Bug && !bStarted)
+		{
+			UClass* BugClass = LoadClass<ANightmareFlyingBug>(nullptr,
+				TEXT("/Game/Enemy/Nightmare/FlyingBug2/Blueprint/BP_NightmareFlyingBug2.BP_NightmareFlyingBug2_C"));
+			APlayerController* PC = World->GetFirstPlayerController();
+			FVector SpawnLocation = PC && PC->GetPawn()
+				? PC->GetPawn()->GetActorLocation() + FVector(600.f, 300.f, 300.f) : FVector(0.f, 0.f, 300.f);
+			FHitResult GroundHit;
+			if (World->LineTraceSingleByChannel(GroundHit, SpawnLocation + FVector(0.f, 0.f, 600.f),
+				SpawnLocation - FVector(0.f, 0.f, 1200.f), ECC_Visibility))
+			{
+				SpawnLocation.Z = GroundHit.ImpactPoint.Z + 100.f;
+			}
+			Bug = BugClass ? World->SpawnActor<ANightmareFlyingBug>(BugClass, SpawnLocation, FRotator::ZeroRotator) : nullptr;
+			SpawnedBug = Bug;
+		}
+		if (!Bug) return false;
+		if (!bStarted)
+		{
+			bStarted = true;
+			StartLocation = Bug->GetActorLocation();
+			StartTime = World->GetTimeSeconds();
+			return false;
+		}
+		if (World->GetTimeSeconds() - StartTime < 2.f) return false;
+		Test->TestEqual(TEXT("Nightmare uses walking movement"), Bug->GetCharacterMovement()->MovementMode, MOVE_Walking);
+		Test->TestTrue(TEXT("Nightmare moved while crawling"),
+			FVector::Dist2D(StartLocation, Bug->GetActorLocation()) > 20.f);
+		const FVector Target = Bug->GetActorLocation() + FVector(0.f, 0.f, 35.f);
+		Test->TestTrue(TEXT("Nightmare crawl evidence screenshot saved"), SaveSceneCapture(
+			World, Bug, Target + FVector(-520.f, 360.f, 260.f), Target,
+			TEXT("TMT_NightmareLocomotor_Crawl.png")));
+		return true;
+	}
+private:
+	FAutomationTestBase* Test = nullptr;
+	bool bStarted = false;
+	float StartTime = 0.f;
+	FVector StartLocation = FVector::ZeroVector;
+	TWeakObjectPtr<ANightmareFlyingBug> SpawnedBug;
+};
+
+class FNightmareSlopeEvidenceCommand final : public IAutomationLatentCommand
+{
+public:
+	explicit FNightmareSlopeEvidenceCommand(FAutomationTestBase* InTest) : Test(InTest) {}
+	virtual bool Update() override
+	{
+		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+		if (!World) return false;
+		if (!bStarted)
+		{
+			APlayerController* PC = World->GetFirstPlayerController();
+			const FVector Base = PC && PC->GetPawn() ? PC->GetPawn()->GetActorLocation() : FVector::ZeroVector;
+			RampRotation = FRotator(-18.f, 0.f, 0.f);
+			Ramp = World->SpawnActor<AStaticMeshActor>(Base + FVector(1100.f, -600.f, 130.f), RampRotation);
+			UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+			if (!Ramp.IsValid() || !Cube) return false;
+			Ramp->GetStaticMeshComponent()->SetStaticMesh(Cube);
+			Ramp->GetStaticMeshComponent()->SetMobility(EComponentMobility::Movable);
+			Ramp->GetStaticMeshComponent()->SetWorldScale3D(FVector(6.f, 4.f, 0.2f));
+			Ramp->GetStaticMeshComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			const FVector Forward = RampRotation.RotateVector(FVector::ForwardVector);
+			const FVector Normal = RampRotation.RotateVector(FVector::UpVector);
+			const FVector Start = Ramp->GetActorLocation() - Forward * 180.f + Normal * 125.f;
+			UClass* BugClass = LoadClass<ANightmareFlyingBug>(nullptr,
+				TEXT("/Game/Enemy/Nightmare/FlyingBug2/Blueprint/BP_NightmareFlyingBug2.BP_NightmareFlyingBug2_C"));
+			Bug = BugClass ? World->SpawnActor<ANightmareFlyingBug>(BugClass, Start, RampRotation) : nullptr;
+			if (!Bug.IsValid()) return false;
+			Bug->SetRoamDestinationForTesting(Start + Forward * 360.f);
+			StartLocation = Bug->GetActorLocation();
+			StartTime = World->GetTimeSeconds();
+			bStarted = true;
+			return false;
+		}
+		if (!Bug.IsValid() || World->GetTimeSeconds() - StartTime < 2.f) return false;
+		const FVector RampNormal = RampRotation.RotateVector(FVector::UpVector);
+		Test->TestEqual(TEXT("Nightmare remains walking on slope"), Bug->GetCharacterMovement()->MovementMode, MOVE_Walking);
+		Test->TestTrue(TEXT("Nightmare crawls along slope"), FVector::Dist(StartLocation, Bug->GetActorLocation()) > 20.f);
+		Test->TestTrue(TEXT("Nightmare aligns its up axis to slope"), FVector::DotProduct(Bug->GetActorUpVector(), RampNormal) > 0.9f);
+		const FVector Target = Bug->GetActorLocation() + FVector(0.f, 0.f, 40.f);
+		Test->TestTrue(TEXT("Nightmare slope evidence screenshot saved"), SaveSceneCapture(
+			World, Bug.Get(), Target + FVector(-520.f, 420.f, 280.f), Target,
+			TEXT("TMT_NightmareLocomotor_Slope.png")));
+		return true;
+	}
+private:
+	FAutomationTestBase* Test = nullptr;
+	bool bStarted = false;
+	float StartTime = 0.f;
+	FVector StartLocation = FVector::ZeroVector;
+	FRotator RampRotation = FRotator::ZeroRotator;
+	TWeakObjectPtr<AStaticMeshActor> Ramp;
+	TWeakObjectPtr<ANightmareFlyingBug> Bug;
+};
 
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FValidatePlayerViewmodelPIECommand, FAutomationTestBase*, Test);
 bool FValidatePlayerViewmodelPIECommand::Update()
@@ -879,6 +1044,48 @@ bool FPlayerFramingCaptureTest::RunTest(const FString& Parameters)
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FPlayerFramingScreenshotCommand());
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FShadowUpperBodyEvidenceTest,
+	"TheManTest.Player.Shadow.UpperBodyEvidence",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FShadowUpperBodyEvidenceTest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FShadowUpperBodyEvidenceCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FNightmareLocomotorCrawlEvidenceTest,
+	"TheManTest.Enemy.Nightmare.LocomotorCrawlEvidence",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FNightmareLocomotorCrawlEvidenceTest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.5f));
+	ADD_LATENT_AUTOMATION_COMMAND(FNightmareCrawlEvidenceCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FNightmareLocomotorSlopeEvidenceTest,
+	"TheManTest.Enemy.Nightmare.LocomotorSlopeEvidence",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FNightmareLocomotorSlopeEvidenceTest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.5f));
+	ADD_LATENT_AUTOMATION_COMMAND(FNightmareSlopeEvidenceCommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }

@@ -19,7 +19,7 @@ UGA_EnemyShoot::UGA_EnemyShoot()
 	// 不注册 GameplayEvent 触发器：由 AEnemyBase::UseRandomSkill 按类激活，
 	// 这样一个敌人可拥有多个本类的子类技能（各绑不同子弹），分别独立触发。
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> DefaultHumanoidMuzzle(
-		TEXT("/Game/Enemy/Phantom/Effects/Muzzle/Systems/NS_HumanoidRifle_Muzzle.NS_HumanoidRifle_Muzzle"));
+		TEXT("/Game/Enemy/Humanoid/Phantom/Effects/Muzzle/Systems/NS_HumanoidRifle_Muzzle.NS_HumanoidRifle_Muzzle"));
 	if (DefaultHumanoidMuzzle.Succeeded())
 	{
 		MuzzleEffect = DefaultHumanoidMuzzle.Object;

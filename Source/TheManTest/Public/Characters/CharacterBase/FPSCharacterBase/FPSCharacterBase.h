@@ -55,6 +55,7 @@ public:
 	FORCEINLINE USkeletalMeshComponent*     GetArmsMesh()         const { return ArmsViewMesh; }
 	FORCEINLINE USceneComponent*            GetBodyRoot()         const { return BodyRoot; }
 	FORCEINLINE USkeletalMeshComponent*     GetShadowBodyMesh()   const { return ShadowBodyMesh; }
+	FORCEINLINE USkeletalMeshComponent*     GetShadowUpperBodyMesh() const { return ShadowUpperBodyMesh; }
 	FORCEINLINE USkeletalMeshComponent*     GetLegsMesh()         const { return LegsMesh; }
 	FORCEINLINE UEquipmentManagerComponent* GetEquipmentManager() const { return EquipmentManager; }
 	FORCEINLINE UScanEffectComponent*       GetScanEffect()       const { return ScanEffect; }
@@ -147,6 +148,9 @@ protected:
 	// FEAT-038锛氭姇褰辩敤鍏ㄨ韩 mesh銆傚鑷繁闅愯棌 + 鎶曢殣钘忛槾褰?鈫?鐜╁鐪嬩笉鍒般€佷絾鍦颁笂鏈夊畬鏁翠汉褰㈠奖瀛愩€?	// Follower锛歋etLeaderPoseComponent(ArmsMesh)锛屼笌鎵嬭噦鍏变韩鍚屼竴浠藉Э鍔裤€?	U_PROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
 	USkeletalMeshComponent* ShadowBodyMesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
+	USkeletalMeshComponent* ShadowUpperBodyMesh;
 
 	// FEAT-038锛氬彲瑙佷笅鍗婅韩 mesh銆傚彧缁欒嚜宸辩湅銆佷笉鎶曞奖锛堟姇褰变氦缁?ShadowBodyMesh锛夆啋 浣庡ご鐪嬪埌鑷繁鐨勮吙銆?	// Follower锛氫笌鎵嬭噦鍏变韩濮垮娍锛涢潬鏉愯川娈甸殣钘忚函骞蹭互涓娿€?	U_PROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")

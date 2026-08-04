@@ -27,5 +27,5 @@
 ## Nightmare FlyingBug2
 
 - `ANightmareEnemy` 保持空的 Enemy 语义基类。
-- `ANightmareFlyingBug : ANightmareEnemy` 位于 `Enemy/Nightmare/FlyingBug2/`，负责 MOVE_Flying 三维随机游荡和 Locomotor `FVectorDamper` 平滑。
+- `ANightmareFlyingBug : ANightmareEnemy` 位于 `Enemy/Nightmare/FlyingBug2/`，使用 `MOVE_Walking`、Locomotor Control Rig 多足链、`FVectorDamper` 平滑速度和地面法线对齐完成贴地爬行。
 - 具体蓝图 `/Game/Enemy/Nightmare/FlyingBug2/Blueprint/BP_NightmareFlyingBug2` 配置最终 Mesh 与 `RoamAnimation`；C++ BeginPlay 显式循环播放动画。
