@@ -899,6 +899,8 @@ public:
 		Test->TestEqual(TEXT("Nightmare uses walking movement"), Bug->GetCharacterMovement()->MovementMode, MOVE_Walking);
 		Test->TestTrue(TEXT("Nightmare moved while crawling"),
 			FVector::Dist2D(StartLocation, Bug->GetActorLocation()) > 20.f);
+		Test->TestTrue(TEXT("Nightmare mesh remains upright relative to actor"),
+			FVector::DotProduct(Bug->GetMesh()->GetUpVector(), Bug->GetActorUpVector()) > 0.99f);
 		const FVector Target = Bug->GetActorLocation() + FVector(0.f, 0.f, 35.f);
 		Test->TestTrue(TEXT("Nightmare crawl evidence screenshot saved"), SaveSceneCapture(
 			World, Bug, Target + FVector(-520.f, 360.f, 260.f), Target,
@@ -951,6 +953,8 @@ public:
 		Test->TestEqual(TEXT("Nightmare remains walking on slope"), Bug->GetCharacterMovement()->MovementMode, MOVE_Walking);
 		Test->TestTrue(TEXT("Nightmare crawls along slope"), FVector::Dist(StartLocation, Bug->GetActorLocation()) > 20.f);
 		Test->TestTrue(TEXT("Nightmare aligns its up axis to slope"), FVector::DotProduct(Bug->GetActorUpVector(), RampNormal) > 0.9f);
+		Test->TestTrue(TEXT("Nightmare mesh stays upright on slope"),
+			FVector::DotProduct(Bug->GetMesh()->GetUpVector(), Bug->GetActorUpVector()) > 0.99f);
 		const FVector Target = Bug->GetActorLocation() + FVector(0.f, 0.f, 40.f);
 		Test->TestTrue(TEXT("Nightmare slope evidence screenshot saved"), SaveSceneCapture(
 			World, Bug.Get(), Target + FVector(-520.f, 420.f, 280.f), Target,
