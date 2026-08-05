@@ -143,6 +143,13 @@ void AEquipmentBase::Equip(AActor* NewOwner)
         ShadowStaticMesh->AttachToComponent(
             FPSChar->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, EquipSocketName);
         ShadowStaticMesh->SetRelativeTransform(StaticMesh->GetRelativeTransform());
+
+        // The viewmodel mesh is authored in camera space, while CharacterMesh0 is
+        // evaluated in world/body space.  Reusing the viewmodel's full relative
+        // rotation on the body socket turns the projected rifle sideways even
+        // though the player is looking forward. Preserve the authored positional
+        // offset and scale, but let the authoritative body socket supply rotation.
+        ShadowStaticMesh->SetRelativeRotation(FRotator::ZeroRotator);
     }
     TArray<USkeletalMeshComponent*> AnimMeshes;
     GetAnimLayerMeshes(NewOwner, AnimMeshes);

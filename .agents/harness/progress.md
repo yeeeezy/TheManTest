@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-05-session193
+**最后更新：** 2026-08-05-session194
 
 **当前功能：** FEAT-076 — FlyingBug2 六足交替步态修正
 
@@ -10,9 +10,11 @@
 
 ## 当前待办
 
-- 前台打开 Control Rig 复核三组腿对与接地预览；冷回读、平地两轮、坡地一轮和亮场截图已通过。
+- 无本轮阻塞；用户已授权以最终截图与自动化作为本轮验收。
 
 ## FEAT-076 本轮进展
+
+- session194：修正旧验收只看足端数值、未保证整条前腿可见摆动的缺口。前腿 FBIK PositionAlpha 由0.2改为1.0；四张连续时相图人工确认两条前腿整链明显切换支撑/摆动姿态。平地与坡地自动化均 Success，Development Editor 冷构建 Success。同轮清除 shadow-only 枪体的第一人称相机空间旋转，改由 CharacterMesh0 GripPoint 决定投影方向；UpperBodyEvidence Success，最终截图已复核。
 
 - 参考用户教程截图，确认正确结构为四个 Foot Set → 八个 FeetTransform → 八个 FullBodyIK Effector。
 - 已将误配的头部 `tent_low*` 清除，改为六条真实接地腿的两组三足组，PhaseOffset=`0/0.5`；Control Rig 重编译保存成功。

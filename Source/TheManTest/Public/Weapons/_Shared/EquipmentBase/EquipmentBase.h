@@ -100,6 +100,7 @@ protected:
 public:
     // 对外暴露的 Getter，供 Component 获取数据
     FORCEINLINE UStaticMeshComponent* GetStaticMesh() const { return StaticMesh; }       // 🌟 新增 Getter
+    FORCEINLINE UStaticMeshComponent* GetShadowStaticMesh() const { return ShadowStaticMesh; }
     FORCEINLINE USkeletalMeshComponent* GetSkeletalMesh() const { return SkeletalMesh; } // 🌟 修正 Getter
     FORCEINLINE FName GetEquipSocketName() const { return EquipSocketName; }
     FORCEINLINE FName GetHolsterSocketName() const { return HolsterSocketName; }

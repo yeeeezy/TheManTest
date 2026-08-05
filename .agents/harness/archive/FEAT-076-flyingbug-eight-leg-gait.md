@@ -96,3 +96,9 @@
 - 实测否决两档过慢方案：0.633 cycles/s 导致约190cm不可达步幅，四条中后腿不抬；1.129 cycles/s/约106cm步幅仍有三条腿拖地。未把失败参数留在资产中。
 - 最终 `PhaseSpeedMin=0.8`、`PhaseSpeedMax=2.1`、`MinimumStepLength=12`；120cm/s时约1.852 cycles/s、65cm步幅，较旧版降频约46%，同时保持六相错峰完整抬落。
 - `CadenceTuneCrawl3.log` 与 `CadenceTuneCrawlRepeat.log` 连续 Success：六足全部独立移动与抬落，中后足垂直范围3.2~3.6cm、前足29.7~31.3cm，最低6/6低位支撑，最大高差25.8cm；`CadenceTuneSlope.log` Success。四张时相截图已复核，无腿链反折或左右交叉，原Walk头颈混合保持运动。
+
+### 2026-08-05 session194 — 前腿可见链驱动与最终投影回归
+
+- 用户前台指出前腿几乎不动；根因是前腿 FBIK `PositionAlpha=0.2`，旧验收只看足端数值位移，没有保证整条五关节链肉眼可见。现六条腿统一 `PositionAlpha=1.0`。
+- 四张连续时相图人工复核，两条前腿整链在支撑/摆动姿势间明显切换；六足垂直范围均3.3~3.4cm，平地与坡地测试均 Success。日志：`VisibleFrontLegCrawl.log`、`VisibleFrontLegSlope.log`。
+- 同轮修复玩家影子空间分叉：shadow-only 枪体不再复用第一人称相机空间旋转，位置/缩放保留，方向交给 `CharacterMesh0.GripPoint`。`UpperBodyEvidence` Success，最终截图 `TMT_ShadowUpperBody_Runtime.png`已人工复核。

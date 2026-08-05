@@ -70,7 +70,10 @@ effectors = "(%s)" % ",".join(
     '(Item=(Type=Bone,Name="%s"),Position=(X=0.000000,Y=0.000000,Z=0.000000),'
     'PositionAlpha=%.1f,PositionDepth=1000,Rotation=(X=0.000000,Y=0.000000,Z=0.000000,W=1.000000),'
     'RotationAlpha=0.0,RotationDepth=1000,Pull=0.000000)' %
-    (name, 0.2 if "forward3" in name else 1.0)
+    # The front pair must drive the whole five-joint chain just like the other
+    # four legs.  A 0.2 alpha only moved the terminal numerically and was
+    # effectively invisible in the final silhouette.
+    (name, 1.0)
     for names, _phase in groups for name in names
 )
 effectors_changed = controller.set_pin_default_value(

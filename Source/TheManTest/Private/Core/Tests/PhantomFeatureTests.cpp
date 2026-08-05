@@ -1211,6 +1211,14 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 			Equipment->GetRootComponent()->GetAttachParent(), static_cast<USceneComponent*>(Player->GetArmsMesh()));
 		Test->TestEqual(TEXT("Current equipment uses declared equip socket"),
 			Equipment->GetRootComponent()->GetAttachSocketName(), Equipment->GetEquipSocketName());
+		Test->TestNotNull(TEXT("Equipment owns a world-space shadow mesh"), Equipment->GetShadowStaticMesh());
+		if (UStaticMeshComponent* ShadowWeapon = Equipment->GetShadowStaticMesh())
+		{
+			Test->TestEqual(TEXT("Shadow weapon follows authoritative body mesh"),
+				ShadowWeapon->GetAttachParent(), static_cast<USceneComponent*>(Player->GetMesh()));
+			Test->TestTrue(TEXT("Shadow weapon does not reuse camera-space rotation"),
+				ShadowWeapon->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
+		}
 	}
 
 	return true;
