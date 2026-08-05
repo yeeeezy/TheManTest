@@ -6,19 +6,19 @@ if not rig:
     raise RuntimeError("Control Rig asset failed to load")
 
 def foot(name):
-    support_drop = 0.0 if "forward3" in name else -30.0
     return (
         '(AnkleBone=(Type=Bone,Name="%s"),CollisionRadius=8.0,'
-        'MaxHeelPeel=(X=0.000000,Y=0.000000,Z=6.000000),'
-        'StaticLocalOffset=(X=0.000,Y=0.000,Z=%.3f))' % (name, support_drop)
+        'MaxHeelPeel=(X=0.000000,Y=0.000000,Z=50.000000),'
+        'StaticLocalOffset=(X=0.000,Y=0.000,Z=0.000))' % name
     )
 
 # This mesh is a six-legged creature, not the tutorial's eight-legged spider.
 # Use the six terminal chains whose reference-pose Z is at ground level. The old
 # tent_low* choices are head tentacles around Z=150-178 and must never be feet.
 groups = [
-    (["tent_large_forward3_left5", "tent_large_back2_right5", "tent_large_back_left5"], 0.00),
-    (["tent_large_forward3_right5", "tent_large_back2_left5", "tent_large_back_right5"], 0.50),
+    (["tent_large_forward3_left5", "tent_large_forward3_right5"], 0.000),
+    (["tent_large_back2_left5", "tent_large_back2_right5"], 0.333),
+    (["tent_large_back_left5", "tent_large_back_right5"], 0.667),
 ]
 foot_sets = "(%s)" % ",".join(
     "(Feet=(%s),PhaseOffset=%.2f)" % (
@@ -50,9 +50,17 @@ print("TMT_GAIT_VALUE", rig.get_model().find_pin("Locomotor.FootSets").get_defau
 # so four or more tips remain visually load-bearing instead of forming a tall,
 # alternating biped silhouette.
 for pin_path, value in (
-    ("Locomotor.Stepping.PercentOfStrideInAir", "0.22"),
-    ("Locomotor.Stepping.StepHeight", "4.0"),
-    ("Locomotor.Stepping.MaxCollisionHeight", "18.0"),
+    # Locomotor phase speed is cycles/second. Match the authored walk's
+    # cadence without asking the five-segment chains to span the source clip's
+    # impractical ~190 cm inferred stride. At the runtime roam speed of 120
+    # cm/s this evaluates to 1.852 cycles/s (about a 65 cm stride), instead of
+    # the previous frantic 3.43 cycles/s / 35 cm stride.
+    ("Locomotor.Movement.PhaseSpeedMin", "0.800"),
+    ("Locomotor.Movement.PhaseSpeedMax", "2.100"),
+    ("Locomotor.Movement.MinimumStepLength", "12.0"),
+    ("Locomotor.Stepping.PercentOfStrideInAir", "0.35"),
+    ("Locomotor.Stepping.StepHeight", "6.0"),
+    ("Locomotor.Stepping.MaxCollisionHeight", "1.0"),
 	("Locomotor.Pelvis.BobOffset", "-35.0"),
 ):
     print("TMT_STEP_SET", pin_path,

@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-04-session191
+**最后更新：** 2026-08-05-session193
 
 **当前功能：** FEAT-076 — FlyingBug2 六足交替步态修正
 
@@ -10,7 +10,7 @@
 
 ## 当前待办
 
-- 前台复核亮场蟹形六足姿态、尖足触地观感与头身 Walk 混合；自动化与人工截图审查已通过，仍保留用户主观验收。
+- 前台打开 Control Rig 复核三组腿对与接地预览；冷回读、平地两轮、坡地一轮和亮场截图已通过。
 
 ## FEAT-076 本轮进展
 
@@ -22,6 +22,8 @@
 - 已按用户最新截图创建 `ABP_NightmareFlyingBug2_WalkLocomotor`：`Anim_Nightmare_bug2_walk1 -> Control Rig -> Output Pose`。移除外置 ControlRigComponent 整骨架覆盖；平地验证六足继续抬落且头部/触须累计运动 208.8cm，坡地验证 Success。日志 `WalkSourcePoseColdRound2.log`、`WalkSourcePoseSlopeColdRound1.log`。
 - DebugGame 编辑器关闭后，六个主弯曲关节的 FBIK AngularStiffness 已成功写盘；六个 Effector 的 RotationAlpha 改为 0，仅由 Locomotor 修正位置并保留原 Walk 的尖足朝向。平地与坡地冷启动均 Success，日志 `WalkBlendPositionOnlyCold1.log`、`WalkBlendPositionOnlySlopeCold1.log`。
 - session191：撤销“旧自动化成功即姿态正确”的结论。严格审查确认旧链最低仅 2/6 低位、六足高差 162cm。专用 AnimBP 改为原 Walk 头身循环 + 六腿接地帧分层，再进入 Locomotor；前支撑对 FBIK PositionAlpha=0.2，后四腿=1.0，步高4、空中占比0.22、骨盆 BobOffset=-35。最终两轮平地 Success（最低3/6低位、最大高差约56cm、头触须运动约204cm），坡地 Success；亮场截图已人工复核，待用户前台确认。
+- session192：按用户确认的六条可接地腿，将两组三足改为三组左右腿对：前/中/后 Phase=`0/0.333/0.667`；保留六个 At 与六个 FBIK Effector 一一对应。Stepping 按教程截图恢复 `PercentOfStrideInAir=0.35`、`StepHeight=6`、`MaxCollisionHeight=1`。冷写盘与独立回读成功；平地两轮均为6/6低位、最大高差25.4/25.5cm，坡地 Success。Control Rig 初始预览六足 Z=-3.73~5.31cm，三对左右展开，无错误悬空基础姿势。
+- session193：依据引擎 Locomotor 公式反复校准位移与步频。原设置在120cm/s为3.43 cycles/s；0.633与1.129两版分别因约190/106cm步幅导致中后腿拖地而否决。最终采用 `PhaseSpeedMin=0.8`、`PhaseSpeedMax=2.1`、`MinimumStepLength=12`，运行时约1.852 cycles/s、65cm步幅。平地连续两轮与坡地均 Success；六足独立抬落，中后足垂直范围3.2~3.6cm、前足29.7~31.3cm，最低6/6低位支撑，最大高差25.8cm，原Walk头颈混合保持运动。
 
 ## 本轮完成
 

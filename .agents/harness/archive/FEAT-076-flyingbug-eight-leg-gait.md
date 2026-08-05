@@ -82,3 +82,17 @@
 - 六个足端仍全部登记在 Locomotor/FBIK。前支撑对 PositionAlpha=0.2，避免完全静止同时抑制旧 FBIK 拉飞；后四腿 PositionAlpha=1.0。步高降为4、空中占比0.22、MaxCollisionHeight=18、BobOffset=-35；RotationAlpha 保持0，保留原 Walk 朝向。
 - 新增逐帧蟹形断言：每帧至少一组三足处于尖足低位支撑带、六足最大高差小于60cm、三对左右足不得交叉；继续逐腿检查独立运动与头部混合。
 - `GroundedCrabFinalCrawl2.log` 与 `GroundedCrabFinalCrawlRepeat.log` 连续 Success：最低低位足3/6、最大高差56.0/56.5cm、头触须运动203.9/203.8cm；`GroundedCrabFinalSlope2.log` Success。亮场截图 `Saved/Screenshots/WindowsEditor/TMT_NightmareLocomotor_Crawl.png` 已人工复核，仍待用户前台主观确认。
+
+### 2026-08-04 session192 — 三组腿对结构复刻
+
+- 用户确认模型只有六条真实可接地腿，因此将教程四组/八足结构按模型等比例落实为三组/六足，而不是继续使用两组三足：前腿对 Phase 0、中腿对 Phase 0.333、后腿对 Phase 0.667。
+- 六个 `GetFoot0..5` 数组索引与六个 FullBodyIK Effector 冷回读全部一一连通。Stepping 按教程截图写为 PercentOfStrideInAir 0.35、StepHeight 6、MaxCollisionHeight 1。
+- 关闭占用资产的 DebugGame 编辑器后冷写盘成功；Control Rig 初始姿势审计显示六足端 Z 为 -3.73~5.31cm，三对左右分离并处于接地基础带。
+- `ThreePairCrawlAudit1.log`、`ThreePairCrawlAuditRepeat2.log` 连续 Success：最低低位足均6/6，最大高差25.4/25.5cm，头触须运动170.6/169.8cm；`ThreePairSlopeAudit1.log` Success。第一次重复启动因 UE WebBrowser/CEF RHI 断言中断，单独冷重跑成功，非姿态失败。
+
+### 2026-08-05 session193 — 位移、步频与步幅定量校准
+
+- 从 UE 5.7 Locomotor 源码确认 `PhaseSpeed` 单位为 cycles/s，且 `StrideLength=CurrentSpeed/CurrentPhaseSpeed`。旧设置在运行速度120cm/s时为3.43 cycles/s、约35cm步幅，视觉上明显原地快速倒腾。
+- 实测否决两档过慢方案：0.633 cycles/s 导致约190cm不可达步幅，四条中后腿不抬；1.129 cycles/s/约106cm步幅仍有三条腿拖地。未把失败参数留在资产中。
+- 最终 `PhaseSpeedMin=0.8`、`PhaseSpeedMax=2.1`、`MinimumStepLength=12`；120cm/s时约1.852 cycles/s、65cm步幅，较旧版降频约46%，同时保持六相错峰完整抬落。
+- `CadenceTuneCrawl3.log` 与 `CadenceTuneCrawlRepeat.log` 连续 Success：六足全部独立移动与抬落，中后足垂直范围3.2~3.6cm、前足29.7~31.3cm，最低6/6低位支撑，最大高差25.8cm；`CadenceTuneSlope.log` Success。四张时相截图已复核，无腿链反折或左右交叉，原Walk头颈混合保持运动。

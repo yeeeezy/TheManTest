@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-04-session191",
+    "last_updated":  "2026-08-05-session193",
     "active_feature":  "FEAT-076",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -11,14 +11,14 @@
                          "description":  "纠正将头部触须误配为足端的问题，为 FlyingBug2 的六条真实接地腿建立可逐腿验证的 Locomotor + FullBodyIK 交替步态。",
                          "archive_file":  "archive/FEAT-076-flyingbug-eight-leg-gait.md",
                          "created":  "2026-08-04",
-                         "updated":  "2026-08-04-session191",
+                         "updated":  "2026-08-05-session193",
                          "done_criteria":  [
                                                "六条接地腿的骨骼链、足端和 Locomotor Foot 映射逐项正确，头部 tent_low* 不参与步态",
                                                "六个足端使用两组三足交替相位，移动时不会退化为少数腿同步颠动",
                                                "自动化逐腿断言每个足端均存在有效位移、抬起与落地阶段",
                                                "Development Editor 冷构建、Control Rig/蓝图编译及平地与起伏路线 PIE 验证通过"
                                            ],
-                         "verification_evidence":  "2026-08-04-session191：严格复审否定旧宽松结论（旧姿态最低2/6低位、最大高差162cm）。现为原Walk头身循环+六腿接地帧分层后进入Locomotor；六足均登记，前支撑对FBIK位置权重0.2、后四腿1.0，低步高蟹形两组三足交替。Development Editor构建Success；平地两轮最低3/6低位、最大高差56.0/56.5cm、头触须运动约204cm，坡地Success。亮场截图已人工复核，待用户前台视觉确认。"
+                         "verification_evidence":  "2026-08-05-session193：定量校准 Locomotor 位移/步频/步幅。否决 0.633 与 1.129 cycles/s 两版（中后腿拖地），最终采用 Speed 35-140 对应 PhaseSpeed 0.8-2.1；运行时120cm/s约1.852 cycles/s、65cm步幅，比旧版3.43 cycles/s降频约46%。平地连续两轮Success，六足均独立抬落，最低6/6低位支撑、最大高差25.8cm；坡地Success，原Walk头颈混合持续运动。待用户前台主观确认。"
                      },
                      {
                          "id":  "FEAT-071",
