@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-05-session194
+**最后更新：** 2026-08-05-session197
 
 **当前功能：** FEAT-076 — FlyingBug2 六足交替步态修正
 
@@ -10,10 +10,13 @@
 
 ## 当前待办
 
-- 无本轮阻塞；用户已授权以最终截图与自动化作为本轮验收。
+- 无本轮阻塞；编辑器内冷读回、运行时截图与方向断言已经通过，功能保持 `in_progress` 等待用户前台观感确认。
 
 ## FEAT-076 本轮进展
 
+- session197：按用户反馈重新做可见验收。人物在真实关卡编辑器视口中仅显示权威身体，并绘制红色 Actor `+X` 与绿色 Mesh 视觉 `+Y` 两支调试箭头；截图 `TMT_Player_Model_WithAlignedArrows.png` 中两箭头同向平行，编辑器计算点积=`1.0`，临时验证 Actor 随后删除。FlyingBug 旧三组左右腿对会让每排两腿同步抬起，形成机械摇摆；现改为标准交叉三足：左前+右中+左后 Phase0，右前+左中+右后 Phase0.5。18秒平地四张连续时相人工复核为两组三角支撑交替，`LocomotorCrawlEvidence` 与 `LocomotorSlopeEvidence` Success，人物 `UpperBodyEvidence` Success。
+- session196：用户通过编辑器箭头发现 session195 玩家身体归零仍错误；该轮验收撤销。身体资产视觉前方实际为局部 `+Y`，正确组件修正是蓝色 Z/Yaw `-90°`。同时发现 Python `unreal.Rotator(0,-90,0)` 写到了绿色 Pitch，现改为 `unreal.Rotator(0,0,-90)` 并在真实 Editor 中冷读回 Mesh/Shadow/Legs 蓝色 Yaw 均为 `-90°`。自动化也从错误的 Mesh `ForwardVector` 改为核对 Mesh `RightVector`（局部 `+Y`）与 Actor 前向箭头，第一次在错误 Pitch 下真实 Fail，修正后 `UpperBodyEvidence` Success；`FramingCapture` Success。
+- session195：撤销 session194 对“朝向已通过”的结论。骨骼参考姿势审计确认 FlyingBug2 的视觉前方为局部 `+Y`，将地表朝向从 `MakeFromXZ` 改为 `MakeFromYZ`，并新增“Mesh 局部 +Y 与实际位移方向点积 > 0.9”的运行时断言。玩家侧不再把第一人称 RepairGun Layer 同时强加到完整身体：`ArmsViewMesh` 保留第一人称层，`CharacterMesh0` 改用 `ABP_RepairGun_BodyAnimLayer` 的第三人称 Idle/Run；身体、影子、腿组件统一为零相对旋转。实际 Unreal Editor 内打开 `BP_MaintenanceWorker` 冷读回三个身体组件 Rotation=0；运行时身体正向、影子及 FlyingBug 爬行截图人工复核。Development Editor 冷构建、Crawl、Slope、UpperBodyEvidence、FramingCapture 均 Success。
 - session194：修正旧验收只看足端数值、未保证整条前腿可见摆动的缺口。前腿 FBIK PositionAlpha 由0.2改为1.0；四张连续时相图人工确认两条前腿整链明显切换支撑/摆动姿态。平地与坡地自动化均 Success，Development Editor 冷构建 Success。同轮清除 shadow-only 枪体的第一人称相机空间旋转，改由 CharacterMesh0 GripPoint 决定投影方向；UpperBodyEvidence Success，最终截图已复核。
 
 - 参考用户教程截图，确认正确结构为四个 Foot Set → 八个 FeetTransform → 八个 FullBodyIK Effector。

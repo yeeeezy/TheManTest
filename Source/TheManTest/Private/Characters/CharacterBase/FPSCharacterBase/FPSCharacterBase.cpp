@@ -69,6 +69,10 @@ AFPSCharacterBase::AFPSCharacterBase()
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw   = true;
 	bUseControllerRotationRoll  = false;
+	// CharacterBase meshes are authored facing local +Y. Rotate that visual axis
+	// onto ACharacter's +X arrow; the first-person arms keep their own camera-space
+	// transform and must not determine the full-body component basis.
+	GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
 
 	// FEAT-039/根运动：动画宿主合并进 ACharacter 的 GetMesh()（原独立 ArmsMesh 已删），
 	// 让 CharacterMovement 能原生从 GetMesh() 提取根运动驱动胶囊体（停步/起步滑步）。

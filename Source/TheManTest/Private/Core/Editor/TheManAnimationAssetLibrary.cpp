@@ -1,9 +1,12 @@
 #include "Core/Editor/TheManAnimationAssetLibrary.h"
 #include "Animation/AnimationAsset.h"
 #include "Animation/Skeleton.h"
+#include "Components/SceneComponent.h"
 
 #if WITH_EDITOR
 #include "Animation/AnimBlueprint.h"
+#include "Engine/Blueprint.h"
+#include "Engine/InheritableComponentHandler.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimNode_SequencePlayer.h"
@@ -13,12 +16,99 @@
 #include "AnimGraphNode_SequencePlayer.h"
 #include "AnimationGraph.h"
 #include "AnimationGraphSchema.h"
+#include "AnimationBlueprintLibrary.h"
 #include "AssetToolsModule.h"
 #include "ControlRigBlueprintLegacy.h"
 #include "Factories/AnimBlueprintFactory.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/KismetEditorUtilities.h"
 #endif
+
+bool UTheManAnimationAssetLibrary::AddAnimationAssetOverride(
+	UAnimBlueprint* AnimBlueprint,
+	UAnimationAsset* Target,
+	UAnimationAsset* Override)
+{
+#if WITH_EDITOR
+	if (!AnimBlueprint || !Target || !Override)
+	{
+		return false;
+	}
+	UAnimationBlueprintLibrary::AddNodeAssetOverride(AnimBlueprint, Target, Override, true);
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(AnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(AnimBlueprint);
+	AnimBlueprint->MarkPackageDirty();
+	return true;
+#else
+	return false;
+#endif
+}
+
+bool UTheManAnimationAssetLibrary::SetInheritedSceneComponentRotation(
+	UBlueprint* Blueprint,
+	FName ComponentVariableName,
+	FRotator RelativeRotation)
+{
+#if WITH_EDITOR
+	if (!Blueprint || ComponentVariableName.IsNone())
+	{
+		return false;
+	}
+	UInheritableComponentHandler* Handler = Blueprint->GetInheritableComponentHandler(true);
+	if (!Handler)
+	{
+		return false;
+	}
+	const FComponentKey Key = Handler->FindKey(ComponentVariableName);
+	if (!Key.IsValid())
+	{
+		if (!Blueprint->GeneratedClass)
+		{
+			return false;
+		}
+		AActor* DefaultActor = Cast<AActor>(Blueprint->GeneratedClass->GetDefaultObject());
+		if (!DefaultActor)
+		{
+			return false;
+		}
+		USceneComponent* DefaultComponent = nullptr;
+		for (UActorComponent* Component : DefaultActor->GetComponents())
+		{
+			if (Component && Component->GetFName() == ComponentVariableName)
+			{
+				DefaultComponent = Cast<USceneComponent>(Component);
+				break;
+			}
+		}
+		if (!DefaultComponent)
+		{
+			return false;
+		}
+		DefaultComponent->Modify();
+		DefaultComponent->SetRelativeRotation(RelativeRotation);
+		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
+		Blueprint->MarkPackageDirty();
+		return true;
+	}
+	UActorComponent* Template = Handler->GetOverridenComponentTemplate(Key);
+	if (!Template)
+	{
+		Template = Handler->CreateOverridenComponentTemplate(Key);
+	}
+	USceneComponent* SceneTemplate = Cast<USceneComponent>(Template);
+	if (!SceneTemplate)
+	{
+		return false;
+	}
+	SceneTemplate->Modify();
+	SceneTemplate->SetRelativeRotation(RelativeRotation);
+	FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
+	Blueprint->MarkPackageDirty();
+	return true;
+#else
+	return false;
+#endif
+}
 
 bool UTheManAnimationAssetLibrary::AssignAnimationSkeleton(UAnimationAsset* AnimationAsset, USkeleton* Skeleton)
 {

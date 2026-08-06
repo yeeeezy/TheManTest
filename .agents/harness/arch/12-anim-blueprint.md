@@ -390,6 +390,7 @@ Cache_Locomotion → WeaponUpperBody → Slot"UpperBody" → WeaponAimOffset →
 ## 2026-08-04 玩家最终统一链
 
 - MaintenanceWorker 四个 SkeletalMesh 均指定 `ABP_CharacterBase_Body` 最终骨架子类；Shadow/Legs Leader=`CharacterMesh0`。
-- RepairGun 层在装备时链接到全部角色 SkeletalMesh，避免任一 Mesh 回落到无武器/参考姿势。
+- RepairGun 第一人称层只链接 `ArmsViewMesh`；`CharacterMesh0` 使用独立的 `BodyEquipmentAnimLayerClass`（RepairGun 为 `ABP_RepairGun_BodyAnimLayer`），其 Idle/Run 覆盖为第三人称瞄准动画，避免把相机空间手臂姿态强塞给完整身体。Shadow/Legs 继续跟随 `CharacterMesh0`。
+- MaintenanceWorker 身体资产的视觉正前方为 Mesh 局部 `+Y`；`CharacterMesh0`、`ShadowBodyMesh`、`LegsMesh` 必须使用蓝色 Z/Yaw `-90°`，把视觉 `+Y` 对齐 Character/Actor 的 `+X` 前向箭头。第一人称 `ArmsViewMesh` 的相机空间构图旋转保持独立，不得用它反推或覆盖身体朝向。Unreal Python 的 `Rotator` 位置参数为 roll/pitch/yaw，脚本写 Yaw 时必须使用第三个参数。
 - 初始装备完成链接后，在首个渲染帧前对 CharacterMesh0 与 ArmsViewMesh 执行零时长动画评估，避免冷启动入口 Pose 闪帧。
 - 无引用旧 `ABP_CharacterBase` 已删除；正式运行类仅保留模板 `TABP_BodyLocomotion` → 最终 `ABP_CharacterBase_Body` → RepairGun Linked Layer。

@@ -101,18 +101,14 @@ static void GetAnimLayerMeshes(AActor* Owner, TArray<USkeletalMeshComponent*>& O
 {
     if (AFPSCharacterBase* FPSChar = Cast<AFPSCharacterBase>(Owner))
     {
-        // The first-person arms, hidden full body, shadow body, and visible legs
-        // all run the shared body AnimBP. Link the equipped weapon layer to every
-        // character skeletal mesh so their instances stay on the same animation
-        // architecture and cannot silently fall back to an unarmed/reference pose.
-        TArray<USkeletalMeshComponent*> CharacterMeshes;
-        FPSChar->GetComponents<USkeletalMeshComponent>(CharacterMeshes);
-        for (USkeletalMeshComponent* CharacterMesh : CharacterMeshes)
+        // The equipped layer contains camera-authored first-person upper-body poses.
+        // Linking it to CharacterMesh0 rotates the world-space torso/arms sideways
+        // even though the body component itself correctly faces actor +X.  Keep the
+        // camera-space layer on the viewmodel only; the complete body keeps its own
+        // world-space locomotion pose and remains the authoritative shadow caster.
+        if (USkeletalMeshComponent* ArmsMesh = FPSChar->GetArmsMesh())
         {
-            if (CharacterMesh)
-            {
-                OutMeshes.AddUnique(CharacterMesh);
-            }
+            OutMeshes.AddUnique(ArmsMesh);
         }
         return;
     }
@@ -164,6 +160,15 @@ void AEquipmentBase::Equip(AActor* NewOwner)
             {
                 AnimInst->LinkAnimClassLayers(EquipmentAnimLayerClass);
             }
+        }
+    }
+
+    if (AFPSCharacterBase* FPSChar = Cast<AFPSCharacterBase>(NewOwner);
+        FPSChar && BodyEquipmentAnimLayerClass && FPSChar->GetMesh())
+    {
+        if (UAnimInstance* BodyAnim = FPSChar->GetMesh()->GetAnimInstance())
+        {
+            BodyAnim->LinkAnimClassLayers(BodyEquipmentAnimLayerClass);
         }
     }
 }
@@ -257,6 +262,14 @@ void AEquipmentBase::Unequip()
                 {
                     AnimInst->UnlinkAnimClassLayers(EquipmentAnimLayerClass);
                 }
+            }
+        }
+        if (AFPSCharacterBase* FPSChar = Cast<AFPSCharacterBase>(CurrentOwner);
+            FPSChar && BodyEquipmentAnimLayerClass && FPSChar->GetMesh())
+        {
+            if (UAnimInstance* BodyAnim = FPSChar->GetMesh()->GetAnimInstance())
+            {
+                BodyAnim->UnlinkAnimClassLayers(BodyEquipmentAnimLayerClass);
             }
         }
     }

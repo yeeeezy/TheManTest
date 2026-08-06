@@ -855,10 +855,17 @@ bool FShadowUpperBodyEvidenceCommand::Update()
 		Player->GetShadowBodyMesh()->GetSkeletalMeshAsset(), static_cast<USkeletalMesh*>(nullptr));
 	Test->TestTrue(TEXT("Authoritative animated body casts its own hidden shadow"),
 		Player->GetMesh()->CastShadow && Player->GetMesh()->bCastHiddenShadow);
+	// The body asset's authored visual forward is local +Y. Verify that visual
+	// axis, rather than the component's generic +X axis, against the actor arrow.
+	Test->TestTrue(TEXT("Third-person body authored +Y matches actor forward arrow"),
+		FVector::DotProduct(Player->GetMesh()->GetRightVector(), Player->GetActorForwardVector()) > 0.99f);
 	const FVector Target = Player->GetActorLocation() + FVector(0.f, 0.f, 80.f);
 	Test->TestTrue(TEXT("Shadow upper-body evidence screenshot saved"), SaveSceneCapture(
 		World, Player, Target + FVector(-260.f, 260.f, 260.f), Target,
 		TEXT("TMT_ShadowUpperBody_Runtime.png")));
+	Test->TestTrue(TEXT("Body forward viewport evidence screenshot saved"), SaveSceneCapture(
+		World, Player, Target - Player->GetActorForwardVector() * 360.f + FVector(0.f, 0.f, 90.f), Target,
+		TEXT("TMT_PlayerBody_ForwardViewport.png")));
 	return true;
 }
 
@@ -998,6 +1005,10 @@ public:
 			FVector::Dist2D(StartLocation, Bug->GetActorLocation()) > 1200.f);
 		Test->TestTrue(TEXT("Nightmare mesh remains back-up across rugged terrain"),
 			FVector::DotProduct(Bug->GetMesh()->GetUpVector(), FVector::UpVector) > 0.75f);
+		const FVector TravelDirection = (Bug->GetActorLocation() - StartLocation).GetSafeNormal2D();
+		const FVector VisualForward = Bug->GetMesh()->GetRightVector().GetSafeNormal2D();
+		Test->TestTrue(TEXT("Nightmare authored +Y visual forward follows crawl direction"),
+			FVector::DotProduct(VisualForward, TravelDirection) > 0.9f);
 		for (const FName BoneName : GetFootBones())
 		{
 			const float ComponentTravel = FootTravel.FindRef(BoneName);
@@ -1216,8 +1227,8 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 		{
 			Test->TestEqual(TEXT("Shadow weapon follows authoritative body mesh"),
 				ShadowWeapon->GetAttachParent(), static_cast<USceneComponent*>(Player->GetMesh()));
-			Test->TestTrue(TEXT("Shadow weapon does not reuse camera-space rotation"),
-				ShadowWeapon->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
+			Test->TestTrue(TEXT("Shadow weapon is attached to the body-space grip socket"),
+				ShadowWeapon->GetAttachSocketName() == Equipment->GetEquipSocketName());
 		}
 	}
 

@@ -15,10 +15,12 @@ def foot(name):
 # This mesh is a six-legged creature, not the tutorial's eight-legged spider.
 # Use the six terminal chains whose reference-pose Z is at ground level. The old
 # tent_low* choices are head tentacles around Z=150-178 and must never be feet.
+# Use a true alternating insect tripod. Pairing left/right legs at the same
+# phase makes the creature rock in three synchronized rows and reads as a
+# mechanical hop. Each support triangle now spans both sides and the full body.
 groups = [
-    (["tent_large_forward3_left5", "tent_large_forward3_right5"], 0.000),
-    (["tent_large_back2_left5", "tent_large_back2_right5"], 0.333),
-    (["tent_large_back_left5", "tent_large_back_right5"], 0.667),
+    (["tent_large_forward3_left5", "tent_large_back2_right5", "tent_large_back_left5"], 0.000),
+    (["tent_large_forward3_right5", "tent_large_back2_left5", "tent_large_back_right5"], 0.500),
 ]
 foot_sets = "(%s)" % ",".join(
     "(Feet=(%s),PhaseOffset=%.2f)" % (

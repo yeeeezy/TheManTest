@@ -102,3 +102,23 @@
 - 用户前台指出前腿几乎不动；根因是前腿 FBIK `PositionAlpha=0.2`，旧验收只看足端数值位移，没有保证整条五关节链肉眼可见。现六条腿统一 `PositionAlpha=1.0`。
 - 四张连续时相图人工复核，两条前腿整链在支撑/摆动姿势间明显切换；六足垂直范围均3.3~3.4cm，平地与坡地测试均 Success。日志：`VisibleFrontLegCrawl.log`、`VisibleFrontLegSlope.log`。
 - 同轮修复玩家影子空间分叉：shadow-only 枪体不再复用第一人称相机空间旋转，位置/缩放保留，方向交给 `CharacterMesh0.GripPoint`。`UpperBodyEvidence` Success，最终截图 `TMT_ShadowUpperBody_Runtime.png`已人工复核。
+
+### 2026-08-05 session195 — 撤销错误朝向验收并在编辑器内复验
+
+- session194 的“最终投影回归通过”不足以证明完整人物朝向正确，现撤销该结论。旧自动化只验证组件/枪体附着，没有验证身体模型前向，也没有验证 FlyingBug 的视觉头部是否跟随位移。
+- FlyingBug2 参考姿势审计确认视觉前方是 Mesh 局部 `+Y`；地表对齐由 `MakeFromXZ` 改为 `MakeFromYZ`，Actor Yaw 直接取实际移动 Forward。`LocomotorCrawlEvidence` 新增 Mesh `RightVector`（局部 `+Y`）与实际位移方向点积 `>0.9` 的断言。
+- 玩家第一人称与完整身体的装备动画层拆分：`EquipmentAnimLayerClass` 仅链接 `ArmsViewMesh`，新增 `BodyEquipmentAnimLayerClass` 链接 `CharacterMesh0`。RepairGun 身体层 `ABP_RepairGun_BodyAnimLayer` 使用第三人称瞄准 Idle/Run，避免第一人称手臂姿势覆盖完整人物。
+- `CharacterMesh0`、`ShadowBodyMesh`、`LegsMesh` 正式统一为零相对旋转；在实际 Unreal Editor 中打开 `BP_MaintenanceWorker` 并冷读回三者 Rotation=`0/0/0`。编辑器证据：`Saved/Screenshots/TMT_BP_MaintenanceWorker_Viewport_Final3.png`。
+- 运行时截图 `TMT_PlayerBody_ForwardViewport.png`、`TMT_ShadowUpperBody_Runtime.png`、`TMT_NightmareLocomotor_Crawl.png` 已人工复核。冷构建 Success；`FinalOrientationEvidence.log` 中 Crawl、Slope、UpperBodyEvidence 全部 Success；`FinalViewmodelFraming.log` 中 FramingCapture Success，证明第一人称构图未回归。
+
+### 2026-08-05 session196 — 以 Actor 箭头纠正玩家身体 Yaw
+
+- 用户指出 session195 编辑器箭头仍不一致，因此撤销该轮玩家身体“零旋转通过”的结论。MaintenanceWorker 身体资产与 FlyingBug 一样以 Mesh 局部 `+Y` 为视觉前方，必须通过蓝色 Z/Yaw `-90°` 对齐 Actor `+X` 箭头。
+- 修正 Python 写盘参数：旧 `unreal.Rotator(0,-90,0)` 实际写入绿色 Pitch；现使用 `unreal.Rotator(0,0,-90)`。真实 Unreal Editor 冷读回 `CharacterMesh0`、`ShadowBodyMesh`、`LegsMesh` 均为 Pitch `0°`、Yaw `-90°`，证据 `TMT_BodyYawMinus90_Editor.png`。
+- `UpperBodyEvidence` 改为断言 Mesh `RightVector`（资产局部 `+Y`）与 Actor Forward 箭头点积 `>0.99`。错误 Pitch 版本实际 Fail，正确 Yaw 版本 Success；最终人物正向与影子截图重新生成并人工复核。`FramingCapture` 同轮 Success。
+
+### 2026-08-05 session197 — 箭头同框验收与交叉三足自然步态
+
+- 在真实关卡编辑器视口生成临时 MaintenanceWorker，隐藏第一人称/影子重复 Mesh，只显示权威 `CharacterMesh0`；红色箭头表示 Actor `+X`，绿色箭头表示 Mesh 视觉 `+Y`。截图 `TMT_Player_Model_WithAlignedArrows.png` 中两者平行同向，编辑器计算点积=`1.0`。临时 Actor 未写入关卡并已清理。
+- 用户指出爬行仍不自然。根因是 session192 的前/中/后三组左右腿对让每排两腿同相抬起，产生机械式三排摇摆。现改为标准交叉三足：左前+右中+左后 Phase0；右前+左中+右后 Phase0.5。
+- 新配置冷写盘成功。18秒平地四张连续时相显示两组三角支撑交替而非横排同步；`LocomotorCrawlEvidence` Success，`LocomotorSlopeEvidence` Success，人物 `UpperBodyEvidence` Success。

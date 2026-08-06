@@ -81,11 +81,15 @@ void ANightmareFlyingBug::Tick(float DeltaSeconds)
 			SmoothNormal).GetSafeNormal();
 		if (!Forward.IsNearlyZero())
 		{
-			const FRotator SurfaceRotation = FRotationMatrix::MakeFromXZ(Forward, SmoothNormal).Rotator();
+			// This creature is authored facing local +Y (the head/tentacles are at +Y and
+			// the rear legs are at -Y).  MakeFromXZ treated local +X as its nose and made
+			// the rendered creature travel exactly sideways even though Actor yaw and
+			// velocity agreed.  Build the surface frame from the authored visual axis.
+			const FRotator SurfaceRotation = FRotationMatrix::MakeFromYZ(Forward, SmoothNormal).Rotator();
 			// ACharacter's collision capsule must remain vertical. Tilting the whole actor
 			// makes the capsule wedge into convex/concave slope seams. Only yaw belongs to
 			// the actor; the visual mesh follows the full ground-normal orientation.
-			SetActorRotation(FRotator(0.f, SurfaceRotation.Yaw, 0.f));
+			SetActorRotation(FRotator(0.f, Forward.Rotation().Yaw, 0.f));
 			// Preserve the skeletal mesh import/Blueprint orientation. Applying the
 			// surface frame directly discarded that authored basis on flat ground,
 			// stood this creature up, and made Locomotor solve feet in the wrong frame.

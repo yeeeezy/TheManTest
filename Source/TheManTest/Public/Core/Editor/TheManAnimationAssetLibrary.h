@@ -9,6 +9,7 @@ class UAnimBlueprint;
 class UAnimSequence;
 class UControlRigBlueprint;
 class USkeleton;
+class UBlueprint;
 
 // Small editor-facing repair hook used by destination-only asset migration workflows.
 UCLASS()
@@ -27,4 +28,16 @@ public:
 		const FString& AssetName,
 		UAnimSequence* SourceAnimation,
 		UControlRigBlueprint* ControlRigBlueprint);
+
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Animation")
+	static bool AddAnimationAssetOverride(
+		UAnimBlueprint* AnimBlueprint,
+		UAnimationAsset* Target,
+		UAnimationAsset* Override);
+
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Blueprint")
+	static bool SetInheritedSceneComponentRotation(
+		UBlueprint* Blueprint,
+		FName ComponentVariableName,
+		FRotator RelativeRotation);
 };
