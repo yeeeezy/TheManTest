@@ -14,3 +14,4 @@
 - `TheManTest.uproject` 启用引擎实验性 `Locomotor` 插件。
 - `TheManTest.Build.cs` 增加 `Locomotor` 模块，用于 Nightmare FlyingBug2 的 `FVectorDamper` 程序化速度平滑。
 - Editor 构建额外依赖 `AnimationBlueprintLibrary`，供 `UTheManAnimationAssetLibrary` 创建装备身体专用 Anim Layer 并写入动画资产覆盖；运行时构建不引入该编辑器模块。
+- Editor 构建额外依赖 `Kismet`、`Slate`、`SlateCore`，供 `UTheManAnimationAssetLibrary` 打开数据型角色蓝图的完整组件编辑器，并以确定性的 Front/Side/Top 正交视图生成组件布局验收证据；运行时构建不引入这些模块。

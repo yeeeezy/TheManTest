@@ -12,6 +12,7 @@ for component in components:
     name = component.get_name()
     if name not in {
         "CharacterMesh0",
+        "HeadCamera",
         "ArmsViewMesh",
         "ShadowBodyMesh",
         "ShadowUpperBodyMesh",
@@ -42,6 +43,28 @@ for component in components:
     )
     if anim_class:
         print("TMT_ANIM_CLASS component=%s class=%s" % (name, anim_class.get_path_name()))
+
+by_name = {component.get_name(): component for component in components}
+arms = by_name.get("ArmsViewMesh")
+body = by_name.get("CharacterMesh0")
+camera = by_name.get("HeadCamera")
+viewmodel_root = by_name.get("ViewmodelRoot")
+legs = by_name.get("LegsMesh")
+if arms and body and camera and viewmodel_root and legs:
+    # At the BP default orientation the actor right axis is +Y.  Component origins
+    # are sufficient here because the requested invariant is absolute lateral
+    # placement, while depth and height are intentionally allowed to differ.
+    camera_location = camera.get_relative_transform().translation
+    viewmodel_location = viewmodel_root.get_relative_transform().translation
+    arms_location = arms.get_relative_transform().translation
+    body_location = body.get_relative_transform().translation
+    arm_lateral = camera_location.y + viewmodel_location.y + arms_location.y
+    body_lateral = body_location.y
+    print("TMT_AXIS arm_lateral=%.6f body_lateral=%.6f error=%.6f" % (
+        arm_lateral, body_lateral, abs(arm_lateral - body_lateral)))
+    print("TMT_LEGS_ORIGIN body=%s legs_world_basis=%s body_root=%s" % (
+        body_location, legs.get_relative_transform().translation,
+        by_name["BodyRoot"].get_relative_transform().translation))
 
 registry = unreal.AssetRegistryHelpers.get_asset_registry()
 for bp_path in [

@@ -1190,6 +1190,11 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 		Player->GetArmsMesh()->GetAttachParent(), Player->GetViewmodelRoot());
 	Test->TestTrue(TEXT("BodyRotator-equivalent pivot remains at the camera origin"),
 		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector::ZeroVector, 0.01f));
+	const float ArmsBodyLateralOffset = FVector::DotProduct(
+		Player->GetArmsMesh()->GetComponentLocation() - Player->GetMesh()->GetComponentLocation(),
+		Player->GetActorRightVector());
+	Test->TestTrue(TEXT("First-person arms and authoritative shadow body share one world-space lateral axis"),
+		FMath::Abs(ArmsBodyLateralOffset) < 0.1f);
 	Test->TestTrue(TEXT("Viewmodel root matches VFXPack BodyRotator identity rotation"),
 		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
 	Test->TestTrue(TEXT("Arms rotation matches VFXPack SK_ArmMesh"),
@@ -1205,6 +1210,9 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 	}
 	Test->TestEqual(TEXT("Deprecated duplicate shadow body stays empty"),
 		Player->GetShadowBodyMesh()->GetSkeletalMeshAsset(), static_cast<USkeletalMesh*>(nullptr));
+	Test->TestTrue(TEXT("Visible legs share the authoritative shadow body's capsule-space origin"),
+		Player->GetLegsMesh()->GetComponentTransform().GetRelativeTransform(
+			Player->GetMesh()->GetComponentTransform()).GetLocation().IsNearlyZero(0.1f));
 	Test->TestTrue(TEXT("Animated CharacterMesh0 owns the complete hidden shadow"),
 		Player->GetMesh()->CastShadow && Player->GetMesh()->bCastHiddenShadow);
 

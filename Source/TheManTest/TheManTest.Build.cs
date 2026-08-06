@@ -13,7 +13,7 @@ public class TheManTest : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 		if (Target.bBuildEditor)
 		{
-			PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "AssetTools", "AnimGraph", "BlueprintGraph", "ControlRigDeveloper", "AnimationBlueprintLibrary" });
+			PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "AssetTools", "AnimGraph", "BlueprintGraph", "ControlRigDeveloper", "AnimationBlueprintLibrary", "Kismet", "Slate", "SlateCore" });
 		}
 
 		// Uncomment if you are using Slate UI

@@ -94,7 +94,7 @@ AFPSCharacterBase::AFPSCharacterBase()
 	// 眼高 Z 默认 ~77（capsule 中心 88 + 77 ≈ 世界 165 眼高），换骨架/角色可在 BP 微调。
 	HeadCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("HeadCamera"));
 	HeadCamera->SetupAttachment(RootComponent);
-	HeadCamera->SetRelativeLocation(FVector(0.f, 0.f, 77.f));
+	HeadCamera->SetRelativeLocation(HeadCameraRelativeLocation);
 	HeadCamera->SetRelativeRotation(FRotator::ZeroRotator);
 	HeadCamera->SetFieldOfView(77.0f);
 	HeadCamera->bUsePawnControlRotation = true;
@@ -124,7 +124,10 @@ AFPSCharacterBase::AFPSCharacterBase()
 	BodyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("BodyRoot"));
 	BodyRoot->SetupAttachment(RootComponent);
 	BodyRoot->SetUsingAbsoluteRotation(true);
-	BodyRoot->SetRelativeLocation(FVector(-30.f, 0.f, 0.f));   // 初始往后偏移（Shadow/Legs 整体后移，使影子/腿相对相机靠后）
+	// LegsMesh and the authoritative shadow caster CharacterMesh0 must share the
+	// same capsule-space origin.  First-person framing belongs to the camera/viewmodel,
+	// never to the body/legs root.
+	BodyRoot->SetRelativeLocation(FVector::ZeroVector);
 
 	ShadowBodyMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ShadowBodyMesh"));
 	ShadowBodyMesh->SetupAttachment(BodyRoot);
@@ -180,6 +183,11 @@ void AFPSCharacterBase::EnsureViewmodelAttachment()
 
 void AFPSCharacterBase::ApplyViewmodelFraming()
 {
+	if (HeadCamera)
+	{
+		HeadCamera->SetRelativeLocation(HeadCameraRelativeLocation);
+		HeadCamera->SetRelativeRotation(FRotator::ZeroRotator);
+	}
 	if (ViewmodelRoot)
 	{
 		ViewmodelRoot->SetRelativeLocation(FVector::ZeroVector);
@@ -511,6 +519,7 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 	// 身体保持直立并直接跟随 Pawn yaw；相机俯仰不传给身体组件。
 	if (BodyRoot)
 	{
+		BodyRoot->SetRelativeLocation(FVector::ZeroVector);
 		BodyRoot->SetWorldRotation(FRotator(0.f, GetActorRotation().Yaw, 0.f));
 	}
 

@@ -10,6 +10,7 @@ class UAnimSequence;
 class UControlRigBlueprint;
 class USkeleton;
 class UBlueprint;
+class USkeletalMesh;
 
 // Small editor-facing repair hook used by destination-only asset migration workflows.
 UCLASS()
@@ -40,4 +41,28 @@ public:
 		UBlueprint* Blueprint,
 		FName ComponentVariableName,
 		FRotator RelativeRotation);
+
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Blueprint")
+	static bool SetInheritedSceneComponentTransform(
+		UBlueprint* Blueprint,
+		FName ComponentVariableName,
+		FVector RelativeLocation,
+		FRotator RelativeRotation,
+		FVector RelativeScale);
+
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Blueprint")
+	static bool SetInheritedSkeletalMesh(
+		UBlueprint* Blueprint,
+		FName ComponentVariableName,
+		USkeletalMesh* SkeletalMesh);
+
+	/** Session-only helper used to open a data-only Blueprint in the full component viewport. */
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Blueprint")
+	static bool SetBlueprintForceFullEditor(UBlueprint* Blueprint, bool bForceFullEditor);
+
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Blueprint")
+	static bool FocusBlueprintComponentViewport(UBlueprint* Blueprint);
+
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Blueprint")
+	static bool SetBlueprintComponentViewportView(UBlueprint* Blueprint, const FString& ViewName);
 };

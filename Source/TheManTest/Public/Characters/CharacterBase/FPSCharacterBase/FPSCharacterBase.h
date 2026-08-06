@@ -103,6 +103,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Framing")
 	FVector ViewmodelOffsetLocation = FVector(-18.107912f, 18.852108f, -150.007950f);
 
+	// Keep the camera-authored viewmodel framing without moving the first-person
+	// skeleton off the authoritative body's world-space centre line.  The camera
+	// carries the inverse lateral offset, so ArmsViewMesh may remain forward/vertical
+	// offset while its component origin stays on CharacterMesh0's left/right axis.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera|Framing")
+	FVector HeadCameraRelativeLocation = FVector(0.f, -18.852108f, 77.f);
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Framing")
 	FRotator ViewmodelOffsetRotation = FRotator::ZeroRotator;
 

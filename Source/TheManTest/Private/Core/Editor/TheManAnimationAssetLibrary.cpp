@@ -2,6 +2,7 @@
 #include "Animation/AnimationAsset.h"
 #include "Animation/Skeleton.h"
 #include "Components/SceneComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 
 #if WITH_EDITOR
 #include "Animation/AnimBlueprint.h"
@@ -22,6 +23,13 @@
 #include "Factories/AnimBlueprintFactory.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/KismetEditorUtilities.h"
+#include "BlueprintEditor.h"
+#include "BlueprintEditorTabs.h"
+#include "Subsystems/AssetEditorSubsystem.h"
+#include "Framework/Application/SlateApplication.h"
+#include "SEditorViewport.h"
+#include "EditorViewportClient.h"
+#include "EngineUtils.h"
 #endif
 
 bool UTheManAnimationAssetLibrary::AddAnimationAssetOverride(
@@ -104,6 +112,218 @@ bool UTheManAnimationAssetLibrary::SetInheritedSceneComponentRotation(
 	SceneTemplate->SetRelativeRotation(RelativeRotation);
 	FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
 	Blueprint->MarkPackageDirty();
+	return true;
+#else
+	return false;
+#endif
+}
+
+#if WITH_EDITOR
+static UActorComponent* GetOrCreateInheritedComponentTemplate(
+	UBlueprint* Blueprint,
+	FName ComponentVariableName)
+{
+	if (!Blueprint || ComponentVariableName.IsNone())
+	{
+		return nullptr;
+	}
+	UInheritableComponentHandler* Handler = Blueprint->GetInheritableComponentHandler(true);
+	if (!Handler)
+	{
+		return nullptr;
+	}
+	const FComponentKey Key = Handler->FindKey(ComponentVariableName);
+	if (Key.IsValid())
+	{
+		if (UActorComponent* Existing = Handler->GetOverridenComponentTemplate(Key))
+		{
+			return Existing;
+		}
+		return Handler->CreateOverridenComponentTemplate(Key);
+	}
+	if (!Blueprint->GeneratedClass)
+	{
+		return nullptr;
+	}
+	AActor* DefaultActor = Cast<AActor>(Blueprint->GeneratedClass->GetDefaultObject());
+	if (!DefaultActor)
+	{
+		return nullptr;
+	}
+	for (UActorComponent* Component : DefaultActor->GetComponents())
+	{
+		if (Component && Component->GetFName() == ComponentVariableName)
+		{
+			return Component;
+		}
+	}
+	return nullptr;
+}
+#endif
+
+bool UTheManAnimationAssetLibrary::SetInheritedSceneComponentTransform(
+	UBlueprint* Blueprint,
+	FName ComponentVariableName,
+	FVector RelativeLocation,
+	FRotator RelativeRotation,
+	FVector RelativeScale)
+{
+#if WITH_EDITOR
+	USceneComponent* SceneTemplate = Cast<USceneComponent>(
+		GetOrCreateInheritedComponentTemplate(Blueprint, ComponentVariableName));
+	if (!SceneTemplate)
+	{
+		return false;
+	}
+	SceneTemplate->Modify();
+	SceneTemplate->SetRelativeLocation(RelativeLocation);
+	SceneTemplate->SetRelativeRotation(RelativeRotation);
+	SceneTemplate->SetRelativeScale3D(RelativeScale);
+	FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
+	Blueprint->MarkPackageDirty();
+	return true;
+#else
+	return false;
+#endif
+}
+
+bool UTheManAnimationAssetLibrary::SetInheritedSkeletalMesh(
+	UBlueprint* Blueprint,
+	FName ComponentVariableName,
+	USkeletalMesh* SkeletalMesh)
+{
+#if WITH_EDITOR
+	USkeletalMeshComponent* MeshTemplate = Cast<USkeletalMeshComponent>(
+		GetOrCreateInheritedComponentTemplate(Blueprint, ComponentVariableName));
+	if (!MeshTemplate)
+	{
+		return false;
+	}
+	MeshTemplate->Modify();
+	MeshTemplate->SetSkeletalMeshAsset(SkeletalMesh);
+	FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
+	Blueprint->MarkPackageDirty();
+	return true;
+#else
+	return false;
+#endif
+}
+
+bool UTheManAnimationAssetLibrary::SetBlueprintForceFullEditor(
+	UBlueprint* Blueprint,
+	bool bForceFullEditor)
+{
+#if WITH_EDITOR
+	if (!Blueprint)
+	{
+		return false;
+	}
+	Blueprint->bForceFullEditor = bForceFullEditor;
+	return true;
+#else
+	return false;
+#endif
+}
+
+bool UTheManAnimationAssetLibrary::FocusBlueprintComponentViewport(UBlueprint* Blueprint)
+{
+#if WITH_EDITOR
+	if (!Blueprint || !GEditor)
+	{
+		return false;
+	}
+	UAssetEditorSubsystem* AssetEditorSubsystem = GEditor->GetEditorSubsystem<UAssetEditorSubsystem>();
+	IAssetEditorInstance* EditorInstance = AssetEditorSubsystem
+		? AssetEditorSubsystem->FindEditorForAsset(Blueprint, false)
+		: nullptr;
+	if (!EditorInstance || EditorInstance->GetEditorName() != TEXT("BlueprintEditor"))
+	{
+		return false;
+	}
+	FBlueprintEditor* BlueprintEditor = static_cast<FBlueprintEditor*>(EditorInstance);
+	TSharedPtr<SDockTab> ViewportTab = BlueprintEditor->GetTabManager()->TryInvokeTab(
+		FBlueprintEditorTabs::SCSViewportID);
+	if (!ViewportTab.IsValid())
+	{
+		return false;
+	}
+	FSlateApplication::Get().SetKeyboardFocus(ViewportTab->GetContent(), EFocusCause::SetDirectly);
+	return true;
+#else
+	return false;
+#endif
+}
+
+bool UTheManAnimationAssetLibrary::SetBlueprintComponentViewportView(
+	UBlueprint* Blueprint,
+	const FString& ViewName)
+{
+#if WITH_EDITOR
+	if (!FocusBlueprintComponentViewport(Blueprint) || !GEditor)
+	{
+		return false;
+	}
+	UAssetEditorSubsystem* AssetEditorSubsystem = GEditor->GetEditorSubsystem<UAssetEditorSubsystem>();
+	IAssetEditorInstance* EditorInstance = AssetEditorSubsystem
+		? AssetEditorSubsystem->FindEditorForAsset(Blueprint, false)
+		: nullptr;
+	if (!EditorInstance || EditorInstance->GetEditorName() != TEXT("BlueprintEditor"))
+	{
+		return false;
+	}
+	FBlueprintEditor* BlueprintEditor = static_cast<FBlueprintEditor*>(EditorInstance);
+	TSharedPtr<SDockTab> ViewportTab = BlueprintEditor->GetTabManager()->FindExistingLiveTab(
+		FBlueprintEditorTabs::SCSViewportID);
+	if (!ViewportTab.IsValid())
+	{
+		return false;
+	}
+	TSharedRef<SEditorViewport> EditorViewport = StaticCastSharedRef<SEditorViewport>(
+		ViewportTab->GetContent());
+	TSharedPtr<FEditorViewportClient> ViewportClient = EditorViewport->GetViewportClient();
+	if (!ViewportClient.IsValid())
+	{
+		return false;
+	}
+	if (ViewName.Equals(TEXT("Front"), ESearchCase::IgnoreCase))
+	{
+		ViewportClient->SetViewportType(LVT_OrthoYZ);
+	}
+	else if (ViewName.Equals(TEXT("Side"), ESearchCase::IgnoreCase))
+	{
+		ViewportClient->SetViewportType(LVT_OrthoXZ);
+	}
+	else if (ViewName.Equals(TEXT("Top"), ESearchCase::IgnoreCase))
+	{
+		ViewportClient->SetViewportType(LVT_OrthoXY);
+	}
+	else
+	{
+		return false;
+	}
+	FBox PreviewBounds(ForceInit);
+	if (FPreviewScene* PreviewScene = ViewportClient->GetPreviewScene())
+	{
+		if (UWorld* PreviewWorld = PreviewScene->GetWorld())
+		{
+			for (TActorIterator<AActor> It(PreviewWorld); It; ++It)
+			{
+				TInlineComponentArray<USkeletalMeshComponent*> MeshComponents(*It);
+				for (USkeletalMeshComponent* MeshComponent : MeshComponents)
+				{
+					if (MeshComponent && MeshComponent->GetSkeletalMeshAsset())
+					{
+						PreviewBounds += MeshComponent->Bounds.GetBox();
+					}
+				}
+			}
+		}
+	}
+	if (PreviewBounds.IsValid)
+	{
+		ViewportClient->FocusViewportOnBox(PreviewBounds, true);
+	}
+	ViewportClient->Invalidate();
 	return true;
 #else
 	return false;

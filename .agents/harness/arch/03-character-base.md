@@ -9,7 +9,7 @@
 | 文件 | 关键内容 |
 |---|---|
 | `Source/TheManTest/Public/Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h` | HeadCamera / **ViewmodelRoot / ArmsViewMesh**（FEAT-042 独立 FP viewmodel）/ **BodyRoot / ShadowBodyMesh / LegsMesh**（FEAT-038 三件套，含 Getter）/ EquipmentManager；**`GetArmsMesh()` 返回 `ArmsViewMesh`**，武器挂载/开火蒙太奇/装备渲染走相机子级 FP 手臂；`GetMesh()` 是 GASP/MM 宿主，驱动身体/影子/腿；`ArmsHiddenSections` / `LegsHiddenSections`（EditDefaultsOnly 材质段隐藏）；CharacterData / InitGEClass；通用 `DefaultAbilityClasses`；`PrimaryFire()` / `SecondaryFire()` / `IsSprinting()`（冲刺键状态，停步走/跑档用）|
-| `Source/TheManTest/Private/Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.cpp` | 组件挂载：**HeadCamera←RootComponent(capsule)，相对 Z≈+77 固定眼高，bUsePawnControlRotation**；**ViewmodelRoot←HeadCamera 且位置为零，ArmsViewMesh←ViewmodelRoot 并持有原版 SK_ArmMesh 偏移**。这精确对应原版 `FPS_Camera -> BodyRotator(原点) -> SK_ArmMesh(偏移)`，避免冲刺时绕手臂自身原点旋转而让前臂翻入中央视野。HeadCamera 的 C++ 基础 FOV 为原 VFXPack 的 77°，`BeginPlay` 不再强制覆盖，角色蓝图可直接使用 Camera 组件原生 `Field Of View`。C++ 同步驱动 ArmsViewMesh 与 GetMesh 的原版 VFXPack AnimBP，并复刻 Body_Sway：Side=`Clamp(MoveRight+MouseX)`，Forward=`Clamp(-MoveForward-10×LookUp)`，Walk/Sprint 插值速度 2/8。冲刺按原版 0.2s 可逆过渡同时驱动速度 550→750 与 `ViewmodelRoot` Pitch 0→-12.5°。WASD 位置惯性只叠加到 `ArmsViewMesh`，默认左右 2.4cm、前后 1.4cm、跟随速度 8、回弹速度 10，四项均可在角色蓝图 `Viewmodel|Movement Lag` 调整。`ShadowBodyMesh` 与 `LegsMesh` 均 Leader=`GetMesh()`。BodyRoot 每帧保持 Actor Yaw/直立。|
+| `Source/TheManTest/Private/Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.cpp` | 组件挂载：**HeadCamera←RootComponent(capsule)，相对 `(0,-18.852108,77)` 固定眼高与横向补偿，bUsePawnControlRotation**；**ViewmodelRoot←HeadCamera 且位置为零，ArmsViewMesh←ViewmodelRoot 并持有原版 SK_ArmMesh 偏移**。HeadCamera 的 Y 补偿与 ArmsViewMesh 的 Y 偏移互相抵消，使第一人称手臂的世界横轴与权威身体/影子严格同轴，同时保留手臂前后与高度构图。BodyRoot 位于 capsule 原点；LegsMesh 与 GetMesh 使用相同根位置。HeadCamera 的 C++ 基础 FOV 为原 VFXPack 的 77°，`BeginPlay` 不再强制覆盖。C++ 同步驱动 ArmsViewMesh 与 GetMesh 的原版 VFXPack AnimBP，并复刻 Body_Sway。`ShadowBodyMesh` / `ShadowUpperBodyMesh` 为弃用空组件；唯一完整影子来自 `GetMesh()` 的 CastHiddenShadow。BodyRoot 每帧保持 Actor Yaw/直立。|
 
 **扫描组件：** `UScanEffectComponent` 由所有玩家角色基类创建。组件构造函数提供项目默认 `MPC_ScanEffect` 与世界空间适配材质 `M_InfiltratorScanTerrainAdaptive`，角色 BP 仍可覆盖。`TriggerScan` 会创建归属角色的运行时 `UDecalComponent`，先通过 `AddInstanceComponent` 纳入 Actor 生命周期，再注册到当前 World；独立 MID 接收 `ScanOriginWS` / `ScanRadius` / `ScanOpacity`，不复用红色后处理的相机相对参数。红色 MPC 为空时只跳过红色后处理，不再阻断地形扫描。`RetractScan` 隐藏 Decal 并清零透明度。
 
@@ -21,13 +21,13 @@ Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE
 │   └─ ViewmodelRoot = 原版 BodyRotator 等价节点，位于相机原点，负责整体冲刺旋转
 │       └─ ArmsViewMesh = 持有原版 SK_ArmMesh 相对位置/旋转的独立 FP 手臂+武器挂载目标
 ├─ GetMesh()  = GASP/MM Leader+动画宿主+根运动源，OwnerNoSee，CastShadow=false
-└─ BodyRoot (SceneComponent, 绝对旋转, Tick 每帧只取 Yaw → 直立；相对 Location X=-30 往后)
+└─ BodyRoot (SceneComponent, 绝对旋转, Tick 每帧只取 Yaw → 直立；相对 Location=(0,0,0))
     ├─ ShadowBodyMesh = 已弃用空组件；完整影子直接由 GetMesh() CastHiddenShadow
     └─ LegsMesh       = Follower，只渲染腿材质段，OnlyOwnerSee，无影
 ```
 - session89 起暂停原地转身方案：`bUseControllerRotationYaw=true`，Pawn 直接跟随 Controller yaw；`BodyRoot` 每帧直接使用 Actor yaw 并保持 Pitch/Roll 为 0。旧 `BodyVisualYaw` 滞后、固定 45 度转步和动画曲线驱动代码均已删除，后续转体作为独立方案重新设计。
 - 三 mesh 须引用**同一 Skeleton**；几何分离只用材质段（`ShowMaterialSection`）/OpacityMask，**禁用 HideBoneByName**（会改共享姿势）。本项目实际用「物理拆 mesh」（Blender 拆 Arms/Legs，原整块当 Shadow），`ArmsHiddenSections/LegsHiddenSections` 留空。
-- 蓝图侧：Legs 组件相对变换需 Yaw=-90 + Z=-CapsuleHalfHeight(=-88)（同默认 GetMesh() 摆法）。ShadowBody/ShadowUpperBody 不再持有 Mesh，避免蓝图旧 Transform 形成错轴重复身体。
+- 蓝图侧：Legs 组件相对变换需与 GetMesh() 完全相同（当前 Location=(0,0,-90)、Yaw=-90），保证下半身根点与脚底影子起点重合。ShadowBody/ShadowUpperBody 不再持有 Mesh，避免编辑器显示旧副本而与 PIE 的权威 CharacterMesh0 不一致。
 - 蓝图侧 **Mesh（GetMesh()）组件**：指定全身骨架 mesh + locomotion AnimClass + 相对 Transform；**Cast Shadow 取消勾选**（BP 勾选会覆盖 C++ 的 false，造成手臂形状影子与 ShadowBodyMesh 穿帮）。`OnlyOwnerSee` 已由 C++ 设——故编辑器视口（无 owner）看不见手臂，PIE 里可见，属正常。
 
 **根运动历史决策（FEAT-039，已被 FEAT-042/session62 的独立 Viewmodel 方案取代）：**

@@ -27,6 +27,13 @@
 
 ## 实现日志
 
+### 2026-08-06 — 玩家手臂、下半身与权威影子同轴
+
+- 修正 BP 编辑器与 PIE 不一致：蓝图中清空已弃用的 `ShadowBodyMesh` / `ShadowUpperBodyMesh` 资产，唯一完整影子继续由隐藏的 `CharacterMesh0` 投射。
+- 保留 VFXPack 手臂的前后与高度构图；`ArmsViewMesh.Y=+18.852108`，`HeadCamera.Y=-18.852108`，使手臂组件世界横向位置与 CharacterMesh0/影子严格同轴，冷读回误差 `0.000000cm`。
+- `BodyRoot` 归零；`LegsMesh` 与 `CharacterMesh0` 均为 Location `(0,0,-90)`、Yaw `-90°`，保证下半身与脚底影子起点重合。
+- 新增 PIE 横向轴线与腿根重合断言，并增加蓝图组件编辑器 Front/Side/Top 正交视图辅助接口用于可见验收。
+
 ### 2026-08-04 — 功能规划
 
 - **背景：** 用户指出被配置的 `tent_low*` 实为头部而非脚。骨骼层级和参考姿势全局高度复核证明 FlyingBug2 有六条真实接地腿。
