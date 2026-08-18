@@ -120,10 +120,10 @@ AFPSCharacterBase::AFPSCharacterBase()
 
 
 	// --- FEAT-038：第三人称全身三件套（影子 + 可见腿），与 ArmsMesh 共享同一份姿势 ---
-	// BodyRoot 保持直立：绝对旋转，Tick 每帧只取 Yaw，丢弃相机俯仰 → 投影/腿不前倾。
+	// BodyRoot follows the capsule hierarchy. Its authored Blueprint transform is the
+	// runtime baseline; C++ must not replace it during construction or Tick.
 	BodyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("BodyRoot"));
 	BodyRoot->SetupAttachment(RootComponent);
-	BodyRoot->SetUsingAbsoluteRotation(true);
 	// LegsMesh and the authoritative shadow caster CharacterMesh0 must share the
 	// same capsule-space origin.  First-person framing belongs to the camera/viewmodel,
 	// never to the body/legs root.
@@ -168,46 +168,6 @@ UAbilitySystemComponent* AFPSCharacterBase::GetAbilitySystemComponent() const
 	return nullptr;
 }
 
-void AFPSCharacterBase::EnsureViewmodelAttachment()
-{
-	if (!ViewmodelRoot || !ArmsViewMesh)
-	{
-		return;
-	}
-
-	if (ArmsViewMesh->GetAttachParent() != ViewmodelRoot)
-	{
-		ArmsViewMesh->AttachToComponent(ViewmodelRoot, FAttachmentTransformRules::KeepRelativeTransform);
-	}
-}
-
-void AFPSCharacterBase::ApplyViewmodelFraming()
-{
-	if (HeadCamera)
-	{
-		HeadCamera->SetRelativeLocation(HeadCameraRelativeLocation);
-		HeadCamera->SetRelativeRotation(FRotator::ZeroRotator);
-	}
-	if (ViewmodelRoot)
-	{
-		ViewmodelRoot->SetRelativeLocation(FVector::ZeroVector);
-		ViewmodelRoot->SetRelativeRotation(ViewmodelOffsetRotation);
-	}
-	if (ArmsViewMesh)
-	{
-		CurrentViewmodelMoveLag = FVector::ZeroVector;
-		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
-		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
-	}
-}
-
-void AFPSCharacterBase::OnConstruction(const FTransform& Transform)
-{
-	Super::OnConstruction(Transform);
-	EnsureViewmodelAttachment();
-	ApplyViewmodelFraming();
-}
-
 // FEAT-038：隐藏指定材质槽对应的 section（只影响渲染，不改骨骼姿势 → Leader/Follower 共享姿势安全）。
 // 首版按"材质槽 index == LOD0 section index"的常见情形处理；若身体 mesh 的 section/材质映射不同，
 // 需按真实布局调整（如改为遍历 RenderSections 按 MaterialIndex 匹配）。索引无效时引擎内部 no-op。
@@ -224,8 +184,6 @@ static void HideMeshMaterialSlots(USkeletalMeshComponent* Mesh, const TArray<int
 void AFPSCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-	EnsureViewmodelAttachment();
-	ApplyViewmodelFraming();
 	if (GetCharacterMovement())
 	{
 		GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
@@ -516,13 +474,6 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		GetCharacterMovement()->MaxWalkSpeed = FMath::Lerp(WalkSpeed, SprintSpeed, SprintTransitionAlpha);
 	}
 
-	// 身体保持直立并直接跟随 Pawn yaw；相机俯仰不传给身体组件。
-	if (BodyRoot)
-	{
-		BodyRoot->SetRelativeLocation(FVector::ZeroVector);
-		BodyRoot->SetWorldRotation(FRotator(0.f, GetActorRotation().Yaw, 0.f));
-	}
-
 	// 后坐力：角速度积分驱动，FInterpTo 衰减
 	if (FMath::Abs(RecoilPitchVelocity) > KINDA_SMALL_NUMBER ||
 		FMath::Abs(RecoilYawVelocity)   > KINDA_SMALL_NUMBER)
@@ -585,31 +536,10 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		UpdateVFXPackAnimInstance(ArmsViewMesh->GetAnimInstance());
 		UpdateVFXPackAnimInstance(GetMesh() ? GetMesh()->GetAnimInstance() : nullptr);
 
-		// ViewmodelRoot is the direct equivalent of VFXPack's FPS_Camera -> BodyRotator
-		// pivot and owns only the source sprint lowering. Directional lean remains wholly
-		// in the unmodified source AnimBP spine_03/hand_l Modify Bone chain.
-		ViewmodelRoot->SetRelativeLocation(FVector::ZeroVector);
-		ViewmodelRoot->SetRelativeRotation(
-			ViewmodelOffsetRotation + FRotator(SprintViewmodelPitchDegrees * SprintTransitionAlpha, 0.f, 0.f));
-		// Move opposite the player's input to create subtle positional inertia.
-		// Each axis returns independently, using the faster release speed.
-		const FVector MoveLagTarget(
-			-CurrentVFXMoveInput.Y * ViewmodelMoveLagForwardDistance,
-			-CurrentVFXMoveInput.X * ViewmodelMoveLagSideDistance,
-			0.f);
-		const float ForwardLagSpeed = FMath::IsNearlyZero(CurrentVFXMoveInput.Y)
-			? ViewmodelMoveLagReturnSpeed
-			: ViewmodelMoveLagFollowSpeed;
-		const float SideLagSpeed = FMath::IsNearlyZero(CurrentVFXMoveInput.X)
-			? ViewmodelMoveLagReturnSpeed
-			: ViewmodelMoveLagFollowSpeed;
-		CurrentViewmodelMoveLag.X = FMath::FInterpTo(
-			CurrentViewmodelMoveLag.X, MoveLagTarget.X, DeltaTime, ForwardLagSpeed);
-		CurrentViewmodelMoveLag.Y = FMath::FInterpTo(
-			CurrentViewmodelMoveLag.Y, MoveLagTarget.Y, DeltaTime, SideLagSpeed);
-		CurrentViewmodelMoveLag.Z = 0.f;
-		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation + CurrentViewmodelMoveLag);
-		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
+		// Component transforms are authored exclusively in the character Blueprint.
+		// Tick must never move or rotate HeadCamera, ViewmodelRoot, ArmsViewMesh,
+		// BodyRoot, CharacterMesh0, or LegsMesh. This keeps the Blueprint component
+		// viewport and PIE on the same serialized transform values.
 		CurrentArmsPitch = 0.f;
 		// Mouse axis values in the source are frame deltas. Consume this frame's value
 		// so a stopped mouse cannot leave a persistent lean target.

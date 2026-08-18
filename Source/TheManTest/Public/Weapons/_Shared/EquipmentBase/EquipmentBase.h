@@ -97,11 +97,6 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Equipment|Animation")
     TSubclassOf<UAnimInstance> EquipmentAnimLayerClass;
 
-    // Optional world/body-space layer. First-person animation assets use a
-    // camera-authored basis and must not drive the complete shadow body.
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Equipment|Animation")
-    TSubclassOf<UAnimInstance> BodyEquipmentAnimLayerClass;
-
 public:
     // 对外暴露的 Getter，供 Component 获取数据
     FORCEINLINE UStaticMeshComponent* GetStaticMesh() const { return StaticMesh; }       // 🌟 新增 Getter

@@ -18,7 +18,7 @@
                                                "自动化逐腿断言每个足端均存在有效位移、抬起与落地阶段",
                                                "Development Editor 冷构建、Control Rig/蓝图编译及平地与起伏路线 PIE 验证通过"
                                            ],
-                         "verification_evidence":  "2026-08-05-session197：人物在真实关卡编辑器视口中以红色 Actor +X 和绿色 Mesh 视觉 +Y 两支箭头同框验收；两箭头平行同向，编辑器点积=1.0，截图 TMT_Player_Model_WithAlignedArrows.png。FlyingBug 从会造成机械横排摇摆的前/中/后三组左右腿同相配置，改为左前+右中+左后与右前+左中+右后两组交叉三足。18秒平地四张连续时相已人工复核；LocomotorCrawlEvidence、LocomotorSlopeEvidence、UpperBodyEvidence 均 Success。"
+                         "verification_evidence":  "2026-08-06-session203：维修枪撤销 FP/Body 双层分流，旧 AS_Rifle_A_Idle/Run 引用合并到 FPSShooter1 外部生成的方向修正最终资产 AS_VFXPack_FP_Idle/Run；删除零引用 ABP_RepairGun_BodyAnimLayer 与 C++ BodyEquipmentAnimLayerClass。PIE 中 ArmsViewMesh/CharacterMesh0 统一使用 ABP_CharacterBase_Body + ABP_RepairGun_AnimLayer，关键骨骼旋转点积 0.99993~1.0；截图 TMT_UnifiedVFXPackRepairLayer_PIE.png。玩家组件 Tick Transform 写入仍为0。"
                      },
                      {
                          "id":  "FEAT-071",

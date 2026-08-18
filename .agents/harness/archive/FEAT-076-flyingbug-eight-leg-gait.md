@@ -1,5 +1,20 @@
 # FEAT-076 — FlyingBug2 六足交替步态修正
 
+### 2026-08-06 session205 — 撤销错误动画根旋转并恢复参考构图
+
+- 用户将于次日继续做主观视觉复核；本轮不得标记为用户验收通过。后续以桌面 `微信图片_20260802100122_109_52.png` 和 `TMT_RestoredVFXPack_ReferenceCheck.png` 为对照继续调整。
+- 撤销 session204 的 7 条第一人称动画 root `+90°` 烘焙；该方案会把游戏内手臂和枪整体转错，不能用于解决蓝图预览差异。
+- 从修改前备份恢复 7 条序列，冷审计首尾 root Yaw 均为原始约 `-89.999977°`。错误版本另存于 `Saved/Backups/VFXPackFirstPerson_BadRootPlus90_20260806_2010`，可回退。
+- PIE 截图 `Saved/Screenshots/WindowsEditor/TMT_RestoredVFXPack_ReferenceCheck.png` 与桌面参考图复核通过；BP CDO 与 PIE 的相机、ViewmodelRoot、手臂、身体、腿部相对 Transform 逐项一致，未使用 C++ Tick 锁定。
+- Development Editor 构建成功；保存并正常关闭编辑器。
+
+### 2026-08-06 session204 — VFXPack 第一人称动画基础方向修复
+
+- 遵守 destination-only 边界，在批准的外部项目 `FPSShooter1` 完成方向审计和关键帧修复；TheManTest 内没有创建 IK Rig、IK Retargeter、源骨架或重定向工作目录。
+- Fire、Idle、JumpStart、JumpLoop、JumpEnd、Run、Still 共 7 条序列的 root 原始首尾 Yaw 均约 `-89.999977°`；对 root 的全部采样关键帧烘焙逆时针 `+90°` 后迁入最终资产。
+- TheManTest 冷启动全量审计 7/7 首尾 root Yaw=`0.0°`，Montage 与 BlendSpace 自动继承修正序列；Development Editor 构建成功。
+- 备份：外部 `D:/Unreal Projects/FPSShooter1/Saved/Codex/Backups/VFXPackFirstPerson_20260806_194749`；目标 `Saved/Backups/VFXPackFirstPerson_20260806_195138`。
+
 **创建日期：** 2026-08-04
 **状态：** in_progress
 **Archive 文件：** `archive/FEAT-076-flyingbug-eight-leg-gait.md`
@@ -26,6 +41,26 @@
 - [ ] Development Editor 冷构建、Control Rig/蓝图编译及平地与起伏路线 PIE 验证通过
 
 ## 实现日志
+
+### 2026-08-06 session199 — 撤销玩家三视图验收并解除 C++ Transform 锁定
+
+- 用户最新截图确认 `ArmsViewMesh` 上半身在蓝图正交视图中侧向分离，session198 的“三视图通过”结论作废。
+- 根因之一是 `OnConstruction/BeginPlay` 的 `ApplyViewmodelFraming()` 与 Tick 每帧重写 `BodyRoot/ViewmodelRoot/ArmsViewMesh`，导致蓝图 Transform 修改进 PIE 后立即被 C++ 覆盖。
+- 已删除静态 Transform 强制覆盖；BeginPlay 读取蓝图序列化的 ViewmodelRoot/ArmsViewMesh Transform 作为基线，Tick 只叠加冲刺旋转和移动惯性。Development Editor / Win64 冷构建 Success。
+- 冷读回确认 BodyRoot 不再使用绝对旋转。尝试用组件 Yaw 强行把独立第一人称 Arms 拼到完整身体后，PIE 出现手臂消失或严重构图错位，说明剩余问题是第一人称资产几何/相机空间与完整身体空间的架构冲突，不得继续用 C++ 或蓝图位置常量伪造通过；实验 Transform 已撤销并恢复原可用构图。
+
+### 2026-08-06 session200 — 保留独立 viewmodel，蓝图直接校正
+
+- 用户明确要求保留独立 `ArmsViewMesh`，通过组件 Transform 校正，不改为完整身体第一人称。
+- session203：按用户指定架构撤销 RepairGun 的 FP/Body Linked Layer 分流。旧 `AS_Rifle_A_Idle/Run` 全部引用合并到 `FPSShooter1` 外部生成并迁入的 `AS_VFXPack_FP_Idle/Run`；删除零引用 `ABP_RepairGun_BodyAnimLayer`，C++ 删除 `BodyEquipmentAnimLayerClass`。ArmsViewMesh 与 CharacterMesh0 现共享 `ABP_CharacterBase_Body + ABP_RepairGun_AnimLayer`，PIE 关键骨骼组件空间旋转一致。
+- 蓝图最终写入 `ArmsViewMesh Location=(200,18.852108,-165)`、Rotation Yaw=`-90°`；身体、腿与 Arms 使用同一 Yaw 基准。
+- 蓝图编译保存成功，PIE 实际截图 `Saved/Screenshots/WindowsEditor/TMT_IndependentArms_YawAligned_Raised_PIE.png`。基础 Transform 仅保存在蓝图，C++ 不再强制覆盖，等待用户前台观感确认。
+
+### 2026-08-06 session201 — Bounds 三视图与 PIE 一致性复验
+
+- 旧检查只对比组件原点，无法证明实际几何重合；现生成未保存的编辑器临时实例并读取 `SystemLibrary.GetComponentBounds`，逐轴比较 `ArmsViewMesh` 与 `CharacterMesh0` 的真实 Bounds 中心。
+- 最终蓝图值：`HeadCamera=(-201.886,-121.126,77)`；`ArmsViewMesh=(200,120,-206.36)`、Yaw `-90°`。相反的相机/手臂平移保留独立 viewmodel 的相对构图，同时使编辑器世界空间几何中心重合。
+- 最终误差：`X=-0.0001cm`、`Y=0.0003cm`、`Z=-0.0203cm`。PIE Runtime Report 确认 Arms 与身体世界 X/Y 完全同点，世界 Yaw 相同；最终截图 `Saved/Screenshots/WindowsEditor/TMT_Player_BPAndPIEAligned_Final.png`。
 
 ### 2026-08-06 — 玩家手臂、下半身与权威影子同轴
 

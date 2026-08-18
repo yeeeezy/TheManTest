@@ -28,7 +28,6 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 	virtual void Tick(float DeltaTime) override;
-	virtual void OnConstruction(const FTransform& Transform) override;
 
 	// 鐢?Controller 鐨?InputComponent 鎴?Character 鐨?SetupPlayerInputComponent 椹卞姩
 	void Move(const FInputActionValue& Value);
@@ -191,9 +190,6 @@ protected:
 	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilityClasses;
 
 private:
-	void EnsureViewmodelAttachment();
-	void ApplyViewmodelFraming();
-
 	void PlayInitialEquipEffect();
 
 	UPROPERTY(Transient)

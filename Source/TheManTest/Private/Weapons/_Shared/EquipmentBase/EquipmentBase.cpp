@@ -101,14 +101,16 @@ static void GetAnimLayerMeshes(AActor* Owner, TArray<USkeletalMeshComponent*>& O
 {
     if (AFPSCharacterBase* FPSChar = Cast<AFPSCharacterBase>(Owner))
     {
-        // The equipped layer contains camera-authored first-person upper-body poses.
-        // Linking it to CharacterMesh0 rotates the world-space torso/arms sideways
-        // even though the body component itself correctly faces actor +X.  Keep the
-        // camera-space layer on the viewmodel only; the complete body keeps its own
-        // world-space locomotion pose and remains the authoritative shadow caster.
+        // The first-person viewmodel and authoritative full body share one animation
+        // architecture. Equipment layers and montages must be applied to both anim
+        // instances; shadow/legs continue to inherit from the authoritative body.
         if (USkeletalMeshComponent* ArmsMesh = FPSChar->GetArmsMesh())
         {
             OutMeshes.AddUnique(ArmsMesh);
+        }
+        if (USkeletalMeshComponent* BodyMesh = FPSChar->GetMesh())
+        {
+            OutMeshes.AddUnique(BodyMesh);
         }
         return;
     }
@@ -163,14 +165,6 @@ void AEquipmentBase::Equip(AActor* NewOwner)
         }
     }
 
-    if (AFPSCharacterBase* FPSChar = Cast<AFPSCharacterBase>(NewOwner);
-        FPSChar && BodyEquipmentAnimLayerClass && FPSChar->GetMesh())
-    {
-        if (UAnimInstance* BodyAnim = FPSChar->GetMesh()->GetAnimInstance())
-        {
-            BodyAnim->LinkAnimClassLayers(BodyEquipmentAnimLayerClass);
-        }
-    }
 }
 
 void AEquipmentBase::PlayEquipMontage()
@@ -262,14 +256,6 @@ void AEquipmentBase::Unequip()
                 {
                     AnimInst->UnlinkAnimClassLayers(EquipmentAnimLayerClass);
                 }
-            }
-        }
-        if (AFPSCharacterBase* FPSChar = Cast<AFPSCharacterBase>(CurrentOwner);
-            FPSChar && BodyEquipmentAnimLayerClass && FPSChar->GetMesh())
-        {
-            if (UAnimInstance* BodyAnim = FPSChar->GetMesh()->GetAnimInstance())
-            {
-                BodyAnim->UnlinkAnimClassLayers(BodyEquipmentAnimLayerClass);
             }
         }
     }
