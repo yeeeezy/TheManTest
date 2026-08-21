@@ -6,6 +6,12 @@
 
 **关闭：** 2026-08-04
 
+## 2026-08-21 正式目录整理
+
+- 修正 session179 恢复资产后遗留的目录语义错误：`Legacy/VFXPackFirstPerson` 中实际仍有用途的10个资产已通过 Unreal AssetTools 迁入 `/Game/Characters/CharacterBase/Animations/FirstPerson/`。
+- Idle/Run/Still/Jump 与 WalkRun BlendSpace 进入 `Locomotion`，Fire/Recoil Montage 进入 `Actions`，旧参考 AnimBP 进入 `Logic`；后续补齐磁盘清场，空 `VFXPackFirstPerson` 及变空的 `Legacy` 父目录均已删除。
+- 本次只更新资产路径和引用，没有修改动画关键帧、root Transform、Skeleton 或执行重定向。相关蓝图编译保存与目标资产加载验证通过。
+
 ## 2026-08-04 最终验收
 
 - MaintenanceWorker 的 `CharacterMesh0`、`ArmsViewMesh`、`ShadowBodyMesh`、`LegsMesh` 统一使用最终骨架类 `ABP_CharacterBase_Body_C`；Shadow/Legs 保持 Leader=`CharacterMesh0`。装备系统向角色全部 SkeletalMesh 实例链接同一个 RepairGun 动画层，PIE 逐 Mesh/逐骨读回通过。

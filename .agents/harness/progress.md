@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-06-session198
+**最后更新：** 2026-08-21-session206
 
 **当前功能：** FEAT-076 — FlyingBug2 六足交替步态修正
 
@@ -15,6 +15,7 @@
 
 ## FEAT-076 本轮进展
 
+- session206：按用户确认整理 MaintenanceWorker 当前使用/参考的 VFXPack 第一人称动画资产，不修改动画关键帧、root Transform、Skeleton 或重定向配置。通过 Unreal AssetTools 将旧 `/Game/Characters/CharacterBase/Animations/Legacy/VFXPackFirstPerson` 的 10 个资产迁至正式 `FirstPerson/Locomotion`、`FirstPerson/Actions`、`FirstPerson/Logic`；相关 AnimBP、RepairGun Layer 与 BP_MaintenanceWorker 编译保存成功，目标目录10个资产及三个运行使用方加载验证通过。首次只验证 Asset Registry 为0、漏删磁盘空目录；用户指出后已删除空 `VFXPackFirstPerson` 及随之变空的 `Legacy` 父目录，并强化迁移规则为 Asset Registry 与磁盘双重清场。用户下一步将在新正式目录手动修复动画。
 - session205：撤销 session204 对 VFXPack 第一人称 7 条 AnimSequence 的错误 root `+90°` 烘焙。用户实际 PIE 证明该修改会令手臂/枪整体转错；从 `Saved/Backups/VFXPackFirstPerson_20260806_195138` 恢复修改前资产，7/7 文件恢复核对完成，冷审计首尾 root Yaw 均回到原始约 `-89.999977°`。PIE 截图 `TMT_RestoredVFXPack_ReferenceCheck.png` 与桌面参考图构图复核：枪位于右下、枪管朝前、准星无遮挡。PIE 与 BP CDO 的 HeadCamera、ViewmodelRoot、ArmsViewMesh、CharacterMesh0、LegsMesh 相对 Transform 逐项完全一致；没有运行时覆盖。Development Editor 构建成功，编辑器已关闭。错误 +90° 版本保存在 `Saved/Backups/VFXPackFirstPerson_BadRootPlus90_20260806_2010`。
 - session204：修复 `/Game/Characters/CharacterBase/Animations/Legacy/VFXPackFirstPerson` 的基础方向。先在批准的外部资源项目 `FPSShooter1` 审计，确认 7 条 AnimSequence 的 root 首尾 Yaw 均约为 `-89.999977°`；在外部项目对 root 全采样关键帧烘焙逆时针 `+90°`，导出最终 FBX，再仅将最终动画迁入 TheManTest。目标项目全量冷审计 7/7 首尾 root Yaw=`0.0°`；Montage/BlendSpace 继续引用这些修正序列。TheManTestEditor Win64 Development 冷构建成功。外部备份：`FPSShooter1/Saved/Codex/Backups/VFXPackFirstPerson_20260806_194749`；目标备份：`Saved/Backups/VFXPackFirstPerson_20260806_195138`。
 - session203：按用户动画架构撤销维修枪 FP/Body 双动画层分流。外部批准项目 `FPSShooter1` 已存在最终方向修正资产 `AS_VFXPack_FP_Idle/Run`，目标项目旧 `AS_Rifle_A_Idle/Run` 的全部引用已合并到该最终资产。删除零引用 `ABP_RepairGun_BodyAnimLayer`；两条 `RTG_W2_*` 仍被 MaintenanceWorker 全身 BlendSpace 引用，保留。C++ 删除 `BodyEquipmentAnimLayerClass`，`EquipmentAnimLayerClass` 与 Equip Montage 统一应用到 ArmsViewMesh 和 CharacterMesh0。PIE 确认两者主 AnimBP 均为 `ABP_CharacterBase_Body`、Linked Layer 均为 `ABP_RepairGun_AnimLayer`，root/pelvis/spine/双手组件空间旋转点积 0.99993~1.0；截图 `TMT_UnifiedVFXPackRepairLayer_PIE.png`。

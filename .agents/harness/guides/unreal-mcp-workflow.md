@@ -27,6 +27,7 @@
 
 - 移动或重命名必须通过 Unreal AssetTools/MCP，让引擎同步更新软硬引用并生成可处理的 Redirector。
 - 先移动资产，再查询目标资产是否存在、旧路径是否消失、使用方 dependencies 是否指向新路径。
+- 旧路径检查必须包含两层：Unreal Asset Registry 中资产/Redirector 为 0，以及磁盘上的旧目录实体已删除；若父目录也因迁移变为空且无保留语义，一并删除。任一层未清理完成都不能结束任务。
 - Redirector 扫描限定在本次涉及的目录，例如 `/Game/Weapons/RepairGun`；不要默认递归列出整个 `/Game`。
 - 批量整理按“所有权优先、资源类型次之”：共享资源放 `_Shared`，专属资源放具体武器或角色目录，再拆分 `Mesh`、`Material`、`Textures`、`Blueprint`、`Animation`。
 

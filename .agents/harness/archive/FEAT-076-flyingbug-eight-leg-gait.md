@@ -1,5 +1,10 @@
 # FEAT-076 — FlyingBug2 六足交替步态修正
 
+### 2026-08-21 session206 — MaintenanceWorker 第一人称资产正式目录整理
+
+- 经用户确认，只整理路径、不修改动画内容：使用 Unreal AssetTools 将 `Legacy/VFXPackFirstPerson` 的10个资产迁至正式 `FirstPerson/Locomotion`、`FirstPerson/Actions` 与 `FirstPerson/Logic`。
+- 旧目录 Asset Registry 回读为0；相关 AnimBP、RepairGun Layer、BP_MaintenanceWorker 编译保存，目标资产加载验证通过。首次漏删磁盘空目录，用户指出后已删除空 `VFXPackFirstPerson` 与变空的 `Legacy` 父目录，并将双重清场要求写入规则。用户将在新目录手动修复动画。
+
 ### 2026-08-06 session205 — 撤销错误动画根旋转并恢复参考构图
 
 - 用户将于次日继续做主观视觉复核；本轮不得标记为用户验收通过。后续以桌面 `微信图片_20260802100122_109_52.png` 和 `TMT_RestoredVFXPack_ReferenceCheck.png` 为对照继续调整。

@@ -70,7 +70,7 @@ registry = unreal.AssetRegistryHelpers.get_asset_registry()
 for bp_path in [
     "/Game/Characters/CharacterBase/Animations/Skeleton/ABP_CharacterBase_Body",
     "/Game/Characters/CharacterBase/Animations/Logic/TABP_BodyLocomotion",
-    "/Game/Characters/CharacterBase/Animations/Legacy/VFXPackFirstPerson/ABP_VFXPack_FirstPerson",
+    "/Game/Characters/CharacterBase/Animations/FirstPerson/Logic/ABP_VFXPack_FirstPerson",
 ]:
     bp = unreal.load_asset(bp_path)
     if bp:
