@@ -187,7 +187,7 @@ bool FPhantomReusableCombatTest::RunTest(const FString& Parameters)
 		CombatSkillTask && CombatSkillTask->GetPostSkillDelay() >= 3.f);
 
 	TestNotNull(TEXT("Cover mesh asset"), LoadObject<UStaticMesh>(nullptr,
-		TEXT("/Game/Enemy/_Shared/Cover/Mesh/SM_PhantomCover.SM_PhantomCover")));
+		TEXT("/Game/Enemy/Humanoid/_Shared/Cover/Meshes/SM_PhantomCover.SM_PhantomCover")));
 	TestNotNull(TEXT("Cover actor blueprint"), LoadObject<UBlueprint>(nullptr,
 		TEXT("/Game/Enemy/_Shared/Cover/BP_EnemyCoverPoint.BP_EnemyCoverPoint")));
 	TestNotNull(TEXT("Burst ability"), LoadObject<UBlueprint>(nullptr,

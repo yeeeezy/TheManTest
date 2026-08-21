@@ -1,9 +1,9 @@
 import unreal
 
 host = unreal.load_asset("/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/ABP_MaintenanceWorker_FirstPerson")
-interface = unreal.load_asset("/Game/Weapons/_Shared/Animations/Interface/ALI_WeaponAnim")
+interface = unreal.load_asset("/Game/Weapons/_Shared/Animations/Interfaces/ALI_WeaponAnim")
 concrete = unreal.load_asset("/Game/Weapons/RepairGun/Animations/FirstPerson/Logic/ABP_RepairGun_FirstPerson")
-template = unreal.load_asset("/Game/Weapons/_Shared/Animations/Logic/TABP_FirstPersonFirearmBase")
+template = unreal.load_asset("/Game/Weapons/_Shared/Animations/Templates/TABP_FirstPersonFirearmBase")
 
 if not all((host, template, concrete, interface)):
     raise RuntimeError("Required first-person linked animation assets are missing")

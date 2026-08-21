@@ -23,7 +23,7 @@ UScanEffectComponent::UScanEffectComponent()
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 
 	static ConstructorHelpers::FObjectFinder<UMaterialParameterCollection> DefaultScanMPC(
-		TEXT("/Game/Characters/Infiltrator/Material/MPC_ScanEffect.MPC_ScanEffect"));
+		TEXT("/Game/Characters/Infiltrator/Materials/MPC_ScanEffect.MPC_ScanEffect"));
 	if (DefaultScanMPC.Succeeded())
 	{
 		ScanMPC = DefaultScanMPC.Object;

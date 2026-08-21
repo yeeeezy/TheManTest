@@ -100,7 +100,7 @@ ATestGun（Public/Equipment/Firearms/）← 继承 AFirearm，空壳测试武器
 
 动画基类（FEAT-021）：
 UBaseLocomotionAnimInstance（Public/Characters/_Shared/Animation/）← 骨骼无关 C++ 基类
-ABP_BaseLocomotion（Content/Characters/CharacterBase/Animations/Logic/）← Template ABP，不绑骨骼
+TABP_MaintenanceWorker_BodyLocomotion（Content/Characters/MaintenanceWorker/Animations/Body/Logic/）← 当前身体 Template ABP
 
 ✅ 已删除（FEAT-041，session43）：旧 ATheManCharacterBase / AInfiltrator / AMaintenanceWorker /
    ATheManExecutive / UTheManAnimInstanceBase 全部删除（备份 scratchpad/deprecated-char-backup-session43）。

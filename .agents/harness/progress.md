@@ -1,9 +1,20 @@
 # 进度日志
 
+## 2026-08-22 session212 交接：全项目资产目录规范化启动
+
+- 当前活动功能切换为 FEAT-078；FEAT-077 已保存至检查点 `d923f88`，自动化通过但仍待用户前台主观验收，因此状态改为 `needs_improvement`。
+- 新增 `arch/00-asset-directory-standard.md`：统一采用所有者优先、资源类型次之的结构，并规定 `_Shared` 必须有真实复用证据。
+- 用户确认 MaintenanceWorker 专属表现资产全部迁回具体角色；Infiltrator 与 TheExecutive 尚无具体 Mesh，不创建空目录或复制占位美术资产。
+- AssetTools 最终采用单次批量事务迁移248个资产，并补迁 InteractableBase 内部4个资产；顺序迁移实验发现依赖保存风险后已从检查点完整恢复，没有保留失败结果。
+- CharacterBase 最终只剩 BP、Data、基础 Ability/Effect 四个资产；Actors、Weapons、Enemy 与具体角色均统一为规范分类名。
+- 两个 TestMap External Actor 已重存并完成二次 Redirector Fixup；Characters、Actors、Weapons、Enemy 四个根 Redirector 均为0，旧非规范目录资产为0，清理72个空目录。
+- 两条零引用且 Skeleton 已损坏的旧 Rifle Sequence 删除；10个 AssetTools 遗留的零引用旧 Skeletal Mesh 完整副本删除，均可从检查点 `d923f88` 恢复。
+- MaintenanceWorker 33条 AnimSequence 冷加载 Skeleton 全有效；Development Editor构建和三项玩家动画回归全部Success。
+
 ## 2026-08-21 session211 交接：第一人称 Linked Anim Layer 模板化
 
 - `ArmsViewMesh` 常驻宿主整理为 `/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/ABP_MaintenanceWorker_FirstPerson`，父类为 `UCharacterBaseAnimInstance`；地面持枪 Pose 改由 `ALI_WeaponAnim.WeaponUpperBody` Linked Layer 提供，腾空时切回宿主原 Jump 状态机以保持改前表现，原 `spine_03/hand_l` 通用晃动仍在最终输出端。
-- 枪械模板正式命名为 `/Game/Weapons/_Shared/Animations/Logic/TABP_FirstPersonFirearmBase`，父类 `UFirearmAnimInstance`；维修枪子类为 `/Game/Weapons/RepairGun/Animations/FirstPerson/Logic/ABP_RepairGun_FirstPerson`。切枪只链接层，不更换 Arms 主 AnimInstance。
+- 枪械模板正式命名为 `/Game/Weapons/_Shared/Animations/Templates/TABP_FirstPersonFirearmBase`，父类 `UFirearmAnimInstance`；维修枪子类为 `/Game/Weapons/RepairGun/Animations/FirstPerson/Logic/ABP_RepairGun_FirstPerson`。切枪只链接层，不更换 Arms 主 AnimInstance。
 - `UCharacterBaseAnimInstance` 继承 `UFPSCharacterAnimInstance`，统一由 C++ 提供 Speed/Direction/VelocityZ/bIsFalling、`Character_Speed/Is_Moving/Is_InAir` 与 Lean/Look；第一人称宿主的素材包 EventGraph 驱动已清空。
 - 身体资产归入 MaintenanceWorker：`ABP_MaintenanceWorker_Body` 与 `TABP_MaintenanceWorker_BodyLocomotion`；无引用 `TABP_CharacterBase` 已删除。
 - Development Editor 编译成功；冷启动 `Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture`、`Viewmodel.EquipDissolveEvidence` 均 Success，验证影子上半身同步、构图和装备显隐未相对改前回归。
@@ -29,16 +40,16 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-21-session211
+**最后更新：** 2026-08-22-session212
 
 **当前功能：** FEAT-077 — 第一人称手臂与完整身体双 AnimBP 合成
 
-**状态：** in_progress
+**状态：** in_progress（FEAT-078 已完成归档）
 
 ## 当前待办
 
-- 用户需前台 PIE 实际复核切枪、Idle/移动/跳跃/开火/冲刺；重点观察切枪首帧、影子上半身同步、下半身连续性和第一人称是否仍有 root/pelvis 横移。
-- 自动化与冷构建均通过，当前没有代码或资产阻塞；用户主观观感确认前不关闭 FEAT-077。
+- 目录规范化实现与自动化验证已经完成；等待用户后续明确说“更新 Git”时再提交最终结果。
+- FEAT-077 仍需用户前台主观复核切枪、Idle/移动/跳跃/开火/冲刺观感。
 
 ## FEAT-076 本轮进展
 

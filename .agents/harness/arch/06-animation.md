@@ -25,8 +25,9 @@
 
 **玩家 locomotion（session63 简化）：**
 
-- FEAT-074 当前有效第一人称资产是 `/Game/Characters/CharacterBase/Animations/Skeleton/ABP_CharacterBase`：它保持 VFXPack 原版 AnimGraph、状态机、蓝图变量和原 AnimInstance 父类。`TABP_CharacterBase` 暂未进入运行链；直接 reparent 到该空模板会剥离 AnimGraph，禁止重复此操作。
-- VFXPack 第一人称正式资产已从误用的 `Legacy/VFXPackFirstPerson` 迁出：Idle/Run/Still/Jump 序列与 WalkRun BlendSpace 位于 `/Game/Characters/CharacterBase/Animations/FirstPerson/Locomotion/`，Fire/Recoil Montage 位于 `FirstPerson/Actions/`，旧参考 AnimBP 位于 `FirstPerson/Logic/`。旧 Legacy 目录已清空；后续动画修正只编辑这些正式路径。
+- 当前第一人称宿主是 `/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/ABP_MaintenanceWorker_FirstPerson`；身体宿主和模板位于 `/Game/Characters/MaintenanceWorker/Animations/Body/Logic/`。
+- MaintenanceWorker 的 Body/第一人称 Sequence、BlendSpace 与动作资产全部归入具体角色的 `Animations/Body`、`Animations/FirstPerson`；`CharacterBase` 不再保存具体角色表现资产。
+- 武器动画接口与模板分别位于 `/Game/Weapons/_Shared/Animations/Interfaces/ALI_WeaponAnim` 和 `/Game/Weapons/_Shared/Animations/Templates/TABP_FirstPersonFirearmBase`；RepairGun 子层位于 `/Game/Weapons/RepairGun/Animations/FirstPerson/Logic/ABP_RepairGun_FirstPerson`。
 - 2026-08-21 root 方向纠正：原始/外部最终 VFXPack 第一人称动画 root 参考方向为 Yaw=0°；TheManTest 曾错误恢复为约-90°。当前7条正式序列的首尾 root Yaw 均已审计为0°。组件构图和 GripPoint 必须以这批正确动画为基准，不得再通过动画 root ±90° 补偿组件方向。
 - FEAT-074 MaintenanceWorker 特例：`CharacterMesh0` 与 `ArmsViewMesh` 同时使用整理后的原版 VFXPack 第一人称 AnimBP，C++ 向两者同步写原变量。原 `Walk_Run_1D` 是 Speed 一维轴；Body Sway 目标为 Side=`Clamp(MoveRight+MouseX)` 与 Forward=`Clamp(-MoveForward-10×LookUp)`，Walk/Sprint 插值速度分别为 2/8。原 AnimBP EventGraph 随后还会应用 authored `Lean_Sides_Offset=8` / `Look_Up_Offset=2`；由于该 EventGraph 的示例角色硬 Cast 已被移除，C++ 写 AnimBP 时必须保留这两个倍率。鼠标轴按帧消费，移动输入 Completed/Canceled 时目标清零。A/D 不额外平移或旋转 `ViewmodelRoot`。原版冲刺层级是 `FPS_Camera -> BodyRotator(相机原点) -> SK_ArmMesh(位置偏移)`；当前必须同样让零位置的 `ViewmodelRoot` 在 0.2s 内压至 Pitch -12.5°，并让 `ArmsViewMesh` 持有 SK_ArmMesh 偏移，不能把偏移放到旋转节点。Shadow/Legs 仍 Leader=`CharacterMesh0`。
 - 不再使用 `StopAnimIndex` / `bShouldStop` / `bShouldMove` / 脚相位 / 延迟停 / 保持原速滑行。

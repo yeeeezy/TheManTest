@@ -28,8 +28,8 @@ FEAT-074 起，玩家枪口统一由 `AFirearm::GetMuzzleWorldTransform()` 解�
 
 - 多种武器复用的资源放在 `/Game/Weapons/_Shared/`，并按 `Mesh`、`Material`、`Textures`、`Animations`、`GAS` 等类型继续分层。
 - 某把武器专属的资源放在 `/Game/Weapons/<WeaponName>/`，按 `Blueprint`、`Mesh`、`Material`、`Textures`、`Animation` 分层；不要把材质或贴图放进 `Mesh`。
-- 通用弹体：`/Game/Weapons/_Shared/Mesh/SM_Shared_Bullet`，材质为 `/Game/Weapons/_Shared/Material/M_Shared_Bullet` 与 `M_Shared_Bullet_Accent`。
-- RepairGun 科技泡沫弹体：`/Game/Weapons/RepairGun/Mesh/SM_RepairGun_Bullet`，专属材质为 `/Game/Weapons/RepairGun/Material/M_RepairGun_Bullet`。
+- 通用弹体：`/Game/Weapons/_Shared/Meshes/SM_Shared_Bullet`，材质为 `/Game/Weapons/_Shared/Materials/M_Shared_Bullet` 与 `M_Shared_Bullet_Accent`。
+- RepairGun 科技泡沫弹体：`/Game/Weapons/RepairGun/Meshes/SM_RepairGun_Bullet`，专属材质为 `/Game/Weapons/RepairGun/Materials/M_RepairGun_Bullet`。
 
 ## 武器动画层字段
 

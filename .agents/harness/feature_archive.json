@@ -1,9 +1,19 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-04-session185",
+    "last_updated":  "2026-08-22-session212",
     "source_file":  "feature_list.json",
     "status_scope":  "done",
     "features":  [
+                     {
+                         "id": "FEAT-078",
+                         "name": "全项目资产目录规范化",
+                         "status": "done",
+                         "description": "建立所有者优先、资源类型次之的统一Content规范；清理CharacterBase具体角色资产并统一Characters、Actors、Weapons、Enemy目录。",
+                         "archive_file": "archive/FEAT-078-project-asset-directory-standardization.md",
+                         "created": "2026-08-22",
+                         "updated": "2026-08-22-session212-complete",
+                         "verification_evidence": "AssetTools迁移252个资产；四个业务根Redirector与非规范目录资产均为0；MaintenanceWorker 33条AnimSequence Skeleton有效；Development Editor构建及三项玩家动画自动化Success。"
+                     },
                      {
                          "id": "FEAT-075",
                          "name": "Nightmare FlyingBug2 Locomotor贴地爬行与敌人/影子结构修正",

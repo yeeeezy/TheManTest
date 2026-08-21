@@ -2,8 +2,8 @@ import unreal
 
 paths = [
     "/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/ABP_MaintenanceWorker_FirstPerson",
-    "/Game/Weapons/_Shared/Animations/Interface/ALI_WeaponAnim",
-    "/Game/Weapons/_Shared/Animations/Logic/TABP_FirstPersonFirearmBase",
+    "/Game/Weapons/_Shared/Animations/Interfaces/ALI_WeaponAnim",
+    "/Game/Weapons/_Shared/Animations/Templates/TABP_FirstPersonFirearmBase",
     "/Game/Weapons/RepairGun/Animations/FirstPerson/Logic/ABP_RepairGun_FirstPerson",
 ]
 

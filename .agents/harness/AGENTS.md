@@ -44,6 +44,8 @@ TheManTest — UE 5.7.4 单人游戏项目。C++ 负责数据结构、GAS 配置
 
 ### 外部资产迁入目录规则
 
+- **正式目录规范是强制入口。** 新建、导入、迁移或整理 Content 资产前，必须先读取 `.agents/harness/arch/00-asset-directory-standard.md`，并遵守其中的所有权、统一分类名和 `_Shared` 准入规则。
+
 - **迁入后按项目语义整理。** 从素材包或外部 Unreal 项目迁入的正式资产，不得保留供应商、商城包或示例工程目录作为项目内长期路径；必须通过 Unreal AssetTools 按本项目功能归属移动到对应系统、角色、武器或共享目录。
 - **只使用项目自己的语义目录。** 顶层固定使用项目既有的 `Actors`、`Characters`、`Core`、`Maps`、`Environment`、`Weapons`、`Enemy`、`UI`；不得新增供应商名、素材包名、迁移暂存名或笼统的顶层 `Effects`。引擎管理目录（如 `__ExternalActors__`）不受此条影响。
 - **功能归属优先，资产类型次之。** 专属资源放在具体所有者目录下，例如 RepairGun 特效放 `/Game/Weapons/RepairGun/Effects/`，Phantom 特效放 `/Game/Enemy/Humanoid/Phantom/Effects/`；然后再拆分 `Systems`、`Materials`、`Textures`、`Niagara`、`Meshes` 等类型子目录。
