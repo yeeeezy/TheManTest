@@ -19,7 +19,7 @@
                                                "切枪、Idle/移动/跳跃/开火/冲刺验证无参考姿势、明显横移或切换卡顿",
                                                "Development Editor 冷构建、相关 AnimBP/蓝图编译保存及冷启动验证通过"
                                            ],
-                         "verification_evidence":  "2026-08-21-session210：ArmsViewMesh 独立使用 ABP_VFXPack_FirstPerson；CharacterMesh0 使用 ABP_CharacterBase_Body，在 TABP_BodyLocomotion 最终输出前通过 FirstPersonPoseSource Copy Pose 并从 spine_01 以上分层混合。装备层/Montage 仅链接 Arms，Body 保持连续 locomotion；组件 prerequisite 保证 Arms 先求值。Development Editor 冷构建成功；Shadow.UpperBodyEvidence、Viewmodel.FramingCapture、Viewmodel.EquipDissolveEvidence 均 Success，待用户前台切枪/移动/跳跃/开火主观复核。"
+                         "verification_evidence":  "2026-08-21-session210：ArmsViewMesh 独立使用 ABP_CharacterBase_FirstPerson；CharacterMesh0 使用 ABP_CharacterBase_Body，在 TABP_BodyLocomotion 最终输出前通过 FirstPersonPoseSource Copy Pose 并从 spine_01 以上分层混合。装备层/Montage 仅链接 Arms，Body 保持连续 locomotion；组件 prerequisite 保证 Arms 先求值。Development Editor 冷构建成功；Shadow.UpperBodyEvidence、Viewmodel.FramingCapture、Viewmodel.EquipDissolveEvidence 均 Success，待用户前台切枪/移动/跳跃/开火主观复核。"
                      },
                      {
                          "id":  "FEAT-076",

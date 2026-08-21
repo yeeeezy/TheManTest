@@ -3,9 +3,10 @@
 ## 2026-08-21 session210 交接：双 AnimBP 上半身 Pose 合成
 
 - 当前活动功能切换为 FEAT-077；FlyingBug2 自动化已完成但待主观验收，FEAT-076 改为 `needs_improvement`。
-- `ArmsViewMesh` 独立运行 `ABP_VFXPack_FirstPerson_C`；`CharacterMesh0` 运行 `ABP_CharacterBase_Body_C`，在 Body 主图末端读取 `FirstPersonPoseSource`，只从 `spine_01` 以上混入 Arms 的局部骨骼 Pose。
+- `ArmsViewMesh` 独立运行 `ABP_CharacterBase_FirstPerson_C`；`CharacterMesh0` 运行 `ABP_CharacterBase_Body_C`，在 Body 主图末端读取 `FirstPersonPoseSource`，只从 `spine_01` 以上混入 Arms 的局部骨骼 Pose。
 - Arms 先 Tick、Body 后合成；Body root/pelvis/腿部 locomotion 不进入第一人称手臂。装备层与 Montage 只链接 Arms，CharacterMesh0 不再重复切换武器层。
 - Development Editor 构建成功；Shadow UpperBody、FramingCapture、EquipDissolve 三项 PIE 自动化均 Success。
+- 正式命名整理完成：第一人称类为 `FirstPerson/Logic/ABP_CharacterBase_FirstPerson`；身体类为 `Body/Logic/ABP_CharacterBase_Body`。旧素材来源名和 `Animations/Skeleton` 目录已清理。
 - 待办：用户前台实际按键复核切枪、Idle/移动/跳跃/开火/冲刺；重点观察切枪首帧、影子上半身同步和下半身连续性。
 
 ## 2026-08-21 session209 暂停交接：FPSShooter1 第一人称架构调查

@@ -21,7 +21,7 @@
 
 | 资产 / 类 | 路径 | 作用 |
 |---|---|---|
-| `TABP_BodyLocomotion` | `Content/Characters/CharacterBase/Animations/Logic/` | 身体 locomotion 无骨架模板；最终身体子类现整理到 `Animations/Skeleton/ABP_CharacterBase_Body` |
+| `TABP_BodyLocomotion` | `Content/Characters/CharacterBase/Animations/Logic/` | 身体 locomotion 无骨架模板；最终身体子类位于 `Animations/Body/Logic/ABP_CharacterBase_Body` |
 | `TABP_CharacterBase` | `Content/Characters/CharacterBase/Animations/Template/` | FEAT-074 预留无骨架模板，目前不在运行继承链中；不得把完整原版 AnimBP 直接 reparent 到该空模板 |
 | `ABP_CharacterBase` | `Content/Characters/CharacterBase/Animations/Skeleton/` | 当前有效的完整原版 VFXPack AnimBP；保留原 AnimInstance 父类、AnimGraph、状态机和蓝图变量，由 MaintenanceWorker 的 ArmsViewMesh 引用 |
 | `ALI_WeaponAnim` | `Content/Weapons/_Shared/Animations/Interface/` | 武器动画层接口，定义两个层：`WeaponAimOffset`、`WeaponUpperBody` |
