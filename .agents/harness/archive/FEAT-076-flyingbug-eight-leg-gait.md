@@ -1,5 +1,11 @@
 # FEAT-076 — FlyingBug2 六足交替步态修正
 
+### 2026-08-21 session207 — MaintenanceWorker 第一人称动画 root 方向修复
+
+- 用户截图证明当前迁入序列 root 约-90°、原资产为0°，session205 的“恢复原始-90°”结论作废。
+- 在外部批准项目 FPSShooter1 确认7条最终动画首尾 root Yaw=0°并导出，TheManTest 仅导入最终动画；最终7/7回读为0°。Still 因0.066秒帧边界问题启用最近帧吸附后成为3采样键。
+- 相关ABP、RepairGun Layer、BP_MaintenanceWorker编译保存，资产加载验证通过；FramingCapture在冷启动环境未注册，前台PIE视觉验收仍待用户完成。
+
 ### 2026-08-21 session206 — MaintenanceWorker 第一人称资产正式目录整理
 
 - 经用户确认，只整理路径、不修改动画内容：使用 Unreal AssetTools 将 `Legacy/VFXPackFirstPerson` 的10个资产迁至正式 `FirstPerson/Locomotion`、`FirstPerson/Actions` 与 `FirstPerson/Logic`。

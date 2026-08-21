@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-21-session206
+**最后更新：** 2026-08-21-session207
 
 **当前功能：** FEAT-076 — FlyingBug2 六足交替步态修正
 
@@ -10,11 +10,12 @@
 
 ## 当前待办
 
-- 用户将在 2026-08-07 仔细复核第一人称手臂与桌面参考图 `微信图片_20260802100122_109_52.png` 的视觉一致性。session205 目前只算技术回退与自动/数值验收完成，不算用户视觉验收通过；若用户仍认为构图不对，继续基于 `TMT_RestoredVFXPack_ReferenceCheck.png` 调整蓝图 Transform，禁止恢复动画 root `+90°` 或 C++ Tick Transform 锁定。
+- 用户需在当前已打开的编辑器中前台 PIE 复核 root=0° 后 Idle/Run/Jump/Fire 的手臂、枪口方向和构图。不得重新引入 C++ Tick Transform 锁定；若仍有偏差，只依据当前 root=0° 正式动画审计组件 authored Transform 与 GripPoint，不再用动画 root 制造补偿。
 - 本轮无阻塞：已恢复早上第一人称蓝图基线，完成蓝图三视图、PIE 构图及运行时组件 Transform 验收；编辑器已保存并关闭。
 
 ## FEAT-076 本轮进展
 
+- session207：用户截图用原资产 root=0° 对照证明 session205 恢复 `-89.999977°` 的结论错误；异常确在迁入序列的 root 轨道。遵守 destination-only 边界，在 `FPSShooter1` 审计其现有最终资产，确认7条序列首尾 root Yaw 全为0°，备份到 `Saved/Codex/Backups/VFXPackFirstPerson_BeforeRootZero_20260821_114911` 后导出最终 FBX；TheManTest 只导入最终动画。Idle/Run/JumpStart/JumpLoop/JumpEnd/Fire 正常覆盖，Still 因0.066秒非帧边界首次被拒，启用 Snap to Closest Frame Boundary 后导入为3采样键。最终7/7首尾 root Yaw=0°；相关ABP/RepairGun Layer/BP_MaintenanceWorker编译保存，正式目录与三个使用方资产加载验证通过。FramingCapture 冷启动环境未注册该测试，不能声称PIE视觉通过，待用户前台复核。
 - session206：按用户确认整理 MaintenanceWorker 当前使用/参考的 VFXPack 第一人称动画资产，不修改动画关键帧、root Transform、Skeleton 或重定向配置。通过 Unreal AssetTools 将旧 `/Game/Characters/CharacterBase/Animations/Legacy/VFXPackFirstPerson` 的 10 个资产迁至正式 `FirstPerson/Locomotion`、`FirstPerson/Actions`、`FirstPerson/Logic`；相关 AnimBP、RepairGun Layer 与 BP_MaintenanceWorker 编译保存成功，目标目录10个资产及三个运行使用方加载验证通过。首次只验证 Asset Registry 为0、漏删磁盘空目录；用户指出后已删除空 `VFXPackFirstPerson` 及随之变空的 `Legacy` 父目录，并强化迁移规则为 Asset Registry 与磁盘双重清场。用户下一步将在新正式目录手动修复动画。
 - session205：撤销 session204 对 VFXPack 第一人称 7 条 AnimSequence 的错误 root `+90°` 烘焙。用户实际 PIE 证明该修改会令手臂/枪整体转错；从 `Saved/Backups/VFXPackFirstPerson_20260806_195138` 恢复修改前资产，7/7 文件恢复核对完成，冷审计首尾 root Yaw 均回到原始约 `-89.999977°`。PIE 截图 `TMT_RestoredVFXPack_ReferenceCheck.png` 与桌面参考图构图复核：枪位于右下、枪管朝前、准星无遮挡。PIE 与 BP CDO 的 HeadCamera、ViewmodelRoot、ArmsViewMesh、CharacterMesh0、LegsMesh 相对 Transform 逐项完全一致；没有运行时覆盖。Development Editor 构建成功，编辑器已关闭。错误 +90° 版本保存在 `Saved/Backups/VFXPackFirstPerson_BadRootPlus90_20260806_2010`。
 - session204：修复 `/Game/Characters/CharacterBase/Animations/Legacy/VFXPackFirstPerson` 的基础方向。先在批准的外部资源项目 `FPSShooter1` 审计，确认 7 条 AnimSequence 的 root 首尾 Yaw 均约为 `-89.999977°`；在外部项目对 root 全采样关键帧烘焙逆时针 `+90°`，导出最终 FBX，再仅将最终动画迁入 TheManTest。目标项目全量冷审计 7/7 首尾 root Yaw=`0.0°`；Montage/BlendSpace 继续引用这些修正序列。TheManTestEditor Win64 Development 冷构建成功。外部备份：`FPSShooter1/Saved/Codex/Backups/VFXPackFirstPerson_20260806_194749`；目标备份：`Saved/Backups/VFXPackFirstPerson_20260806_195138`。

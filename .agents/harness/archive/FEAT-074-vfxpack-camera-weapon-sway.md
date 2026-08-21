@@ -12,6 +12,12 @@
 - Idle/Run/Still/Jump 与 WalkRun BlendSpace 进入 `Locomotion`，Fire/Recoil Montage 进入 `Actions`，旧参考 AnimBP 进入 `Logic`；后续补齐磁盘清场，空 `VFXPackFirstPerson` 及变空的 `Legacy` 父目录均已删除。
 - 本次只更新资产路径和引用，没有修改动画关键帧、root Transform、Skeleton 或执行重定向。相关蓝图编译保存与目标资产加载验证通过。
 
+## 2026-08-21 root 方向修复
+
+- 用户截图以原资产 root=0° 对照，证明此前目标动画统一约-90°是错误的迁入数据，而非应保留的 authored 方向；session205 的回退结论作废。
+- 在批准的外部项目 FPSShooter1 审计并导出7条 root=0° 的最终动画，TheManTest 仅接收最终资产。最终 Idle/Run/Still/JumpStart/JumpLoop/JumpEnd/Fire 首尾 root Yaw 全为0°。
+- Still 导入时按导入器要求将0.066秒吸附到30fps最近帧边界，最终3个采样键。相关蓝图编译保存、目标目录与使用方加载验证通过；待用户前台PIE视觉确认。
+
 ## 2026-08-04 最终验收
 
 - MaintenanceWorker 的 `CharacterMesh0`、`ArmsViewMesh`、`ShadowBodyMesh`、`LegsMesh` 统一使用最终骨架类 `ABP_CharacterBase_Body_C`；Shadow/Legs 保持 Leader=`CharacterMesh0`。装备系统向角色全部 SkeletalMesh 实例链接同一个 RepairGun 动画层，PIE 逐 Mesh/逐骨读回通过。
