@@ -136,6 +136,8 @@ UEquipmentAnimInstance
 
 ## 玩家身体/手臂共用主 ABP + 双 mesh 武器层（session70）
 
+> **FEAT-077 已替代本节旧的“共用主 ABP”运行方案。** 当前仅保留两个 AnimBP 类：Arms 独立 FP AnimBP；Body 完整 locomotion AnimBP 在最终输出前执行 `Copy Pose From Mesh(FirstPersonPoseSource)`，并以 `Layered Blend Per Bone(spine_01)` 合成上半身。Copy Pose 使用局部骨骼变换，不复制 root/pelvis，也不复制 ArmsViewMesh 的相机空间组件 Transform。Arms 必须先于 Body Tick，装备层只链接 Arms。
+
 `GetMesh()` 和 `ArmsViewMesh` 可以使用同一个主 ABP（如 `ABP_BodyLocomotion`），因为两者骨骼一致。`EquipmentAnimLayerClass` 装备时同时链接到这两个 mesh 的 AnimInstance：
 
 ```

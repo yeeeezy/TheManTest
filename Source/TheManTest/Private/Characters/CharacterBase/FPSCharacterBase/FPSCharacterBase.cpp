@@ -117,6 +117,9 @@ AFPSCharacterBase::AFPSCharacterBase()
 	ArmsViewMesh->bCastDynamicShadow = false;
 	ArmsViewMesh->CastShadow = false;
 	ArmsViewMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+	// CharacterMesh0 consumes the completed ArmsViewMesh local-bone pose in its own
+	// AnimGraph. Force the viewmodel to evaluate first so the shadow never trails it.
+	GetMesh()->AddTickPrerequisiteComponent(ArmsViewMesh);
 
 
 	// --- FEAT-038：第三人称全身三件套（影子 + 可见腿），与 ArmsMesh 共享同一份姿势 ---
@@ -553,11 +556,10 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 			}
 		};
 
-		// The body and viewmodel run separate instances of the shared body AnimBP.
-		// Its final graph applies this sway after the ALI_WeaponAnim linked layers;
-		// ShadowBodyMesh and LegsMesh continue to follow CharacterMesh0.
+		// Arms owns the first-person graph and weapon layer. CharacterMesh0 runs its
+		// independent body locomotion, then copies only the completed upper-body pose
+		// from ArmsViewMesh in the Body AnimGraph.
 		UpdateVFXPackAnimInstance(ArmsViewMesh->GetAnimInstance());
-		UpdateVFXPackAnimInstance(GetMesh() ? GetMesh()->GetAnimInstance() : nullptr);
 
 		CurrentArmsPitch = 0.f;
 		// Mouse axis values in the source are frame deltas. Consume this frame's value

@@ -5,6 +5,7 @@
 #include "TheManAnimationAssetLibrary.generated.h"
 
 class UAnimationAsset;
+class UAnimInstance;
 class UAnimBlueprint;
 class UAnimSequence;
 class UControlRigBlueprint;
@@ -29,6 +30,13 @@ public:
 		const FString& AssetName,
 		UAnimSequence* SourceAnimation,
 		UControlRigBlueprint* ControlRigBlueprint);
+
+	/** Insert FirstPersonPoseSource -> Copy Pose above BlendBone before the main AnimGraph output. */
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Animation")
+	static bool ConfigureFirstPersonUpperBodyCopy(
+		UAnimBlueprint* AnimBlueprint,
+		FName SourcePropertyName,
+		FName BlendBoneName);
 
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Animation")
 	static bool AddAnimationAssetOverride(
@@ -55,6 +63,12 @@ public:
 		UBlueprint* Blueprint,
 		FName ComponentVariableName,
 		USkeletalMesh* SkeletalMesh);
+
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Blueprint")
+	static bool SetInheritedAnimClass(
+		UBlueprint* Blueprint,
+		FName ComponentVariableName,
+		TSubclassOf<UAnimInstance> AnimClass);
 
 	/** Session-only helper used to open a data-only Blueprint in the full component viewport. */
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Blueprint")

@@ -101,16 +101,12 @@ static void GetAnimLayerMeshes(AActor* Owner, TArray<USkeletalMeshComponent*>& O
 {
     if (AFPSCharacterBase* FPSChar = Cast<AFPSCharacterBase>(Owner))
     {
-        // The first-person viewmodel and authoritative full body share one animation
-        // architecture. Equipment layers and montages must be applied to both anim
-        // instances; shadow/legs continue to inherit from the authoritative body.
+        // The first-person viewmodel owns weapon layers and montages. CharacterMesh0
+        // keeps its uninterrupted full-body locomotion and copies the completed arms
+        // upper-body pose in its AnimGraph, so linking the layer twice is unnecessary.
         if (USkeletalMeshComponent* ArmsMesh = FPSChar->GetArmsMesh())
         {
             OutMeshes.AddUnique(ArmsMesh);
-        }
-        if (USkeletalMeshComponent* BodyMesh = FPSChar->GetMesh())
-        {
-            OutMeshes.AddUnique(BodyMesh);
         }
         return;
     }

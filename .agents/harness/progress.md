@@ -1,5 +1,13 @@
 # 进度日志
 
+## 2026-08-21 session210 交接：双 AnimBP 上半身 Pose 合成
+
+- 当前活动功能切换为 FEAT-077；FlyingBug2 自动化已完成但待主观验收，FEAT-076 改为 `needs_improvement`。
+- `ArmsViewMesh` 独立运行 `ABP_VFXPack_FirstPerson_C`；`CharacterMesh0` 运行 `ABP_CharacterBase_Body_C`，在 Body 主图末端读取 `FirstPersonPoseSource`，只从 `spine_01` 以上混入 Arms 的局部骨骼 Pose。
+- Arms 先 Tick、Body 后合成；Body root/pelvis/腿部 locomotion 不进入第一人称手臂。装备层与 Montage 只链接 Arms，CharacterMesh0 不再重复切换武器层。
+- Development Editor 构建成功；Shadow UpperBody、FramingCapture、EquipDissolve 三项 PIE 自动化均 Success。
+- 待办：用户前台实际按键复核切枪、Idle/移动/跳跃/开火/冲刺；重点观察切枪首帧、影子上半身同步和下半身连续性。
+
 ## 2026-08-21 session209 暂停交接：FPSShooter1 第一人称架构调查
 
 - 对 `D:\Unreal Projects\FPSShooter1` 做了只读导出调查，没有保存或修改外部工程；临时调查脚本与导出文件已清理。
@@ -11,16 +19,16 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-21-session207
+**最后更新：** 2026-08-21-session210
 
-**当前功能：** FEAT-076 — FlyingBug2 六足交替步态修正
+**当前功能：** FEAT-077 — 第一人称手臂与完整身体双 AnimBP 合成
 
 **状态：** in_progress
 
 ## 当前待办
 
-- 用户需在当前已打开的编辑器中前台 PIE 复核 root=0° 后 Idle/Run/Jump/Fire 的手臂、枪口方向和构图。不得重新引入 C++ Tick Transform 锁定；若仍有偏差，只依据当前 root=0° 正式动画审计组件 authored Transform 与 GripPoint，不再用动画 root 制造补偿。
-- 本轮无阻塞：已恢复早上第一人称蓝图基线，完成蓝图三视图、PIE 构图及运行时组件 Transform 验收；编辑器已保存并关闭。
+- 用户需前台 PIE 实际复核切枪、Idle/移动/跳跃/开火/冲刺；重点观察切枪首帧、影子上半身同步、下半身连续性和第一人称是否仍有 root/pelvis 横移。
+- 自动化与冷构建均通过，当前没有代码或资产阻塞；用户主观观感确认前不关闭 FEAT-077。
 
 ## FEAT-076 本轮进展
 

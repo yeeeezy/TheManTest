@@ -14,6 +14,8 @@
 
 **玩家动画：**
 
+> FEAT-077 当前双类结构：`ArmsViewMesh=ABP_VFXPack_FirstPerson` 独立生成最终 FP Pose；`CharacterMesh0=ABP_CharacterBase_Body` 生成完整身体 locomotion，并通过 `UFPSCharacterAnimInstance.FirstPersonPoseSource` 在主图末端 Copy Arms 局部 Pose、从 `spine_01` 以上混合。禁止让 Arms 再反向 Copy Body，否则形成循环依赖。
+
 | 文件 | 关键内容 |
 |---|---|
 | `Source/TheManTest/Public/Characters/CharacterBase/Animation/CharacterBaseAnimInstance.h` | FEAT-074 预留的第一人称强类型 C++ 数据源。当前完整原版 AnimBP 尚未安全迁入该父类，因此 `AFPSCharacterBase` 对它继续使用兼容反射写值 |

@@ -5,6 +5,7 @@
 #include "FPSCharacterAnimInstance.generated.h"
 
 class UAnimMontage;
+class USkeletalMeshComponent;
 
 // 玩家角色（AFPSCharacterBase）的动画实例。挂在 GetMesh() 上，驱动身体/影子/腿三件套共享的全身姿势。
 // 当前 locomotion 采用模板式基础方案：Idle 与 Walk/Run BlendSpace 直接按 Speed/Direction 混合，
@@ -16,6 +17,12 @@ class THEMANTEST_API UFPSCharacterAnimInstance : public UBaseLocomotionAnimInsta
 
 public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+
+	// CharacterMesh0's AnimGraph reads this as the source of the upper-body Copy Pose.
+	// It is assigned from the owning AFPSCharacterBase and intentionally excludes the
+	// first-person component transform: Copy Pose transfers local bone transforms only.
+	UPROPERTY(Transient, BlueprintReadOnly, Category = "First Person Pose")
+	TObjectPtr<USkeletalMeshComponent> FirstPersonPoseSource;
 
 	// 保存当前最终姿势，供武器 Linked Layer 切换时做短时连续过渡。
 	void CaptureWeaponTransitionPose();

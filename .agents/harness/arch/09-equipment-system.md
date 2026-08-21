@@ -35,6 +35,8 @@ FEAT-074 起，玩家枪口统一由 `AFirearm::GetMuzzleWorldTransform()` 解�
 
 `Equip()` 只用武器 BP 上的 `EquipmentAnimLayerClass` 操作角色 Mesh 的现有 AnimInstance：
 
+FEAT-077 起，FPS 玩家只对 `ArmsViewMesh` Link/Unlink 武器层和播放装备 Montage。`CharacterMesh0` 不再重复切换武器层，而是在完整身体 locomotion 之后从 `ArmsViewMesh` Copy 最终上半身 Pose；非 FPS `ACharacter` 仍操作 `GetMesh()`。
+
 - **`EquipmentAnimLayerClass`**（`LinkAnimClassLayers`，链接武器层）：必须与宿主使用同一 Skeleton，并实现 `ALI_WeaponAnim`。
 - `EquipmentAnimClass` 与 `SetAnimInstanceClass` 路径已删除；武器不得整体替换角色基础 AnimBP。需要专属跑跳的特殊武器应把状态机放进自己的 Linked Anim Layer。
 

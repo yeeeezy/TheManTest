@@ -2,6 +2,7 @@
 
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Pawn.h"
+#include "Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h"
 
 void UFPSCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
@@ -37,6 +38,11 @@ void UFPSCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	if (!Pawn)
 	{
 		return;
+	}
+
+	if (const AFPSCharacterBase* FPSCharacter = Cast<AFPSCharacterBase>(Pawn))
+	{
+		FirstPersonPoseSource = FPSCharacter->GetArmsMesh();
 	}
 
 	FVector Accel = FVector::ZeroVector;

@@ -7,6 +7,7 @@
 #include "Enemy/BTTask_UseCombatSkill.h"
 #include "Enemy/Humanoid/HumanoidEnemyAnimInstance.h"
 #include "Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h"
+#include "Characters/CharacterBase/FPSCharacterBase/Animation/FPSCharacterAnimInstance.h"
 #include "Weapons/_Shared/Components/EquipmentManagerComponent.h"
 #include "Weapons/_Shared/EquipmentBase/EquipmentBase.h"
 #include "Enemy/Humanoid/Phantom/Phantom.h"
@@ -855,6 +856,29 @@ bool FShadowUpperBodyEvidenceCommand::Update()
 		Player->GetShadowBodyMesh()->GetSkeletalMeshAsset(), static_cast<USkeletalMesh*>(nullptr));
 	Test->TestTrue(TEXT("Authoritative animated body casts its own hidden shadow"),
 		Player->GetMesh()->CastShadow && Player->GetMesh()->bCastHiddenShadow);
+	USkeletalMeshComponent* BodyMesh = Player->GetMesh();
+	USkeletalMeshComponent* ArmsMesh = Player->GetArmsMesh();
+	Test->TestNotNull(TEXT("Independent first-person arms mesh"), ArmsMesh);
+	Test->TestTrue(TEXT("Body and arms use different AnimBP classes"),
+		BodyMesh && ArmsMesh && BodyMesh->GetAnimClass() != ArmsMesh->GetAnimClass());
+	UFPSCharacterAnimInstance* BodyAnim = BodyMesh
+		? Cast<UFPSCharacterAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr;
+	Test->TestNotNull(TEXT("Body uses FPS body AnimInstance"), BodyAnim);
+	if (BodyAnim)
+	{
+		Test->TestEqual(TEXT("Body Copy Pose source is ArmsViewMesh"),
+			BodyAnim->FirstPersonPoseSource.Get(), ArmsMesh);
+	}
+	if (BodyMesh && ArmsMesh)
+	{
+		for (const FName BoneName : { FName(TEXT("spine_03")), FName(TEXT("hand_r")), FName(TEXT("hand_l")) })
+		{
+			const FQuat BodyLocal = BodyMesh->GetSocketTransform(BoneName, RTS_ParentBoneSpace).GetRotation();
+			const FQuat ArmsLocal = ArmsMesh->GetSocketTransform(BoneName, RTS_ParentBoneSpace).GetRotation();
+			Test->TestTrue(FString::Printf(TEXT("%s copies first-person local rotation"), *BoneName.ToString()),
+				FMath::Abs(BodyLocal | ArmsLocal) > 0.999f);
+		}
+	}
 	// The body asset's authored visual forward is local +Y. Verify that visual
 	// axis, rather than the component's generic +X axis, against the actor arrow.
 	Test->TestTrue(TEXT("Third-person body authored +Y matches actor forward arrow"),
@@ -1198,14 +1222,14 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 	Test->TestTrue(TEXT("Viewmodel root matches VFXPack BodyRotator identity rotation"),
 		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
 	Test->TestTrue(TEXT("Arms rotation matches VFXPack SK_ArmMesh"),
-		Player->GetArmsMesh()->GetRelativeRotation().Equals(FRotator(-3.f, -15.f, -1.f), 0.01f));
+		Player->GetArmsMesh()->GetRelativeRotation().Equals(FRotator(-3.f, -90.f, -1.f), 0.01f));
 	Test->TestTrue(TEXT("Arms location matches VFXPack SK_ArmMesh beneath BodyRotator"),
 		Player->GetArmsMesh()->GetRelativeLocation().Equals(FVector(-18.107912f, 18.852108f, -150.00795f), 0.01f));
 	Test->TestNotNull(TEXT("Body uses an animation instance"), Player->GetMesh()->GetAnimInstance());
 	Test->TestNotNull(TEXT("First-person arms use an animation instance"), Player->GetArmsMesh()->GetAnimInstance());
 	if (Player->GetMesh()->GetAnimInstance() && Player->GetArmsMesh()->GetAnimInstance())
 	{
-		Test->TestEqual(TEXT("First- and third-person meshes use the same VFXPack AnimBP class"),
+		Test->TestNotEqual(TEXT("Body locomotion and first-person arms use independent AnimBP classes"),
 			Player->GetMesh()->GetAnimInstance()->GetClass(), Player->GetArmsMesh()->GetAnimInstance()->GetClass());
 	}
 	Test->TestEqual(TEXT("Deprecated duplicate shadow body stays empty"),

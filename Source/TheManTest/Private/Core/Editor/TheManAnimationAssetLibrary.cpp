@@ -12,6 +12,7 @@
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimNode_SequencePlayer.h"
 #include "AnimGraphNode_ControlRig.h"
+#include "AnimGraphNode_CopyPoseFromMesh.h"
 #include "AnimGraphNode_LayeredBoneBlend.h"
 #include "AnimGraphNode_Root.h"
 #include "AnimGraphNode_SequencePlayer.h"
@@ -22,6 +23,7 @@
 #include "ControlRigBlueprintLegacy.h"
 #include "Factories/AnimBlueprintFactory.h"
 #include "Kismet2/BlueprintEditorUtils.h"
+#include "K2Node_VariableGet.h"
 #include "Kismet2/KismetEditorUtilities.h"
 #include "BlueprintEditor.h"
 #include "BlueprintEditorTabs.h"
@@ -209,6 +211,29 @@ bool UTheManAnimationAssetLibrary::SetInheritedSkeletalMesh(
 #endif
 }
 
+bool UTheManAnimationAssetLibrary::SetInheritedAnimClass(
+	UBlueprint* Blueprint,
+	FName ComponentVariableName,
+	TSubclassOf<UAnimInstance> AnimClass)
+{
+#if WITH_EDITOR
+	USkeletalMeshComponent* MeshTemplate = Cast<USkeletalMeshComponent>(
+		GetOrCreateInheritedComponentTemplate(Blueprint, ComponentVariableName));
+	if (!MeshTemplate || !AnimClass)
+	{
+		return false;
+	}
+	MeshTemplate->Modify();
+	MeshTemplate->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+	MeshTemplate->SetAnimInstanceClass(AnimClass);
+	FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
+	Blueprint->MarkPackageDirty();
+	return true;
+#else
+	return false;
+#endif
+}
+
 bool UTheManAnimationAssetLibrary::SetBlueprintForceFullEditor(
 	UBlueprint* Blueprint,
 	bool bForceFullEditor)
@@ -339,6 +364,119 @@ bool UTheManAnimationAssetLibrary::AssignAnimationSkeleton(UAnimationAsset* Anim
 	AnimationAsset->ValidateSkeleton();
 	AnimationAsset->MarkPackageDirty();
 	return AnimationAsset->GetSkeleton() == Skeleton;
+#else
+	return false;
+#endif
+}
+
+bool UTheManAnimationAssetLibrary::ConfigureFirstPersonUpperBodyCopy(
+	UAnimBlueprint* AnimBlueprint,
+	FName SourcePropertyName,
+	FName BlendBoneName)
+{
+#if WITH_EDITOR
+	if (!AnimBlueprint || SourcePropertyName.IsNone() || BlendBoneName.IsNone())
+	{
+		return false;
+	}
+
+	UEdGraph* AnimGraph = nullptr;
+	for (UEdGraph* Graph : AnimBlueprint->FunctionGraphs)
+	{
+		if (Graph && Graph->GetFName() == UEdGraphSchema_K2::GN_AnimGraph)
+		{
+			AnimGraph = Graph;
+			break;
+		}
+	}
+	if (!AnimGraph)
+	{
+		return false;
+	}
+
+	// Idempotence: an existing Copy Pose node means the composition was already authored.
+	for (UEdGraphNode* GraphNode : AnimGraph->Nodes)
+	{
+		if (Cast<UAnimGraphNode_CopyPoseFromMesh>(GraphNode))
+		{
+			return true;
+		}
+	}
+
+	UAnimGraphNode_Root* RootNode = nullptr;
+	for (UEdGraphNode* GraphNode : AnimGraph->Nodes)
+	{
+		if (UAnimGraphNode_Root* Candidate = Cast<UAnimGraphNode_Root>(GraphNode))
+		{
+			RootNode = Candidate;
+			break;
+		}
+	}
+	UEdGraphPin* RootResult = RootNode ? RootNode->FindPin(TEXT("Result")) : nullptr;
+	if (!RootResult || RootResult->LinkedTo.Num() != 1)
+	{
+		return false;
+	}
+	UEdGraphPin* ExistingBodyPose = RootResult->LinkedTo[0];
+
+	FGraphNodeCreator<UAnimGraphNode_CopyPoseFromMesh> CopyCreator(*AnimGraph);
+	UAnimGraphNode_CopyPoseFromMesh* CopyNode = CopyCreator.CreateNode();
+	CopyNode->Node.bUseAttachedParent = false;
+	CopyNode->Node.bCopyCurves = true;
+	CopyNode->Node.bCopyCustomAttributes = true;
+	CopyNode->Node.bUseMeshPose = false;
+	CopyNode->Node.RootBoneToCopy = BlendBoneName;
+	CopyNode->NodePosX = RootNode->NodePosX - 450;
+	CopyNode->NodePosY = RootNode->NodePosY + 250;
+	CopyCreator.Finalize();
+
+	FGraphNodeCreator<UK2Node_VariableGet> VariableCreator(*AnimGraph);
+	UK2Node_VariableGet* SourceVariable = VariableCreator.CreateNode();
+	SourceVariable->VariableReference.SetSelfMember(SourcePropertyName);
+	SourceVariable->NodePosX = CopyNode->NodePosX - 300;
+	SourceVariable->NodePosY = CopyNode->NodePosY + 100;
+	VariableCreator.Finalize();
+
+	FGraphNodeCreator<UAnimGraphNode_LayeredBoneBlend> BlendCreator(*AnimGraph);
+	UAnimGraphNode_LayeredBoneBlend* BlendNode = BlendCreator.CreateNode();
+	BlendNode->NodePosX = RootNode->NodePosX - 200;
+	BlendNode->NodePosY = RootNode->NodePosY;
+	BlendCreator.Finalize();
+	BlendNode->Node.LayerSetup.SetNum(1);
+	FBranchFilter& UpperBodyFilter = BlendNode->Node.LayerSetup[0].BranchFilters.AddDefaulted_GetRef();
+	UpperBodyFilter.BoneName = BlendBoneName;
+	UpperBodyFilter.BlendDepth = 0;
+	BlendNode->Node.bMeshSpaceRotationBlend = true;
+	BlendNode->Node.bMeshSpaceScaleBlend = true;
+
+	const UEdGraphSchema* Schema = AnimGraph->GetSchema();
+	UEdGraphPin* SourceValue = SourceVariable->GetValuePin();
+	UEdGraphPin* SourceMesh = CopyNode->FindPin(TEXT("SourceMeshComponent"));
+	UEdGraphPin* CopyPose = CopyNode->FindPin(TEXT("Pose"));
+	UEdGraphPin* BlendBase = BlendNode->FindPin(TEXT("BasePose"));
+	UEdGraphPin* BlendUpper = BlendNode->FindPin(TEXT("BlendPoses_0"));
+	UEdGraphPin* BlendWeight = BlendNode->FindPin(TEXT("BlendWeights_0"));
+	UEdGraphPin* BlendPose = BlendNode->FindPin(TEXT("Pose"));
+	if (!Schema || !SourceValue || !SourceMesh || !CopyPose || !BlendBase || !BlendUpper
+		|| !BlendWeight || !BlendPose)
+	{
+		return false;
+	}
+
+	RootResult->BreakAllPinLinks();
+	BlendWeight->DefaultValue = TEXT("1.0");
+	if (!Schema->TryCreateConnection(SourceValue, SourceMesh)
+		|| !Schema->TryCreateConnection(ExistingBodyPose, BlendBase)
+		|| !Schema->TryCreateConnection(CopyPose, BlendUpper)
+		|| !Schema->TryCreateConnection(BlendPose, RootResult))
+	{
+		return false;
+	}
+
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(AnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(AnimBlueprint);
+	AnimBlueprint->MarkPackageDirty();
+	return AnimBlueprint->Status != BS_Error;
 #else
 	return false;
 #endif
