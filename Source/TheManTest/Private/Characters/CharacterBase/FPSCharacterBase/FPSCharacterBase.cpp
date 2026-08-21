@@ -61,7 +61,7 @@ AFPSCharacterBase::AFPSCharacterBase()
 	PitchMin        = -75.0f;
 	PitchMax        = 40.0f;
 	// VFXPack FirstPersonCharacter.SK_ArmMesh exact relative rotation.
-	BaseArmsRotation = FRotator(-3.f, -15.f, -1.f);
+	BaseArmsRotation = FRotator(-3.f, -90.f, -1.f);
 
 	// FEAT-038 修正：身体不再物理俯仰。相机从 head 骨骼摘下挂 capsule 固定眼高，
 	// 看上下交给控制器旋转（相机 bUsePawnControlRotation）+ 后续 FEAT-039 上半身 AimOffset。
@@ -493,31 +493,53 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 	// Body_Sway：原蓝图同时使用移动轴和本帧鼠标轴，再以 Walk=2 / Sprint=8 插值。
 	if (ArmsViewMesh && ViewmodelRoot)
 	{
+		// Restore the original camera-relative viewmodel response from the native
+		// framing defaults. The Blueprint only supplies the mesh and AnimBP assets.
+		ViewmodelRoot->SetRelativeLocation(FVector::ZeroVector);
+		ViewmodelRoot->SetRelativeRotation(
+			ViewmodelOffsetRotation + FRotator(SprintViewmodelPitchDegrees * SprintTransitionAlpha, 0.f, 0.f));
+
+		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
+		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
+
 		// VFXPack FirstPerson_AnimBP 原 Event Blueprint Update Animation 的等价逻辑。
 		// 直接写原变量，保留其原 StateMachine / BlendSpace 资产，不另造动画状态机。
-		// Match FirstPersonCharacter.Body_Sway: drive the lean from the raw movement axes,
-		// not CharacterMovement velocity. This gives the full +/-1 target immediately while
-		// acceleration and braking are still ramping, then FInterpTo supplies the original ease.
-		// Source Body_Sway target is Clamp(MoveRight + MouseX, -1, 1).
-		const float SideInput = FMath::Clamp(CurrentVFXMoveInput.X + CurrentVFXLookInputX, -1.f, 1.f);
-		// Source forward target is Clamp(-MoveForward - 10 * LookUp, -1, 1).
-		const float ForwardSwayTarget = FMath::Clamp(
-			-CurrentVFXMoveInput.Y - 10.f * CurrentVFXLookInputY,
-			-1.f,
-			1.f);
+		// Raw movement input drives only the source AnimBP's Modify Bone chain.
+		// The input stays in [-1, 1]; the 2/8 below controls interpolation speed,
+		// independently of the authored output offsets applied later.
+		const float SideInput = FMath::Clamp(CurrentVFXMoveInput.X, -1.f, 1.f);
+		const float ForwardSwayTarget = FMath::Clamp(-CurrentVFXMoveInput.Y, -1.f, 1.f);
 		const float BodySwayInterpSpeed = bIsSprinting ? 8.f : 2.f;
 		CurrentVFXLeanSides = FMath::FInterpTo(CurrentVFXLeanSides, SideInput, DeltaTime, BodySwayInterpSpeed);
 		CurrentVFXLookUpDown = FMath::FInterpTo(CurrentVFXLookUpDown, ForwardSwayTarget, DeltaTime, BodySwayInterpSpeed);
 
-			auto UpdateVFXPackAnimInstance = [this, CharacterSpeed](UAnimInstance* AnimInstance)
+		// The source AnimBP authored its component-space spine correction with the
+		// arm component at Yaw -15 degrees. Our finalized animations keep root at
+		// identity and the arm component supplies Yaw -90 degrees instead. Rotate
+		// the authored Roll/Pitch vector through that 75-degree basis difference so
+		// the visible correction stays aligned with the source camera space.
+		constexpr float SourceToCurrentBasisDegrees = 75.f;
+		const float BasisRadians = FMath::DegreesToRadians(SourceToCurrentBasisDegrees);
+		const float BasisCos = FMath::Cos(BasisRadians);
+		const float BasisSin = FMath::Sin(BasisRadians);
+		// The source AnimBP EventGraph multiplies its interpolated [-1, 1] inputs
+		// by the authored Lean/Look offsets before the Modify Bone nodes evaluate.
+		constexpr float SourceLeanSidesOffset = 8.f;
+		constexpr float SourceLookUpOffset = 2.f;
+		const float SourceLeanRoll = CurrentVFXLeanSides * SourceLeanSidesOffset;
+		const float SourceLookPitch = CurrentVFXLookUpDown * SourceLookUpOffset;
+		const float RemappedLeanRoll = SourceLeanRoll * BasisCos - SourceLookPitch * BasisSin;
+		const float RemappedLookPitch = SourceLeanRoll * BasisSin + SourceLookPitch * BasisCos;
+
+		auto UpdateVFXPackAnimInstance = [this, CharacterSpeed, RemappedLeanRoll, RemappedLookPitch](UAnimInstance* AnimInstance)
 		{
 			if (UCharacterBaseAnimInstance* CharacterAnimInstance = Cast<UCharacterBaseAnimInstance>(AnimInstance))
 			{
 				CharacterAnimInstance->UpdateCharacterAnimationState(
 					static_cast<float>(CharacterSpeed),
 					GetCharacterMovement()->IsFalling(),
-					CurrentVFXLeanSides * 8.f,
-					CurrentVFXLookUpDown * 2.f);
+					RemappedLeanRoll,
+					RemappedLookPitch);
 			}
 			else
 			{
@@ -526,20 +548,17 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 				SetAnimBool(AnimInstance, TEXT("Is_Moving"), CharacterSpeed > 0.0);
 				SetAnimBool(AnimInstance, TEXT("Is_InAir"), GetCharacterMovement()->IsFalling());
 				SetAnimNumber(AnimInstance, TEXT("Character_Speed"), CharacterSpeed);
-				SetAnimNumber(AnimInstance, TEXT("Lean_Sides_Amount"), CurrentVFXLeanSides * 8.0);
-				SetAnimNumber(AnimInstance, TEXT("Look_Up_Amount"), CurrentVFXLookUpDown * 2.0);
+				SetAnimNumber(AnimInstance, TEXT("Lean_Sides_Amount"), RemappedLeanRoll);
+				SetAnimNumber(AnimInstance, TEXT("Look_Up_Amount"), RemappedLookPitch);
 			}
 		};
 
-		// 恢复项目原有的第一/第三人称同一动画源：两个 Mesh 使用同一个 VFXPack
-		// AnimBP 类并接收同一组驱动值；ShadowBodyMesh 继续 Leader=CharacterMesh0。
+		// The body and viewmodel run separate instances of the shared body AnimBP.
+		// Its final graph applies this sway after the ALI_WeaponAnim linked layers;
+		// ShadowBodyMesh and LegsMesh continue to follow CharacterMesh0.
 		UpdateVFXPackAnimInstance(ArmsViewMesh->GetAnimInstance());
 		UpdateVFXPackAnimInstance(GetMesh() ? GetMesh()->GetAnimInstance() : nullptr);
 
-		// Component transforms are authored exclusively in the character Blueprint.
-		// Tick must never move or rotate HeadCamera, ViewmodelRoot, ArmsViewMesh,
-		// BodyRoot, CharacterMesh0, or LegsMesh. This keeps the Blueprint component
-		// viewport and PIE on the same serialized transform values.
 		CurrentArmsPitch = 0.f;
 		// Mouse axis values in the source are frame deltas. Consume this frame's value
 		// so a stopped mouse cannot leave a persistent lean target.

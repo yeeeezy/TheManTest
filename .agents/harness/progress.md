@@ -1,5 +1,14 @@
 # 进度日志
 
+## 2026-08-21 session209 暂停交接：FPSShooter1 第一人称架构调查
+
+- 对 `D:\Unreal Projects\FPSShooter1` 做了只读导出调查，没有保存或修改外部工程；临时调查脚本与导出文件已清理。
+- 原工程全身 `CharacterMesh0` 使用 `ABP_Unarmed` 运行完整 locomotion；第一人称 `ABP_FP_Copy` 不运行 locomotion 状态机，而是 `Copy Pose From Mesh（Use Attached Parent） -> CtrlRig_FPWarp -> Output`。
+- 原工程武器 `ABP_FP_Weapon` 同样从最终第一人称 Mesh Copy Pose，再接第一人称 Control Rig/Aim 与 Montage Slot。
+- 当前 TheManTest 的问题根因已经收敛：让 `ArmsViewMesh` 直接运行完整 `ABP_CharacterBase_Body`，会把 root/pelvis/下半身 locomotion 位移直接带进可见手臂；末端的 `spine_03/hand_l` Modify Bone 只能补旋转，无法消除该平移。
+- 下一步建议（尚未实施）：`CharacterMesh0` 保留完整 Body AnimBP 和现有动画接口；为 `ArmsViewMesh` 建轻量 FP Copy AnimBP，复制 `CharacterMesh0` 的最终 Pose 后增加专用第一人称 Warp/校正，再叠加现有 Lean/Look；RepairGun 跟随最终 Arms Pose 或继续通过现有接口层连接。
+- 暂停点：本次只记录调查结论，没有继续修改动画资产或架构。恢复工作时先基于上述 Copy Pose + FP Warp 方案设计最小改动并做 PIE A/D/W/Shift 对照验证。
+
 ## 当前状态
 
 **最后更新：** 2026-08-21-session207
@@ -171,3 +180,13 @@
 - 最终采用 `ViewmodelOffsetLocation=(0,41,-155)`、`ViewmodelOffsetRotation=(0,-13,0)`；实测枪口约 `(57.9%,57.2%)`，RepairGun 主体按参考尺度延伸并裁出右下边界。
 - 确定性截图为 `Saved/Screenshots/PlayerFramingCurrent.png`；普通 PIE 截图 `TMT_CorrectVFXReference_Idle.png` 因当前内嵌面板为 1567×428 超宽比例，仅用于可见性检查，不参与 16:9 构图验收。
 - 自动化断言已同步；Live Coding、FramingCapture、Development Editor / Win64 冷构建均成功。重启后 BP_MaintenanceWorker 资产验证与最终 Transform 冷回读通过。
+## 2026-08-21 session208
+
+- MaintenanceWorker 第一人称视图模型恢复 C++ 驱动：`BaseArmsRotation=(-3,-90,-1)`，奔跑以 0.2 秒过渡将 `ViewmodelRoot` Pitch 压至 -6°。
+- 按用户最新要求暂不加入 WASD 位置滞后；相关运行逻辑、可调参数和缓存状态均已移除，`ArmsViewMesh` 保持 C++ 静态构图位置。
+- 直接冷读原 VFXPack `FirstPerson_AnimBP` CDO 与图表确认两组数值职责不同：Walk/Sprint 的 `2/8` 是输入插值速度，而 `Lean_Sides_Offset=8`、`Look_Up_Offset=2` 是 Modify Bone 前的正式输出倍率。现恢复原版倍率，并把源组件 Yaw `-15°` 到当前 `-90°` 的 75° 基差映射到 Roll/Pitch；不叠加组件位移或侧移 Roll。
+- 纠正本 session 对“统一架构”的错误理解：不能让 `CharacterMesh0` 直接运行纯第一人称 `ABP_VFXPack_FirstPerson`，否则完整身体的 Idle/Run/Jump 状态机消失。已从 Git 基线原样恢复误删的 `ABP_CharacterBase_Body`、`TABP_BodyLocomotion`、`BS_RunWalk_MaintenanceWorker` 与身体 Idle/Jump 序列；`CharacterMesh0`、`ArmsViewMesh` 均恢复运行 `ABP_CharacterBase_Body_C`，并各自通过现有 `ALI_WeaponAnim` 链接 `ABP_RepairGun_AnimLayer_C`，`LegsMesh` Leader 跟随身体。原 VFXPack 的 `spine_03` 组件空间 Additive Roll/Pitch 与 `hand_l` 半倍率 Roll 已接到 Body 主 AnimGraph 最终输出端（武器接口层之后）。PIE W/A/D 实测速度550，两个主实例与 Linked Layer 均同步；A/D 的 Lean/Look 分别为约 `-2.07/-7.73` 与 `+1.97/+7.35`，确认旋转方向翻转且主图实际收到驱动。
+- 直接只读导出用户指定的原版 VFXPack 工程后确认：原 SK_ArmMesh Yaw=-15°，当前以动画 root=0° + ArmsViewMesh Yaw=-90°承担最终方向。为保持当前静态朝向且复现原版 Component Space 骨骼动态，C++ 将 Lean Roll / Look Pitch 按 75°坐标基差换轴后写入 AnimBP；组件位置保持不变。
+- PIE 截图与运行时探针最终定位明显横移根因：`ArmsViewMesh` 被 BP 错绑为全身 `ABP_CharacterBase_Body_C`，A/D 时播放身体 Locomotion 导致整套手臂/枪明显换位。现恢复为原版第一人称 `ABP_VFXPack_FirstPerson_C`；复测 A 输入时 HeadCamera/ViewmodelRoot/ArmsViewMesh Transform 全部稳定，运行 AnimClass 与 Lean/Look 输入正确。证据截图：`TMT_Viewmodel_Idle_Audit.png`、`TMT_Viewmodel_Left_Audit.png`（修复前）及 `TMT_Viewmodel_Idle_Fixed.png`、`TMT_Viewmodel_Left_Fixed.png`（修复后）。
+- `BP_MaintenanceWorker` 的 framing、sprint 参数以及 HeadCamera/ViewmodelRoot/ArmsViewMesh Transform 已执行 Reset to Default，蓝图继续只保留 Mesh/AnimBP 等资产配置。
+- `TheManTestEditor Win64 Development` 完整构建成功；MaintenanceWorker 蓝图编译保存成功，冷回读 Transform 与 C++ 默认值一致。待用户前台 PIE 主观确认移动幅度和奔跑压枪观感。

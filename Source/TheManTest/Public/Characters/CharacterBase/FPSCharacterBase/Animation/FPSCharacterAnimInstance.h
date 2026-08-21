@@ -30,6 +30,15 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Locomotion")
 	bool bHasAcceleration = false;
 
+	// Camera-relative first-person sway is authored once at the end of the shared
+	// body graph, after the weapon linked layers. Both CharacterMesh0 and
+	// ArmsViewMesh therefore receive the same final skeletal correction.
+	UPROPERTY(BlueprintReadOnly, Category = "Viewmodel Sway")
+	double Lean_Sides_Amount = 0.0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Viewmodel Sway")
+	double Look_Up_Amount = 0.0;
+
 	// AnimGraph 在输出端用它从命名 Pose Snapshot 混合到当前实时姿势。
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon Transition")
 	float WeaponTransitionAlpha = 1.f;
