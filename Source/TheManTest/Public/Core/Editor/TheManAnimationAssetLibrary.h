@@ -38,6 +38,16 @@ public:
 		FName SourcePropertyName,
 		FName BlendBoneName);
 
+	/** Move the existing first-person locomotion graph into a firearm interface template,
+	 * then replace the host state-machine output with a linked layer call. */
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Animation")
+	static bool ConfigureFirstPersonFirearmLinkedLayer(
+		UAnimBlueprint* HostAnimBlueprint,
+		UAnimBlueprint* FirearmTemplateAnimBlueprint,
+		UAnimBlueprint* ConcreteFirearmAnimBlueprint,
+		UAnimBlueprint* AnimLayerInterface,
+		FName LayerName);
+
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Animation")
 	static bool AddAnimationAssetOverride(
 		UAnimBlueprint* AnimBlueprint,

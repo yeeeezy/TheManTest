@@ -12,10 +12,10 @@ void UFirearmAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	USkeletalMeshComponent* Mesh = GetOwningComponent();
 	if (!Mesh) return;
 
-	APawn* PawnOwner = Cast<APawn>(GetOwningActor());
-	if (!PawnOwner) return;
+	APawn* OwningPawn = Cast<APawn>(GetOwningActor());
+	if (!OwningPawn) return;
 
-	AController* Controller = PawnOwner->GetController();
+	AController* Controller = OwningPawn->GetController();
 	if (!Controller) return;
 
 	FVector ViewLocation;
@@ -26,7 +26,7 @@ void UFirearmAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(PawnOwner);
+	Params.AddIgnoredActor(OwningPawn);
 
 	const bool bHit = GetWorld()->LineTraceSingleByChannel(
 		HitResult,

@@ -3,11 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Weapons/_Shared/Animation/EquipmentAnimInstance.h"
+#include "Characters/CharacterBase/Animation/CharacterBaseAnimInstance.h"
 #include "FirearmAnimInstance.generated.h"
 
 UCLASS()
-class THEMANTEST_API UFirearmAnimInstance : public UEquipmentAnimInstance
+class THEMANTEST_API UFirearmAnimInstance : public UCharacterBaseAnimInstance
 {
 	GENERATED_BODY()
 

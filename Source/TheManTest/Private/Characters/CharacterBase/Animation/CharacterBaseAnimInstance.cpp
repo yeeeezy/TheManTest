@@ -1,5 +1,13 @@
 #include "Characters/CharacterBase/Animation/CharacterBaseAnimInstance.h"
 
+void UCharacterBaseAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
+{
+	Super::NativeUpdateAnimation(DeltaSeconds);
+	Character_Speed = Speed;
+	Is_Moving = Speed > 0.0f;
+	Is_InAir = bIsFalling;
+}
+
 void UCharacterBaseAnimInstance::UpdateCharacterAnimationState(
 	const double InCharacterSpeed,
 	const bool bInAir,

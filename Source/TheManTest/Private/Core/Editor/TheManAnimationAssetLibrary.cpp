@@ -3,6 +3,8 @@
 #include "Animation/Skeleton.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Characters/CharacterBase/Animation/CharacterBaseAnimInstance.h"
+#include "Weapons/_Shared/Firearms/FirearmAnimInstance.h"
 
 #if WITH_EDITOR
 #include "Animation/AnimBlueprint.h"
@@ -13,9 +15,13 @@
 #include "Animation/AnimNode_SequencePlayer.h"
 #include "AnimGraphNode_ControlRig.h"
 #include "AnimGraphNode_CopyPoseFromMesh.h"
+#include "AnimGraphNode_BlendListByBool.h"
 #include "AnimGraphNode_LayeredBoneBlend.h"
+#include "AnimGraphNode_LinkedAnimLayer.h"
+#include "AnimGraphNode_LinkedInputPose.h"
 #include "AnimGraphNode_Root.h"
 #include "AnimGraphNode_SequencePlayer.h"
+#include "AnimGraphNode_StateMachine.h"
 #include "AnimationGraph.h"
 #include "AnimationGraphSchema.h"
 #include "AnimationBlueprintLibrary.h"
@@ -24,7 +30,11 @@
 #include "Factories/AnimBlueprintFactory.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "K2Node_VariableGet.h"
+#include "K2Node_VariableSet.h"
+#include "K2Node_CallFunction.h"
 #include "Kismet2/KismetEditorUtilities.h"
+#include "EdGraphUtilities.h"
+#include "KismetCompiler.h"
 #include "BlueprintEditor.h"
 #include "BlueprintEditorTabs.h"
 #include "Subsystems/AssetEditorSubsystem.h"
@@ -33,6 +43,457 @@
 #include "EditorViewportClient.h"
 #include "EngineUtils.h"
 #endif
+
+bool UTheManAnimationAssetLibrary::ConfigureFirstPersonFirearmLinkedLayer(
+	UAnimBlueprint* HostAnimBlueprint,
+	UAnimBlueprint* FirearmTemplateAnimBlueprint,
+	UAnimBlueprint* ConcreteFirearmAnimBlueprint,
+	UAnimBlueprint* AnimLayerInterface,
+	FName LayerName)
+{
+#if WITH_EDITOR
+	if (!HostAnimBlueprint || !FirearmTemplateAnimBlueprint || !ConcreteFirearmAnimBlueprint || !AnimLayerInterface || LayerName.IsNone()
+		|| !AnimLayerInterface->GeneratedClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("FP linked setup: invalid inputs host=%d template=%d interface=%d generated=%d layer=%s"), HostAnimBlueprint != nullptr, FirearmTemplateAnimBlueprint != nullptr, AnimLayerInterface != nullptr, AnimLayerInterface && AnimLayerInterface->GeneratedClass != nullptr, *LayerName.ToString());
+		return false;
+	}
+
+	auto FindGraph = [](UAnimBlueprint* Blueprint, FName GraphName) -> UEdGraph*
+	{
+		TArray<UEdGraph*> AllGraphs;
+		Blueprint->GetAllGraphs(AllGraphs);
+		for (UEdGraph* Graph : AllGraphs)
+		{
+			if (Graph && Graph->GetFName() == GraphName)
+			{
+				return Graph;
+			}
+		}
+		return nullptr;
+	};
+
+	UEdGraph* HostGraph = FindGraph(HostAnimBlueprint, UEdGraphSchema_K2::GN_AnimGraph);
+	UEdGraph* TemplateLayerGraph = FindGraph(FirearmTemplateAnimBlueprint, LayerName);
+	if (!HostGraph)
+	{
+		UE_LOG(LogTemp, Error, TEXT("FP linked setup: missing host AnimGraph"));
+		return false;
+	}
+
+	UClass* InterfaceClass = AnimLayerInterface->GeneratedClass;
+	// The existing firearm template already owns the shared weapon locomotion and
+	// implements ALI_WeaponAnim. Convert only the first-person host into a thin
+	// router and keep its authored post-layer sway chain intact.
+	if (TemplateLayerGraph)
+	{
+		HostAnimBlueprint->ParentClass = UCharacterBaseAnimInstance::StaticClass();
+		FirearmTemplateAnimBlueprint->ParentClass = UFirearmAnimInstance::StaticClass();
+		const TSet<FName> DriverNames = {
+			TEXT("Is_Moving"), TEXT("Is_InAir"), TEXT("Character_Speed"),
+			TEXT("Lean_Sides_Amount"), TEXT("Look_Up_Amount") };
+		HostAnimBlueprint->NewVariables.RemoveAll([&DriverNames](const FBPVariableDescription& Variable)
+		{
+			return DriverNames.Contains(Variable.VarName);
+		});
+		for (UEdGraph* EventGraph : HostAnimBlueprint->UbergraphPages)
+		{
+			for (int32 Index = EventGraph->Nodes.Num() - 1; Index >= 0; --Index)
+			{
+				EventGraph->Nodes[Index]->DestroyNode();
+			}
+		}
+		if (!FBlueprintEditorUtils::ImplementsInterface(HostAnimBlueprint, true, InterfaceClass)
+			&& !FBlueprintEditorUtils::ImplementNewInterface(HostAnimBlueprint, InterfaceClass->GetClassPathName()))
+		{
+			return false;
+		}
+
+		UAnimGraphNode_StateMachine* StateMachine = nullptr;
+		for (UEdGraphNode* Node : HostGraph->Nodes)
+		{
+			if (UAnimGraphNode_StateMachine* Candidate = Cast<UAnimGraphNode_StateMachine>(Node))
+			{
+				StateMachine = Candidate;
+				break;
+			}
+		}
+		UEdGraphPin* StatePose = StateMachine ? StateMachine->FindPin(TEXT("Pose")) : nullptr;
+		if (!StatePose)
+		{
+			UE_LOG(LogTemp, Error, TEXT("FP linked jump fallback: state machine pose missing"));
+			return false;
+		}
+		for (UEdGraphNode* Node : HostGraph->Nodes)
+		{
+			if (Cast<UAnimGraphNode_BlendListByBool>(Node))
+			{
+				return true;
+			}
+		}
+		UAnimGraphNode_LinkedAnimLayer* LayerNode = nullptr;
+		for (UEdGraphNode* Node : HostGraph->Nodes)
+		{
+			if (UAnimGraphNode_LinkedAnimLayer* Candidate = Cast<UAnimGraphNode_LinkedAnimLayer>(Node))
+			{
+				if (Candidate->Node.Layer == LayerName)
+				{
+					LayerNode = Candidate;
+					break;
+				}
+			}
+		}
+		if (!LayerNode)
+		{
+			FGraphNodeCreator<UAnimGraphNode_LinkedAnimLayer> Creator(*HostGraph);
+			LayerNode = Creator.CreateNode();
+			LayerNode->Node.Interface = InterfaceClass;
+			LayerNode->Node.Layer = LayerName;
+			FGuid LayerGuid;
+			FBlueprintEditorUtils::GetFunctionGuidFromClassByFieldName(
+				FBlueprintEditorUtils::GetMostUpToDateClass(InterfaceClass), LayerName, LayerGuid);
+			if (FStructProperty* RefProperty = FindFProperty<FStructProperty>(LayerNode->GetClass(), TEXT("FunctionReference")))
+			{
+				RefProperty->ContainerPtrToValuePtr<FMemberReference>(LayerNode)->SetExternalMember(
+					LayerName, InterfaceClass, LayerGuid);
+			}
+			LayerNode->NodePosX = StateMachine->NodePosX;
+			LayerNode->NodePosY = StateMachine->NodePosY;
+			Creator.Finalize();
+			LayerNode->ReconstructNode();
+		}
+		UEdGraphPin* LayerPose = LayerNode->FindPin(TEXT("Pose"));
+		if (!LayerPose)
+		{
+			UE_LOG(LogTemp, Error, TEXT("FP linked jump fallback: layer pose missing"));
+			return false;
+		}
+		TArray<UEdGraphPin*> Consumers = StatePose->LinkedTo;
+		if (Consumers.IsEmpty())
+		{
+			UE_LOG(LogTemp, Error, TEXT("FP linked jump fallback: no downstream consumers"));
+			Consumers = LayerPose->LinkedTo;
+		}
+		if (Consumers.IsEmpty())
+		{
+			return false;
+		}
+		StatePose->BreakAllPinLinks();
+		LayerPose->BreakAllPinLinks();
+
+		FGraphNodeCreator<UAnimGraphNode_BlendListByBool> BlendCreator(*HostGraph);
+		UAnimGraphNode_BlendListByBool* AirBlend = BlendCreator.CreateNode();
+		AirBlend->NodePosX = LayerNode->NodePosX + 220;
+		AirBlend->NodePosY = LayerNode->NodePosY;
+		BlendCreator.Finalize();
+		FGraphNodeCreator<UK2Node_VariableGet> FallingCreator(*HostGraph);
+		UK2Node_VariableGet* FallingVariable = FallingCreator.CreateNode();
+		FallingVariable->VariableReference.SetSelfMember(TEXT("bIsFalling"));
+		FallingVariable->NodePosX = AirBlend->NodePosX - 220;
+		FallingVariable->NodePosY = AirBlend->NodePosY + 220;
+		FallingCreator.Finalize();
+		UEdGraphPin* GroundPose = AirBlend->FindPin(TEXT("BlendPose_0"));
+		UEdGraphPin* AirPose = AirBlend->FindPin(TEXT("BlendPose_1"));
+		UEdGraphPin* ActiveValue = AirBlend->FindPin(TEXT("bActiveValue"));
+		UEdGraphPin* BlendedPose = AirBlend->FindPin(TEXT("Pose"));
+		if (!GroundPose || !AirPose || !ActiveValue || !BlendedPose
+			|| !HostGraph->GetSchema()->TryCreateConnection(LayerPose, GroundPose)
+			|| !HostGraph->GetSchema()->TryCreateConnection(StatePose, AirPose)
+			|| !HostGraph->GetSchema()->TryCreateConnection(FallingVariable->GetValuePin(), ActiveValue))
+		{
+			UE_LOG(LogTemp, Error, TEXT("FP linked jump fallback: blend pins/connections failed ground=%d air=%d active=%d output=%d"), GroundPose != nullptr, AirPose != nullptr, ActiveValue != nullptr, BlendedPose != nullptr);
+			return false;
+		}
+		for (UEdGraphPin* Consumer : Consumers)
+		{
+			if (!HostGraph->GetSchema()->TryCreateConnection(BlendedPose, Consumer))
+			{
+				UE_LOG(LogTemp, Error, TEXT("FP linked jump fallback: downstream connection failed"));
+				return false;
+			}
+		}
+
+		FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(FirearmTemplateAnimBlueprint);
+		FKismetEditorUtilities::CompileBlueprint(FirearmTemplateAnimBlueprint);
+		ConcreteFirearmAnimBlueprint->ParentClass = FirearmTemplateAnimBlueprint->GeneratedClass;
+		FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(ConcreteFirearmAnimBlueprint);
+		FKismetEditorUtilities::CompileBlueprint(ConcreteFirearmAnimBlueprint);
+		FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(HostAnimBlueprint);
+		FKismetEditorUtilities::CompileBlueprint(HostAnimBlueprint);
+		HostAnimBlueprint->MarkPackageDirty();
+		FirearmTemplateAnimBlueprint->MarkPackageDirty();
+		ConcreteFirearmAnimBlueprint->MarkPackageDirty();
+		return HostAnimBlueprint->Status != BS_Error
+			&& FirearmTemplateAnimBlueprint->Status != BS_Error
+			&& ConcreteFirearmAnimBlueprint->Status != BS_Error;
+	}
+	HostAnimBlueprint->ParentClass = UCharacterBaseAnimInstance::StaticClass();
+	FirearmTemplateAnimBlueprint->ParentClass = UFirearmAnimInstance::StaticClass();
+	if (!FBlueprintEditorUtils::ImplementsInterface(FirearmTemplateAnimBlueprint, true, InterfaceClass))
+	{
+		if (!FBlueprintEditorUtils::ImplementNewInterface(
+			FirearmTemplateAnimBlueprint, InterfaceClass->GetClassPathName()))
+		{
+			UE_LOG(LogTemp, Error, TEXT("FP linked setup: firearm template cannot implement interface"));
+			return false;
+		}
+	}
+	TemplateLayerGraph = FindGraph(FirearmTemplateAnimBlueprint, LayerName);
+	if (!TemplateLayerGraph)
+	{
+		UE_LOG(LogTemp, Error, TEXT("FP linked setup: new firearm template layer is missing"));
+		return false;
+	}
+
+	const TSet<FName> NativeDriverNames = {
+		TEXT("Is_Moving"), TEXT("Is_InAir"), TEXT("Character_Speed"),
+		TEXT("Lean_Sides_Amount"), TEXT("Look_Up_Amount") };
+	HostAnimBlueprint->NewVariables.RemoveAll([&NativeDriverNames](const FBPVariableDescription& Variable)
+	{
+		return NativeDriverNames.Contains(Variable.VarName);
+	});
+	for (const FBPVariableDescription& Variable : HostAnimBlueprint->NewVariables)
+	{
+		if (NativeDriverNames.Contains(Variable.VarName)
+			|| FirearmTemplateAnimBlueprint->NewVariables.ContainsByPredicate(
+				[&Variable](const FBPVariableDescription& Existing) { return Existing.VarName == Variable.VarName; }))
+		{
+			continue;
+		}
+		FirearmTemplateAnimBlueprint->NewVariables.Add(Variable);
+	}
+	// The imported vendor EventGraph only writes locomotion variables. The native
+	// UCharacterBaseAnimInstance/UFirearmAnimInstance hierarchy is now the sole driver.
+	for (UEdGraph* EventGraph : FirearmTemplateAnimBlueprint->UbergraphPages)
+	{
+		for (int32 Index = EventGraph->Nodes.Num() - 1; Index >= 0; --Index)
+		{
+			EventGraph->Nodes[Index]->DestroyNode();
+		}
+	}
+
+	// Preserve the interface graph terminators, but replace its old implementation.
+	UAnimGraphNode_Root* TemplateRoot = nullptr;
+	for (UEdGraphNode* Node : TemplateLayerGraph->Nodes)
+	{
+		if (UAnimGraphNode_Root* Root = Cast<UAnimGraphNode_Root>(Node))
+		{
+			TemplateRoot = Root;
+		}
+	}
+	if (!TemplateRoot)
+	{
+		UE_LOG(LogTemp, Error, TEXT("FP linked setup: template layer has no root"));
+		return false;
+	}
+	for (int32 Index = TemplateLayerGraph->Nodes.Num() - 1; Index >= 0; --Index)
+	{
+		UEdGraphNode* Node = TemplateLayerGraph->Nodes[Index];
+		if (Node != TemplateRoot && !Node->IsA<UAnimGraphNode_LinkedInputPose>())
+		{
+			Node->DestroyNode();
+		}
+	}
+
+	FCompilerResultsLog CloneLog;
+	TArray<UEdGraphNode*> ClonedNodes;
+	FEdGraphUtilities::CloneAndMergeGraphIn(
+		TemplateLayerGraph, HostGraph, CloneLog, true, false, &ClonedNodes);
+	TArray<UEdGraph*> TemplateGraphsAfterClone;
+	FirearmTemplateAnimBlueprint->GetAllGraphs(TemplateGraphsAfterClone);
+	TArray<UEdGraphNode*> NodesToRepair;
+	for (UEdGraph* Graph : TemplateGraphsAfterClone)
+	{
+		NodesToRepair.Append(Graph->Nodes);
+	}
+	for (UEdGraphNode* Node : NodesToRepair)
+	{
+		for (UEdGraphPin* Pin : Node->Pins)
+		{
+			if (UClass* PinClass = Cast<UClass>(Pin->PinType.PinSubCategoryObject.Get()))
+			{
+				if (PinClass->ClassGeneratedBy == HostAnimBlueprint)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("FP linked repair: node=%s class=%s pin=%s host-typed=%s"), *Node->GetNodeTitle(ENodeTitleType::FullTitle).ToString(), *Node->GetClass()->GetName(), *Pin->GetName(), *PinClass->GetName());
+					Pin->PinType.PinSubCategoryObject = FirearmTemplateAnimBlueprint->SkeletonGeneratedClass;
+				}
+			}
+		}
+		if (UK2Node_VariableGet* VariableGet = Cast<UK2Node_VariableGet>(Node))
+		{
+			UClass* MemberParent = VariableGet->VariableReference.GetMemberParentClass();
+			if (MemberParent && (MemberParent == HostAnimBlueprint->GeneratedClass
+				|| MemberParent == HostAnimBlueprint->SkeletonGeneratedClass
+				|| MemberParent->ClassGeneratedBy == HostAnimBlueprint))
+			{
+				VariableGet->VariableReference.SetSelfMember(VariableGet->VariableReference.GetMemberName());
+				VariableGet->ReconstructNode();
+			}
+		}
+		else if (UK2Node_VariableSet* VariableSet = Cast<UK2Node_VariableSet>(Node))
+		{
+			UClass* MemberParent = VariableSet->VariableReference.GetMemberParentClass();
+			if (MemberParent && (MemberParent == HostAnimBlueprint->GeneratedClass
+				|| MemberParent == HostAnimBlueprint->SkeletonGeneratedClass
+				|| MemberParent->ClassGeneratedBy == HostAnimBlueprint))
+			{
+				VariableSet->VariableReference.SetSelfMember(VariableSet->VariableReference.GetMemberName());
+				VariableSet->ReconstructNode();
+			}
+		}
+		else if (UK2Node_CallFunction* CallFunction = Cast<UK2Node_CallFunction>(Node))
+		{
+			UClass* MemberParent = CallFunction->FunctionReference.GetMemberParentClass();
+			if (MemberParent && (MemberParent == HostAnimBlueprint->GeneratedClass
+				|| MemberParent == HostAnimBlueprint->SkeletonGeneratedClass
+				|| MemberParent->ClassGeneratedBy == HostAnimBlueprint))
+			{
+				CallFunction->FunctionReference.SetSelfMember(CallFunction->FunctionReference.GetMemberName());
+				CallFunction->ReconstructNode();
+			}
+		}
+		for (UEdGraphPin* Pin : Node->Pins)
+		{
+			if (UClass* PinClass = Cast<UClass>(Pin->PinType.PinSubCategoryObject.Get()))
+			{
+				if (PinClass->ClassGeneratedBy == HostAnimBlueprint)
+				{
+					Pin->PinType.PinSubCategoryObject = FirearmTemplateAnimBlueprint->SkeletonGeneratedClass;
+				}
+			}
+		}
+	}
+
+	UAnimGraphNode_Root* ClonedRoot = nullptr;
+	UAnimGraphNode_StateMachine* ClonedStateMachine = nullptr;
+	for (UEdGraphNode* Node : ClonedNodes)
+	{
+		if (UAnimGraphNode_Root* Root = Cast<UAnimGraphNode_Root>(Node))
+		{
+			ClonedRoot = Root;
+		}
+		if (UAnimGraphNode_StateMachine* StateMachine = Cast<UAnimGraphNode_StateMachine>(Node))
+		{
+			ClonedStateMachine = StateMachine;
+		}
+	}
+	UEdGraphPin* ClonedResult = ClonedRoot ? ClonedRoot->FindPin(TEXT("Result")) : nullptr;
+	UEdGraphPin* TemplateResult = TemplateRoot->FindPin(TEXT("Result"));
+	UEdGraphPin* ClonedFinalPose = ClonedStateMachine ? ClonedStateMachine->FindPin(TEXT("Pose")) : nullptr;
+	if (!ClonedResult || !ClonedFinalPose || !TemplateResult)
+	{
+		UE_LOG(LogTemp, Error, TEXT("FP linked setup: cloned final pose invalid, root=%d links=%d template=%d"), ClonedResult != nullptr, ClonedResult ? ClonedResult->LinkedTo.Num() : -1, TemplateResult != nullptr);
+		return false;
+	}
+	ClonedResult->BreakAllPinLinks();
+	TemplateResult->BreakAllPinLinks();
+	if (!TemplateLayerGraph->GetSchema()->TryCreateConnection(ClonedFinalPose, TemplateResult))
+	{
+		UE_LOG(LogTemp, Error, TEXT("FP linked setup: cannot connect cloned pose to template root"));
+		return false;
+	}
+	ClonedRoot->DestroyNode();
+	for (int32 Index = TemplateLayerGraph->Nodes.Num() - 1; Index >= 0; --Index)
+	{
+		UEdGraphNode* Node = TemplateLayerGraph->Nodes[Index];
+		if (Node != TemplateRoot && Node != ClonedStateMachine && !Node->IsA<UAnimGraphNode_LinkedInputPose>())
+		{
+			Node->DestroyNode();
+		}
+	}
+	if (UEdGraph* TemplateMainGraph = FindGraph(FirearmTemplateAnimBlueprint, UEdGraphSchema_K2::GN_AnimGraph))
+	{
+		for (int32 Index = TemplateMainGraph->Nodes.Num() - 1; Index >= 0; --Index)
+		{
+			if (!TemplateMainGraph->Nodes[Index]->IsA<UAnimGraphNode_Root>())
+			{
+				TemplateMainGraph->Nodes[Index]->DestroyNode();
+			}
+		}
+	}
+
+	if (!FBlueprintEditorUtils::ImplementsInterface(HostAnimBlueprint, true, InterfaceClass))
+	{
+		if (!FBlueprintEditorUtils::ImplementNewInterface(
+			HostAnimBlueprint, InterfaceClass->GetClassPathName()))
+		{
+			UE_LOG(LogTemp, Error, TEXT("FP linked setup: host cannot implement interface"));
+			return false;
+		}
+	}
+
+	UAnimGraphNode_StateMachine* HostStateMachine = nullptr;
+	for (UEdGraphNode* Node : HostGraph->Nodes)
+	{
+		if (UAnimGraphNode_StateMachine* StateMachine = Cast<UAnimGraphNode_StateMachine>(Node))
+		{
+			HostStateMachine = StateMachine;
+			break;
+		}
+	}
+	UEdGraphPin* StateMachinePose = HostStateMachine ? HostStateMachine->FindPin(TEXT("Pose")) : nullptr;
+	if (!StateMachinePose || StateMachinePose->LinkedTo.IsEmpty())
+	{
+		UE_LOG(LogTemp, Error, TEXT("FP linked setup: host state machine output missing or unused"));
+		return false;
+	}
+	TArray<UEdGraphPin*> ExistingConsumers = StateMachinePose->LinkedTo;
+	StateMachinePose->BreakAllPinLinks();
+
+	FGraphNodeCreator<UAnimGraphNode_LinkedAnimLayer> LayerCreator(*HostGraph);
+	UAnimGraphNode_LinkedAnimLayer* LayerNode = LayerCreator.CreateNode();
+	LayerNode->Node.Interface = InterfaceClass;
+	LayerNode->Node.Layer = LayerName;
+	FGuid FunctionGuid;
+	FBlueprintEditorUtils::GetFunctionGuidFromClassByFieldName(
+		FBlueprintEditorUtils::GetMostUpToDateClass(InterfaceClass), LayerName, FunctionGuid);
+	if (FStructProperty* FunctionReferenceProperty = FindFProperty<FStructProperty>(
+		LayerNode->GetClass(), TEXT("FunctionReference")))
+	{
+		FMemberReference* FunctionReference = FunctionReferenceProperty->ContainerPtrToValuePtr<FMemberReference>(LayerNode);
+		FunctionReference->SetExternalMember(LayerName, InterfaceClass, FunctionGuid);
+	}
+	LayerNode->NodePosX = HostStateMachine->NodePosX;
+	LayerNode->NodePosY = HostStateMachine->NodePosY;
+	LayerCreator.Finalize();
+	LayerNode->ReconstructNode();
+	UEdGraphPin* LayerPose = LayerNode->FindPin(TEXT("Pose"));
+	if (!LayerPose)
+	{
+		UE_LOG(LogTemp, Error, TEXT("FP linked setup: linked layer has no Pose pin"));
+		return false;
+	}
+	for (UEdGraphPin* Consumer : ExistingConsumers)
+	{
+		if (!HostGraph->GetSchema()->TryCreateConnection(LayerPose, Consumer))
+		{
+			UE_LOG(LogTemp, Error, TEXT("FP linked setup: cannot connect linked layer to old consumer"));
+			return false;
+		}
+	}
+
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(FirearmTemplateAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(FirearmTemplateAnimBlueprint);
+	ConcreteFirearmAnimBlueprint->ParentClass = FirearmTemplateAnimBlueprint->GeneratedClass;
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(ConcreteFirearmAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(ConcreteFirearmAnimBlueprint);
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(HostAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(HostAnimBlueprint);
+	HostAnimBlueprint->MarkPackageDirty();
+	FirearmTemplateAnimBlueprint->MarkPackageDirty();
+	ConcreteFirearmAnimBlueprint->MarkPackageDirty();
+	const bool bSucceeded = HostAnimBlueprint->Status != BS_Error
+		&& FirearmTemplateAnimBlueprint->Status != BS_Error
+		&& ConcreteFirearmAnimBlueprint->Status != BS_Error;
+	if (!bSucceeded)
+	{
+		UE_LOG(LogTemp, Error, TEXT("FP linked setup: compile failed host=%d template=%d"), static_cast<int32>(HostAnimBlueprint->Status), static_cast<int32>(FirearmTemplateAnimBlueprint->Status));
+	}
+	return bSucceeded;
+#else
+	return false;
+#endif
+}
 
 bool UTheManAnimationAssetLibrary::AddAnimationAssetOverride(
 	UAnimBlueprint* AnimBlueprint,

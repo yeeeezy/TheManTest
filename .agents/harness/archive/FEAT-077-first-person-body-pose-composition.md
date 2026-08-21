@@ -46,3 +46,11 @@
 - 身体正式运行类从技术性的 `Animations/Skeleton` 迁至功能目录：`Animations/Body/Logic/ABP_CharacterBase_Body`。
 - 第一人称类保留于 `Animations/FirstPerson/Logic/`；无骨架身体模板继续位于共享 `Animations/Logic/`。
 - 迁移通过 Unreal AssetTools 完成并修复引用；旧 `Animations/Skeleton` Asset Registry 为 0 且磁盘目录已删除。
+
+## 2026-08-21 session211 — Linked Anim Layer 模板化与目录归属
+
+- 第一人称常驻宿主改为 `ABP_MaintenanceWorker_FirstPerson`（`UCharacterBaseAnimInstance`），地面持枪 Pose 从 `ALI_WeaponAnim.WeaponUpperBody` 获取；当前枪械模板尚无 Jump 状态，因此 `bIsFalling` 时显式切回宿主原 Jump 状态机，避免相对改前退化。通用骨骼晃动继续位于最终输出端。
+- 枪械模板改名 `TABP_FirstPersonFirearmBase`（`UFirearmAnimInstance`），维修枪骨架子类改名 `ABP_RepairGun_FirstPerson`。武器切换继续只替换 Linked Layer。
+- C++ 层级统一为 `UBaseLocomotionAnimInstance -> UFPSCharacterAnimInstance -> UCharacterBaseAnimInstance -> UFirearmAnimInstance`；速度、方向、垂直速度、腾空、移动状态和通用 Lean/Look 不再由素材包 EventGraph重复计算。
+- 角色专属 AnimBP 已从 `CharacterBase` 移至 `MaintenanceWorker/Animations/{FirstPerson,Body}/Logic`；无引用空模板 `TABP_CharacterBase` 删除。
+- Development Editor 构建通过；三项冷启动自动化 `Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture`、`Viewmodel.EquipDissolveEvidence` 全部 Success。

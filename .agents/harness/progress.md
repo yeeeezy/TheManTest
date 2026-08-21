@@ -1,5 +1,14 @@
 # 进度日志
 
+## 2026-08-21 session211 交接：第一人称 Linked Anim Layer 模板化
+
+- `ArmsViewMesh` 常驻宿主整理为 `/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/ABP_MaintenanceWorker_FirstPerson`，父类为 `UCharacterBaseAnimInstance`；地面持枪 Pose 改由 `ALI_WeaponAnim.WeaponUpperBody` Linked Layer 提供，腾空时切回宿主原 Jump 状态机以保持改前表现，原 `spine_03/hand_l` 通用晃动仍在最终输出端。
+- 枪械模板正式命名为 `/Game/Weapons/_Shared/Animations/Logic/TABP_FirstPersonFirearmBase`，父类 `UFirearmAnimInstance`；维修枪子类为 `/Game/Weapons/RepairGun/Animations/FirstPerson/Logic/ABP_RepairGun_FirstPerson`。切枪只链接层，不更换 Arms 主 AnimInstance。
+- `UCharacterBaseAnimInstance` 继承 `UFPSCharacterAnimInstance`，统一由 C++ 提供 Speed/Direction/VelocityZ/bIsFalling、`Character_Speed/Is_Moving/Is_InAir` 与 Lean/Look；第一人称宿主的素材包 EventGraph 驱动已清空。
+- 身体资产归入 MaintenanceWorker：`ABP_MaintenanceWorker_Body` 与 `TABP_MaintenanceWorker_BodyLocomotion`；无引用 `TABP_CharacterBase` 已删除。
+- Development Editor 编译成功；冷启动 `Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture`、`Viewmodel.EquipDissolveEvidence` 均 Success，验证影子上半身同步、构图和装备显隐未相对改前回归。
+- 待办：用户前台实际输入复核 Idle/WASD/Run/Jump/切枪/开火主观观感。
+
 ## 2026-08-21 session210 交接：双 AnimBP 上半身 Pose 合成
 
 - 当前活动功能切换为 FEAT-077；FlyingBug2 自动化已完成但待主观验收，FEAT-076 改为 `needs_improvement`。
@@ -20,7 +29,7 @@
 
 ## 当前状态
 
-**最后更新：** 2026-08-21-session210
+**最后更新：** 2026-08-21-session211
 
 **当前功能：** FEAT-077 — 第一人称手臂与完整身体双 AnimBP 合成
 

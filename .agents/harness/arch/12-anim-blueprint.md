@@ -21,12 +21,11 @@
 
 | 资产 / 类 | 路径 | 作用 |
 |---|---|---|
-| `TABP_BodyLocomotion` | `Content/Characters/CharacterBase/Animations/Logic/` | 身体 locomotion 无骨架模板；最终身体子类位于 `Animations/Body/Logic/ABP_CharacterBase_Body` |
-| `TABP_CharacterBase` | `Content/Characters/CharacterBase/Animations/Template/` | FEAT-074 预留无骨架模板，目前不在运行继承链中；不得把完整原版 AnimBP 直接 reparent 到该空模板 |
-| `ABP_CharacterBase` | `Content/Characters/CharacterBase/Animations/Skeleton/` | 当前有效的完整原版 VFXPack AnimBP；保留原 AnimInstance 父类、AnimGraph、状态机和蓝图变量，由 MaintenanceWorker 的 ArmsViewMesh 引用 |
+| `TABP_MaintenanceWorker_BodyLocomotion` | `Content/Characters/MaintenanceWorker/Animations/Body/Logic/` | MaintenanceWorker 身体 locomotion 模板；最终身体子类为同目录 `ABP_MaintenanceWorker_Body` |
+| `ABP_MaintenanceWorker_FirstPerson` | `Content/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/` | 常驻 ArmsViewMesh 宿主；地面调用 `ALI_WeaponAnim`，腾空沿用共享 Jump 状态机，随后应用通用骨骼晃动 |
 | `ALI_WeaponAnim` | `Content/Weapons/_Shared/Animations/Interface/` | 武器动画层接口，定义两个层：`WeaponAimOffset`、`WeaponUpperBody` |
-| `TABP_Firearm_UpperBodyBase` | `Content/Weapons/_Shared/Animations/Logic/` | 当前枪械上半身 Template AnimBP，实现 `ALI_WeaponAnim`；具体玩家骨架层继续与玩家 Skeleton 兼容 |
-| `UCharacterBaseAnimInstance` | `Source/.../Characters/CharacterBase/Animation/CharacterBaseAnimInstance.h` | 第一人称模板的五个原版 VFXPack 驱动变量及强类型更新入口 |
+| `TABP_FirstPersonFirearmBase` | `Content/Weapons/_Shared/Animations/Logic/` | 第一人称枪械 Template AnimBP，实现 `ALI_WeaponAnim`；统一持枪 Idle/WalkRun 状态逻辑，具体武器子类替换动画资产 |
+| `UCharacterBaseAnimInstance` | `Source/.../Characters/CharacterBase/Animation/CharacterBaseAnimInstance.h` | 第一人称宿主/枪械模板共享的 C++ 数据基类；统一映射移动、腾空与通用 Lean/Look 变量 |
 | `UFPSCharacterAnimInstance` | `Source/.../Characters/CharacterBase/FPSCharacterBase/Animation/FPSCharacterAnimInstance.h` | 身体 locomotion 模板仍在使用的 C++ 父类；旧 `UFPSArmsAnimInstance` 已无源码和 CoreRedirect |
 | `UFirearmAnimInstance` | `Source/.../Equipment/Firearms/FirearmAnimInstance.h` | 当前枪械动画层模板 `TABP_Firearm_UpperBodyBase` 的 C++ 父类，持有四个 AimIK 变量 |
 
