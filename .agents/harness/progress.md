@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-08-22 session216 交接：枪械模板断线播放器清理
+
+- 冷导出确认 `TABP_FirstPersonFirearmBase.WeaponUpperBody/WalkRun` 的实际输出早已连接空 `Sequence Player`；用户看到的非 Sequence 节点是旧方案遗留、完全断线的 `Blend Space Player`。
+- 删除断线 `Blend Space Player` 及仅向它供值的孤立 Speed Getter。模板现在 Idle、WalkRun 各只有一个连接到 State Result 的空 `Sequence Player`。
+- `ABP_RepairGun_FirstPerson` 继续通过 Parent Asset Overrides 提供 `AS_MaintenanceWorker_FP_Idle` 与 `AS_MaintenanceWorker_FP_Run`；枪械模板对 `/Game/Weapons/RepairGun/` 的具体资产依赖为 0。
+- `TheManTestEditor Win64 Development` 构建成功；带渲染冷启动 `Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture` 及冷启动 `Viewmodel.EquipDissolveEvidence` 均为 1/1 Success。`-nullrhi` 不适用于前两项截图型测试，会在截图辅助代码中访问无效渲染资源。
+
 ## 2026-08-22 session215 交接：角色动画模板去具体资产化
 
 - `TABP_CharacterBase_FirstPerson` 的状态机由默认名 `New State Machine` 改为 `FirstPersonLocomotionSM`。

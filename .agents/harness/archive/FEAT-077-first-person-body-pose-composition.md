@@ -3,6 +3,12 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-22 session216 — 枪械模板断线节点清理
+
+- 冷导出确认 `TABP_FirstPersonFirearmBase` 的 Idle、WalkRun 实际输出均为无具体资产的 `Sequence Player`；WalkRun 内另有旧方案遗留且完全断线的 `Blend Space Player` 和 Speed Getter。
+- 删除上述两个孤立节点。`ABP_RepairGun_FirstPerson.ParentAssetOverrides` 继续分别为两个 Sequence Player 提供 Idle、Run 资产，模板对 RepairGun 目录具体资产依赖为 0。
+- Development Editor 构建成功；三项玩家动画自动化均通过。截图型测试须使用渲染冷启动，不能使用 `-nullrhi`。
+
 ## 目标
 
 - `ArmsViewMesh` 独立运行第一人称 AnimBP，不接收身体 root/pelvis locomotion。

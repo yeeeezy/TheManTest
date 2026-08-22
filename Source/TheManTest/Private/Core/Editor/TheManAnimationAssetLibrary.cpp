@@ -1,4 +1,5 @@
 #include "Core/Editor/TheManAnimationAssetLibrary.h"
+#include "Algo/NoneOf.h"
 #include "Animation/AnimationAsset.h"
 #include "Animation/Skeleton.h"
 #include "Components/SceneComponent.h"
@@ -594,6 +595,7 @@ bool UTheManAnimationAssetLibrary::MoveTemplateAnimationAssetsToChild(
 	TArray<UEdGraph*> Graphs;
 	TemplateAnimBlueprint->GetAllGraphs(Graphs);
 	TArray<UAnimGraphNode_AssetPlayerBase*> AssetPlayers;
+	TArray<UAnimGraphNode_AssetPlayerBase*> DisconnectedAssetPlayers;
 	UAnimGraphNode_StateMachineBase* StateMachineToRename = nullptr;
 	for (UEdGraph* Graph : Graphs)
 	{
@@ -601,6 +603,12 @@ bool UTheManAnimationAssetLibrary::MoveTemplateAnimationAssetsToChild(
 		{
 			if (UAnimGraphNode_AssetPlayerBase* AssetPlayer = Cast<UAnimGraphNode_AssetPlayerBase>(GraphNode))
 			{
+				const UEdGraphPin* PosePin = AssetPlayer->FindPin(TEXT("Pose"));
+				if (PosePin && PosePin->LinkedTo.IsEmpty())
+				{
+					DisconnectedAssetPlayers.Add(AssetPlayer);
+					continue;
+				}
 				if (AssetPlayer->GetAnimationAsset())
 				{
 					if (!AssetPlayer->IsA<UAnimGraphNode_SequencePlayer>()
@@ -622,6 +630,39 @@ bool UTheManAnimationAssetLibrary::MoveTemplateAnimationAssetsToChild(
 						StateMachineToRename = StateMachine;
 					}
 				}
+			}
+		}
+	}
+
+	int32 RemovedDisconnectedNodeCount = 0;
+	for (UAnimGraphNode_AssetPlayerBase* AssetPlayer : DisconnectedAssetPlayers)
+	{
+		TSet<UEdGraphNode*> InputNodes;
+		for (UEdGraphPin* Pin : AssetPlayer->Pins)
+		{
+			if (Pin && Pin->Direction == EGPD_Input)
+			{
+				for (UEdGraphPin* LinkedPin : Pin->LinkedTo)
+				{
+					if (LinkedPin && LinkedPin->GetOwningNode())
+					{
+						InputNodes.Add(LinkedPin->GetOwningNode());
+					}
+				}
+			}
+		}
+		AssetPlayer->DestroyNode();
+		++RemovedDisconnectedNodeCount;
+		for (UEdGraphNode* InputNode : InputNodes)
+		{
+			if (InputNode->IsA<UK2Node_VariableGet>()
+				&& Algo::NoneOf(InputNode->Pins, [](const UEdGraphPin* Pin)
+				{
+					return Pin && !Pin->LinkedTo.IsEmpty();
+				}))
+			{
+				InputNode->DestroyNode();
+				++RemovedDisconnectedNodeCount;
 			}
 		}
 	}
@@ -709,8 +750,9 @@ bool UTheManAnimationAssetLibrary::MoveTemplateAnimationAssetsToChild(
 	FKismetEditorUtilities::CompileBlueprint(ChildAnimBlueprint);
 	TemplateAnimBlueprint->MarkPackageDirty();
 	ChildAnimBlueprint->MarkPackageDirty();
-	UE_LOG(LogTemp, Warning, TEXT("Template asset extraction complete: template=%s moved=%d automatic_transitions=%d state_machine_renamed=%d"),
-		*TemplateAnimBlueprint->GetPathName(), AssetPlayers.Num(), AutomaticTransitionCount, StateMachineToRename != nullptr);
+	UE_LOG(LogTemp, Warning, TEXT("Template asset extraction complete: template=%s moved=%d removed_disconnected_nodes=%d automatic_transitions=%d state_machine_renamed=%d"),
+		*TemplateAnimBlueprint->GetPathName(), AssetPlayers.Num(), RemovedDisconnectedNodeCount,
+		AutomaticTransitionCount, StateMachineToRename != nullptr);
 	return TemplateAnimBlueprint->Status != BS_Error
 		&& ChildAnimBlueprint->Status != BS_Error;
 #else
