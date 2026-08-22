@@ -3,6 +3,11 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-22 session225 — Body Sway 插值速度参数化
+
+- 新增 `ViewmodelBodySwayInterpSpeed`（`Viewmodel|Movement`，默认 `6.0`），替代普通移动硬编码 `2.0`；进入倾斜和松键回弹同步加快。冲刺仍使用原版 `8.0`。
+- 写入前 WIP 检查点 `2e3b5ad`；Development Editor 冷构建及3项玩家回归全部 Success。
+
 ## 2026-08-22 session224 — 恢复用户认可的 session220 表现
 
 - 按用户决定精确恢复 `e1c24eb` / session220 的完整75° Lean/Look 骨骼映射，保留当时倾斜观感及其已知上下平移。

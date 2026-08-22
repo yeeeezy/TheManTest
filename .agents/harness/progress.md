@@ -1,5 +1,11 @@
 # 进度日志
 
+## 2026-08-22 session225 交接：暴露并加快 Viewmodel Body Sway 插值
+
+- 普通移动 Body Sway 插值速度从硬编码 `2.0` 改为蓝图可调 `ViewmodelBodySwayInterpSpeed`，位于角色 Class Defaults 的 `Viewmodel|Movement`，默认 `6.0`；A/D/W/S 进入倾斜与松键回弹共用该速度。
+- 冲刺继续保持原版硬编码 `8.0`，未改变 session224 恢复的75° Lean/Look骨骼映射及其表现边界。
+- 写入前 WIP 检查点：`2e3b5ad`。Development Editor 冷构建成功；3项 `TheManTest.Player` 回归全部 Success。
+
 ## 2026-08-22 session224 交接：恢复 session220 骨骼倾斜版本
 
 - 用户决定保留最早“倾斜正确但存在上下平移”的版本。玩家角色源码与相关测试已精确恢复到 `e1c24eb` / session220：完整75° `RemappedLeanRoll/RemappedLookPitch` 骨骼映射恢复。

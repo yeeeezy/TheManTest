@@ -115,6 +115,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Sprint", meta = (ClampMin = "-45.0", ClampMax = "0.0", Units = "deg"))
 	float SprintViewmodelPitchDegrees = -6.f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Movement", meta = (ClampMin = "0.1"))
+	float ViewmodelBodySwayInterpSpeed = 6.f;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;

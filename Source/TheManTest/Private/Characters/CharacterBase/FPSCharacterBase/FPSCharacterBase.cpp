@@ -508,11 +508,11 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		// VFXPack FirstPerson_AnimBP 原 Event Blueprint Update Animation 的等价逻辑。
 		// 直接写原变量，保留其原 StateMachine / BlendSpace 资产，不另造动画状态机。
 		// Raw movement input drives only the source AnimBP's Modify Bone chain.
-		// The input stays in [-1, 1]; the 2/8 below controls interpolation speed,
+		// The input stays in [-1, 1]; the walk/sprint values below control interpolation speed,
 		// independently of the authored output offsets applied later.
 		const float SideInput = FMath::Clamp(CurrentVFXMoveInput.X, -1.f, 1.f);
 		const float ForwardSwayTarget = FMath::Clamp(-CurrentVFXMoveInput.Y, -1.f, 1.f);
-		const float BodySwayInterpSpeed = bIsSprinting ? 8.f : 2.f;
+		const float BodySwayInterpSpeed = bIsSprinting ? 8.f : ViewmodelBodySwayInterpSpeed;
 		CurrentVFXLeanSides = FMath::FInterpTo(CurrentVFXLeanSides, SideInput, DeltaTime, BodySwayInterpSpeed);
 		CurrentVFXLookUpDown = FMath::FInterpTo(CurrentVFXLookUpDown, ForwardSwayTarget, DeltaTime, BodySwayInterpSpeed);
 
