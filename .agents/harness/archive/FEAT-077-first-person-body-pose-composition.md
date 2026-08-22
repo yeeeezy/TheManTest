@@ -3,6 +3,24 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-22 session224 — 恢复用户认可的 session220 表现
+
+- 按用户决定精确恢复 `e1c24eb` / session220 的完整75° Lean/Look 骨骼映射，保留当时倾斜观感及其已知上下平移。
+- 删除随后加入的装备 Actor 独立 Roll、Arms 位置补偿、输入符号修正和专项测试；三份相关源码与目标检查点定向比较一致。
+- Development Editor 冷构建及恢复后的3项 `TheManTest.Player` 回归全部 Success。
+
+## 2026-08-22 session223 — A/D 倾斜符号纠正
+
+- session222 只验证旋转幅度与枪口稳定，遗漏视觉方向；用户前台发现方向相反。
+- 按原版运行记录 A→正 Lean、D→负 Lean，将侧移目标改为 `-MoveInput.X`。专项测试新增 D 输入 `Lean_Sides_Amount < -5°` 断言，并以真实 D 输入截图对照原版 `TMT_VFXPack_StrafeRight.png`，两者枪身均为左上→右下。
+- Development Editor 构建及全部4项 `TheManTest.Player` 回归 Success。
+
+## 2026-08-22 session222 — VFXPack 骨骼倾斜与枪口枢轴补偿
+
+- 撤销 session221 的装备根节点独立 Roll；按原 VFXPack 恢复 `spine_03` Component Space Additive Roll、`hand_l` 半倍率 Roll，以及 `hand_r/GripPoint` 随骨骼 Pose 带枪。
+- 删除 75° Roll/Pitch 交叉映射，纯 A/D 不再写入 `Look_Up_Amount`。专项审计先复现无补偿时枪口约 `-18.6cm` 高度弧线，再以中性 `spine_03→muzzle` 向量计算圆弧并补偿 Arms 构图位置。
+- 最终自动化实测 `spine_03=6.92°`、`hand_r=7.82°`、枪口高度变化 `-0.006cm`；装备 Actor 相对 Transform 不变。Development Editor 构建及全部4项 `TheManTest.Player` 回归 Success，待用户前台 PIE 观感验收。
+
 ## 2026-08-22 session220 — 恢复原枪体绕轴旋转
 
 - 用户澄清枪体必须保持原地，目标是保留修改前沿枪管前向轴的倾斜旋转；session218/session219 的位置滞后与旋转拆分属于误解，已全部撤回。
@@ -67,6 +85,12 @@
 - `TheManTest.Player.Shadow.UpperBodyEvidence`：Success。
 - `TheManTest.Player.Viewmodel.FramingCapture`：Success。
 - `TheManTest.Player.Viewmodel.EquipDissolveEvidence`：Success。
+
+## 2026-08-22 session221：枪械前轴 Roll 独立于骨骼滞后
+
+- A/D 的上下漂移确定来自 AnimBP 上游骨骼 Modify Bone 旋转使 `GripPoint` 沿弧线位移，而不是 ViewmodelRoot/ArmsViewMesh 的组件 Location。
+- Lean/Look 骨骼滞后输入暂时关闭；A/D 改为只对当前装备根节点施加即时本地 X/Roll `±8°`，同时把该根节点相对 Location 固定为零。
+- 自动化实际注入左右输入并断言 Location=0、Roll=`-8°/+8°`；Development Editor 构建及三项玩家回归均 Success，待用户前台观感验收。
 - 待用户前台实际输入复核切枪、Idle/移动/跳跃/开火/冲刺观感后决定是否关闭。
 
 ## 正式目录与命名整理

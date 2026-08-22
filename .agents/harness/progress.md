@@ -1,5 +1,30 @@
 # 进度日志
 
+## 2026-08-22 session224 交接：恢复 session220 骨骼倾斜版本
+
+- 用户决定保留最早“倾斜正确但存在上下平移”的版本。玩家角色源码与相关测试已精确恢复到 `e1c24eb` / session220：完整75° `RemappedLeanRoll/RemappedLookPitch` 骨骼映射恢复。
+- session221 的装备 Actor 独立 Roll、session222 的 `ArmsViewMesh` 圆弧位置补偿、session223 的符号修正及其专项测试均已移除；三份相关源码与 `e1c24eb` 定向比较无差异。
+- Development Editor 冷构建成功；恢复后的3项 `TheManTest.Player` 回归全部 Success。当前已知边界是 A/D 倾斜观感按用户认可版本恢复，同时保留其原有枪口上下平移。
+
+## 2026-08-22 session223 交接：纠正 VFXPack A/D 倾斜方向
+
+- 用户指出 session222 虽通过骨骼角度与枪口高度测试，但实际旋转方向完全相反；此前自动化只验证“发生旋转”，未验证输入方向，属于验收缺口。
+- 对照历史原版运行记录（A→正 Lean、D→负 Lean）与 VFXPack 右移证据图 `TMT_VFXPack_StrafeRight.png`，确认 Enhanced Input 为 A=`X=-1`、D=`X=+1`，因此 Body Sway 必须使用 `SideInput=-MoveInput.X`。现已纠正符号。
+- 专项测试新增硬断言 D 输入必须得到小于 `-5°` 的 `Lean_Sides_Amount`，并保存真实 D 输入构图供目视检查；新图与原版右移图均为枪身左上→右下倾斜。Development Editor 构建成功；全部4项 `TheManTest.Player` 回归 Success。
+
+## 2026-08-22 session222 交接：恢复 VFXPack 骨骼倾斜并锁定枪口高度
+
+- 用户前台确认 session221 只旋转装备根节点导致“手不动、只有枪口动”。重新以 `UE389_MuzzleSource/.../VFXPack` 原始 `FirstPersonCharacter` 与 `FirstPerson_AnimBP` 为准审计：A/D 应驱动 AnimBP 的 `spine_03` Component Space Additive Roll，并由后代 `hand_r/GripPoint` 带枪，`hand_l` 叠半倍率 Roll；原版不旋转武器 Actor。
+- 删除装备根节点独立 Roll，恢复平滑 `Lean_Sides_Amount × 8` 骨骼驱动；移除错误的 75° Roll/Pitch 交叉映射，纯 A/D 的 `Look_Up_Amount=0`。
+- 自动化量化发现，仅恢复骨骼链会因本项目较长的相机空间手臂构图使枪口高度漂移约 `-18.6cm`。现以 `spine_03→muzzle` 中性向量计算原版 Roll 的圆弧，并对 `ArmsViewMesh` 施加等量反向构图补偿；手臂和枪仍由同一骨骼 Pose 倾斜，武器 Actor 相对 Transform 不变。
+- 新增 `TheManTest.Player.Viewmodel.VFXPackLateralSway`：实测 `spine_03=6.92°`、`hand_r=7.82°`，枪口相对 ViewmodelRoot 高度变化约 `-0.006cm`，无 A/D→Pitch 串扰。Development Editor 构建成功；全部4项 `TheManTest.Player` 回归 Success。待用户前台 PIE 主观验收。
+
+## 2026-08-22 session221 交接：枪械 Roll 与骨骼位置滞后解耦
+
+- 根因确认：旧 A/D 输入经 75° 基差同时写入 AnimBP 的 `Lean_Sides_Amount` / `Look_Up_Amount`，上游 Modify Bone 枢轴使手部 `GripPoint` 沿弧线移动，因此视觉上出现上下平移；组件 Location 本身并未变化。
+- 暂时关闭 AnimBP 的 Lean/Look 骨骼滞后输入。A/D 仅在当前装备自身根节点施加即时本地 X/Roll `-8°..+8°`；装备根节点相对 Location 每帧锁定为零，因此枪体绕自身前轴倾斜但挂点保持原地。
+- `FramingCapture` 新增左右输入运行时断言：MoveLeft/MoveRight 下装备根节点 Location 均为零，Roll 分别为 `-8°/+8°`。Development Editor 构建成功；`FramingCapture`、`Shadow.UpperBodyEvidence`、`EquipDissolveEvidence` 均 1/1 Success；截图人工审查未见构图或影子回归。待用户晚间前台主观复核。
+
 ## 2026-08-22 session220 交接：撤回移动位置方案并恢复原枪体绕轴旋转
 
 - 用户澄清需求不是上下/左右位置滞后，而是枪体保持原地时沿枪管前向轴的旋转。session218/session219 对 ViewmodelRoot XY 位移及 Roll/Pitch 分解的正式改动均撤回。
