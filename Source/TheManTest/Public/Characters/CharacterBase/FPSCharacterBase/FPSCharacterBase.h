@@ -87,7 +87,7 @@ public:
 	TSubclassOf<UCameraShakeBase> RunningCameraShake;
 
 	// ArmsMesh 鍩虹鐩稿鏃嬭浆銆傛柊鍏ㄨ韩楠ㄦ灦鍙傝€冨Э鍔挎湞 +Y锛岄渶 Yaw -90掳 杞鏈?+X銆?	// 姝﹀櫒鎽囨憜姣忓抚鍙犲姞鍦ㄥ畠涔嬩笂锛堣€岄潪瑕嗙洊锛夛紝鍚﹀垯韬綋浼氳鐢╁洖 identity 姝悜渚ч潰銆?	U_PROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Framing", meta = (DisplayName = "Viewmodel Arms Rotation"))
 	FRotator BaseArmsRotation;
 
 	// 鈹€鈹€ 绗竴浜虹О viewmodel 璋冭瘯鍙傛暟锛堜繚鐣欑粰鍚庣画鎭㈠鎵嬭噦婊炲悗/鎯€э級鈹€鈹€

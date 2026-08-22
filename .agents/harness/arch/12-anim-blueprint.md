@@ -392,6 +392,7 @@ Cache_Locomotion → WeaponUpperBody → Slot"UpperBody" → WeaponAimOffset →
 - 普通移动 Body Sway 的进入/回弹速度由 `AFPSCharacterBase.ViewmodelBodySwayInterpSpeed` 控制，Class Defaults 分类为 `Viewmodel|Movement`，默认 `6.0`；冲刺保持 `8.0`。
 - 静态第一人称构图仅在 `BeginPlay` 应用：`ViewmodelRoot.Location=0`，Arms 使用 `ViewmodelOffsetLocation` 与 `BaseArmsRotation`。Tick 不再重写 Arms 静态 Transform，只更新 `ViewmodelRoot` 的冲刺 Pitch 和 AnimBP Lean/Look。
 - 冲刺压枪使用独立 `SprintVisualAlpha`：按实际 `Velocity.Size2D()` 在 `WalkSpeed..SprintSpeed` 映射0..1并驱动 `ViewmodelRoot.Pitch`。Shift 意图的 `SprintTransitionAlpha` 只切换 MaxWalkSpeed；原地 Shift 不触发视觉下压。
+- 静态朝向应调 `Viewmodel|Framing > Viewmodel Arms Rotation`（底层 `BaseArmsRotation`），它作用于 `ArmsViewMesh` 自身且不改变 Location。`Viewmodel Offset Rotation` 作用于相机原点的父级 `ViewmodelRoot`，仅保留为冲刺旋转基线，不应用于手调枪械左右朝向。
 - C++ 必须把 `Is_Moving`、`Is_InAir`、`Character_Speed`、`Lean_Sides_Amount`、`Look_Up_Amount` 同帧写给两个 AnimInstance，避免第一/第三人称及影子上半身再次分叉。
 - session157 修正：前后倾斜的原版 AnimBP 变量实际名为 `Look_Up_Amount`，不是 `Look_Up_Down_Amount`。方向倾斜必须缓存 Enhanced Input 原始移动轴，A/D → `Lean_Sides_Amount`、W/S → `Look_Up_Amount`；不得只用 CharacterMovement 速度反推后就以变量数值代替最终姿势验收。正式 AnimGraph 为 `spine_03` Additive Roll/Pitch，加上 `hand_l` 的 0.5× Additive Roll。
 - session165：取消项目补充的 5cm `ViewmodelRoot` Y 向横移；A/D 最终视觉只来自上述 AnimBP 骨骼链，构图根节点不再随侧移输入改变位置或旋转。

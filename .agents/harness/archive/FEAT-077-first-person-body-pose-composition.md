@@ -3,6 +3,11 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-22 session228 — Arms 自身旋转参数暴露
+
+- `BaseArmsRotation` 改为 `Viewmodel|Framing` 下显示的 `Viewmodel Arms Rotation`，保持默认 `(-3,-90,-1)`，用于不改变组件 Location 的 Arms 自身静态朝向调整。
+- 检查点 `3af3217`；Development Editor 冷构建成功，Shadow/EquipDissolve Success。FramingCapture 因用户 BP 中仍保存旧父枢轴 Rotation/Location 手调而失败，待用户重置旧 Rotation 并改用新参数后复核；未覆盖用户 `.uasset`。
+
 ## 2026-08-22 session227 — 实际速度驱动冲刺压枪
 
 - `SprintTransitionAlpha` 仅负责0.2秒 MaxWalkSpeed 切换；`ViewmodelRoot` 压枪改由实际水平速度在550..750映射出的 `SprintVisualAlpha` 驱动。

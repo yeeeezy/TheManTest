@@ -1,5 +1,11 @@
 # 进度日志
 
+## 2026-08-22 session228 交接：暴露 Arms 自身构图旋转
+
+- 将原 `BaseArmsRotation` 从 `Mesh` 分类整理到 Class Defaults 的 `Viewmodel|Framing`，显示名为 `Viewmodel Arms Rotation`，默认仍为 `(-3,-90,-1)`；BeginPlay 直接应用于 `ArmsViewMesh`，调整其 Yaw 不会像父级 ViewmodelRoot 那样绕相机原点画圆。
+- 写入前 WIP 检查点：`3af3217`。Development Editor 冷构建成功；Shadow 与 EquipDissolve 回归 Success。FramingCapture 正确失败并揭示用户刚才的 BP 手调已保存旧 `Viewmodel Offset Rotation`/Location 覆盖，需用户在 BP 中将旧父枢轴 Rotation 重置为0，再使用新 Arms Rotation，之后补跑构图回归。
+- `BP_MaintenanceWorker.uasset` 的现有未提交改动属于用户手调，本轮未覆盖或提交。
+
 ## 2026-08-22 session227 交接：冲刺压枪改为实际速度驱动
 
 - 将冲刺速度切换与视觉压枪解耦：`SprintTransitionAlpha` 继续按 Shift 意图在0.2秒内切换 `MaxWalkSpeed` 550→750；新增局部 `SprintVisualAlpha`，按实际水平速度在 `WalkSpeed..SprintSpeed` 映射0..1。
