@@ -14,7 +14,7 @@
 
 **玩家动画：**
 
-> FEAT-077 当前双类结构：`ArmsViewMesh=ABP_MaintenanceWorker_FirstPerson` 作为常驻宿主，通过 `ALI_WeaponAnim` 链接当前枪械层；`CharacterMesh0=ABP_MaintenanceWorker_Body` 生成完整身体 locomotion，并通过 `UFPSCharacterAnimInstance.FirstPersonPoseSource` 在主图末端 Copy Arms 局部 Pose、从 `spine_01` 以上混合。禁止让 Arms 再反向 Copy Body，否则形成循环依赖。
+> FEAT-077 当前双类结构：`ArmsViewMesh=ABP_MaintenanceWorker_FirstPerson` 继承无骨架 `TABP_CharacterBase_FirstPerson`，通过 `ALI_WeaponAnim` 链接当前枪械层；`CharacterMesh0=ABP_MaintenanceWorker_Body` 继承 `TABP_CharacterBase_BodyLocomotion`，生成完整身体 locomotion，并通过 `UFPSCharacterAnimInstance.FirstPersonPoseSource` 在主图末端 Copy Arms 局部 Pose、从 `spine_01` 以上混合。禁止让 Arms 再反向 Copy Body，否则形成循环依赖。
 
 | 文件 | 关键内容 |
 |---|---|
@@ -25,7 +25,7 @@
 
 **玩家 locomotion（session63 简化）：**
 
-- 当前第一人称宿主是 `/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/ABP_MaintenanceWorker_FirstPerson`；身体宿主和模板位于 `/Game/Characters/MaintenanceWorker/Animations/Body/Logic/`。
+- 当前第一人称无骨架模板是 `/Game/Characters/CharacterBase/Animations/FirstPerson/Logic/TABP_CharacterBase_FirstPerson`，具体宿主是 `/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/ABP_MaintenanceWorker_FirstPerson`；身体无骨架模板位于 `CharacterBase/Animations/Body/Logic`，具体身体子类位于 MaintenanceWorker 对应目录。
 - MaintenanceWorker 的 Body/第一人称 Sequence、BlendSpace 与动作资产全部归入具体角色的 `Animations/Body`、`Animations/FirstPerson`；`CharacterBase` 不再保存具体角色表现资产。
 - 武器动画接口与模板分别位于 `/Game/Weapons/_Shared/Animations/Interfaces/ALI_WeaponAnim` 和 `/Game/Weapons/_Shared/Animations/Templates/TABP_FirstPersonFirearmBase`；RepairGun 子层位于 `/Game/Weapons/RepairGun/Animations/FirstPerson/Logic/ABP_RepairGun_FirstPerson`。
 - 2026-08-21 root 方向纠正：原始/外部最终 VFXPack 第一人称动画 root 参考方向为 Yaw=0°；TheManTest 曾错误恢复为约-90°。当前7条正式序列的首尾 root Yaw 均已审计为0°。组件构图和 GripPoint 必须以这批正确动画为基准，不得再通过动画 root ±90° 补偿组件方向。

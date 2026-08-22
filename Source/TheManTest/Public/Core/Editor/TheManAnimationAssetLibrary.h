@@ -54,6 +54,15 @@ public:
 		UAnimationAsset* Target,
 		UAnimationAsset* Override);
 
+	/** Duplicate a concrete first-person host as a skeleton-free template. When requested,
+	 * reparent the source Blueprint to that template and remove its now-inherited graphs. */
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Animation")
+	static UAnimBlueprint* CreateFirstPersonHostTemplate(
+		UAnimBlueprint* HostAnimBlueprint,
+		const FString& PackagePath,
+		const FString& AssetName,
+		bool bReparentHost);
+
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Blueprint")
 	static bool SetInheritedSceneComponentRotation(
 		UBlueprint* Blueprint,

@@ -63,3 +63,10 @@
 - 写入前 WIP 检查点：`a3da38b`。
 - 新模板与具体 Body AnimBP 资产加载验证通过；旧路径 Asset Registry 为0且无 Redirector，新模板唯一确认引用方为 `ABP_MaintenanceWorker_Body`。
 - 关闭编辑器后 `TheManTestEditor Win64 Development` 冷构建成功；冷启动 `Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture`、`Viewmodel.EquipDissolveEvidence` 均为 1/1 Success。
+
+## 2026-08-22 session214 — 第一人称宿主模板化
+
+- 新增无骨架 `/Game/Characters/CharacterBase/Animations/FirstPerson/Logic/TABP_CharacterBase_FirstPerson`，承载原宿主完整 AnimGraph、基础 locomotion/Jump、武器 Linked Layer 路由和最终 Lean/Look。
+- `ABP_MaintenanceWorker_FirstPerson` 保留具体 Skeleton 与原资产路径，ParentClass 改为新模板生成类并删除本地 AnimGraph，成为纯具体角色子类。
+- 冷审计确认模板 `TargetSkeleton=None` 且 AnimGraph 存在；子类 Skeleton 仍为 `SK_Mannequin_Arms_Skeleton`、本地 AnimGraph 为 None，并明确依赖模板。
+- 写入前 WIP 检查点 `20be43d`；Development Editor 冷构建及三项玩家动画回归均 Success。

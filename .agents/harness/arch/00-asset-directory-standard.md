@@ -56,7 +56,7 @@
 └─ _Shared/
 ```
 
-`CharacterBase` 只包含与抽象角色基类直接绑定的 Blueprint、默认数据和 GAS 基础设施，不包含具体身体、手臂、动画、材质或贴图。
+`CharacterBase` 只包含与抽象角色基类直接绑定的 Blueprint、默认数据和 GAS 基础设施，不包含具体身体、手臂、动画、材质或贴图。无骨架、由多个具体玩家角色继承的 Template AnimBP 属于抽象角色架构，可放在 `CharacterBase/Animations/{Body,FirstPerson}/Logic`；具体 Skeleton、Sequence、BlendSpace 和最终子 AnimBP 仍必须留在具体角色目录。
 
 动画资产数量较少时直接放入 `Animations/Body` 或 `Animations/FirstPerson`。只有目录已明显拥挤时，才继续拆分 `Logic`、`Locomotion`、`Actions`。Skeleton 与 Physics Asset 跟随对应 Skeletal Mesh 放在 `Meshes`。
 

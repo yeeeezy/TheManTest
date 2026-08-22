@@ -2,6 +2,7 @@ import unreal
 
 registry = unreal.AssetRegistryHelpers.get_asset_registry()
 targets = [
+    "/Game/Characters/CharacterBase/Animations/FirstPerson/Logic/TABP_CharacterBase_FirstPerson",
     "/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/ABP_MaintenanceWorker_FirstPerson",
     "/Game/Characters/MaintenanceWorker/Animations/Body/Logic/ABP_MaintenanceWorker_Body",
     "/Game/Weapons/_Shared/Animations/Interfaces/ALI_WeaponAnim",

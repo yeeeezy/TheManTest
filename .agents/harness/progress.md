@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-08-22 session214 交接：第一人称宿主模板化
+
+- 新增无骨架 `/Game/Characters/CharacterBase/Animations/FirstPerson/Logic/TABP_CharacterBase_FirstPerson`，完整继承原第一人称基础 locomotion/Jump、`ALI_WeaponAnim` 路由和最终 Lean/Look 图。
+- `ABP_MaintenanceWorker_FirstPerson` 保留原路径与具体 `SK_Mannequin_Arms_Skeleton`，改为新模板子类并移除本地 AnimGraph；冷审计确认 ParentClass 指向模板、模板 `TargetSkeleton=None`、子类本地 `AnimGraph=None`、模板 AnimGraph 存在。
+- C++ 新增编辑器辅助 `CreateFirstPersonHostTemplate`，用于从已验证宿主安全生成无骨架模板并把具体宿主转换为纯继承子类。
+- 写入前 WIP 检查点：`20be43d`。`TheManTestEditor Win64 Development` 冷构建成功；冷启动 `Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture`、`Viewmodel.EquipDissolveEvidence` 均为 1/1 Success。
+
 ## 2026-08-22 session213 交接：身体 Locomotion 模板提升至 CharacterBase
 
 - 无骨架模板 `TABP_MaintenanceWorker_BodyLocomotion` 已通过 Unreal AssetTools 改名并迁移为 `/Game/Characters/CharacterBase/Animations/Body/Logic/TABP_CharacterBase_BodyLocomotion`。

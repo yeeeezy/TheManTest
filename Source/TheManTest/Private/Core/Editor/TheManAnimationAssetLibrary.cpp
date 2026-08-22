@@ -515,6 +515,64 @@ bool UTheManAnimationAssetLibrary::AddAnimationAssetOverride(
 #endif
 }
 
+UAnimBlueprint* UTheManAnimationAssetLibrary::CreateFirstPersonHostTemplate(
+	UAnimBlueprint* HostAnimBlueprint,
+	const FString& PackagePath,
+	const FString& AssetName,
+	bool bReparentHost)
+{
+#if WITH_EDITOR
+	if (!HostAnimBlueprint || PackagePath.IsEmpty() || AssetName.IsEmpty())
+	{
+		return nullptr;
+	}
+
+	const FString TemplateObjectPath = FString::Printf(
+		TEXT("%s/%s.%s"), *PackagePath, *AssetName, *AssetName);
+	UAnimBlueprint* TemplateAnimBlueprint = LoadObject<UAnimBlueprint>(nullptr, *TemplateObjectPath);
+	if (!TemplateAnimBlueprint)
+	{
+		TemplateAnimBlueprint = Cast<UAnimBlueprint>(
+			FAssetToolsModule::GetModule().Get().DuplicateAsset(
+				AssetName, PackagePath, HostAnimBlueprint));
+	}
+	if (!TemplateAnimBlueprint)
+	{
+		return nullptr;
+	}
+
+	TemplateAnimBlueprint->TargetSkeleton = nullptr;
+	TemplateAnimBlueprint->bIsTemplate = true;
+	TemplateAnimBlueprint->ParentClass = UCharacterBaseAnimInstance::StaticClass();
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(TemplateAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(TemplateAnimBlueprint);
+	TemplateAnimBlueprint->MarkPackageDirty();
+	if (TemplateAnimBlueprint->Status == BS_Error || !bReparentHost)
+	{
+		return TemplateAnimBlueprint;
+	}
+
+	HostAnimBlueprint->ParentClass = TemplateAnimBlueprint->GeneratedClass;
+	TArray<UEdGraph*> OwnedGraphs;
+	OwnedGraphs.Append(HostAnimBlueprint->UbergraphPages);
+	OwnedGraphs.Append(HostAnimBlueprint->FunctionGraphs);
+	OwnedGraphs.Append(HostAnimBlueprint->MacroGraphs);
+	for (UEdGraph* Graph : OwnedGraphs)
+	{
+		if (Graph)
+		{
+			FBlueprintEditorUtils::RemoveGraph(HostAnimBlueprint, Graph);
+		}
+	}
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(HostAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(HostAnimBlueprint);
+	HostAnimBlueprint->MarkPackageDirty();
+	return HostAnimBlueprint->Status == BS_Error ? nullptr : TemplateAnimBlueprint;
+#else
+	return nullptr;
+#endif
+}
+
 bool UTheManAnimationAssetLibrary::SetInheritedSceneComponentRotation(
 	UBlueprint* Blueprint,
 	FName ComponentVariableName,

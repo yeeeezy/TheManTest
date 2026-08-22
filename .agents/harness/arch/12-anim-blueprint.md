@@ -22,7 +22,8 @@
 | 资产 / 类 | 路径 | 作用 |
 |---|---|---|
 | `TABP_CharacterBase_BodyLocomotion` | `Content/Characters/CharacterBase/Animations/Body/Logic/` | 无骨架玩家身体 locomotion 模板；MaintenanceWorker 最终身体子类为其角色目录下的 `ABP_MaintenanceWorker_Body` |
-| `ABP_MaintenanceWorker_FirstPerson` | `Content/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/` | 常驻 ArmsViewMesh 宿主；地面调用 `ALI_WeaponAnim`，腾空沿用共享 Jump 状态机，随后应用通用骨骼晃动 |
+| `TABP_CharacterBase_FirstPerson` | `Content/Characters/CharacterBase/Animations/FirstPerson/Logic/` | 无骨架第一人称宿主模板；拥有基础 locomotion/Jump、武器层路由及最终 Lean/Look 图 |
+| `ABP_MaintenanceWorker_FirstPerson` | `Content/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/` | 绑定 MaintenanceWorker Skeleton 的模板子类；无本地 AnimGraph，通过继承模板作为 ArmsViewMesh 常驻宿主 |
 | `ALI_WeaponAnim` | `Content/Weapons/_Shared/Animations/Interfaces/` | 武器动画层接口，定义两个层：`WeaponAimOffset`、`WeaponUpperBody` |
 | `TABP_FirstPersonFirearmBase` | `Content/Weapons/_Shared/Animations/Templates/` | 第一人称枪械 Template AnimBP，实现 `ALI_WeaponAnim`；统一持枪 Idle/WalkRun 状态逻辑，具体武器子类替换动画资产 |
 | `UCharacterBaseAnimInstance` | `Source/.../Characters/CharacterBase/Animation/CharacterBaseAnimInstance.h` | 第一人称宿主/枪械模板共享的 C++ 数据基类；统一映射移动、腾空与通用 Lean/Look 变量 |
