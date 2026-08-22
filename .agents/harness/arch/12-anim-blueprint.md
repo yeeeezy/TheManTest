@@ -23,6 +23,8 @@
 |---|---|---|
 | `TABP_CharacterBase_BodyLocomotion` | `Content/Characters/CharacterBase/Animations/Body/Logic/` | 无骨架玩家身体 locomotion 模板；MaintenanceWorker 最终身体子类为其角色目录下的 `ABP_MaintenanceWorker_Body` |
 | `TABP_CharacterBase_FirstPerson` | `Content/Characters/CharacterBase/Animations/FirstPerson/Logic/` | 无骨架第一人称宿主模板；拥有基础 locomotion/Jump、武器层路由及最终 Lean/Look 图 |
+
+> CharacterBase 的 Body/FirstPerson Template AnimBP 不得直接绑定具体角色动画资产。模板保留 `Sequence Player` 与专用 `Blend Space Player` 占位节点，具体 Sequence/BlendSpace 由角色子 AnimBP 的 Parent Asset Overrides 提供。第一人称模板状态机名为 `FirstPersonLocomotionSM`；资产为空时，跳跃过渡使用状态机原生自动剩余时间规则，避免在模板中保留指向具体 Sequence Player 的 Getter。
 | `ABP_MaintenanceWorker_FirstPerson` | `Content/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/` | 绑定 MaintenanceWorker Skeleton 的模板子类；无本地 AnimGraph，通过继承模板作为 ArmsViewMesh 常驻宿主 |
 | `ALI_WeaponAnim` | `Content/Weapons/_Shared/Animations/Interfaces/` | 武器动画层接口，定义两个层：`WeaponAimOffset`、`WeaponUpperBody` |
 | `TABP_FirstPersonFirearmBase` | `Content/Weapons/_Shared/Animations/Templates/` | 第一人称枪械 Template AnimBP，实现 `ALI_WeaponAnim`；统一持枪 Idle/WalkRun 状态逻辑，具体武器子类替换动画资产 |

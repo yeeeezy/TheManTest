@@ -21,7 +21,11 @@
 #include "AnimGraphNode_LinkedInputPose.h"
 #include "AnimGraphNode_Root.h"
 #include "AnimGraphNode_SequencePlayer.h"
+#include "AnimGraphNode_AssetPlayerBase.h"
+#include "AnimGraphNode_BlendSpacePlayer.h"
 #include "AnimGraphNode_StateMachine.h"
+#include "AnimGraphNode_TransitionResult.h"
+#include "AnimStateTransitionNode.h"
 #include "AnimationGraph.h"
 #include "AnimationGraphSchema.h"
 #include "AnimationBlueprintLibrary.h"
@@ -32,6 +36,7 @@
 #include "K2Node_VariableGet.h"
 #include "K2Node_VariableSet.h"
 #include "K2Node_CallFunction.h"
+#include "K2Node_TransitionRuleGetter.h"
 #include "Kismet2/KismetEditorUtilities.h"
 #include "EdGraphUtilities.h"
 #include "KismetCompiler.h"
@@ -570,6 +575,146 @@ UAnimBlueprint* UTheManAnimationAssetLibrary::CreateFirstPersonHostTemplate(
 	return HostAnimBlueprint->Status == BS_Error ? nullptr : TemplateAnimBlueprint;
 #else
 	return nullptr;
+#endif
+}
+
+bool UTheManAnimationAssetLibrary::MoveTemplateAnimationAssetsToChild(
+	UAnimBlueprint* TemplateAnimBlueprint,
+	UAnimBlueprint* ChildAnimBlueprint,
+	FName StateMachineOldName,
+	FName StateMachineNewName)
+{
+#if WITH_EDITOR
+	if (!TemplateAnimBlueprint || !ChildAnimBlueprint
+		|| ChildAnimBlueprint->ParentClass != TemplateAnimBlueprint->GeneratedClass)
+	{
+		return false;
+	}
+
+	TArray<UEdGraph*> Graphs;
+	TemplateAnimBlueprint->GetAllGraphs(Graphs);
+	TArray<UAnimGraphNode_AssetPlayerBase*> AssetPlayers;
+	UAnimGraphNode_StateMachineBase* StateMachineToRename = nullptr;
+	for (UEdGraph* Graph : Graphs)
+	{
+		for (UEdGraphNode* GraphNode : Graph->Nodes)
+		{
+			if (UAnimGraphNode_AssetPlayerBase* AssetPlayer = Cast<UAnimGraphNode_AssetPlayerBase>(GraphNode))
+			{
+				if (AssetPlayer->GetAnimationAsset())
+				{
+					if (!AssetPlayer->IsA<UAnimGraphNode_SequencePlayer>()
+						&& !AssetPlayer->IsA<UAnimGraphNode_BlendSpacePlayer>())
+					{
+						UE_LOG(LogTemp, Error, TEXT("Template asset extraction: unsupported player %s (%s)"),
+							*GraphNode->GetName(), *GraphNode->GetClass()->GetName());
+						return false;
+					}
+					AssetPlayers.Add(AssetPlayer);
+				}
+			}
+			if (!StateMachineOldName.IsNone())
+			{
+				if (UAnimGraphNode_StateMachineBase* StateMachine = Cast<UAnimGraphNode_StateMachineBase>(GraphNode))
+				{
+					if (StateMachine->GetStateMachineName() == StateMachineOldName.ToString())
+					{
+						StateMachineToRename = StateMachine;
+					}
+				}
+			}
+		}
+	}
+
+	for (UAnimGraphNode_AssetPlayerBase* AssetPlayer : AssetPlayers)
+	{
+		UAnimationAsset* ConcreteAsset = AssetPlayer->GetAnimationAsset();
+		ChildAnimBlueprint->ParentAssetOverrides.RemoveAll(
+			[AssetPlayer](const FAnimParentNodeAssetOverride& Override)
+			{
+				return Override.ParentNodeGuid == AssetPlayer->NodeGuid;
+			});
+		ChildAnimBlueprint->ParentAssetOverrides.Emplace(AssetPlayer->NodeGuid, ConcreteAsset);
+		UE_LOG(LogTemp, Warning, TEXT("Template asset extraction: %s %s -> child override %s"),
+			*AssetPlayer->GetClass()->GetName(), *AssetPlayer->NodeGuid.ToString(), *ConcreteAsset->GetPathName());
+		if (UAnimGraphNode_SequencePlayer* SequencePlayer = Cast<UAnimGraphNode_SequencePlayer>(AssetPlayer))
+		{
+			SequencePlayer->Node.SetSequence(nullptr);
+		}
+		else if (UAnimGraphNode_BlendSpacePlayer* BlendSpacePlayer = Cast<UAnimGraphNode_BlendSpacePlayer>(AssetPlayer))
+		{
+			BlendSpacePlayer->Node.SetBlendSpace(nullptr);
+		}
+	}
+	TemplateAnimBlueprint->ParentAssetOverrides.Empty();
+	int32 AutomaticTransitionCount = 0;
+	for (UEdGraph* Graph : Graphs)
+	{
+		bool bNeedsRelevantTimeRule = false;
+		for (UEdGraphNode* GraphNode : Graph->Nodes)
+		{
+			if (UK2Node_TransitionRuleGetter* Getter = Cast<UK2Node_TransitionRuleGetter>(GraphNode))
+			{
+				bNeedsRelevantTimeRule |= Getter->GetterType == ETransitionGetter::AnimationAsset_GetTimeFromEnd
+					|| Getter->GetterType == ETransitionGetter::AnimationAsset_GetTimeFromEndFraction;
+			}
+		}
+		if (bNeedsRelevantTimeRule)
+		{
+			if (UAnimStateTransitionNode* Transition = Cast<UAnimStateTransitionNode>(Graph->GetOuter()))
+			{
+				Transition->bAutomaticRuleBasedOnSequencePlayerInState = true;
+				for (int32 Index = Graph->Nodes.Num() - 1; Index >= 0; --Index)
+				{
+					if (!Graph->Nodes[Index]->IsA<UAnimGraphNode_TransitionResult>())
+					{
+						Graph->Nodes[Index]->DestroyNode();
+					}
+				}
+				for (UEdGraphNode* GraphNode : Graph->Nodes)
+				{
+					if (UAnimGraphNode_TransitionResult* Result = Cast<UAnimGraphNode_TransitionResult>(GraphNode))
+					{
+						if (UEdGraphPin* CanEnter = Result->FindPin(TEXT("bCanEnterTransition")))
+						{
+							CanEnter->DefaultValue = TEXT("true");
+						}
+					}
+				}
+				++AutomaticTransitionCount;
+			}
+		}
+		for (UEdGraphNode* GraphNode : Graph->Nodes)
+		{
+			for (UEdGraphPin* Pin : GraphNode->Pins)
+			{
+				if (Pin && Cast<UAnimationAsset>(Pin->DefaultObject))
+				{
+					Pin->DefaultObject = nullptr;
+					Pin->DefaultValue.Reset();
+				}
+			}
+		}
+	}
+
+	if (StateMachineToRename && !StateMachineNewName.IsNone()
+		&& StateMachineOldName != StateMachineNewName)
+	{
+		StateMachineToRename->OnRenameNode(StateMachineNewName.ToString());
+	}
+
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(TemplateAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(TemplateAnimBlueprint);
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(ChildAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(ChildAnimBlueprint);
+	TemplateAnimBlueprint->MarkPackageDirty();
+	ChildAnimBlueprint->MarkPackageDirty();
+	UE_LOG(LogTemp, Warning, TEXT("Template asset extraction complete: template=%s moved=%d automatic_transitions=%d state_machine_renamed=%d"),
+		*TemplateAnimBlueprint->GetPathName(), AssetPlayers.Num(), AutomaticTransitionCount, StateMachineToRename != nullptr);
+	return TemplateAnimBlueprint->Status != BS_Error
+		&& ChildAnimBlueprint->Status != BS_Error;
+#else
+	return false;
 #endif
 }
 

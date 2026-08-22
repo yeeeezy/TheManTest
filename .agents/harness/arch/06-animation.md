@@ -26,6 +26,7 @@
 **玩家 locomotion（session63 简化）：**
 
 - 当前第一人称无骨架模板是 `/Game/Characters/CharacterBase/Animations/FirstPerson/Logic/TABP_CharacterBase_FirstPerson`，具体宿主是 `/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/ABP_MaintenanceWorker_FirstPerson`；身体无骨架模板位于 `CharacterBase/Animations/Body/Logic`，具体身体子类位于 MaintenanceWorker 对应目录。
+- 两个 CharacterBase 模板只拥有动画图结构，不直接引用 MaintenanceWorker 的 Sequence/BlendSpace；具体资产通过角色子 AnimBP 的 Parent Asset Overrides 下沉。第一人称 locomotion 状态机统一命名为 `FirstPersonLocomotionSM`。
 - MaintenanceWorker 的 Body/第一人称 Sequence、BlendSpace 与动作资产全部归入具体角色的 `Animations/Body`、`Animations/FirstPerson`；`CharacterBase` 不再保存具体角色表现资产。
 - 武器动画接口与模板分别位于 `/Game/Weapons/_Shared/Animations/Interfaces/ALI_WeaponAnim` 和 `/Game/Weapons/_Shared/Animations/Templates/TABP_FirstPersonFirearmBase`；RepairGun 子层位于 `/Game/Weapons/RepairGun/Animations/FirstPerson/Logic/ABP_RepairGun_FirstPerson`。
 - 2026-08-21 root 方向纠正：原始/外部最终 VFXPack 第一人称动画 root 参考方向为 Yaw=0°；TheManTest 曾错误恢复为约-90°。当前7条正式序列的首尾 root Yaw 均已审计为0°。组件构图和 GripPoint 必须以这批正确动画为基准，不得再通过动画 root ±90° 补偿组件方向。

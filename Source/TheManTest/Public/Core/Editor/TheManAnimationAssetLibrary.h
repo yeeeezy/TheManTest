@@ -63,6 +63,15 @@ public:
 		const FString& AssetName,
 		bool bReparentHost);
 
+	/** Move concrete Sequence/BlendSpace assets from template player nodes into the
+	 * concrete child's parent overrides, leaving skeleton-free placeholder players. */
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Animation")
+	static bool MoveTemplateAnimationAssetsToChild(
+		UAnimBlueprint* TemplateAnimBlueprint,
+		UAnimBlueprint* ChildAnimBlueprint,
+		FName StateMachineOldName,
+		FName StateMachineNewName);
+
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Blueprint")
 	static bool SetInheritedSceneComponentRotation(
 		UBlueprint* Blueprint,

@@ -1,5 +1,13 @@
 # 进度日志
 
+## 2026-08-22 session215 交接：角色动画模板去具体资产化
+
+- `TABP_CharacterBase_FirstPerson` 的状态机由默认名 `New State Machine` 改为 `FirstPersonLocomotionSM`。
+- 两个 CharacterBase 模板均只保留结构节点：动画序列使用无具体资产的 `Sequence Player`，移动混合使用无具体资产的 `Blend Space Player`；冷启动依赖审计确认两者对 `/Game/Characters/MaintenanceWorker/` 的具体资产依赖均为 0。
+- `TABP_CharacterBase_BodyLocomotion` 原本已经通过子类 Asset Override 绑定具体动画，本轮无需迁移；`TABP_CharacterBase_FirstPerson` 的 7 个播放器绑定已迁入 `ABP_MaintenanceWorker_FirstPerson` 的 Parent Asset Overrides（Idle、Still×2、JumpStart、JumpLoop、JumpEnd、WalkRun BlendSpace）。
+- 第一人称模板中 3 条依赖具体 Sequence 的剩余时间 Getter 已改为状态机原生自动剩余时间过渡，保证播放器清空资产后模板仍可独立编译。
+- `TheManTestEditor Win64 Development` 构建成功；冷启动 `Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture`、`Viewmodel.EquipDissolveEvidence` 均为 1/1 Success。
+
 ## 2026-08-22 session214 交接：第一人称宿主模板化
 
 - 新增无骨架 `/Game/Characters/CharacterBase/Animations/FirstPerson/Logic/TABP_CharacterBase_FirstPerson`，完整继承原第一人称基础 locomotion/Jump、`ALI_WeaponAnim` 路由和最终 Lean/Look 图。

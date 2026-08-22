@@ -70,3 +70,11 @@
 - `ABP_MaintenanceWorker_FirstPerson` 保留具体 Skeleton 与原资产路径，ParentClass 改为新模板生成类并删除本地 AnimGraph，成为纯具体角色子类。
 - 冷审计确认模板 `TargetSkeleton=None` 且 AnimGraph 存在；子类 Skeleton 仍为 `SK_Mannequin_Arms_Skeleton`、本地 AnimGraph 为 None，并明确依赖模板。
 - 写入前 WIP 检查点 `20be43d`；Development Editor 冷构建及三项玩家动画回归均 Success。
+
+## 2026-08-22 session215 — 模板播放器占位与具体资产下沉
+
+- 将 `TABP_CharacterBase_FirstPerson` 的状态机正式命名为 `FirstPersonLocomotionSM`。
+- Body 与 FirstPerson 两个 CharacterBase 模板均只保留无具体资产的 `Sequence Player` / `Blend Space Player` 结构；冷启动依赖审计确认对 `/Game/Characters/MaintenanceWorker/` 的依赖均为 0。
+- Body 模板原已采用子类 Asset Override，无需迁移。FirstPerson 模板的 7 个播放器绑定迁入 `ABP_MaintenanceWorker_FirstPerson.ParentAssetOverrides`：Idle、Still 两处、JumpStart、JumpLoop、JumpEnd 和 WalkRun BlendSpace。
+- 因模板 Sequence Player 不再绑定资产，Jump 的 3 条剩余时间 Getter 改为状态机原生自动剩余时间过渡，模板与具体子类均重新编译保存。
+- `TheManTestEditor Win64 Development` 构建成功；冷启动 `Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture`、`Viewmodel.EquipDissolveEvidence` 均为 1/1 Success。仍待用户前台主观复核。
