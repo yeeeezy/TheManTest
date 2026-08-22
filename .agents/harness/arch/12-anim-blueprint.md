@@ -388,6 +388,7 @@ Cache_Locomotion → WeaponUpperBody → Slot"UpperBody" → WeaponAimOffset →
 
 - session153 的 `ShadowBodyMesh Leader=ArmsViewMesh` 已撤销。MaintenanceWorker 恢复本项目既有的同源方式：`CharacterMesh0` 与 `ArmsViewMesh` 使用同一原版 VFXPack AnimBP 类，各自拥有 AnimInstance；Shadow/Legs 均 Leader=`CharacterMesh0`。
 - VFXPack `Walk_Run_1D` 只有 Speed 轴。方向姿态由原角色 Body_Sway 写入 AnimBP，不是 2D BlendSpace：原始目标为 `Clamp(MoveRight+MouseX,-1,1)` 和 `Clamp(-MoveForward-10×LookUp,-1,1)`，Walk 插值速度 2、Sprint 8；写入 Modify Bone 前原 EventGraph 还精确乘以 `Lean_Sides_Offset=8.0` / `Look_Up_Offset=2.0`。
+- session218 后移动表现分为两层：A/D 继续通过 `Lean_Sides_Amount` 保留枪械绕轴 Roll，但不得再交叉写入 `Look_Up_Amount`；W/S 独立驱动 Look/Pitch。位置惯性由 `ViewmodelRoot` 相机局部 XY 承担，方向与输入相反且 Z 恒为0，不能用骨骼 Pitch 模拟左右位置滞后。
 - C++ 必须把 `Is_Moving`、`Is_InAir`、`Character_Speed`、`Lean_Sides_Amount`、`Look_Up_Amount` 同帧写给两个 AnimInstance，避免第一/第三人称及影子上半身再次分叉。
 - session157 修正：前后倾斜的原版 AnimBP 变量实际名为 `Look_Up_Amount`，不是 `Look_Up_Down_Amount`。方向倾斜必须缓存 Enhanced Input 原始移动轴，A/D → `Lean_Sides_Amount`、W/S → `Look_Up_Amount`；不得只用 CharacterMovement 速度反推后就以变量数值代替最终姿势验收。正式 AnimGraph 为 `spine_03` Additive Roll/Pitch，加上 `hand_l` 的 0.5× Additive Roll。
 - session165：取消项目补充的 5cm `ViewmodelRoot` Y 向横移；A/D 最终视觉只来自上述 AnimBP 骨骼链，构图根节点不再随侧移输入改变位置或旋转。

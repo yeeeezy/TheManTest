@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-08-22 session218 交接：第一人称移动惯性分层修正
+
+- 临时诊断开关分别隔离 WalkRun、Lean、Look 后量化 `hand_r` 相对相机高度：WalkRun 约 `0.23cm`；Lean 左右总差约 `2.29cm`；Look 左右总差约 `4.63cm`；原组合总差约 `6.81cm`。`ViewmodelRoot` 与 `ArmsViewMesh` 原 Location 全程固定，确认问题主因是侧移经 75°换轴串入 Look/Pitch，而非组件平移。
+- 临时诊断代码已撤回。正式实现保留现有侧移 `Lean/Roll`（枪械绕轴偏转），只移除侧移到 `Look/Pitch` 的交叉项；前后输入仍独立驱动 Look/Pitch。
+- 新增相机局部 `ViewmodelRoot` XY 位置滞后：A→+Y、D→-Y、W→-X、S→+X，Z 强制为0；默认侧向3cm、前后2cm、插值速度6，参数可在角色默认值调整。
+- 新增 `TheManTest.Player.Viewmodel.MovementLagDirections`，验证四向反向滞后、无Z位移、A/D保留Roll且不串入Pitch。该测试、Development Editor 构建及原三项玩家动画回归均 Success。
+
 ## 2026-08-22 session217 交接：枪械 WalkRun 恢复 Blend Space 占位
 
 - 纠正 session216 的错误方向：`TABP_FirstPersonFirearmBase.WeaponUpperBody/WalkRun` 不应使用 Run Sequence 冒充移动混合，现已替换为无具体资产的 `Blend Space Player`，并将 `Speed` 接入 X。

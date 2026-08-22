@@ -8,6 +8,7 @@
 #include "Enemy/Humanoid/HumanoidEnemyAnimInstance.h"
 #include "Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h"
 #include "Characters/CharacterBase/FPSCharacterBase/Animation/FPSCharacterAnimInstance.h"
+#include "Characters/CharacterBase/Animation/CharacterBaseAnimInstance.h"
 #include "Weapons/_Shared/Components/EquipmentManagerComponent.h"
 #include "Weapons/_Shared/EquipmentBase/EquipmentBase.h"
 #include "Enemy/Humanoid/Phantom/Phantom.h"
@@ -778,6 +779,58 @@ bool FPhantomTacticalApproachPIETest::RunTest(const FString& Parameters)
 
 DEFINE_LATENT_AUTOMATION_COMMAND(FPlayerFramingScreenshotCommand);
 
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FSetViewmodelMoveInputCommand, FVector2D, Input, bool, bStop);
+bool FSetViewmodelMoveInputCommand::Update()
+{
+	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+	AFPSCharacterBase* Player = World && World->GetFirstPlayerController()
+		? Cast<AFPSCharacterBase>(World->GetFirstPlayerController()->GetPawn()) : nullptr;
+	if (!Player) return false;
+	if (bStop)
+	{
+		Player->StopMove(FInputActionValue(FVector2D::ZeroVector));
+	}
+	else
+	{
+		Player->Move(FInputActionValue(Input));
+	}
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_FOUR_PARAMETER(
+	FValidateViewmodelLagCommand, FAutomationTestBase*, Test, FString, Label, int32, ExpectedXSign, int32, ExpectedYSign);
+bool FValidateViewmodelLagCommand::Update()
+{
+	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+	AFPSCharacterBase* Player = World && World->GetFirstPlayerController()
+		? Cast<AFPSCharacterBase>(World->GetFirstPlayerController()->GetPawn()) : nullptr;
+	if (!Player || !Player->GetViewmodelRoot() || !Player->GetArmsMesh()) return false;
+	const FVector Lag = Player->GetViewmodelRoot()->GetRelativeLocation();
+	Test->TestTrue(Label + TEXT(" lag X direction"), ExpectedXSign == 0
+		? FMath::Abs(Lag.X) < 0.05f : Lag.X * ExpectedXSign > 0.5f);
+	Test->TestTrue(Label + TEXT(" lag Y direction"), ExpectedYSign == 0
+		? FMath::Abs(Lag.Y) < 0.05f : Lag.Y * ExpectedYSign > 0.5f);
+	Test->TestTrue(Label + TEXT(" never adds vertical lag"), FMath::Abs(Lag.Z) < KINDA_SMALL_NUMBER);
+	if (UCharacterBaseAnimInstance* Anim = Cast<UCharacterBaseAnimInstance>(Player->GetArmsMesh()->GetAnimInstance()))
+	{
+		if (ExpectedYSign != 0)
+		{
+			const FDoubleProperty* LeanProperty = FindFProperty<FDoubleProperty>(Anim->GetClass(), TEXT("Lean_Sides_Amount"));
+			const FDoubleProperty* LookProperty = FindFProperty<FDoubleProperty>(Anim->GetClass(), TEXT("Look_Up_Amount"));
+			Test->TestNotNull(Label + TEXT(" exposes Lean/Roll"), LeanProperty);
+			Test->TestNotNull(Label + TEXT(" exposes Look/Pitch"), LookProperty);
+			if (LeanProperty && LookProperty)
+			{
+				Test->TestTrue(Label + TEXT(" keeps lateral barrel Roll"),
+					FMath::Abs(LeanProperty->GetPropertyValue_InContainer(Anim)) > 0.1);
+				Test->TestTrue(Label + TEXT(" lateral input does not leak into Look/Pitch"),
+					FMath::Abs(LookProperty->GetPropertyValue_InContainer(Anim)) < 0.05);
+			}
+		}
+	}
+	return true;
+}
+
 static bool SaveSceneCapture(UWorld* World, AActor* Owner, const FVector& CameraLocation,
 	const FVector& TargetLocation, const FString& FileName)
 {
@@ -1307,6 +1360,33 @@ bool FShadowUpperBodyEvidenceTest::RunTest(const FString& Parameters)
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FShadowUpperBodyEvidenceCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FViewmodelMovementLagDirectionsTest,
+	"TheManTest.Player.Viewmodel.MovementLagDirections",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FViewmodelMovementLagDirectionsTest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.5f));
+
+	auto AddCase = [this](const TCHAR* Label, const FVector2D Input, const int32 XSign, const int32 YSign)
+	{
+		ADD_LATENT_AUTOMATION_COMMAND(FSetViewmodelMoveInputCommand(Input, false));
+		ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.8f));
+		ADD_LATENT_AUTOMATION_COMMAND(FValidateViewmodelLagCommand(this, Label, XSign, YSign));
+		ADD_LATENT_AUTOMATION_COMMAND(FSetViewmodelMoveInputCommand(FVector2D::ZeroVector, true));
+		ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.8f));
+	};
+	AddCase(TEXT("MoveLeft"), FVector2D(-1.f, 0.f), 0, 1);
+	AddCase(TEXT("MoveRight"), FVector2D(1.f, 0.f), 0, -1);
+	AddCase(TEXT("MoveForward"), FVector2D(0.f, 1.f), -1, 0);
+	AddCase(TEXT("MoveBackward"), FVector2D(0.f, -1.f), 1, 0);
+
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }

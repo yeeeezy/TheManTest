@@ -3,6 +3,12 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-22 session218 — 移动位置滞后与骨骼旋转解耦
+
+- 隔离采样确认 A/D 上下偏移主要来自侧移 Lean 经 75°基差交叉写入 Look/Pitch；WalkRun 仅贡献约0.23cm，组件 Location 原本没有任何移动滞后。
+- 正式实现保留侧移的枪械绕轴 Lean/Roll，只删除侧移到 Look/Pitch 的交叉项；新增独立 `ViewmodelRoot` 相机局部 XY 反向位置滞后，Z 永远为0。默认 A/D 3cm、W/S 2cm、插值速度6。
+- 新增 MovementLagDirections 自动化；四向符号、零Z、Roll保留、Pitch隔离均通过，原三项玩家动画回归及 Development Editor 构建也通过。
+
 ## 2026-08-22 session217 — 枪械 WalkRun 专用 Blend Space Player
 
 - 按用户审查纠正 session216：枪械模板 Idle 使用空 Sequence Player，WalkRun 使用空 Blend Space Player，不能用 Run Sequence 代替移动 BlendSpace。
