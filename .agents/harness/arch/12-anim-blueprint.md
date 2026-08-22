@@ -21,7 +21,7 @@
 
 | 资产 / 类 | 路径 | 作用 |
 |---|---|---|
-| `TABP_MaintenanceWorker_BodyLocomotion` | `Content/Characters/MaintenanceWorker/Animations/Body/Logic/` | MaintenanceWorker 身体 locomotion 模板；最终身体子类为同目录 `ABP_MaintenanceWorker_Body` |
+| `TABP_CharacterBase_BodyLocomotion` | `Content/Characters/CharacterBase/Animations/Body/Logic/` | 无骨架玩家身体 locomotion 模板；MaintenanceWorker 最终身体子类为其角色目录下的 `ABP_MaintenanceWorker_Body` |
 | `ABP_MaintenanceWorker_FirstPerson` | `Content/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/` | 常驻 ArmsViewMesh 宿主；地面调用 `ALI_WeaponAnim`，腾空沿用共享 Jump 状态机，随后应用通用骨骼晃动 |
 | `ALI_WeaponAnim` | `Content/Weapons/_Shared/Animations/Interfaces/` | 武器动画层接口，定义两个层：`WeaponAimOffset`、`WeaponUpperBody` |
 | `TABP_FirstPersonFirearmBase` | `Content/Weapons/_Shared/Animations/Templates/` | 第一人称枪械 Template AnimBP，实现 `ALI_WeaponAnim`；统一持枪 Idle/WalkRun 状态逻辑，具体武器子类替换动画资产 |
@@ -37,7 +37,7 @@
 
 > `ABP_BodyLocomotion` 是项目自己的玩家全身主 ABP，不应因为放弃 Motion Matching 而直接删除。若它曾在实验中加入 `PoseSearchHistoryCollector` / Motion Matching / Stop 状态，需要在编辑器里清掉这些节点，保留为普通 locomotion 模板。父类推荐继续用 `UFPSCharacterAnimInstance`，该类现在是很薄的玩家专属子类，只比 `UBaseLocomotionAnimInstance` 多 `AccelDirection` / `bHasAcceleration`。
 
-**当前身体路径：** `Content/Characters/MaintenanceWorker/Animations/Body/Logic/TABP_MaintenanceWorker_BodyLocomotion`
+**当前身体路径：** `Content/Characters/CharacterBase/Animations/Body/Logic/TABP_CharacterBase_BodyLocomotion`
 
 **推荐 LocomotionSM：**
 
@@ -243,7 +243,7 @@ BBBAimIK 节点
 
 | 资产 / 类 | 路径 | 作用 |
 |---|---|---|
-| `TABP_MaintenanceWorker_BodyLocomotion` | `Content/Characters/MaintenanceWorker/Animations/Body/Logic/` | 当前 MaintenanceWorker 身体 Template ABP，完整 Locomotion 状态机框架 |
+| `TABP_CharacterBase_BodyLocomotion` | `Content/Characters/CharacterBase/Animations/Body/Logic/` | 无骨架玩家身体 Template ABP，提供完整 Locomotion 状态机与上半身 Pose 合成框架 |
 | `ABP_HumanoidEnemy` | `Content/Enemy/Phantom/Animations/Logic/`（ABP_Phantom 等） | 人形怪 ABP，Parent Class = `UHumanoidEnemyAnimInstance` |
 | `UBaseLocomotionAnimInstance` | `Source/.../Characters/_Shared/Animation/BaseLocomotionAnimInstance.h` | 所有 AnimInstance 的 C++ 基类 |
 | `UHumanoidEnemyAnimInstance` | `Source/.../Enemy/Humanoid/HumanoidEnemyAnimInstance.h` | 人形怪专属 AnimInstance |

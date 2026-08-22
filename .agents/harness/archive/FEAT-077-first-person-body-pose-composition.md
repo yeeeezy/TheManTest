@@ -54,3 +54,12 @@
 - C++ 层级统一为 `UBaseLocomotionAnimInstance -> UFPSCharacterAnimInstance -> UCharacterBaseAnimInstance -> UFirearmAnimInstance`；速度、方向、垂直速度、腾空、移动状态和通用 Lean/Look 不再由素材包 EventGraph重复计算。
 - 角色专属 AnimBP 已从 `CharacterBase` 移至 `MaintenanceWorker/Animations/{FirstPerson,Body}/Logic`；无引用空模板 `TABP_CharacterBase` 删除。
 - Development Editor 构建通过；三项冷启动自动化 `Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture`、`Viewmodel.EquipDissolveEvidence` 全部 Success。
+
+## 2026-08-22 session213 — 身体模板提升至 CharacterBase
+
+- 纠正模板所有权：无骨架 `TABP_MaintenanceWorker_BodyLocomotion` 不绑定 MaintenanceWorker Skeleton 或动画资产，其职责是提供玩家身体 Locomotion 状态机与上半身 Pose 合成框架。
+- 通过 Unreal AssetTools 改名并迁移为 `/Game/Characters/CharacterBase/Animations/Body/Logic/TABP_CharacterBase_BodyLocomotion`。
+- `ABP_MaintenanceWorker_Body` 仍留在具体角色目录，继续承担 MaintenanceWorker Skeleton 与动画 Asset Override；迁移后已重新编译保存。
+- 写入前 WIP 检查点：`a3da38b`。
+- 新模板与具体 Body AnimBP 资产加载验证通过；旧路径 Asset Registry 为0且无 Redirector，新模板唯一确认引用方为 `ABP_MaintenanceWorker_Body`。
+- 关闭编辑器后 `TheManTestEditor Win64 Development` 冷构建成功；冷启动 `Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture`、`Viewmodel.EquipDissolveEvidence` 均为 1/1 Success。

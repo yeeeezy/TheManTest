@@ -1,5 +1,13 @@
 # 进度日志
 
+## 2026-08-22 session213 交接：身体 Locomotion 模板提升至 CharacterBase
+
+- 无骨架模板 `TABP_MaintenanceWorker_BodyLocomotion` 已通过 Unreal AssetTools 改名并迁移为 `/Game/Characters/CharacterBase/Animations/Body/Logic/TABP_CharacterBase_BodyLocomotion`。
+- 具体实现 `ABP_MaintenanceWorker_Body` 继续留在 MaintenanceWorker 角色目录，并已重新编译保存；它是新模板当前唯一引用方。
+- 此次只提升通用状态机与上半身 Pose 合成框架，没有移动 MaintenanceWorker 的 Skeleton、动画序列或 BlendSpace。
+- 写入前 WIP 检查点：`a3da38b`。新旧路径、唯一引用、两项资产加载验证及 AnimBP 编译保存均已通过；旧路径 Asset Registry 为0且未留下 Redirector。
+- 关闭编辑器后 `TheManTestEditor Win64 Development` 冷构建成功；冷启动 `Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture`、`Viewmodel.EquipDissolveEvidence` 均为 1/1 Success。
+
 ## 2026-08-22 session212 交接：全项目资产目录规范化启动
 
 - 当前活动功能切换为 FEAT-078；FEAT-077 已保存至检查点 `d923f88`，自动化通过但仍待用户前台主观验收，因此状态改为 `needs_improvement`。
@@ -16,7 +24,7 @@
 - `ArmsViewMesh` 常驻宿主整理为 `/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Logic/ABP_MaintenanceWorker_FirstPerson`，父类为 `UCharacterBaseAnimInstance`；地面持枪 Pose 改由 `ALI_WeaponAnim.WeaponUpperBody` Linked Layer 提供，腾空时切回宿主原 Jump 状态机以保持改前表现，原 `spine_03/hand_l` 通用晃动仍在最终输出端。
 - 枪械模板正式命名为 `/Game/Weapons/_Shared/Animations/Templates/TABP_FirstPersonFirearmBase`，父类 `UFirearmAnimInstance`；维修枪子类为 `/Game/Weapons/RepairGun/Animations/FirstPerson/Logic/ABP_RepairGun_FirstPerson`。切枪只链接层，不更换 Arms 主 AnimInstance。
 - `UCharacterBaseAnimInstance` 继承 `UFPSCharacterAnimInstance`，统一由 C++ 提供 Speed/Direction/VelocityZ/bIsFalling、`Character_Speed/Is_Moving/Is_InAir` 与 Lean/Look；第一人称宿主的素材包 EventGraph 驱动已清空。
-- 身体资产归入 MaintenanceWorker：`ABP_MaintenanceWorker_Body` 与 `TABP_MaintenanceWorker_BodyLocomotion`；无引用 `TABP_CharacterBase` 已删除。
+- 身体具体实现归入 MaintenanceWorker：`ABP_MaintenanceWorker_Body`；其无骨架通用模板随后在 session213 提升为 `CharacterBase/Animations/Body/Logic/TABP_CharacterBase_BodyLocomotion`。无引用 `TABP_CharacterBase` 已删除。
 - Development Editor 编译成功；冷启动 `Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture`、`Viewmodel.EquipDissolveEvidence` 均 Success，验证影子上半身同步、构图和装备显隐未相对改前回归。
 - 待办：用户前台实际输入复核 Idle/WASD/Run/Jump/切枪/开火主观观感。
 

@@ -10,7 +10,7 @@ moves = [
     ("/Game/Characters/CharacterBase/Animations/Body/Logic/ABP_CharacterBase_Body",
      "/Game/Characters/MaintenanceWorker/Animations/Body/Logic/ABP_MaintenanceWorker_Body"),
     ("/Game/Characters/CharacterBase/Animations/Logic/TABP_BodyLocomotion",
-     "/Game/Characters/MaintenanceWorker/Animations/Body/Logic/TABP_MaintenanceWorker_BodyLocomotion"),
+     "/Game/Characters/CharacterBase/Animations/Body/Logic/TABP_CharacterBase_BodyLocomotion"),
 ]
 
 for source, destination in moves:
