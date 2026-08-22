@@ -271,6 +271,23 @@ void AFPSCharacterBase::PlayInitialEquipEffect()
 	}
 }
 
+#if WITH_EDITOR
+void AFPSCharacterBase::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	const FName PropertyName = PropertyChangedEvent.GetPropertyName();
+	if (ArmsViewMesh && PropertyName == GET_MEMBER_NAME_CHECKED(AFPSCharacterBase, ViewmodelOffsetLocation))
+	{
+		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
+	}
+	else if (ArmsViewMesh && PropertyName == GET_MEMBER_NAME_CHECKED(AFPSCharacterBase, BaseArmsRotation))
+	{
+		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
+	}
+}
+#endif
+
 void AFPSCharacterBase::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);

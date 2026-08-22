@@ -1,5 +1,11 @@
 # 进度日志
 
+## 2026-08-22 session229 交接：Viewmodel 构图支持 PIE 实例即时编辑
+
+- `Viewmodel Offset Location` 与 `Viewmodel Arms Rotation` 改为 `EditAnywhere`，可在 PIE 运行实例 Details 中调整。
+- 新增编辑器专用 `PostEditChangeProperty`：仅在这两个属性真正被编辑时立即更新 `ArmsViewMesh` Location/Rotation；普通 Tick 不检测、不比较、不覆盖静态构图，打包版本无该编辑器回调。
+- 写入前 WIP 检查点：`0b54ba2`。Development Editor 冷构建成功。用户未提交的 `BP_MaintenanceWorker.uasset` 手调继续保留且未被覆盖；旧 ViewmodelRoot Rotation 仍需在蓝图中重置为0后再用 Arms Rotation 调朝向。
+
 ## 2026-08-22 session228 交接：暴露 Arms 自身构图旋转
 
 - 将原 `BaseArmsRotation` 从 `Mesh` 分类整理到 Class Defaults 的 `Viewmodel|Framing`，显示名为 `Viewmodel Arms Rotation`，默认仍为 `(-3,-90,-1)`；BeginPlay 直接应用于 `ArmsViewMesh`，调整其 Yaw 不会像父级 ViewmodelRoot 那样绕相机原点画圆。

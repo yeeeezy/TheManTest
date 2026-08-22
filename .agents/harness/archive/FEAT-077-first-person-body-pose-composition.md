@@ -3,6 +3,11 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-22 session229 — PIE 实例即时构图编辑
+
+- Location 与 Arms Rotation 改为实例可调；编辑器 `PostEditChangeProperty` 仅在用户修改属性时更新 Arms Transform，Tick 保持无静态构图检测/覆盖。
+- 检查点 `0b54ba2`；Development Editor 冷构建成功，用户 BP 手调资产未覆盖。
+
 ## 2026-08-22 session228 — Arms 自身旋转参数暴露
 
 - `BaseArmsRotation` 改为 `Viewmodel|Framing` 下显示的 `Viewmodel Arms Rotation`，保持默认 `(-3,-90,-1)`，用于不改变组件 Location 的 Arms 自身静态朝向调整。
