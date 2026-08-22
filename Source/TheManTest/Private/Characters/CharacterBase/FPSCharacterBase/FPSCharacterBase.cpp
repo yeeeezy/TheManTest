@@ -477,8 +477,7 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 	const FVector AnimationVelocity = GetVelocity();
 	const double CharacterSpeed = AnimationVelocity.Size();
 	const float GroundSpeed = AnimationVelocity.Size2D();
-	// VFXPack uses a 0.2 second Timeline that plays on Sprint pressed and reverses
-	// from its current position on release. One alpha owns speed and BodyRotator.
+	// Sprint intent keeps the original 0.2 second walk/sprint speed transition.
 	const float SprintTimelineStep = DeltaTime / VFXSprintTransitionDuration;
 	SprintTransitionAlpha = FMath::Clamp(
 		SprintTransitionAlpha + (bIsSprinting ? SprintTimelineStep : -SprintTimelineStep),
@@ -488,6 +487,11 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = FMath::Lerp(WalkSpeed, SprintSpeed, SprintTransitionAlpha);
 	}
+	// Visual compression follows achieved horizontal speed, not the Shift key.
+	// Standing still or being blocked therefore keeps the viewmodel at its baseline.
+	const float SprintVisualAlpha = SprintSpeed > WalkSpeed + KINDA_SMALL_NUMBER
+		? FMath::Clamp((GroundSpeed - WalkSpeed) / (SprintSpeed - WalkSpeed), 0.f, 1.f)
+		: 0.f;
 
 	// 后坐力：角速度积分驱动，FInterpTo 衰减
 	if (FMath::Abs(RecoilPitchVelocity) > KINDA_SMALL_NUMBER ||
@@ -511,7 +515,7 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		// ViewmodelRoot is the original VFXPack BodyRotator equivalent. Only its
 		// dynamic sprint rotation changes at runtime; static framing was applied once.
 		ViewmodelRoot->SetRelativeRotation(
-			ViewmodelOffsetRotation + FRotator(SprintViewmodelPitchDegrees * SprintTransitionAlpha, 0.f, 0.f));
+			ViewmodelOffsetRotation + FRotator(SprintViewmodelPitchDegrees * SprintVisualAlpha, 0.f, 0.f));
 
 		// VFXPack FirstPerson_AnimBP 原 Event Blueprint Update Animation 的等价逻辑。
 		// 直接写原变量，保留其原 StateMachine / BlendSpace 资产，不另造动画状态机。

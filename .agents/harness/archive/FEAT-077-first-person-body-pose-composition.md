@@ -3,6 +3,11 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-22 session227 — 实际速度驱动冲刺压枪
+
+- `SprintTransitionAlpha` 仅负责0.2秒 MaxWalkSpeed 切换；`ViewmodelRoot` 压枪改由实际水平速度在550..750映射出的 `SprintVisualAlpha` 驱动。
+- 原地 Shift、受阻或速度不超过 WalkSpeed 时不压枪；专项运行时断言通过。写入前检查点 `102ffab`，Development Editor 冷构建及3项玩家回归全部 Success。
+
 ## 2026-08-22 session226 — 静态构图停止逐帧覆盖
 
 - ViewmodelRoot 静态位置、Arms 的 Offset Location/Base Rotation 改为 `BeginPlay` 应用一次；Tick 只更新冲刺动态 Pitch 和 AnimBP 输入。

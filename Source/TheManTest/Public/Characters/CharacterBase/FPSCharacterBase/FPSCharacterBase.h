@@ -50,6 +50,9 @@ public:
 
 	FORCEINLINE UCameraComponent*           GetHeadCamera()       const { return HeadCamera; }
 	FORCEINLINE USceneComponent*            GetViewmodelRoot()    const { return ViewmodelRoot; }
+#if WITH_DEV_AUTOMATION_TESTS
+	void SetSprintingForTesting(bool bValue) { bIsSprinting = bValue; }
+#endif
 	// FEAT-042锛欶P 鎵嬭噦鏀瑰洖鐙珛 mesh锛圓rmsViewMesh锛夛紝涓嶅綊 MM 绠?鈫?鑳借浆缁勪欢璺熻瑙掞紙MM 瀹夸富杞笉鍔紝
 	FORCEINLINE USkeletalMeshComponent*     GetArmsMesh()         const { return ArmsViewMesh; }
 	FORCEINLINE USceneComponent*            GetBodyRoot()         const { return BodyRoot; }

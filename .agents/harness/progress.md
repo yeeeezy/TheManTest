@@ -1,5 +1,11 @@
 # 进度日志
 
+## 2026-08-22 session227 交接：冲刺压枪改为实际速度驱动
+
+- 将冲刺速度切换与视觉压枪解耦：`SprintTransitionAlpha` 继续按 Shift 意图在0.2秒内切换 `MaxWalkSpeed` 550→750；新增局部 `SprintVisualAlpha`，按实际水平速度在 `WalkSpeed..SprintSpeed` 映射0..1。
+- `ViewmodelRoot.Pitch` 仅使用 `SprintVisualAlpha`：原地按 Shift、受阻或实际速度不超过550时不下压，超过550后随速度连续压至最大角度；静态 Arms Transform 仍只在 BeginPlay 应用一次。
+- 新增运行时断言“原地持有 Sprint 不压枪”。写入前 WIP 检查点：`102ffab`。Development Editor 冷构建成功；3项 `TheManTest.Player` 回归全部 Success。
+
 ## 2026-08-22 session226 交接：静态 Viewmodel 构图改为初始化时应用
 
 - `ViewmodelRoot.Location`、`ArmsViewMesh.ViewmodelOffsetLocation` 与 `BaseArmsRotation` 改为在 `BeginPlay`（蓝图默认值加载后）应用一次；Tick 不再重复覆盖这些静态 Transform。

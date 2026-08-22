@@ -1221,6 +1221,11 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 		FMath::Abs(ArmsBodyLateralOffset) < 0.1f);
 	Test->TestTrue(TEXT("Viewmodel root matches VFXPack BodyRotator identity rotation"),
 		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
+	Player->SetSprintingForTesting(true);
+	Player->Tick(0.25f);
+	Test->TestTrue(TEXT("Holding sprint while stationary does not compress the viewmodel"),
+		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
+	Player->SetSprintingForTesting(false);
 	Test->TestTrue(TEXT("Arms rotation matches VFXPack SK_ArmMesh"),
 		Player->GetArmsMesh()->GetRelativeRotation().Equals(FRotator(-3.f, -90.f, -1.f), 0.01f));
 	Test->TestTrue(TEXT("Arms location matches VFXPack SK_ArmMesh beneath BodyRotator"),
