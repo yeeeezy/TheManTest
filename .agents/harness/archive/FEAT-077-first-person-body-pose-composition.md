@@ -3,6 +3,11 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-22 session226 — 静态构图停止逐帧覆盖
+
+- ViewmodelRoot 静态位置、Arms 的 Offset Location/Base Rotation 改为 `BeginPlay` 应用一次；Tick 只更新冲刺动态 Pitch 和 AnimBP 输入。
+- 写入前 WIP 检查点 `2ba4834`。首次冷链接因运行中的 Unreal Editor 锁定 DLL 报 LNK1104；关闭编辑器后 Development Editor 冷链接成功，3项玩家回归全部 Success。
+
 ## 2026-08-22 session225 — Body Sway 插值速度参数化
 
 - 新增 `ViewmodelBodySwayInterpSpeed`（`Viewmodel|Movement`，默认 `6.0`），替代普通移动硬编码 `2.0`；进入倾斜和松键回弹同步加快。冲刺仍使用原版 `8.0`。

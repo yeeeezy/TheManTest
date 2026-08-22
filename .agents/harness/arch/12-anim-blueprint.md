@@ -390,6 +390,7 @@ Cache_Locomotion → WeaponUpperBody → Slot"UpperBody" → WeaponAimOffset →
 - VFXPack `Walk_Run_1D` 只有 Speed 轴。方向姿态由原角色 Body_Sway 写入 AnimBP，不是 2D BlendSpace：原始目标为 `Clamp(MoveRight+MouseX,-1,1)` 和 `Clamp(-MoveForward-10×LookUp,-1,1)`，Walk 插值速度 2、Sprint 8；写入 Modify Bone 前原 EventGraph 还精确乘以 `Lean_Sides_Offset=8.0` / `Look_Up_Offset=2.0`。
 - session224 当前边界：按用户决定恢复 `e1c24eb` / session220 的完整75° `RemappedLeanRoll/RemappedLookPitch` 骨骼映射。A/D 继续通过 `spine_03/hand_l` Modify Bone 链带动手臂与枪；不旋转装备 Actor，也不移动 `ArmsViewMesh` 做圆弧补偿。该版本倾斜观感获用户认可，但保留枪口随骨骼枢轴上下平移的已知问题。
 - 普通移动 Body Sway 的进入/回弹速度由 `AFPSCharacterBase.ViewmodelBodySwayInterpSpeed` 控制，Class Defaults 分类为 `Viewmodel|Movement`，默认 `6.0`；冲刺保持 `8.0`。
+- 静态第一人称构图仅在 `BeginPlay` 应用：`ViewmodelRoot.Location=0`，Arms 使用 `ViewmodelOffsetLocation` 与 `BaseArmsRotation`。Tick 不再重写 Arms 静态 Transform，只更新 `ViewmodelRoot` 的冲刺 Pitch 和 AnimBP Lean/Look。
 - C++ 必须把 `Is_Moving`、`Is_InAir`、`Character_Speed`、`Lean_Sides_Amount`、`Look_Up_Amount` 同帧写给两个 AnimInstance，避免第一/第三人称及影子上半身再次分叉。
 - session157 修正：前后倾斜的原版 AnimBP 变量实际名为 `Look_Up_Amount`，不是 `Look_Up_Down_Amount`。方向倾斜必须缓存 Enhanced Input 原始移动轴，A/D → `Lean_Sides_Amount`、W/S → `Look_Up_Amount`；不得只用 CharacterMovement 速度反推后就以变量数值代替最终姿势验收。正式 AnimGraph 为 `spine_03` Additive Roll/Pitch，加上 `hand_l` 的 0.5× Additive Roll。
 - session165：取消项目补充的 5cm `ViewmodelRoot` Y 向横移；A/D 最终视觉只来自上述 AnimBP 骨骼链，构图根节点不再随侧移输入改变位置或旋转。

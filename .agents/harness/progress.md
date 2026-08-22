@@ -1,5 +1,11 @@
 # 进度日志
 
+## 2026-08-22 session226 交接：静态 Viewmodel 构图改为初始化时应用
+
+- `ViewmodelRoot.Location`、`ArmsViewMesh.ViewmodelOffsetLocation` 与 `BaseArmsRotation` 改为在 `BeginPlay`（蓝图默认值加载后）应用一次；Tick 不再重复覆盖这些静态 Transform。
+- Tick 仅保留 `ViewmodelRoot` 的动态冲刺 Pitch，以及 AnimBP Lean/Look 参数更新；双 AnimBP、模板继承、Linked Layer 与 Body Copy Pose 架构未改。
+- 写入前 WIP 检查点：`2ba4834`。首次冷链接因运行中的 Unreal Editor 锁定 DLL 报 LNK1104；用户关闭编辑器后 Development Editor 冷链接成功，3项 `TheManTest.Player` 回归全部 Success。
+
 ## 2026-08-22 session225 交接：暴露并加快 Viewmodel Body Sway 插值
 
 - 普通移动 Body Sway 插值速度从硬编码 `2.0` 改为蓝图可调 `ViewmodelBodySwayInterpSpeed`，位于角色 Class Defaults 的 `Viewmodel|Movement`，默认 `6.0`；A/D/W/S 进入倾斜与松键回弹共用该速度。
