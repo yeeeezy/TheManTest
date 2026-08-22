@@ -496,20 +496,9 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 	// Body_Sway：原蓝图同时使用移动轴和本帧鼠标轴，再以 Walk=2 / Sprint=8 插值。
 	if (ArmsViewMesh && ViewmodelRoot)
 	{
-		// Camera-local positional inertia is independent from the authored bone
-		// rotations below. Movement shifts the viewmodel opposite the input while
-		// never writing Z, so strafing cannot become artificial vertical motion.
-		const FVector MovementLagTarget(
-			-CurrentVFXMoveInput.Y * ViewmodelForwardLagDistance,
-			-CurrentVFXMoveInput.X * ViewmodelLateralLagDistance,
-			0.f);
-		CurrentViewmodelMovementLag = FMath::VInterpTo(
-			CurrentViewmodelMovementLag, MovementLagTarget, DeltaTime, ViewmodelMovementLagInterpSpeed);
-		CurrentViewmodelMovementLag.Z = 0.f;
-
 		// Restore the original camera-relative viewmodel response from the native
 		// framing defaults. The Blueprint only supplies the mesh and AnimBP assets.
-		ViewmodelRoot->SetRelativeLocation(CurrentViewmodelMovementLag);
+		ViewmodelRoot->SetRelativeLocation(FVector::ZeroVector);
 		ViewmodelRoot->SetRelativeRotation(
 			ViewmodelOffsetRotation + FRotator(SprintViewmodelPitchDegrees * SprintTransitionAlpha, 0.f, 0.f));
 
@@ -543,10 +532,7 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		const float SourceLeanRoll = CurrentVFXLeanSides * SourceLeanSidesOffset;
 		const float SourceLookPitch = CurrentVFXLookUpDown * SourceLookUpOffset;
 		const float RemappedLeanRoll = SourceLeanRoll * BasisCos - SourceLookPitch * BasisSin;
-		// Preserve the existing lateral barrel-axis Roll, but do not leak lateral
-		// input into Look/Pitch. That cross-term was responsible for most of the
-		// measured A/D hand-height split. Forward/back input still owns Look/Pitch.
-		const float RemappedLookPitch = SourceLookPitch * BasisCos;
+		const float RemappedLookPitch = SourceLeanRoll * BasisSin + SourceLookPitch * BasisCos;
 
 		auto UpdateVFXPackAnimInstance = [this, CharacterSpeed, RemappedLeanRoll, RemappedLookPitch](UAnimInstance* AnimInstance)
 		{

@@ -1,5 +1,18 @@
 # 进度日志
 
+## 2026-08-22 session220 交接：撤回移动位置方案并恢复原枪体绕轴旋转
+
+- 用户澄清需求不是上下/左右位置滞后，而是枪体保持原地时沿枪管前向轴的旋转。session218/session219 对 ViewmodelRoot XY 位移及 Roll/Pitch 分解的正式改动均撤回。
+- `FPSCharacterBase` 与相关玩家测试源码已精确恢复到远程基线 `e1c24eb`：`ViewmodelRoot.Location` 每帧为零，完整 75° `RemappedLeanRoll/RemappedLookPitch` 映射恢复，原枪体绕轴倾斜重新生效。
+- 临时最终旋转探针曾确认 A/D 时武器 Actor 相对相机角从约 Roll `-13.86°` 变化到 `+4.74°`；探针与错误位置专项测试均已删除。
+- Development Editor 构建成功；`Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture`、`Viewmodel.EquipDissolveEvidence` 均为 1/1 Success。
+
+## 2026-08-22 session219 交接：恢复侧移枪械 Roll 幅度
+
+- 用户前台确认 session218 去除侧移 Pitch 串扰后枪械倾斜不明显。根因是仍保留旧 75°投影的 `cos(75°)`，把原始 `±8°` 侧移 Roll 压缩为约 `±2.07°`。
+- A/D 的纯绕枪轴 Roll 已恢复为原始 `SourceLeanRoll=±8°`；前后输入对 Lean 的既有基差补偿保留，侧移到 Look/Pitch 的交叉项仍为0，独立 ViewmodelRoot XY 位置滞后不变。
+- `MovementLagDirections` 强化为平滑后 Roll 绝对值必须大于5°且 Pitch 小于0.05°；专项测试、Development Editor 构建及原三项玩家动画回归均 Success。
+
 ## 2026-08-22 session218 交接：第一人称移动惯性分层修正
 
 - 临时诊断开关分别隔离 WalkRun、Lean、Look 后量化 `hand_r` 相对相机高度：WalkRun 约 `0.23cm`；Lean 左右总差约 `2.29cm`；Look 左右总差约 `4.63cm`；原组合总差约 `6.81cm`。`ViewmodelRoot` 与 `ArmsViewMesh` 原 Location 全程固定，确认问题主因是侧移经 75°换轴串入 Look/Pitch，而非组件平移。

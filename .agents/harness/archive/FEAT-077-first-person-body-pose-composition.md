@@ -3,6 +3,17 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-22 session220 — 恢复原枪体绕轴旋转
+
+- 用户澄清枪体必须保持原地，目标是保留修改前沿枪管前向轴的倾斜旋转；session218/session219 的位置滞后与旋转拆分属于误解，已全部撤回。
+- 玩家源码及测试精确恢复至 `e1c24eb`：ViewmodelRoot 零位移，完整 75° Lean/Look 映射恢复。临时最终枪体旋转探针及错误位置专项测试均已删除。
+- Development Editor 构建和三项玩家动画回归通过。
+
+## 2026-08-22 session219 — 侧移 Roll 幅度恢复
+
+- 修正 session218 遗留的侧移 Roll 衰减：不再乘 `cos(75°)`，恢复原始 `±8°` 绕枪轴倾斜；A/D 到 Look/Pitch 的串扰继续保持为0。
+- MovementLagDirections 现同时断言平滑后 Roll >5°、Pitch <0.05°；构建、专项测试和三项玩家动画回归均通过。
+
 ## 2026-08-22 session218 — 移动位置滞后与骨骼旋转解耦
 
 - 隔离采样确认 A/D 上下偏移主要来自侧移 Lean 经 75°基差交叉写入 Look/Pitch；WalkRun 仅贡献约0.23cm，组件 Location 原本没有任何移动滞后。

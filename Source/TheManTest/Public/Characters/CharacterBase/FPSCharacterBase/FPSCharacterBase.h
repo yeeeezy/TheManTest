@@ -115,15 +115,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Sprint", meta = (ClampMin = "-45.0", ClampMax = "0.0", Units = "deg"))
 	float SprintViewmodelPitchDegrees = -6.f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Movement Lag", meta = (ClampMin = "0.0", Units = "cm"))
-	float ViewmodelLateralLagDistance = 3.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Movement Lag", meta = (ClampMin = "0.0", Units = "cm"))
-	float ViewmodelForwardLagDistance = 2.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Movement Lag", meta = (ClampMin = "0.0"))
-	float ViewmodelMovementLagInterpSpeed = 6.f;
-
 protected:
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
@@ -199,7 +190,6 @@ private:
 	float CurrentVFXLookInputX = 0.f;
 	float CurrentVFXLookInputY = 0.f;
 	float SprintTransitionAlpha = 0.f;
-	FVector CurrentViewmodelMovementLag = FVector::ZeroVector;
 	static constexpr float VFXSprintTransitionDuration = 0.2f;
 
 	float RecoilPitchVelocity = 0.f;
