@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-08-22 session217 交接：枪械 WalkRun 恢复 Blend Space 占位
+
+- 纠正 session216 的错误方向：`TABP_FirstPersonFirearmBase.WeaponUpperBody/WalkRun` 不应使用 Run Sequence 冒充移动混合，现已替换为无具体资产的 `Blend Space Player`，并将 `Speed` 接入 X。
+- `ABP_RepairGun_FirstPerson.ParentAssetOverrides` 已移除原 WalkRun Sequence Override，改为覆盖 `/Game/Weapons/RepairGun/Animations/FirstPerson/Locomotion/BS_WalkRun_RepairGun`；Idle 仍使用空 Sequence Player + Idle Sequence Override。
+- 冷导出确认 WalkRun 图只包含一个连接到 State Result 的 Blend Space Player，不再存在 WalkRun Sequence Player；模板本身不绑定具体 BlendSpace。
+- `TheManTestEditor Win64 Development` 构建成功；冷启动 `Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture`、`Viewmodel.EquipDissolveEvidence` 均为 1/1 Success。
+
 ## 2026-08-22 session216 交接：枪械模板断线播放器清理
 
 - 冷导出确认 `TABP_FirstPersonFirearmBase.WeaponUpperBody/WalkRun` 的实际输出早已连接空 `Sequence Player`；用户看到的非 Sequence 节点是旧方案遗留、完全断线的 `Blend Space Player`。

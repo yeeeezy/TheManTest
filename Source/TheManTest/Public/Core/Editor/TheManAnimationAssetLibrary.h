@@ -7,6 +7,7 @@
 class UAnimationAsset;
 class UAnimInstance;
 class UAnimBlueprint;
+class UBlendSpace;
 class UAnimSequence;
 class UControlRigBlueprint;
 class USkeleton;
@@ -71,6 +72,16 @@ public:
 		UAnimBlueprint* ChildAnimBlueprint,
 		FName StateMachineOldName,
 		FName StateMachineNewName);
+
+	/** Replace the active Sequence Player in a state with an empty Blend Space Player,
+	 * and assign the concrete Blend Space through the child AnimBP asset override. */
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Animation")
+	static bool RestoreTemplateBlendSpaceState(
+		UAnimBlueprint* TemplateAnimBlueprint,
+		UAnimBlueprint* ChildAnimBlueprint,
+		UBlendSpace* ConcreteBlendSpace,
+		FName StateGraphName,
+		FName CoordinatePropertyName);
 
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Blueprint")
 	static bool SetInheritedSceneComponentRotation(

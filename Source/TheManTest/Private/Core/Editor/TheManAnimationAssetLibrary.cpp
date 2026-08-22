@@ -13,6 +13,7 @@
 #include "Engine/InheritableComponentHandler.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
+#include "Animation/BlendSpace.h"
 #include "Animation/AnimNode_SequencePlayer.h"
 #include "AnimGraphNode_ControlRig.h"
 #include "AnimGraphNode_CopyPoseFromMesh.h"
@@ -25,6 +26,7 @@
 #include "AnimGraphNode_AssetPlayerBase.h"
 #include "AnimGraphNode_BlendSpacePlayer.h"
 #include "AnimGraphNode_StateMachine.h"
+#include "AnimGraphNode_StateResult.h"
 #include "AnimGraphNode_TransitionResult.h"
 #include "AnimStateTransitionNode.h"
 #include "AnimationGraph.h"
@@ -755,6 +757,108 @@ bool UTheManAnimationAssetLibrary::MoveTemplateAnimationAssetsToChild(
 		AutomaticTransitionCount, StateMachineToRename != nullptr);
 	return TemplateAnimBlueprint->Status != BS_Error
 		&& ChildAnimBlueprint->Status != BS_Error;
+#else
+	return false;
+#endif
+}
+
+bool UTheManAnimationAssetLibrary::RestoreTemplateBlendSpaceState(
+	UAnimBlueprint* TemplateAnimBlueprint,
+	UAnimBlueprint* ChildAnimBlueprint,
+	UBlendSpace* ConcreteBlendSpace,
+	FName StateGraphName,
+	FName CoordinatePropertyName)
+{
+#if WITH_EDITOR
+	if (!TemplateAnimBlueprint || !ChildAnimBlueprint || !ConcreteBlendSpace
+		|| ChildAnimBlueprint->ParentClass != TemplateAnimBlueprint->GeneratedClass
+		|| StateGraphName.IsNone() || CoordinatePropertyName.IsNone())
+	{
+		return false;
+	}
+
+	TArray<UEdGraph*> Graphs;
+	TemplateAnimBlueprint->GetAllGraphs(Graphs);
+	UEdGraph** StateGraphMatch = Graphs.FindByPredicate(
+		[StateGraphName](const UEdGraph* Graph)
+		{
+			return Graph && Graph->GetFName() == StateGraphName;
+		});
+	UEdGraph* StateGraph = StateGraphMatch ? *StateGraphMatch : nullptr;
+	if (!StateGraph)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Restore template BlendSpace: state graph %s not found"), *StateGraphName.ToString());
+		return false;
+	}
+
+	UAnimGraphNode_StateResult* ResultNode = nullptr;
+	UAnimGraphNode_SequencePlayer* SequencePlayer = nullptr;
+	for (UEdGraphNode* Node : StateGraph->Nodes)
+	{
+		ResultNode = ResultNode ? ResultNode : Cast<UAnimGraphNode_StateResult>(Node);
+		if (UAnimGraphNode_SequencePlayer* Candidate = Cast<UAnimGraphNode_SequencePlayer>(Node))
+		{
+			if (UEdGraphPin* PosePin = Candidate->FindPin(TEXT("Pose")); PosePin && !PosePin->LinkedTo.IsEmpty())
+			{
+				SequencePlayer = Candidate;
+			}
+		}
+	}
+	if (!ResultNode || !SequencePlayer)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Restore template BlendSpace: active Sequence Player or result missing in %s"), *StateGraphName.ToString());
+		return false;
+	}
+
+	const FGuid OldSequenceGuid = SequencePlayer->NodeGuid;
+	const int32 NodePosX = SequencePlayer->NodePosX;
+	const int32 NodePosY = SequencePlayer->NodePosY;
+	SequencePlayer->DestroyNode();
+
+	FGraphNodeCreator<UAnimGraphNode_BlendSpacePlayer> BlendCreator(*StateGraph);
+	UAnimGraphNode_BlendSpacePlayer* BlendPlayer = BlendCreator.CreateNode();
+	BlendPlayer->Node.SetBlendSpace(nullptr);
+	BlendPlayer->NodePosX = NodePosX;
+	BlendPlayer->NodePosY = NodePosY;
+	BlendCreator.Finalize();
+	BlendPlayer->ReconstructNode();
+
+	FGraphNodeCreator<UK2Node_VariableGet> CoordinateCreator(*StateGraph);
+	UK2Node_VariableGet* CoordinateNode = CoordinateCreator.CreateNode();
+	CoordinateNode->VariableReference.SetSelfMember(CoordinatePropertyName);
+	CoordinateNode->NodePosX = NodePosX - 220;
+	CoordinateNode->NodePosY = NodePosY + 80;
+	CoordinateCreator.Finalize();
+	CoordinateNode->ReconstructNode();
+
+	UEdGraphPin* PosePin = BlendPlayer->FindPin(TEXT("Pose"));
+	UEdGraphPin* ResultPin = ResultNode->FindPin(TEXT("Result"));
+	UEdGraphPin* CoordinatePin = BlendPlayer->FindPin(TEXT("X"));
+	UEdGraphPin* ValuePin = CoordinateNode->GetValuePin();
+	if (!PosePin || !ResultPin || !CoordinatePin || !ValuePin
+		|| !StateGraph->GetSchema()->TryCreateConnection(PosePin, ResultPin)
+		|| !StateGraph->GetSchema()->TryCreateConnection(ValuePin, CoordinatePin))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Restore template BlendSpace: failed to connect nodes in %s"), *StateGraphName.ToString());
+		return false;
+	}
+
+	ChildAnimBlueprint->ParentAssetOverrides.RemoveAll(
+		[OldSequenceGuid, BlendPlayer](const FAnimParentNodeAssetOverride& Override)
+		{
+			return Override.ParentNodeGuid == OldSequenceGuid || Override.ParentNodeGuid == BlendPlayer->NodeGuid;
+		});
+	ChildAnimBlueprint->ParentAssetOverrides.Emplace(BlendPlayer->NodeGuid, ConcreteBlendSpace);
+
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(TemplateAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(TemplateAnimBlueprint);
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(ChildAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(ChildAnimBlueprint);
+	TemplateAnimBlueprint->MarkPackageDirty();
+	ChildAnimBlueprint->MarkPackageDirty();
+	UE_LOG(LogTemp, Warning, TEXT("Restored template BlendSpace state: template=%s state=%s child_override=%s"),
+		*TemplateAnimBlueprint->GetPathName(), *StateGraphName.ToString(), *ConcreteBlendSpace->GetPathName());
+	return TemplateAnimBlueprint->Status != BS_Error && ChildAnimBlueprint->Status != BS_Error;
 #else
 	return false;
 #endif

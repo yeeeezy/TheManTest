@@ -29,7 +29,7 @@
 | `ALI_WeaponAnim` | `Content/Weapons/_Shared/Animations/Interfaces/` | 武器动画层接口，定义两个层：`WeaponAimOffset`、`WeaponUpperBody` |
 | `TABP_FirstPersonFirearmBase` | `Content/Weapons/_Shared/Animations/Templates/` | 第一人称枪械 Template AnimBP，实现 `ALI_WeaponAnim`；统一持枪 Idle/WalkRun 状态逻辑，具体武器子类替换动画资产 |
 
-> `TABP_FirstPersonFirearmBase.WeaponUpperBody` 的 Idle 与 WalkRun 均使用空 `Sequence Player`；具体枪械子类通过 Parent Asset Overrides 分别提供静止和移动 Sequence。不要在状态中保留断线的旧 BlendSpace Player 或输入节点。
+> `TABP_FirstPersonFirearmBase.WeaponUpperBody` 的 Idle 使用空 `Sequence Player`，WalkRun 使用空 `Blend Space Player` 并由 `Speed` 驱动 X；具体枪械子类通过 Parent Asset Overrides 分别提供静止 Sequence 和移动 BlendSpace。不要用 Run Sequence 代替 WalkRun BlendSpace，也不要保留断线的旧播放器或输入节点。
 | `UCharacterBaseAnimInstance` | `Source/.../Characters/CharacterBase/Animation/CharacterBaseAnimInstance.h` | 第一人称宿主/枪械模板共享的 C++ 数据基类；统一映射移动、腾空与通用 Lean/Look 变量 |
 | `UFPSCharacterAnimInstance` | `Source/.../Characters/CharacterBase/FPSCharacterBase/Animation/FPSCharacterAnimInstance.h` | 身体 locomotion 模板仍在使用的 C++ 父类；旧 `UFPSArmsAnimInstance` 已无源码和 CoreRedirect |
 | `UFirearmAnimInstance` | `Source/.../Equipment/Firearms/FirearmAnimInstance.h` | 当前枪械动画层模板 `TABP_Firearm_UpperBodyBase` 的 C++ 父类，持有四个 AimIK 变量 |

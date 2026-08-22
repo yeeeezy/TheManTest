@@ -3,6 +3,12 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-22 session217 — 枪械 WalkRun 专用 Blend Space Player
+
+- 按用户审查纠正 session216：枪械模板 Idle 使用空 Sequence Player，WalkRun 使用空 Blend Space Player，不能用 Run Sequence 代替移动 BlendSpace。
+- WalkRun 的 `Speed` 已连接 Blend Space X；RepairGun 子类通过 Parent Asset Override 指定 `BS_WalkRun_RepairGun`，模板不直接引用该具体资产。
+- 冷导出结构审计、Development Editor 构建和三项玩家动画冷启动回归全部通过。
+
 ## 2026-08-22 session216 — 枪械模板断线节点清理
 
 - 冷导出确认 `TABP_FirstPersonFirearmBase` 的 Idle、WalkRun 实际输出均为无具体资产的 `Sequence Player`；WalkRun 内另有旧方案遗留且完全断线的 `Blend Space Player` 和 Speed Getter。
