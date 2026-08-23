@@ -3,6 +3,12 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-23 session234 — 移除冗余 SprintPivot，Arms Transform 独占静态构图
+
+- 用户明确所有静态构图只调 `ArmsViewMesh.Transform`，不会用 `ViewmodelRoot` 调静态位置/旋转；因此删除与 Root 原点相同的冗余 `SprintPivot`。
+- 最终层级恢复为 `HeadCamera -> ViewmodelRoot -> ArmsViewMesh`。C++ Tick 仅将实际速度驱动的冲刺 Pitch 写入 `ViewmodelRoot`；不读写 `ArmsViewMesh` 的 Location/Rotation，其蓝图 Transform 是唯一静态构图值。
+- 自动化已回归断言 Arms 直接挂 Root、Root 位于相机原点且原地 Shift 不旋转。写入前检查点 `8331987`；`TheManTestEditor Win64 Development` 完整构建成功，冷启动 `TheManTest.Player.Viewmodel.FramingCapture` 1/1 Success。
+
 ## 2026-08-23 session233 — 恢复蓝图组件 Transform 权威
 
 - 按用户最终决定删除 `ViewmodelOffsetLocation` / `ViewmodelOffsetRotation`；C++ 不再在构造、BeginPlay 或 Tick 覆盖 `ViewmodelRoot` 和 `ArmsViewMesh` 的静态 Location/Rotation，蓝图组件面板 Transform 同时成为预览与运行时权威值。

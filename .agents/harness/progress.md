@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-08-23 session234 交接：最终使用 Arms Transform 调全部静态构图
+
+- 按用户确认删除冗余 `SprintPivot`，最终层级为 `HeadCamera -> ViewmodelRoot -> ArmsViewMesh`。
+- 用户只通过蓝图 `ArmsViewMesh.Transform` 调整所有静态构图；C++ 不读写 Arms Transform。`ViewmodelRoot` 不用于静态构图，Tick 只写实际速度驱动的冲刺 Pitch。
+- 写入前检查点 `8331987`；Development Editor 完整构建成功，冷启动 `TheManTest.Player.Viewmodel.FramingCapture` 1/1 Success。
+- 用户的 `BP_MaintenanceWorker.uasset` 与 TestMap ExternalActor 改动保持原样。FEAT-077 继续 `in_progress`，待用户前台用 Arms Transform 确认最终构图。
+
 ## 2026-08-23 session233 交接：蓝图组件 Transform 恢复为静态构图权威
 
 - 已删除 `Viewmodel Offset Location/Rotation`，C++ 不再覆盖 `ViewmodelRoot` 或 `ArmsViewMesh` 的静态 Transform；蓝图组件预览值即运行时值。

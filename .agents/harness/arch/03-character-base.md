@@ -8,8 +8,8 @@
 
 | 文件 | 关键内容 |
 |---|---|
-| `Source/TheManTest/Public/Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h` | HeadCamera / **ViewmodelRoot / SprintPivot / ArmsViewMesh**（FEAT-042/077 独立 FP viewmodel）/ **BodyRoot / ShadowBodyMesh / LegsMesh**（FEAT-038 三件套，含 Getter）/ EquipmentManager；**`GetArmsMesh()` 返回 `ArmsViewMesh`**，武器挂载/开火蒙太奇/装备渲染走相机子级 FP 手臂；`GetMesh()` 是 GASP/MM 宿主，驱动身体/影子/腿；`ArmsHiddenSections` / `LegsHiddenSections`（EditDefaultsOnly 材质段隐藏）；CharacterData / InitGEClass；通用 `DefaultAbilityClasses`；`PrimaryFire()` / `SecondaryFire()` / `IsSprinting()`（冲刺键状态，停步走/跑档用）|
-| `Source/TheManTest/Private/Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.cpp` | 组件挂载：**HeadCamera←RootComponent(capsule)**，**ViewmodelRoot←HeadCamera，SprintPivot←ViewmodelRoot，ArmsViewMesh←SprintPivot**。静态构图完全使用蓝图组件默认 Transform，C++ 不在构造、BeginPlay 或 Tick 覆盖 `ViewmodelRoot` / `ArmsViewMesh` 的 Location/Rotation。Tick 只将冲刺动态 Pitch 写入默认 identity 的 `SprintPivot`。ArmsViewMesh 独立求值，GetMesh() 在 Body AnimBP 内合成其上半身 Pose。`ShadowBodyMesh` / `ShadowUpperBodyMesh` 为弃用空组件；唯一完整影子来自 `GetMesh()` 的 CastHiddenShadow。|
+| `Source/TheManTest/Public/Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h` | HeadCamera / **ViewmodelRoot / ArmsViewMesh**（FEAT-042/077 独立 FP viewmodel）/ **BodyRoot / ShadowBodyMesh / LegsMesh**（FEAT-038 三件套，含 Getter）/ EquipmentManager；**`GetArmsMesh()` 返回 `ArmsViewMesh`**，武器挂载/开火蒙太奇/装备渲染走相机子级 FP 手臂；`GetMesh()` 是 GASP/MM 宿主，驱动身体/影子/腿；`ArmsHiddenSections` / `LegsHiddenSections`（EditDefaultsOnly 材质段隐藏）；CharacterData / InitGEClass；通用 `DefaultAbilityClasses`；`PrimaryFire()` / `SecondaryFire()` / `IsSprinting()`（冲刺键状态，停步走/跑档用）|
+| `Source/TheManTest/Private/Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.cpp` | 组件挂载：**HeadCamera←RootComponent(capsule)**，**ViewmodelRoot←HeadCamera，ArmsViewMesh←ViewmodelRoot**。所有静态构图仅使用 `ArmsViewMesh` 的蓝图组件 Transform，C++ 不覆盖 Arms Location/Rotation。`ViewmodelRoot` 保持零 Location，Tick 只写实际速度驱动的冲刺 Pitch；不用它调静态构图。ArmsViewMesh 独立求值，GetMesh() 在 Body AnimBP 内合成其上半身 Pose。`ShadowBodyMesh` / `ShadowUpperBodyMesh` 为弃用空组件；唯一完整影子来自 `GetMesh()` 的 CastHiddenShadow。|
 
 **FEAT-077：** `ArmsViewMesh` 独立运行第一人称 AnimBP，并作为 `CharacterMesh0` 上半身 Copy Pose 来源。构造时 `CharacterMesh0` 添加 `ArmsViewMesh` Tick prerequisite；完整身体 AnimBP 保留自己的 root/pelvis/腿部 locomotion，只在 `spine_01` 以上混入 Arms 局部骨骼 Pose。唯一完整影子仍由 `CharacterMesh0` 的 CastHiddenShadow 产生。
 
@@ -20,9 +20,8 @@
 ```
 Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE]
 ├─ HeadCamera = 挂 capsule 固定眼高(相对 Z≈+77)，bUsePawnControlRotation，稳定 gameplay 相机
-│   └─ ViewmodelRoot = 蓝图静态整体构图 Transform
-│       └─ SprintPivot = 默认 identity，C++ 只写冲刺动态 Pitch
-│           └─ ArmsViewMesh = 蓝图手臂 Mesh 校准 Transform + 武器挂载目标
+│   └─ ViewmodelRoot = 默认 identity，C++ 只写冲刺动态 Pitch
+│       └─ ArmsViewMesh = 蓝图全部静态构图 Transform + 武器挂载目标
 ├─ GetMesh()  = GASP/MM Leader+动画宿主+根运动源，OwnerNoSee，CastShadow=false
 └─ BodyRoot (SceneComponent, 绝对旋转, Tick 每帧只取 Yaw → 直立；相对 Location=(0,0,0))
     ├─ ShadowBodyMesh = 已弃用空组件；完整影子直接由 GetMesh() CastHiddenShadow

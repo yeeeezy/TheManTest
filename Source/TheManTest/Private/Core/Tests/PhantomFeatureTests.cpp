@@ -1204,24 +1204,22 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
 	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
 	AFPSCharacterBase* Player = PC ? Cast<AFPSCharacterBase>(PC->GetPawn()) : nullptr;
-	if (!Player || !Player->GetHeadCamera() || !Player->GetViewmodelRoot() || !Player->GetSprintPivot() || !Player->GetArmsMesh()) return false;
+	if (!Player || !Player->GetHeadCamera() || !Player->GetViewmodelRoot() || !Player->GetArmsMesh()) return false;
 
 	Test->TestTrue(TEXT("Gameplay camera uses the original VFXPack 77 degree baseline FOV"),
 		FMath::IsNearlyEqual(Player->GetHeadCamera()->FieldOfView, 77.f));
 	Test->TestEqual(TEXT("ViewmodelRoot is attached directly to HeadCamera"),
 		Player->GetViewmodelRoot()->GetAttachParent(), static_cast<USceneComponent*>(Player->GetHeadCamera()));
-	Test->TestEqual(TEXT("SprintPivot is attached to ViewmodelRoot"),
-		Player->GetSprintPivot()->GetAttachParent(), Player->GetViewmodelRoot());
-	Test->TestEqual(TEXT("ArmsViewMesh is attached to SprintPivot"),
-		Player->GetArmsMesh()->GetAttachParent(), Player->GetSprintPivot());
-	Test->TestTrue(TEXT("Dynamic sprint pivot remains at its parent origin"),
-		Player->GetSprintPivot()->GetRelativeLocation().Equals(FVector::ZeroVector, 0.01f));
-	Test->TestTrue(TEXT("Sprint pivot starts at identity rotation"),
-		Player->GetSprintPivot()->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
+	Test->TestEqual(TEXT("ArmsViewMesh is attached to ViewmodelRoot"),
+		Player->GetArmsMesh()->GetAttachParent(), Player->GetViewmodelRoot());
+	Test->TestTrue(TEXT("Dynamic sprint pivot remains at the camera origin"),
+		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector::ZeroVector, 0.01f));
+	Test->TestTrue(TEXT("ViewmodelRoot starts at identity rotation"),
+		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
 	Player->SetSprintingForTesting(true);
 	Player->Tick(0.25f);
 	Test->TestTrue(TEXT("Holding sprint while stationary does not compress the viewmodel"),
-		Player->GetSprintPivot()->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
+		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
 	Player->SetSprintingForTesting(false);
 	Test->TestNotNull(TEXT("Body uses an animation instance"), Player->GetMesh()->GetAnimInstance());
 	Test->TestNotNull(TEXT("First-person arms use an animation instance"), Player->GetArmsMesh()->GetAnimInstance());

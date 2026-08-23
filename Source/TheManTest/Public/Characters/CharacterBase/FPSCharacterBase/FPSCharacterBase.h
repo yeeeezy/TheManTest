@@ -50,7 +50,6 @@ public:
 
 	FORCEINLINE UCameraComponent*           GetHeadCamera()       const { return HeadCamera; }
 	FORCEINLINE USceneComponent*            GetViewmodelRoot()    const { return ViewmodelRoot; }
-	FORCEINLINE USceneComponent*            GetSprintPivot()      const { return SprintPivot; }
 #if WITH_DEV_AUTOMATION_TESTS
 	void SetSprintingForTesting(bool bValue) { bIsSprinting = bValue; }
 #endif
@@ -125,11 +124,6 @@ protected:
 	// 绗竴浜虹О viewmodel 鏍癸細鎸傚湪 HeadCamera 涓嬶紝浣滀负鎵嬭噦/姝﹀櫒鐨勭嫭绔嬬浉瀵瑰亸绉诲眰銆?	// 鐩告満淇濇寔 gameplay 鏉冨▉锛泇iewmodel 缁ф壙鐩告満鏃嬭浆锛屽苟鍙湪鏈眰鍙犲姞 ADS / bob / sway / lag銆?	U_PROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ArmsAiming")
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ArmsAiming")
 	USceneComponent* ViewmodelRoot;
-
-	// Runtime-only sprint compression pivot. Static framing remains authored on
-	// ViewmodelRoot and ArmsViewMesh component transforms in the Blueprint editor.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ArmsAiming")
-	USceneComponent* SprintPivot;
 
 	// FEAT-042锛氱嫭绔嬬涓€浜虹О鎵嬭噦 mesh銆傛寕 ViewmodelRoot 涓嬶紝鑷繁鐨勬鍣?ABP锛堟寔鏋?pose锛夛紝OnlyOwnerSee銆?	// 涓嶅綊 MM 绠★紱姝﹀櫒鎸傚畠銆丟etArmsMesh() 鎸囧畠銆?	U_PROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ArmsAiming")
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ArmsAiming")

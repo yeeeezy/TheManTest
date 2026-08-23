@@ -101,15 +101,10 @@ AFPSCharacterBase::AFPSCharacterBase()
 	ViewmodelRoot = CreateDefaultSubobject<USceneComponent>(TEXT("ViewmodelRoot"));
 	ViewmodelRoot->SetupAttachment(HeadCamera);
 
-	// Keep dynamic sprint rotation separate so C++ never overwrites the authored
-	// ViewmodelRoot or ArmsViewMesh transforms shown in the Blueprint preview.
-	SprintPivot = CreateDefaultSubobject<USceneComponent>(TEXT("SprintPivot"));
-	SprintPivot->SetupAttachment(ViewmodelRoot);
-
-	// FEAT-042：独立 FP 手臂 mesh。挂 SprintPivot 下，跑自己的武器 ABP（持枪 pose），
+	// FEAT-042：独立 FP 手臂 mesh。挂 ViewmodelRoot 下，跑自己的武器 ABP（持枪 pose），
 	// 只给自己看、不投影、始终评估姿势。骨架/相对 Transform/AnimClass 在 BP 配。
 	ArmsViewMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmsViewMesh"));
-	ArmsViewMesh->SetupAttachment(SprintPivot);
+	ArmsViewMesh->SetupAttachment(ViewmodelRoot);
 	ArmsViewMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ArmsViewMesh->SetOnlyOwnerSee(true);
 	ArmsViewMesh->bCastDynamicShadow = false;
@@ -495,11 +490,11 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 
 	// VFXPack 的 Walk_Run_1D 只有速度轴。左右移动时的姿态偏移来自原角色
 	// Body_Sway：原蓝图同时使用移动轴和本帧鼠标轴，再以 Walk=2 / Sprint=8 插值。
-	if (ArmsViewMesh && SprintPivot)
+	if (ArmsViewMesh && ViewmodelRoot)
 	{
-		// Static framing comes entirely from the Blueprint component transforms.
-		// C++ owns only this identity-based dynamic sprint layer.
-		SprintPivot->SetRelativeRotation(
+		// ArmsViewMesh owns all authored static framing. ViewmodelRoot is reserved
+		// for the runtime sprint pitch and is otherwise kept at identity rotation.
+		ViewmodelRoot->SetRelativeRotation(
 			FRotator(SprintViewmodelPitchDegrees * SprintVisualAlpha, 0.f, 0.f));
 
 		// VFXPack FirstPerson_AnimBP 原 Event Blueprint Update Animation 的等价逻辑。
