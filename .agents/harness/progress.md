@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-08-23 session232 交接：唯一构图旋转改为相机中心支点
+
+- 已删除 `Viewmodel Arms Rotation` / `BaseArmsRotation`；`ArmsViewMesh.RelativeRotation` 固定为零。
+- 只保留实例可调的 `Viewmodel Offset Location` 和 `Viewmodel Offset Rotation`。Location 每帧写 Arms；Rotation 默认 `(-3,-90,-1)`，每帧写相机中心的 `ViewmodelRoot`，冲刺 Pitch 在其上叠加。
+- 写入前检查点 `c7f1532`；`TheManTestEditor Win64 Development` UHT/编译/链接成功。用户的 `BP_MaintenanceWorker.uasset` 与 TestMap ExternalActor 改动保持原样。
+- FEAT-077 继续 `in_progress`；待前台 PIE 调整两个 Offset 参数并确认最终构图。
+
 ## 2026-08-23 session231 交接：PIE 实例构图改为每帧直接覆盖
 
 - 已删除 session229 的 `PostEditChangeProperty` 判断路径；Tick 每帧无条件写入 `Viewmodel Offset Location` 与 `Viewmodel Arms Rotation`，PIE 运行实例修改后下一帧生效。

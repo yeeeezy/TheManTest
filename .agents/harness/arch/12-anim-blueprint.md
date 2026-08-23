@@ -390,9 +390,9 @@ Cache_Locomotion → WeaponUpperBody → Slot"UpperBody" → WeaponAimOffset →
 - VFXPack `Walk_Run_1D` 只有 Speed 轴。方向姿态由原角色 Body_Sway 写入 AnimBP，不是 2D BlendSpace：原始目标为 `Clamp(MoveRight+MouseX,-1,1)` 和 `Clamp(-MoveForward-10×LookUp,-1,1)`，Walk 插值速度 2、Sprint 8；写入 Modify Bone 前原 EventGraph 还精确乘以 `Lean_Sides_Offset=8.0` / `Look_Up_Offset=2.0`。
 - session224 当前边界：按用户决定恢复 `e1c24eb` / session220 的完整75° `RemappedLeanRoll/RemappedLookPitch` 骨骼映射。A/D 继续通过 `spine_03/hand_l` Modify Bone 链带动手臂与枪；不旋转装备 Actor，也不移动 `ArmsViewMesh` 做圆弧补偿。该版本倾斜观感获用户认可，但保留枪口随骨骼枢轴上下平移的已知问题。
 - 普通移动 Body Sway 的进入/回弹速度由 `AFPSCharacterBase.ViewmodelBodySwayInterpSpeed` 控制，Class Defaults 分类为 `Viewmodel|Movement`，默认 `6.0`；冲刺保持 `8.0`。
-- 静态第一人称构图仅在 `BeginPlay` 应用：`ViewmodelRoot.Location=0`，Arms 使用 `ViewmodelOffsetLocation` 与 `BaseArmsRotation`。Tick 不再重写 Arms 静态 Transform，只更新 `ViewmodelRoot` 的冲刺 Pitch 和 AnimBP Lean/Look。
+- 第一人称构图在 PIE 实例中每帧直接应用：Arms 使用 `ViewmodelOffsetLocation`，相机中心的 `ViewmodelRoot` 使用唯一 `ViewmodelOffsetRotation` 并叠加冲刺 Pitch；不做属性变化检测。
 - 冲刺压枪使用独立 `SprintVisualAlpha`：按实际 `Velocity.Size2D()` 在 `WalkSpeed..SprintSpeed` 映射0..1并驱动 `ViewmodelRoot.Pitch`。Shift 意图的 `SprintTransitionAlpha` 只切换 MaxWalkSpeed；原地 Shift 不触发视觉下压。
-- 静态朝向应调 `Viewmodel|Framing > Viewmodel Arms Rotation`（底层 `BaseArmsRotation`），它作用于 `ArmsViewMesh` 自身且不改变 Location。`Viewmodel Offset Rotation` 作用于相机原点的父级 `ViewmodelRoot`，仅保留为冲刺旋转基线，不应用于手调枪械左右朝向。
+- 静态朝向统一调整 `Viewmodel|Framing > Viewmodel Offset Rotation`，它作用于相机原点的父级 `ViewmodelRoot`，默认 `(-3,-90,-1)`；`ArmsViewMesh.RelativeRotation` 固定为零，不再暴露 `BaseArmsRotation`。
 - `Viewmodel Offset Location` 与 `Viewmodel Arms Rotation` 支持 PIE 实例 Details 编辑；`PostEditChangeProperty` 在编辑发生时立即应用一次。Tick 不轮询或覆盖这两个静态参数；BeginPlay 仍负责初始应用。
 - C++ 必须把 `Is_Moving`、`Is_InAir`、`Character_Speed`、`Lean_Sides_Amount`、`Look_Up_Amount` 同帧写给两个 AnimInstance，避免第一/第三人称及影子上半身再次分叉。
 - session157 修正：前后倾斜的原版 AnimBP 变量实际名为 `Look_Up_Amount`，不是 `Look_Up_Down_Amount`。方向倾斜必须缓存 Enhanced Input 原始移动轴，A/D → `Lean_Sides_Amount`、W/S → `Look_Up_Amount`；不得只用 CharacterMovement 速度反推后就以变量数值代替最终姿势验收。正式 AnimGraph 为 `spine_03` Additive Roll/Pitch，加上 `hand_l` 的 0.5× Additive Roll。

@@ -3,6 +3,13 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-23 session232 — 构图旋转统一到相机中心支点
+
+- 按用户确认删除 `BaseArmsRotation` / `Viewmodel Arms Rotation`，不再依赖导入手臂 Mesh 自身原点调整静态旋转。
+- `Viewmodel Offset Rotation` 改为 `EditAnywhere`，默认值合并为原 Arms 基础朝向 `(-3,-90,-1)`；PIE Tick 每帧直接应用到相机中心的 `ViewmodelRoot`，并在此基础上叠加冲刺 Pitch。
+- `Viewmodel Offset Location` 仍每帧写入子组件 `ArmsViewMesh`；Arms 自身 RelativeRotation 固定为零。这样不同导入模型共用相机中心旋转支点。
+- 写入前检查点 `c7f1532`；`TheManTestEditor Win64 Development` UHT、编译与链接全部成功。待用户前台 PIE 手调并确认最终值。
+
 ## 2026-08-23 session231 — PIE 实例构图每帧直接覆盖
 
 - 纠正 session229 对用户要求的误解：删除 `PostEditChangeProperty` 变化判断，不再依赖编辑器属性回调。

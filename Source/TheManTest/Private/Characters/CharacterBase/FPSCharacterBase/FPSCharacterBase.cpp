@@ -60,9 +60,6 @@ AFPSCharacterBase::AFPSCharacterBase()
 	SprintSpeed     = 750.0f;   // VFXPack FirstPersonCharacter.Speed_Sprinting
 	PitchMin        = -75.0f;
 	PitchMax        = 40.0f;
-	// VFXPack FirstPersonCharacter.SK_ArmMesh exact relative rotation.
-	BaseArmsRotation = FRotator(-3.f, -90.f, -1.f);
-
 	// FEAT-038 修正：身体不再物理俯仰。相机从 head 骨骼摘下挂 capsule 固定眼高，
 	// 看上下交给控制器旋转（相机 bUsePawnControlRotation）+ 后续 FEAT-039 上半身 AimOffset。
 	// 身体只随偏航转动，保持直立（与 BodyRoot 直立的 Shadow/Legs 一致）。
@@ -111,7 +108,7 @@ AFPSCharacterBase::AFPSCharacterBase()
 	ArmsViewMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmsViewMesh"));
 	ArmsViewMesh->SetupAttachment(ViewmodelRoot);
 	ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
-	ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
+	ArmsViewMesh->SetRelativeRotation(FRotator::ZeroRotator);
 	ArmsViewMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ArmsViewMesh->SetOnlyOwnerSee(true);
 	ArmsViewMesh->bCastDynamicShadow = false;
@@ -201,7 +198,7 @@ void AFPSCharacterBase::BeginPlay()
 	if (ArmsViewMesh)
 	{
 		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
-		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
+		ArmsViewMesh->SetRelativeRotation(FRotator::ZeroRotator);
 	}
 
 	// 角色蓝图可能保存旧的可见性动画 Tick 配置并覆盖构造函数默认值。
@@ -513,9 +510,10 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 	if (ArmsViewMesh && ViewmodelRoot)
 	{
 		// Keep PIE instance framing controls authoritative without editor-only change
-		// detection. This intentionally reapplies the two values every frame.
+		// detection. Location stays on the child mesh while the single rotation control
+		// uses the camera-centred parent pivot, independent of the imported mesh origin.
 		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
-		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
+		ArmsViewMesh->SetRelativeRotation(FRotator::ZeroRotator);
 
 		// ViewmodelRoot is the original VFXPack BodyRotator equivalent. Only its
 		// dynamic sprint rotation changes at runtime.

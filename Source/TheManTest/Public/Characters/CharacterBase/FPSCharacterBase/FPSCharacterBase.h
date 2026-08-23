@@ -87,9 +87,6 @@ public:
 	TSubclassOf<UCameraShakeBase> RunningCameraShake;
 
 	// ArmsMesh 鍩虹鐩稿鏃嬭浆銆傛柊鍏ㄨ韩楠ㄦ灦鍙傝€冨Э鍔挎湞 +Y锛岄渶 Yaw -90掳 杞鏈?+X銆?	// 姝﹀櫒鎽囨憜姣忓抚鍙犲姞鍦ㄥ畠涔嬩笂锛堣€岄潪瑕嗙洊锛夛紝鍚﹀垯韬綋浼氳鐢╁洖 identity 姝悜渚ч潰銆?	U_PROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Viewmodel|Framing", meta = (DisplayName = "Viewmodel Arms Rotation"))
-	FRotator BaseArmsRotation;
-
 	// 鈹€鈹€ 绗竴浜虹О viewmodel 璋冭瘯鍙傛暟锛堜繚鐣欑粰鍚庣画鎭㈠鎵嬭噦婊炲悗/鎯€э級鈹€鈹€
 	// 褰撳墠缁撴瀯涓?HeadCamera -> ViewmodelRoot -> ArmsViewMesh锛屾墜鑷傚ぉ鐒剁户鎵跨浉鏈烘棆杞€?	// 杩欎簺鍙傛暟鏆備笉椹卞姩 pitch锛涘悗缁嫢瑕佸仛鎵嬭噦鐩稿鐩告満鐨勫欢杩?鎯€э紝鍙鐢ㄦ垨鏇挎崲涓?viewmodel offset 鍙傛暟銆?	U_PROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ArmsAiming")
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ArmsAiming")
@@ -112,8 +109,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera|Framing")
 	FVector HeadCameraRelativeLocation = FVector(0.f, -18.852108f, 77.f);
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Framing")
-	FRotator ViewmodelOffsetRotation = FRotator::ZeroRotator;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Viewmodel|Framing")
+	FRotator ViewmodelOffsetRotation = FRotator(-3.f, -90.f, -1.f);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Sprint", meta = (ClampMin = "-45.0", ClampMax = "0.0", Units = "deg"))
 	float SprintViewmodelPitchDegrees = -6.f;

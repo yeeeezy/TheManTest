@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-23-session231",
+    "last_updated":  "2026-08-23-session232",
     "active_feature":  "FEAT-077",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -11,7 +11,7 @@
                          "description":  "让 ArmsViewMesh 独立运行第一人称动画；CharacterMesh0 保留完整身体 locomotion，并仅从脊柱以上复制第一人称最终 Pose 用于完整影子，隔离 root/pelvis 对手臂的影响。",
                          "archive_file":  "archive/FEAT-077-first-person-body-pose-composition.md",
                          "created":  "2026-08-21",
-                         "updated":  "2026-08-23-session231",
+                         "updated":  "2026-08-23-session232",
                          "done_criteria":  [
                                                "ArmsViewMesh 独立 AnimBP 不读取 CharacterMesh0 root/pelvis locomotion",
                                                "CharacterMesh0 在完整身体 locomotion 上仅从 spine_01 或锁骨以上混入 ArmsViewMesh Pose",
