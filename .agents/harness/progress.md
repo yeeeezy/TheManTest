@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-08-23 session231 交接：PIE 实例构图改为每帧直接覆盖
+
+- 已删除 session229 的 `PostEditChangeProperty` 判断路径；Tick 每帧无条件写入 `Viewmodel Offset Location` 与 `Viewmodel Arms Rotation`，PIE 运行实例修改后下一帧生效。
+- 冲刺动态 Pitch 仍仅作用于父级 `ViewmodelRoot`，不覆盖 Arms 自身旋转。`TheManTestEditor Win64 Development` 完整构建成功。
+- 写入前检查点 `8fb7f78`。用户未提交的 `BP_MaintenanceWorker.uasset` 与 TestMap ExternalActor 删除保持原样，未纳入本次修改。
+- FEAT-077 继续 `in_progress`；待用户前台 PIE 手调构图并确认最终数值。
+
 ## 2026-08-22 session230 交接：构图问题未解决，待用户手动测试
 
 - 当前第一人称枪械位置/朝向构图问题仍未解决，不得将 FEAT-077 标记完成；用户将于明天在 PIE 运行实例中手动调整并验证。

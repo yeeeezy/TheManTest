@@ -271,23 +271,6 @@ void AFPSCharacterBase::PlayInitialEquipEffect()
 	}
 }
 
-#if WITH_EDITOR
-void AFPSCharacterBase::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
-{
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-
-	const FName PropertyName = PropertyChangedEvent.GetPropertyName();
-	if (ArmsViewMesh && PropertyName == GET_MEMBER_NAME_CHECKED(AFPSCharacterBase, ViewmodelOffsetLocation))
-	{
-		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
-	}
-	else if (ArmsViewMesh && PropertyName == GET_MEMBER_NAME_CHECKED(AFPSCharacterBase, BaseArmsRotation))
-	{
-		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
-	}
-}
-#endif
-
 void AFPSCharacterBase::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
@@ -529,8 +512,13 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 	// Body_Sway：原蓝图同时使用移动轴和本帧鼠标轴，再以 Walk=2 / Sprint=8 插值。
 	if (ArmsViewMesh && ViewmodelRoot)
 	{
+		// Keep PIE instance framing controls authoritative without editor-only change
+		// detection. This intentionally reapplies the two values every frame.
+		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
+		ArmsViewMesh->SetRelativeRotation(BaseArmsRotation);
+
 		// ViewmodelRoot is the original VFXPack BodyRotator equivalent. Only its
-		// dynamic sprint rotation changes at runtime; static framing was applied once.
+		// dynamic sprint rotation changes at runtime.
 		ViewmodelRoot->SetRelativeRotation(
 			ViewmodelOffsetRotation + FRotator(SprintViewmodelPitchDegrees * SprintVisualAlpha, 0.f, 0.f));
 

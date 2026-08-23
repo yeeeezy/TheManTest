@@ -3,6 +3,12 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-23 session231 — PIE 实例构图每帧直接覆盖
+
+- 纠正 session229 对用户要求的误解：删除 `PostEditChangeProperty` 变化判断，不再依赖编辑器属性回调。
+- Tick 每帧无条件将 `ViewmodelOffsetLocation` 和 `BaseArmsRotation` 写入 `ArmsViewMesh`，PIE 运行实例修改 Location/Rotation 后可在下一帧生效。冲刺 Pitch 仍独立叠加在父级 `ViewmodelRoot`。
+- 写入前检查点 `8fb7f78`；`TheManTestEditor Win64 Development` 完整编译链接成功。用户未提交的 `BP_MaintenanceWorker.uasset` 和 TestMap ExternalActor 删除未被覆盖或纳入本次修改。
+
 ## 2026-08-22 session230 — 未解决构图问题停机交接
 
 - 用户明确确认当前枪械位置/朝向构图问题仍未解决，计划次日在 PIE 运行实例中手动调整 `Viewmodel Offset Location` 与 `Viewmodel Arms Rotation` 后复核。

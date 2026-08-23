@@ -124,9 +124,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
-#if WITH_EDITOR
-	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif
 
 	// 姣忎釜瑙掕壊鍦ㄨ Possess 鏃跺紩鎿庤嚜鍔ㄨ皟鐢紝鐢ㄤ簬缁戝畾鑷繁闇€瑕佸搷搴旂殑杈撳叆
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
