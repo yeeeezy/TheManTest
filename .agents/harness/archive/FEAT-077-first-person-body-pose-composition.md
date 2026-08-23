@@ -3,6 +3,12 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-22 session230 — 未解决构图问题停机交接
+
+- 用户明确确认当前枪械位置/朝向构图问题仍未解决，计划次日在 PIE 运行实例中手动调整 `Viewmodel Offset Location` 与 `Viewmodel Arms Rotation` 后复核。
+- 测试前需清零旧的父级 `Viewmodel Offset Rotation`；保留当前未提交的 `BP_MaintenanceWorker.uasset` 手调，不覆盖、不提交。
+- 本次只记录状态，没有新增实现或验证；FEAT-077 继续保持 `in_progress`，FramingCapture 待手调完成后重跑。
+
 ## 2026-08-22 session229 — PIE 实例即时构图编辑
 
 - Location 与 Arms Rotation 改为实例可调；编辑器 `PostEditChangeProperty` 仅在用户修改属性时更新 Arms Transform，Tick 保持无静态构图检测/覆盖。

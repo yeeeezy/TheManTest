@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-08-22 session230 交接：构图问题未解决，待用户手动测试
+
+- 当前第一人称枪械位置/朝向构图问题仍未解决，不得将 FEAT-077 标记完成；用户将于明天在 PIE 运行实例中手动调整并验证。
+- 待测入口：`Viewmodel|Framing` 下的 `Viewmodel Offset Location` 与 `Viewmodel Arms Rotation`。测试前先将蓝图旧的 `Viewmodel Offset Rotation` 重置为 `(0,0,0)`，避免父级支点旋转造成绕相机偏移。
+- PIE 属性修改采用编辑器 `PostEditChangeProperty` 按修改即时应用，不存在 Tick 静态 Transform 检测或逐帧覆盖。当前用户手调的 `BP_MaintenanceWorker.uasset` 保持未提交、未覆盖。
+- 本次仅记录停机交接，未新增实现或验证；最近一次 Development Editor 冷构建成功，但 FramingCapture 仍需在旧蓝图偏移清零并完成手动构图后重跑。
+
 ## 2026-08-22 session229 交接：Viewmodel 构图支持 PIE 实例即时编辑
 
 - `Viewmodel Offset Location` 与 `Viewmodel Arms Rotation` 改为 `EditAnywhere`，可在 PIE 运行实例 Details 中调整。
