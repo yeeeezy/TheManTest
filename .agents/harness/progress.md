@@ -1,5 +1,13 @@
 # 进度日志
 
+## 2026-08-23 session235 交接：第一人称手臂距离裁切待用户审核
+
+- `M_MaintenanceWorker_FirstPersonArms` 已用 CameraPositionWS 到 AbsoluteWorldPosition 的距离驱动 DitherTemporalAA -> Opacity Mask；`MI_MaintenanceWorker_FirstPersonArms` 正式值为 Distance 180cm / Fade Width 15cm。
+- Arms Mesh 唯一材质槽冷回读继续指向该实例，实例父级与 Opacity Mask 函数节点正确；身体/影子/武器材质未改。
+- 证据图：`Saved/Screenshots/WindowsEditor/TMT_FPArmDistanceClip_Visible_180cm.png`（手臂可见）、`TMT_FPArmDistanceClip_Visible_Forced1cm.png`（同相机/补光下手臂完全裁掉）。临时 1cm 已恢复为 180cm。
+- Development Editor 完整构建成功；`TheManTest.Player.Viewmodel.ArmDistanceClipEvidence` 最终 1/1 Success，无新手臂材质编译错误。旧 `M_UE4Man_Body` 缺纹理警告与本次无关。
+- FEAT-077 继续 `in_progress`，待用户前台审核 180cm/15cm 过渡和靠墙观感。
+
 ## 2026-08-23 session234 交接：最终使用 Arms Transform 调全部静态构图
 
 - 按用户确认删除冗余 `SprintPivot`，最终层级为 `HeadCamera -> ViewmodelRoot -> ArmsViewMesh`。

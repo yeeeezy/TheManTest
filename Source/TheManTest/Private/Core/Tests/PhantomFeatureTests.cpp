@@ -841,6 +841,50 @@ bool FPlayerFramingScreenshotCommand::Update()
 	return bSaved;
 }
 
+DEFINE_LATENT_AUTOMATION_COMMAND(FPlayerArmClipScreenshotCommand);
+bool FPlayerArmClipScreenshotCommand::Update()
+{
+	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+	AFPSCharacterBase* Player = World ? Cast<AFPSCharacterBase>(World->GetFirstPlayerController()->GetPawn()) : nullptr;
+	if (!Player || !Player->GetHeadCamera() || !Player->GetArmsMesh() || !Player->GetEquipmentManager()) return false;
+	AEquipmentBase* Equipment = Player->GetEquipmentManager()->GetCurrentEquipment();
+	if (Equipment) Equipment->SetActorHiddenInGame(true);
+	USkeletalMeshComponent* ArmsMesh = Player->GetArmsMesh();
+	const bool bOnlyOwnerSee = ArmsMesh->bOnlyOwnerSee;
+	ArmsMesh->SetOnlyOwnerSee(false);
+
+	UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>();
+	RenderTarget->RenderTargetFormat = RTF_RGBA8;
+	RenderTarget->InitAutoFormat(1920, 1080);
+	RenderTarget->UpdateResourceImmediate(true);
+	USceneCaptureComponent2D* Capture = NewObject<USceneCaptureComponent2D>(Player);
+	Capture->RegisterComponentWithWorld(World);
+	Capture->AttachToComponent(Player->GetHeadCamera(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	Capture->FOVAngle = Player->GetHeadCamera()->FieldOfView;
+	Capture->CaptureSource = SCS_FinalColorLDR;
+	Capture->TextureTarget = RenderTarget;
+	Capture->bCaptureEveryFrame = false;
+	Capture->bCaptureOnMovement = false;
+	UPointLightComponent* EvidenceLight = NewObject<UPointLightComponent>(Player);
+	EvidenceLight->RegisterComponentWithWorld(World);
+	EvidenceLight->AttachToComponent(Player->GetHeadCamera(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	EvidenceLight->SetRelativeLocation(FVector(60.f, 0.f, -20.f));
+	EvidenceLight->SetIntensity(1500000.f);
+	EvidenceLight->SetAttenuationRadius(500.f);
+	Capture->CaptureScene();
+	TArray<FColor> Pixels;
+	const bool bRead = RenderTarget->GameThread_GetRenderTargetResource()->ReadPixels(Pixels);
+	TArray64<uint8> PNGData;
+	if (bRead) FImageUtils::PNGCompressImageArray(1920, 1080, Pixels, PNGData);
+	const bool bSaved = bRead && FFileHelper::SaveArrayToFile(PNGData,
+		*FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("Screenshots/WindowsEditor/TMT_FPArmDistanceClip_ArmsOnly.png")));
+	EvidenceLight->DestroyComponent();
+	Capture->DestroyComponent();
+	ArmsMesh->SetOnlyOwnerSee(bOnlyOwnerSee);
+	if (Equipment) Equipment->SetActorHiddenInGame(false);
+	return bSaved;
+}
+
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FShadowUpperBodyEvidenceCommand, FAutomationTestBase*, Test);
 bool FShadowUpperBodyEvidenceCommand::Update()
 {
@@ -1212,8 +1256,6 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 		Player->GetViewmodelRoot()->GetAttachParent(), static_cast<USceneComponent*>(Player->GetHeadCamera()));
 	Test->TestEqual(TEXT("ArmsViewMesh is attached to ViewmodelRoot"),
 		Player->GetArmsMesh()->GetAttachParent(), Player->GetViewmodelRoot());
-	Test->TestTrue(TEXT("Dynamic sprint pivot remains at the camera origin"),
-		Player->GetViewmodelRoot()->GetRelativeLocation().Equals(FVector::ZeroVector, 0.01f));
 	Test->TestTrue(TEXT("ViewmodelRoot starts at identity rotation"),
 		Player->GetViewmodelRoot()->GetRelativeRotation().Equals(FRotator::ZeroRotator, 0.01f));
 	Player->SetSprintingForTesting(true);
@@ -1289,6 +1331,23 @@ bool FPlayerFramingCaptureTest::RunTest(const FString& Parameters)
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FPlayerFramingScreenshotCommand());
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPlayerArmDistanceClipEvidenceTest,
+	"TheManTest.Player.Viewmodel.ArmDistanceClipEvidence",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FPlayerArmDistanceClipEvidenceTest::RunTest(const FString& Parameters)
+{
+	if (GEngine) GEngine->Exec(nullptr, TEXT("r.MotionBlurQuality 0"));
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.8f));
+	ADD_LATENT_AUTOMATION_COMMAND(FStabilizePlayerViewmodelCommand());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FPlayerArmClipScreenshotCommand());
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }

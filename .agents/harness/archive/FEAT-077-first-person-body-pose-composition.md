@@ -3,6 +3,14 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-23 session235 — 第一人称手臂相机距离裁切材质
+
+- 只读审计确认 `SKM_MaintenanceWorker_FirstPersonArms` 只有一个材质槽，已绑定专属 `MI_MaintenanceWorker_FirstPersonArms`，其父级为专属 Masked 材质 `M_MaintenanceWorker_FirstPersonArms`；完整身体/影子不共用该材质。
+- 主材质新增 `Distance(CameraPositionWS, AbsoluteWorldPosition)` 距离链，使用 `Arm Clip Distance - Distance` / `Arm Clip Fade Width` 归一化，经 Saturate 与引擎 `/Engine/.../DitherTemporalAA` Material Function 接入 Opacity Mask。实例最终值为 `Arm Clip Distance=180cm`、`Arm Clip Fade Width=15cm`。
+- 新增 `TheManTest.Player.Viewmodel.ArmDistanceClipEvidence` 截图测试：仅在证据捕获时临时隐藏武器、关闭 Arms `OnlyOwnerSee` 并补光，捕获后立即恢复，不改正式游戏状态。
+- 确定性对照：180cm 时手臂表面清晰可见（`TMT_FPArmDistanceClip_Visible_180cm.png`）；临时 1cm 时手臂完全裁掉（`TMT_FPArmDistanceClip_Visible_Forced1cm.png`）。随后恢复正式 180cm，冷回读参数/材质槽/父级/Opacity Mask 节点均正确。
+- 写入前检查点 `0d0a33b`；Development Editor 完整构建成功，最终冷启动 `ArmDistanceClipEvidence` 1/1 Success，无 `M_MaintenanceWorker_FirstPersonArms` 编译错误。仍存在本次之前的 `M_UE4Man_Body` 材质层缺纹理警告，与新专属手臂材质无关。
+
 ## 2026-08-23 session234 — 移除冗余 SprintPivot，Arms Transform 独占静态构图
 
 - 用户明确所有静态构图只调 `ArmsViewMesh.Transform`，不会用 `ViewmodelRoot` 调静态位置/旋转；因此删除与 Root 原点相同的冗余 `SprintPivot`。
