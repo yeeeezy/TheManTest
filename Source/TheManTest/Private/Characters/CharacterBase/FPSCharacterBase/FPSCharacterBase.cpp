@@ -100,15 +100,16 @@ AFPSCharacterBase::AFPSCharacterBase()
 	// 后续 ADS / bob / sway / movement lag 只叠到 ViewmodelRoot 或 ArmsViewMesh，不污染相机。
 	ViewmodelRoot = CreateDefaultSubobject<USceneComponent>(TEXT("ViewmodelRoot"));
 	ViewmodelRoot->SetupAttachment(HeadCamera);
-	ViewmodelRoot->SetRelativeLocation(FVector::ZeroVector);
-	ViewmodelRoot->SetRelativeRotation(ViewmodelOffsetRotation);
 
-	// FEAT-042：独立 FP 手臂 mesh。挂 ViewmodelRoot 下，跑自己的武器 ABP（持枪 pose），
+	// Keep dynamic sprint rotation separate so C++ never overwrites the authored
+	// ViewmodelRoot or ArmsViewMesh transforms shown in the Blueprint preview.
+	SprintPivot = CreateDefaultSubobject<USceneComponent>(TEXT("SprintPivot"));
+	SprintPivot->SetupAttachment(ViewmodelRoot);
+
+	// FEAT-042：独立 FP 手臂 mesh。挂 SprintPivot 下，跑自己的武器 ABP（持枪 pose），
 	// 只给自己看、不投影、始终评估姿势。骨架/相对 Transform/AnimClass 在 BP 配。
 	ArmsViewMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmsViewMesh"));
-	ArmsViewMesh->SetupAttachment(ViewmodelRoot);
-	ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
-	ArmsViewMesh->SetRelativeRotation(FRotator::ZeroRotator);
+	ArmsViewMesh->SetupAttachment(SprintPivot);
 	ArmsViewMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ArmsViewMesh->SetOnlyOwnerSee(true);
 	ArmsViewMesh->bCastDynamicShadow = false;
@@ -188,19 +189,6 @@ void AFPSCharacterBase::BeginPlay()
 	{
 		GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	}
-	// Apply static first-person framing once after Blueprint defaults have loaded.
-	// Runtime Tick only adds dynamic motion such as the sprint pivot rotation.
-	if (ViewmodelRoot)
-	{
-		ViewmodelRoot->SetRelativeLocation(FVector::ZeroVector);
-		ViewmodelRoot->SetRelativeRotation(ViewmodelOffsetRotation);
-	}
-	if (ArmsViewMesh)
-	{
-		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
-		ArmsViewMesh->SetRelativeRotation(FRotator::ZeroRotator);
-	}
-
 	// 角色蓝图可能保存旧的可见性动画 Tick 配置并覆盖构造函数默认值。
 	// GetMesh() 是影子/腿的 Leader，即使对本地 Owner 不可见也必须刷新骨骼变换。
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
@@ -507,18 +495,12 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 
 	// VFXPack 的 Walk_Run_1D 只有速度轴。左右移动时的姿态偏移来自原角色
 	// Body_Sway：原蓝图同时使用移动轴和本帧鼠标轴，再以 Walk=2 / Sprint=8 插值。
-	if (ArmsViewMesh && ViewmodelRoot)
+	if (ArmsViewMesh && SprintPivot)
 	{
-		// Keep PIE instance framing controls authoritative without editor-only change
-		// detection. Location stays on the child mesh while the single rotation control
-		// uses the camera-centred parent pivot, independent of the imported mesh origin.
-		ArmsViewMesh->SetRelativeLocation(ViewmodelOffsetLocation);
-		ArmsViewMesh->SetRelativeRotation(FRotator::ZeroRotator);
-
-		// ViewmodelRoot is the original VFXPack BodyRotator equivalent. Only its
-		// dynamic sprint rotation changes at runtime.
-		ViewmodelRoot->SetRelativeRotation(
-			ViewmodelOffsetRotation + FRotator(SprintViewmodelPitchDegrees * SprintVisualAlpha, 0.f, 0.f));
+		// Static framing comes entirely from the Blueprint component transforms.
+		// C++ owns only this identity-based dynamic sprint layer.
+		SprintPivot->SetRelativeRotation(
+			FRotator(SprintViewmodelPitchDegrees * SprintVisualAlpha, 0.f, 0.f));
 
 		// VFXPack FirstPerson_AnimBP 原 Event Blueprint Update Animation 的等价逻辑。
 		// 直接写原变量，保留其原 StateMachine / BlendSpace 资产，不另造动画状态机。

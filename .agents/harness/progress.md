@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-08-23 session233 交接：蓝图组件 Transform 恢复为静态构图权威
+
+- 已删除 `Viewmodel Offset Location/Rotation`，C++ 不再覆盖 `ViewmodelRoot` 或 `ArmsViewMesh` 的静态 Transform；蓝图组件预览值即运行时值。
+- 新层级为 `HeadCamera -> ViewmodelRoot -> SprintPivot -> ArmsViewMesh`；C++ Tick 只写 `SprintPivot.Pitch`，保留实际速度驱动的冲刺压枪。自动化层级断言已同步。
+- 写入前检查点 `2bdee43`。关闭编辑器后 Development Editor 完整构建成功；冷启动 `TheManTest.Player.Viewmodel.FramingCapture` 在删除与可编辑 Transform 冲突的旧横轴断言后复跑 1/1 Success。
+- 用户的 `BP_MaintenanceWorker.uasset` 与 TestMap ExternalActor 改动保持原样。FEAT-077 继续 `in_progress`。
+
 ## 2026-08-23 session232 交接：唯一构图旋转改为相机中心支点
 
 - 已删除 `Viewmodel Arms Rotation` / `BaseArmsRotation`；`ArmsViewMesh.RelativeRotation` 固定为零。

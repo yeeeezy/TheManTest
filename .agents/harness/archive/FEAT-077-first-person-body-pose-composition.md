@@ -3,6 +3,13 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-23 session233 — 恢复蓝图组件 Transform 权威
+
+- 按用户最终决定删除 `ViewmodelOffsetLocation` / `ViewmodelOffsetRotation`；C++ 不再在构造、BeginPlay 或 Tick 覆盖 `ViewmodelRoot` 和 `ArmsViewMesh` 的静态 Location/Rotation，蓝图组件面板 Transform 同时成为预览与运行时权威值。
+- 组件层级改为 `HeadCamera -> ViewmodelRoot -> SprintPivot -> ArmsViewMesh`。新增的 identity `SprintPivot` 只承载实际速度驱动的冲刺 Pitch，避免动态逻辑改写用户构图 Transform。
+- Framing 自动化已改为验证新层级和 `SprintPivot` identity/原地冲刺不下压，不再硬编码断言用户可编辑的 Arms Transform。
+- 写入前检查点 `2bdee43`。用户关闭编辑器后，`TheManTestEditor Win64 Development` UHT/编译/链接成功。冷启动 `TheManTest.Player.Viewmodel.FramingCapture` 首轮暴露旧的世界横轴硬编码断言与用户可编辑 Transform 冲突；删除该过时断言后重编译并复跑 1/1 Success。用户未提交的蓝图/地图改动未覆盖。
+
 ## 2026-08-23 session232 — 构图旋转统一到相机中心支点
 
 - 按用户确认删除 `BaseArmsRotation` / `Viewmodel Arms Rotation`，不再依赖导入手臂 Mesh 自身原点调整静态旋转。
