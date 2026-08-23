@@ -1,12 +1,12 @@
 # 进度日志
 
-## 2026-08-23 session235 交接：第一人称手臂距离裁切待用户审核
+## 2026-08-23 session236 交接：修正第一人称手臂近距离裁切方向
 
-- `M_MaintenanceWorker_FirstPersonArms` 已用 CameraPositionWS 到 AbsoluteWorldPosition 的距离驱动 DitherTemporalAA -> Opacity Mask；`MI_MaintenanceWorker_FirstPersonArms` 正式值为 Distance 180cm / Fade Width 15cm。
-- Arms Mesh 唯一材质槽冷回读继续指向该实例，实例父级与 Opacity Mask 函数节点正确；身体/影子/武器材质未改。
-- 证据图：`Saved/Screenshots/WindowsEditor/TMT_FPArmDistanceClip_Visible_180cm.png`（手臂可见）、`TMT_FPArmDistanceClip_Visible_Forced1cm.png`（同相机/补光下手臂完全裁掉）。临时 1cm 已恢复为 180cm。
-- Development Editor 完整构建成功；`TheManTest.Player.Viewmodel.ArmDistanceClipEvidence` 最终 1/1 Success，无新手臂材质编译错误。旧 `M_UE4Man_Body` 缺纹理警告与本次无关。
-- FEAT-077 继续 `in_progress`，待用户前台审核 180cm/15cm 过渡和靠墙观感。
+- 用户截图确认 session235 的公式方向相反，远处手臂保留但贴近相机的手肘仍会遮挡。现改为 `(Distance(CameraPositionWS, AbsoluteWorldPosition) - Arm Near Clip Distance) / Arm Near Clip Fade Width`，近处裁掉、远处保留。
+- `MI_MaintenanceWorker_FirstPersonArms` 最终值为 Near Clip Distance 40cm / Fade Width 8cm；只影响第一人称 Arms，身体、影子和武器材质未改。
+- 手臂独立证据图 `Saved/Screenshots/WindowsEditor/TMT_FPArmNearClip_ArmsOnly_40cm.png` 显示近镜头肘部主体被裁掉、双手与前臂保留；正常持枪图 `Saved/Screenshots/PlayerFramingCurrent.png` 无整块手肘遮挡。
+- 正常 DX12 冷启动 `TheManTest.Player.Viewmodel.FramingCapture` 1/1 Success。一次额外 `-NullRHI` 截图尝试因测试需要渲染视口而崩溃，不属于游戏运行路径；正常渲染复跑成功。
+- FEAT-077 继续 `in_progress`，待用户前台在实际动作姿势中审核 40cm/8cm 过渡。
 
 ## 2026-08-23 session234 交接：最终使用 Arms Transform 调全部静态构图
 

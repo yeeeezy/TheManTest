@@ -3,12 +3,18 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-23 session236 — 修正为近相机裁切并按手肘遮挡调参
+
+- 用户最新截图证明 session235 的裁切方向反了：需要删除贴近相机的肘部，而不是删除远端手臂。材质公式改为 `(Distance - Arm Near Clip Distance) / Arm Near Clip Fade Width`，经 Saturate 与 `DitherTemporalAA` 输出 Opacity Mask。
+- 参数重命名为 `Arm Near Clip Distance` 与 `Arm Near Clip Fade Width`，实例最终使用 40cm / 8cm。独立手臂证据图 `TMT_FPArmNearClip_ArmsOnly_40cm.png` 显示近处肘部主体消失且双手/前臂仍保留；正常持枪 `PlayerFramingCurrent.png` 不再出现整块手肘遮挡。
+- 正常 DX12 冷启动 `TheManTest.Player.Viewmodel.FramingCapture` 1/1 Success。额外的 `-NullRHI` 截图尝试因截图命令依赖视口而崩溃，随后已用正常渲染路径成功复跑。
+
 ## 2026-08-23 session235 — 第一人称手臂相机距离裁切材质
 
 - 只读审计确认 `SKM_MaintenanceWorker_FirstPersonArms` 只有一个材质槽，已绑定专属 `MI_MaintenanceWorker_FirstPersonArms`，其父级为专属 Masked 材质 `M_MaintenanceWorker_FirstPersonArms`；完整身体/影子不共用该材质。
-- 主材质新增 `Distance(CameraPositionWS, AbsoluteWorldPosition)` 距离链，使用 `Arm Clip Distance - Distance` / `Arm Clip Fade Width` 归一化，经 Saturate 与引擎 `/Engine/.../DitherTemporalAA` Material Function 接入 Opacity Mask。实例最终值为 `Arm Clip Distance=180cm`、`Arm Clip Fade Width=15cm`。
+- 主材质新增 `Distance(CameraPositionWS, AbsoluteWorldPosition)` 距离链；本次最初使用了方向错误的 `Arm Clip Distance - Distance`，该错误已由 session236 修正并替换参数。
 - 新增 `TheManTest.Player.Viewmodel.ArmDistanceClipEvidence` 截图测试：仅在证据捕获时临时隐藏武器、关闭 Arms `OnlyOwnerSee` 并补光，捕获后立即恢复，不改正式游戏状态。
-- 确定性对照：180cm 时手臂表面清晰可见（`TMT_FPArmDistanceClip_Visible_180cm.png`）；临时 1cm 时手臂完全裁掉（`TMT_FPArmDistanceClip_Visible_Forced1cm.png`）。随后恢复正式 180cm，冷回读参数/材质槽/父级/Opacity Mask 节点均正确。
+- 当时的 180cm/1cm 对照只验证材质链会改变可见性，没有验证裁切方向；用户实拍随后证明该结论不足，正式参数与公式以 session236 为准。
 - 写入前检查点 `0d0a33b`；Development Editor 完整构建成功，最终冷启动 `ArmDistanceClipEvidence` 1/1 Success，无 `M_MaintenanceWorker_FirstPersonArms` 编译错误。仍存在本次之前的 `M_UE4Man_Body` 材质层缺纹理警告，与新专属手臂材质无关。
 
 ## 2026-08-23 session234 — 移除冗余 SprintPivot，Arms Transform 独占静态构图

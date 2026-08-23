@@ -13,7 +13,7 @@
 
 **FEAT-077：** `ArmsViewMesh` 独立运行第一人称 AnimBP，并作为 `CharacterMesh0` 上半身 Copy Pose 来源。构造时 `CharacterMesh0` 添加 `ArmsViewMesh` Tick prerequisite；完整身体 AnimBP 保留自己的 root/pelvis/腿部 locomotion，只在 `spine_01` 以上混入 Arms 局部骨骼 Pose。唯一完整影子仍由 `CharacterMesh0` 的 CastHiddenShadow 产生。
 
-**第一人称手臂距离裁切（session235）：** `SKM_MaintenanceWorker_FirstPersonArms` 唯一材质槽使用 `/Game/Characters/MaintenanceWorker/FirstPerson/Materials/MI_MaintenanceWorker_FirstPersonArms`。其专属父材质以 `Distance(CameraPositionWS, AbsoluteWorldPosition)` 计算相机距离，通过引擎 `DitherTemporalAA` Material Function 输出到 Opacity Mask。实例暴露 `Arm Clip Distance`（默认 180cm）与 `Arm Clip Fade Width`（默认 15cm）；只影响第一人称 Arms，不影响完整身体、影子或武器材质。
+**第一人称手臂近距离裁切（session236）：** `SKM_MaintenanceWorker_FirstPersonArms` 唯一材质槽使用 `/Game/Characters/MaintenanceWorker/FirstPerson/Materials/MI_MaintenanceWorker_FirstPersonArms`。其专属 Masked 父材质计算 `Distance(CameraPositionWS, AbsoluteWorldPosition)`，以 `(Distance - Arm Near Clip Distance) / Arm Near Clip Fade Width` 经 Saturate 和引擎 `DitherTemporalAA` Material Function 输出到 Opacity Mask：贴近相机的肘部裁掉，较远的手和前臂保留。实例参数为 40cm / 8cm；只影响第一人称 Arms，不影响完整身体、影子或武器材质。
 
 **扫描组件：** `UScanEffectComponent` 由所有玩家角色基类创建。组件构造函数提供项目默认 `MPC_ScanEffect` 与世界空间适配材质 `M_InfiltratorScanTerrainAdaptive`，角色 BP 仍可覆盖。`TriggerScan` 会创建归属角色的运行时 `UDecalComponent`，先通过 `AddInstanceComponent` 纳入 Actor 生命周期，再注册到当前 World；独立 MID 接收 `ScanOriginWS` / `ScanRadius` / `ScanOpacity`，不复用红色后处理的相机相对参数。红色 MPC 为空时只跳过红色后处理，不再阻断地形扫描。`RetractScan` 隐藏 Decal 并清零透明度。
 
