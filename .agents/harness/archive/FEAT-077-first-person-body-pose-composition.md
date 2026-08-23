@@ -3,6 +3,13 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-23 session237 — 实证定位蓝图组件预览与 PIE 姿势差异
+
+- 临时自动化探针逐项记录蓝图生成类 CDO 与 PIE：`ArmsViewMesh.RelativeTransform` 完全相同，Rotation `(-0.087114,-82.335250,0.647280)`、Location `(-1.615754,0.000001,-141.738776)`，排除运行时代码覆盖组件 Transform。
+- CDO 的 `Update Animation in Editor=false`，角色蓝图组件视口不会持续求值第一人称 AnimBP；PIE 则在 BeginPlay 链接装备动画层、主动 Tick/Refresh 初始 Pose，随后每帧正常求值。
+- 对 `AS_MaintenanceWorker_FP_Idle` 第 0 秒进行逐骨组件空间采样：相对参考姿势，`upperarm_r=36.248°`、`lowerarm_r=109.692°`、`hand_r=72.553°`；PIE 最终姿势相对该 Idle 仅差 `0.585°/0.457°/0.610°`。所以截图中的大方向差确定来自编辑器参考姿势与运行时 Idle 的差异，不是统一 Idle 被额外旋转。
+- 探针完成后已从源码移除。测试同时暴露用户当前蓝图 FOV 与旧自动化 77° 硬编码断言不一致；这与姿势根因无关。
+
 ## 2026-08-23 session236 — 修正为近相机裁切并按手肘遮挡调参
 
 - 用户最新截图证明 session235 的裁切方向反了：需要删除贴近相机的肘部，而不是删除远端手臂。材质公式改为 `(Distance - Arm Near Clip Distance) / Arm Near Clip Fade Width`，经 Saturate 与 `DitherTemporalAA` 输出 Opacity Mask。

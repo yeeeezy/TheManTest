@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-08-23 session237 交接：蓝图预览与 PIE 手臂朝向差异已实证定位
+
+- 临时逐骨探针确认 `ArmsViewMesh` 蓝图 CDO 与 PIE Relative Transform 完全一致：Rotation `(-0.087114,-82.335250,0.647280)`、Location `(-1.615754,0.000001,-141.738776)`；不存在 PIE 强制覆盖组件构图。
+- CDO 冷回读 `Update Animation in Editor=false`。因此角色蓝图组件视口不持续求值 `ABP_MaintenanceWorker_FirstPerson`，截图显示参考姿势；PIE 才执行 BeginPlay 装备/动画层初始化与逐帧 AnimBP 求值。
+- `AS_MaintenanceWorker_FP_Idle` 对参考姿势的组件空间角差：`upperarm_r=36.248°`、`lowerarm_r=109.692°`、`hand_r=72.553°`；PIE 对同一 Idle 的对应误差仅 `0.585°/0.457°/0.610°`。巨大朝向差由“参考姿势 vs 实际 Idle”确定性解释，不是 Lean/Look、ViewmodelRoot 或 RepairGun 额外旋转。
+- 临时 C++ 探针已移除。FramingCapture 运行到探针并成功产出数据，但因用户当前蓝图 FOV 已不再是旧测试硬编码的 77° 而失败；该旧断言需另行按用户当前构图语义处理。
+
 ## 2026-08-23 session236 交接：修正第一人称手臂近距离裁切方向
 
 - 用户截图确认 session235 的公式方向相反，远处手臂保留但贴近相机的手肘仍会遮挡。现改为 `(Distance(CameraPositionWS, AbsoluteWorldPosition) - Arm Near Clip Distance) / Arm Near Clip Fade Width`，近处裁掉、远处保留。
