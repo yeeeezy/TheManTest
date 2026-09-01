@@ -1,5 +1,11 @@
 # 进度日志
 
+## 2026-09-01 session243 交接：按最新截图更新 ArmsViewMesh 默认值
+
+- `AFPSCharacterBase` 的 `ArmsViewMesh` 默认 Transform 更新为 Location `(-14.766994,-4.322017,-134.599387)`、Rotation `(Roll=5.752239°, Pitch=0.077753°, Yaw=-114.908449°)`、Scale `(1,1,1)`。
+- Development Editor 构建成功；冷启动 Native/BP CDO 均与截图一致。用户最新 `BP_MaintenanceWorker.uasset` 手调仍保留在工作区，未纳入上一安全检查点。
+- 静态构图仍不在 BeginPlay/Tick 强制覆盖；待用户前台确认最终画面。
+
 ## 2026-09-01 session242 交接：ArmsViewMesh 当前构图设为父类默认值
 
 - 根据用户截图，将 `AFPSCharacterBase` 构造默认 `ArmsViewMesh` Transform 设为 Location `(-6.330288,-6.449130,-141.685038)`、Rotation `(Roll=0.581459°, Pitch=0.297436°, Yaw=-117.090375°)`。

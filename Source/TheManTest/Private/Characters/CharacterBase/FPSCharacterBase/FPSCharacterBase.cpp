@@ -105,8 +105,8 @@ AFPSCharacterBase::AFPSCharacterBase()
 	// 只给自己看、不投影、始终评估姿势。骨架/AnimClass 在 BP 配；这里保存经前台确认的默认构图。
 	ArmsViewMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmsViewMesh"));
 	ArmsViewMesh->SetupAttachment(ViewmodelRoot);
-	ArmsViewMesh->SetRelativeLocation(FVector(-6.330288f, -6.449130f, -141.685038f));
-	ArmsViewMesh->SetRelativeRotation(FRotator(0.297436f, -117.090375f, 0.581459f));
+	ArmsViewMesh->SetRelativeLocation(FVector(-14.766994f, -4.322017f, -134.599387f));
+	ArmsViewMesh->SetRelativeRotation(FRotator(0.077753f, -114.908449f, 5.752239f));
 	ArmsViewMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ArmsViewMesh->SetOnlyOwnerSee(true);
 	ArmsViewMesh->bCastDynamicShadow = false;

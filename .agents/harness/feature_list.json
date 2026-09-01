@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-01-session242",
+    "last_updated":  "2026-09-01-session243",
     "active_feature":  "FEAT-077",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -11,7 +11,7 @@
                          "description":  "让 ArmsViewMesh 独立运行第一人称动画；CharacterMesh0 保留完整身体 locomotion，并仅从脊柱以上复制第一人称最终 Pose 用于完整影子，隔离 root/pelvis 对手臂的影响。",
                          "archive_file":  "archive/FEAT-077-first-person-body-pose-composition.md",
                          "created":  "2026-08-21",
-                         "updated":  "2026-09-01-session242",
+                         "updated":  "2026-09-01-session243",
                          "done_criteria":  [
                                                "ArmsViewMesh 独立 AnimBP 不读取 CharacterMesh0 root/pelvis locomotion",
                                                "CharacterMesh0 在完整身体 locomotion 上仅从 spine_01 或锁骨以上混入 ArmsViewMesh Pose",
@@ -19,7 +19,7 @@
                                                "切枪、Idle/移动/跳跃/开火/冲刺验证无参考姿势、明显横移或切换卡顿",
                                                "Development Editor 冷构建、相关 AnimBP/蓝图编译保存及冷启动验证通过"
                                            ],
-                         "verification_evidence":  "2026-08-21-session211：ArmsViewMesh 常驻使用 ABP_MaintenanceWorker_FirstPerson（UCharacterBaseAnimInstance），正常持枪 Pose 通过 ALI_WeaponAnim 链接 TABP_FirstPersonFirearmBase 的维修枪子类 ABP_RepairGun_FirstPerson；通用 spine_03/hand_l 晃动保留在宿主末端。CharacterMesh0 使用 ABP_MaintenanceWorker_Body，并通过 FirstPersonPoseSource 从 spine_01 以上复制 Arms 最终局部 Pose。C++ 基类统一速度、方向、腾空、移动与 Lean/Look 变量。Development Editor 构建成功；冷启动 Shadow.UpperBodyEvidence、Viewmodel.FramingCapture、Viewmodel.EquipDissolveEvidence 均 Success。2026-08-22-session213：无骨架身体模板通过 AssetTools 提升为 CharacterBase/Animations/Body/Logic/TABP_CharacterBase_BodyLocomotion；ABP_MaintenanceWorker_Body 引用更新并重新编译保存。session214：新增无骨架 TABP_CharacterBase_FirstPerson；ABP_MaintenanceWorker_FirstPerson 保留具体 Skeleton 并改为无本地图表的模板子类。Development Editor 冷构建及三项玩家动画回归均 Success。2026-09-01-session240：Asset Registry 确认短名称 AS_MW_FP_* 六条 Sequence 与 BS_MW_FP_WalkRun 外部引用为0并删除。session241：SKM_MaintenanceWorker_FirstPersonArms 与正式动画、BlendSpace、AnimBP 统一使用 SK_Mannequin_Arms_Skeleton，68骨层级逐项一致。session242：ArmsViewMesh 截图构图写为父类默认 Transform，Native/BP CDO 冷回读与 Development Editor 构建成功。待用户前台切枪/移动/跳跃/开火主观复核。"
+                         "verification_evidence":  "2026-08-21-session211：ArmsViewMesh 常驻使用 ABP_MaintenanceWorker_FirstPerson（UCharacterBaseAnimInstance），正常持枪 Pose 通过 ALI_WeaponAnim 链接 TABP_FirstPersonFirearmBase 的维修枪子类 ABP_RepairGun_FirstPerson；通用 spine_03/hand_l 晃动保留在宿主末端。CharacterMesh0 使用 ABP_MaintenanceWorker_Body，并通过 FirstPersonPoseSource 从 spine_01 以上复制 Arms 最终局部 Pose。C++ 基类统一速度、方向、腾空、移动与 Lean/Look 变量。Development Editor 构建成功；冷启动 Shadow.UpperBodyEvidence、Viewmodel.FramingCapture、Viewmodel.EquipDissolveEvidence 均 Success。2026-08-22-session213：无骨架身体模板通过 AssetTools 提升为 CharacterBase/Animations/Body/Logic/TABP_CharacterBase_BodyLocomotion；ABP_MaintenanceWorker_Body 引用更新并重新编译保存。session214：新增无骨架 TABP_CharacterBase_FirstPerson；ABP_MaintenanceWorker_FirstPerson 保留具体 Skeleton 并改为无本地图表的模板子类。Development Editor 冷构建及三项玩家动画回归均 Success。2026-09-01-session240：Asset Registry 确认短名称 AS_MW_FP_* 六条 Sequence 与 BS_MW_FP_WalkRun 外部引用为0并删除。session241：SKM_MaintenanceWorker_FirstPersonArms 与正式动画、BlendSpace、AnimBP 统一使用 SK_Mannequin_Arms_Skeleton，68骨层级逐项一致。session243：最新截图 ArmsViewMesh 构图写为父类默认 Transform，Native/BP CDO 冷回读与 Development Editor 构建成功。待用户前台切枪/移动/跳跃/开火主观复核。"
                      },
                      {
                          "id":  "FEAT-076",

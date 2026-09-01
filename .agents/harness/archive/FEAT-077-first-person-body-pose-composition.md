@@ -3,6 +3,12 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-09-01 session243 — 按最新截图更新 ArmsViewMesh 默认构图
+
+- 用户再次前台微调后，将 `ArmsViewMesh` C++ 默认 Location 更新为 `(-14.766994,-4.322017,-134.599387)`，默认 Rotation 更新为 `(Roll=5.752239°, Pitch=0.077753°, Yaw=-114.908449°)`；Scale 保持 `(1,1,1)`。
+- 不改变静态 Transform 的职责边界：C++ 只提供构造默认，BeginPlay/Tick 不覆盖，具体 BP 可继续覆盖。
+- Development Editor 构建成功；冷启动 Native CDO 与当前 `BP_MaintenanceWorker` CDO 均在0.001容差内匹配新截图数值。
+
 ## 2026-09-01 session242 — 当前 ArmsViewMesh 构图固化为 C++ 默认值
 
 - 按用户最新截图将 `ArmsViewMesh` 默认 Location 固化为 `(-6.330288,-6.449130,-141.685038)`，默认 Rotation 固化为 `(Roll=0.581459°, Pitch=0.297436°, Yaw=-117.090375°)`。
