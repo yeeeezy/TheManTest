@@ -3,6 +3,12 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-09-01 session240 — 删除未使用的短名称第一人称动画副本
+
+- 确认两套动画绑定不同 Skeleton：短名称 `AS_MW_FP_*` 绑定 `SKEL_MaintenanceWorker_FirstPersonArms`；正式完整名称 `AS_MaintenanceWorker_FP_*` 与 `ABP_MaintenanceWorker_FirstPerson` 绑定 `SK_Mannequin_Arms_Skeleton`。这解释了前者只会出现在对应 Skeleton 的兼容资产筛选中，但不代表运行时使用。
+- Unreal Asset Registry 加载确认短名称六条 Sequence 与 `BS_MW_FP_WalkRun` 的外部引用均为0；按依赖顺序删除全部七个资产。
+- 冷启动复查七个短名称目标均不存在；完整名称六条 Sequence、`BS_MaintenanceWorker_FP_WalkRun` 与 `ABP_MaintenanceWorker_FirstPerson` 全部加载成功。
+
 ## 2026-08-23 session239 — RepairGun 切换为 Skeletal Mesh 可见枪体
 
 - `BP_RepairGun` 的继承 `SkeletalMesh` 组件指定 `/Game/Weapons/RepairGun/Meshes/SK_SCFRIFLE`。`AEquipmentBase::BeginPlay` 在蓝图覆盖落定后自动选择表现组件：有 Skeletal Mesh 时显示它，并递归隐藏旧 Static Mesh 与 `StaticMeshOverlay`；旧 Static Mesh 资产继续供 `ShadowStaticMesh` 复制世界空间投影。

@@ -1,5 +1,11 @@
 # 进度日志
 
+## 2026-09-01 session240 交接：删除未使用的短名称第一人称动画副本
+
+- 已确认短名称 `AS_MW_FP_*` 使用 `SKEL_MaintenanceWorker_FirstPersonArms`，完整名称正式资产使用 `SK_Mannequin_Arms_Skeleton`；因此骨骼编辑器的兼容资产筛选结果不同。
+- Asset Registry 预检确认短名称六条 Sequence 与 `BS_MW_FP_WalkRun` 外部引用均为0；七个资产已通过 Unreal 删除，冷启动回读剩余目标为0。
+- 正式 `AS_MaintenanceWorker_FP_*` 六条 Sequence、`BS_MaintenanceWorker_FP_WalkRun` 和 `ABP_MaintenanceWorker_FirstPerson` 冷启动加载全部成功。用户原有 `BP_RepairGun` 与 TestMap ExternalActor 改动未纳入本次操作。
+
 ## 2026-08-23 session239 交接：RepairGun 可见枪体切换为 SK_SCFRIFLE
 
 - `BP_RepairGun.SkeletalMesh` 已指定 `/Game/Weapons/RepairGun/Meshes/SK_SCFRIFLE`；装备 BeginPlay 在 Skeletal Mesh 有资产时显示它并隐藏旧 `StaticMesh` 及其 Overlay 子组件。旧 Static Mesh 资产仍保留，继续作为现有世界空间枪械影子的复制源。
