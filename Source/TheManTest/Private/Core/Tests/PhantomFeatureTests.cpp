@@ -275,7 +275,7 @@ public:
 		Test->AddInfo(FString::Printf(TEXT("LEG_RUNTIME material=%s parent=%s"),
 			*MID->GetPathName(), MID->Parent ? *MID->Parent->GetPathName() : TEXT("None")));
 		float RuntimeRadius = 0.f;
-		MID->GetScalarParameterValue(TEXT("Arm Proximity Clip Radius"), RuntimeRadius);
+		MID->GetScalarParameterValue(TEXT("Proximity Clip Radius"), RuntimeRadius);
 		Test->AddInfo(FString::Printf(TEXT("LEG_RUNTIME proximity radius=%.2f"), RuntimeRadius));
 
 		auto TestPoint = [this, MID](const TCHAR* ParameterName, const FVector& Expected)
@@ -286,16 +286,8 @@ public:
 			Test->TestTrue(*FString::Printf(TEXT("%s follows the first-person arm pose"), ParameterName),
 				FVector(Value.R, Value.G, Value.B).Equals(Expected, 1.f));
 		};
-		const FVector LeftLowerarm = Arms->GetSocketLocation(TEXT("lowerarm_l"));
-		const FVector LeftHand = Arms->GetSocketLocation(TEXT("hand_l"));
-		const FVector RightLowerarm = Arms->GetSocketLocation(TEXT("lowerarm_r"));
 		const FVector RightHand = Arms->GetSocketLocation(TEXT("hand_r"));
-		TestPoint(TEXT("ArmClip_LeftLowerarmWS"), LeftLowerarm);
-		TestPoint(TEXT("ArmClip_LeftMidWS"), (LeftLowerarm + LeftHand) * 0.5f);
-		TestPoint(TEXT("ArmClip_LeftHandWS"), LeftHand);
-		TestPoint(TEXT("ArmClip_RightLowerarmWS"), RightLowerarm);
-		TestPoint(TEXT("ArmClip_RightMidWS"), (RightLowerarm + RightHand) * 0.5f);
-		TestPoint(TEXT("ArmClip_RightHandWS"), RightHand);
+		TestPoint(TEXT("Proximity Origin WS"), RightHand);
 		return true;
 	}
 private:

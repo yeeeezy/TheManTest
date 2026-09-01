@@ -328,3 +328,8 @@
 - session265 迁入的 Footsteps 示例材质不是维修工手臂实际使用的完整材质链，并且旧 `M_UE4Man_Body` 存在缺 Texture/Function 的编译错误，实际渲染回退为默认灰色；已撤销错误资源和错误验收结论。
 - 从 `FPSShooter1` 的 `/Game/Characters/MaintenanceWorker/FirstPersonArms` 迁入可编译的完整 UE4 Mannequin 材质链，整理到正式 `FirstPerson/Materials/UE4Mannequin` 目录。
 - 手臂/腿部专用材质从正式源材质复制，保留完整材质分区，并分别叠加相机近距渐隐与手臂邻近渐隐。冷启动无专用材质错误，视觉截图确认不再全灰，三项相关回归 Success。
+## 2026-09-01 session267 — 右手单点 Proximity
+
+- 腿部材质不再取双臂 8 点最短距离，只使用 `hand_r` 写入的 `Proximity Origin WS`。
+- 手臂与腿部实例参数统一重命名为 `Proximity Clip Radius` / `Proximity Fade Width`，数值分别保持 40/8cm 与 32/18cm。
+- Development Editor 构建及腿部 MID、手臂渐隐、武器跳跃三项回归全部通过。

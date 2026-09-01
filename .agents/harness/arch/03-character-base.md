@@ -13,7 +13,7 @@
 
 **FEAT-077：** `ArmsViewMesh` 独立运行第一人称 AnimBP，并作为 `CharacterMesh0` 上半身 Copy Pose 来源。构造时 `CharacterMesh0` 添加 `ArmsViewMesh` Tick prerequisite；完整身体 AnimBP 保留自己的 root/pelvis/腿部 locomotion，只在 `spine_01` 以上混入 Arms 局部骨骼 Pose。唯一完整影子仍由 `CharacterMesh0` 的 CastHiddenShadow 产生。
 
-**第一人称手臂近距离裁切（session236）：** `SKM_MaintenanceWorker_FirstPersonArms` 唯一材质槽使用 `/Game/Characters/MaintenanceWorker/FirstPerson/Materials/MI_MaintenanceWorker_FirstPersonArms`。其专属 Masked 父材质计算 `Distance(CameraPositionWS, AbsoluteWorldPosition)`，以 `(Distance - Arm Near Clip Distance) / Arm Near Clip Fade Width` 经 Saturate 和引擎 `DitherTemporalAA` Material Function 输出到 Opacity Mask：贴近相机的肘部裁掉，较远的手和前臂保留。实例参数为 40cm / 8cm；只影响第一人称 Arms，不影响完整身体、影子或武器材质。
+**第一人称手臂近距离裁切（session236，session267 参数统一）：** `SKM_MaintenanceWorker_FirstPersonArms` 唯一材质槽使用 `/Game/Characters/MaintenanceWorker/FirstPerson/Materials/MI_MaintenanceWorker_FirstPersonArms`。其专属 Masked 父材质计算 `Distance(CameraPositionWS, AbsoluteWorldPosition)`，以 `(Distance - Proximity Clip Radius) / Proximity Fade Width` 经 Saturate 和引擎 `DitherTemporalAA` Material Function 输出到 Opacity Mask：贴近相机的肘部裁掉，较远的手和前臂保留。实例参数为 40cm / 8cm；只影响第一人称 Arms，不影响完整身体、影子或武器材质。
 
 **第一人称原材质与近距离裁切（session263-264）：** session263 的临时统一灰模方案已被替代。手臂从外部原 VFXPack 项目正式迁入 `MI_Placeholder_Lambert_INST`、`M_Placeholder_Lambert_Master`、`MF_Disintegration` 与 Noise 贴图；本地专属副本保留原参数 `Color=0.802083 / Metallic=0.5 / Specular=0.5 / Roughness=0.8`、Noise/Dissolve 图，并在原 Opacity Mask 后乘入 40cm / 8cm 相机距离抖动裁切。腿部不使用手臂材质；`M_MaintenanceWorker_FirstPersonLegs` 由项目现有 `M_UE4Man_Body` 复制并只追加 55cm / 12cm 裁切，完整身体和影子的原材质不变。
 
@@ -59,3 +59,7 @@ Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE
 
 - 第一人称手臂/腿部材质底稿位于 `/Game/Characters/MaintenanceWorker/FirstPerson/Materials/UE4Mannequin/M_UE4Man_Body_Source`，其 Mask、Normal、Logo 与 Material Layer 依赖均位于同目录树。
 - 不得再使用 `Niagara_Stylized_Footsteps` 示例材质或项目内编译失败的旧 `M_UE4Man_Body` 作为第一人称专用材质底稿。
+## 2026-09-01 session267：统一 Proximity 参数与右手单点
+
+- 手臂和腿部材质实例统一暴露 `Proximity Clip Radius`、`Proximity Fade Width`。
+- 腿部渐隐只读取 `ArmsViewMesh.hand_r` 的世界位置，通过 `Proximity Origin WS` 写入运行时 MID；不再计算左右双臂多点最短距离。

@@ -538,3 +538,8 @@
 - 从批准资源项目 `FPSShooter1` 迁入可正常编译的正式 UE4 Mannequin 材质及 11 项项目依赖（合计含 3 个 Engine 函数为 14 项），整理到 `FirstPerson/Materials/UE4Mannequin`。
 - 手臂和腿部专用材质现在以正式 `M_UE4Man_Body_Source` 为底稿，保留原黑色橡胶、浅色塑料、金属和 Logo 分区；手臂继续 40cm/8cm 相机渐隐，腿部继续双臂 8 点邻近渐隐。
 - 冷启动未出现专用材质编译错误；正常曝光截图已确认不再是统一灰色。`ArmDistanceClipEvidence`、`LegArmProximityRuntime`、`WeaponOwnedJumpRuntime` 均 Success。
+## 2026-09-01 session267 — 右手单点腿部渐隐
+
+- 腿部渐隐源由双臂 8 点改为唯一的右手骨 `hand_r` 世界位置，运行时参数名为 `Proximity Origin WS`。
+- 手臂和腿部实例参数统一为 `Proximity Clip Radius` / `Proximity Fade Width`；手臂保持 40/8cm，腿部保持 32/18cm。
+- Development Editor 构建成功；冷审计确认两套实例参数正确，`LegArmProximityRuntime`、`ArmDistanceClipEvidence`、`WeaponOwnedJumpRuntime` 均 Success。

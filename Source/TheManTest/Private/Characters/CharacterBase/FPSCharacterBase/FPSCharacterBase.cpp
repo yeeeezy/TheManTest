@@ -624,25 +624,13 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 
 		if (LegsArmProximityMaterial)
 		{
-			const FVector LeftUpperarm = ArmsViewMesh->GetSocketLocation(TEXT("upperarm_l"));
-			const FVector LeftLowerarm = ArmsViewMesh->GetSocketLocation(TEXT("lowerarm_l"));
-			const FVector LeftHand = ArmsViewMesh->GetSocketLocation(TEXT("hand_l"));
-			const FVector RightUpperarm = ArmsViewMesh->GetSocketLocation(TEXT("upperarm_r"));
-			const FVector RightLowerarm = ArmsViewMesh->GetSocketLocation(TEXT("lowerarm_r"));
 			const FVector RightHand = ArmsViewMesh->GetSocketLocation(TEXT("hand_r"));
 			auto SetWorldPoint = [this](const TCHAR* ParameterName, const FVector& Point)
 			{
 				LegsArmProximityMaterial->SetVectorParameterValue(
 					FName(ParameterName), FLinearColor(Point.X, Point.Y, Point.Z, 1.f));
 			};
-			SetWorldPoint(TEXT("ArmClip_LeftUpperarmWS"), LeftUpperarm);
-			SetWorldPoint(TEXT("ArmClip_LeftLowerarmWS"), LeftLowerarm);
-			SetWorldPoint(TEXT("ArmClip_LeftMidWS"), (LeftLowerarm + LeftHand) * 0.5f);
-			SetWorldPoint(TEXT("ArmClip_LeftHandWS"), LeftHand);
-			SetWorldPoint(TEXT("ArmClip_RightUpperarmWS"), RightUpperarm);
-			SetWorldPoint(TEXT("ArmClip_RightLowerarmWS"), RightLowerarm);
-			SetWorldPoint(TEXT("ArmClip_RightMidWS"), (RightLowerarm + RightHand) * 0.5f);
-			SetWorldPoint(TEXT("ArmClip_RightHandWS"), RightHand);
+			SetWorldPoint(TEXT("Proximity Origin WS"), RightHand);
 		}
 
 		// Look action values are frame deltas. Consume them so a stopped mouse returns
