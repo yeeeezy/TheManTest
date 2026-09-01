@@ -514,3 +514,9 @@
 - 屏幕倒计时改为 `[Round N | Phase N] Time Remaining: M:SS.s`；回合、阶段、快进、死亡、伤害、血量、切枪、角色生成与 GAS 初始化等现有屏幕 Debug 文本全部改为英语。
 - 角色选择 UI 的默认结束文案改为 `GAME OVER`；Content 二进制资产未发现相关中文序列化文本。
 - `.agents/harness/AGENTS.md` 与 `arch/13-game-flow.md` 已规定：所有玩家可见 UI、HUD 与屏幕 Debug 输出必须使用英语。Development Editor 构建成功。
+
+## 2026-09-01 session263 交接：第一人称手臂/腿部灰模距离裁切
+
+- 手臂专属 Masked 材质 Base Color 改为中性灰 `0.18`，保留原 40cm / 8cm 相机距离抖动裁切。
+- 新增腿部专属 `M/MI_MaintenanceWorker_FirstPersonLegs`，参数 55cm / 12cm，并绑定 `SKM_MaintenanceWorker_LowerBody` 唯一材质槽；完整身体和影子原材质未改。
+- 冷启动回读确认 Mesh 绑定、父实例和参数正确；`ArmDistanceClipEvidence` 与 `WeaponOwnedJumpRuntime` Success。`FramingCapture` 仍只因既有 FOV=77、GripPoint 命名旧断言失败，与本材质改动无关。

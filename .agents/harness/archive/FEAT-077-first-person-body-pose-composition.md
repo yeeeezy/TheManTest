@@ -305,3 +305,9 @@
 - 按用户确认项目为英语游戏，将当前所有 C++ 屏幕 Debug 文本统一改为英语；倒计时显示为 `[Round N | Phase N] Time Remaining: M:SS.s`。
 - `UCharacterSelectWidgetBase` 的默认结束文案改为 `GAME OVER`，并扫描确认 Content 资产中没有对应中文序列化文本。
 - 项目 harness 新增长期规则：玩家可见 UI、HUD、通知和屏幕 Debug 输出必须使用英语。Development Editor 构建成功。
+
+## 2026-09-01 session263 — 手臂灰模与腿部近相机裁切
+
+- 手臂裁切父材质新增 `Viewmodel Base Color=(0.18,0.18,0.18)` 并接入 Base Color，替代纯白输出；原 40cm / 8cm Opacity Mask 链保持不变。
+- `SKM_MaintenanceWorker_LowerBody` 冷读确认只有一个材质槽；新增并绑定独立腿部 Masked 灰模实例，使用 55cm / 12cm 距离裁切。完整身体/影子仍使用原材质。
+- 冷启动资产回读正确且无材质错误；`ArmDistanceClipEvidence`、`WeaponOwnedJumpRuntime` Success。`FramingCapture` 的失败仍为已知旧 FOV/GripPoint 断言，不属于本轮回归。
