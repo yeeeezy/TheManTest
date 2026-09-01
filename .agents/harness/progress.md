@@ -469,3 +469,8 @@
 - 根因补充：角色第一人称 Jump 状态机可用，但 RepairGun `WeaponUpperBody` 仅输出 Idle/WalkRun，覆盖了宿主持枪 Jump Pose。
 - `TABP_FirstPersonFirearmBase.WeaponUpperBody` 现由 `bIsFalling` 选择：地面武器状态机、空中 `UpperBodyInPose`；RepairGun 子层继承。UE 编译保存与 Development Editor / Win64 构建成功。
 - 待用户前台 PIE 验证 JumpStart、持续坠落 JumpLoop 和落地 JumpEnd 是否完整可见。
+
+## 2026-09-01 session254 交接
+
+- 已删除一次性编辑器工具中重复的宿主 AnimGraph 空中旁路生成代码与旧 fallback 日志；当前武器基类资产内的正式空中分支保持不变。
+- 残留关键字扫描为0，Development Editor / Win64 构建成功。待用户前台 PIE 复核跳跃表现。
