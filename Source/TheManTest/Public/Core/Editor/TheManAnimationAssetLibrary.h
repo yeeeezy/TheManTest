@@ -93,6 +93,12 @@ public:
 		UAnimBlueprint* FirearmConcreteAnimBlueprint,
 		FName LayerName);
 
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Animation")
+	static bool CleanFirstPersonWeaponStateMachine(
+		UAnimBlueprint* FirearmTemplateAnimBlueprint,
+		UAnimBlueprint* ConcreteFirearmAnimBlueprint,
+		FName StateMachineGraphName);
+
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Blueprint")
 	static bool SetInheritedSceneComponentRotation(
 		UBlueprint* Blueprint,

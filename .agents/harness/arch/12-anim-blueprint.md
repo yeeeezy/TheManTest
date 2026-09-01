@@ -197,6 +197,7 @@ ABP_BodyLocomotion:
 > session254 已删除 `ConfigureFirstPersonFirearmLinkedLayer` 中旧的“宿主 AnimGraph 外部空中旁路”生成分支；已存在的武器层必须由专用配置函数原位维护，不能再次向宿主添加重复的 `bIsFalling` Blend。
 > **session255-256 修正：** 不能直接删除宿主资产中历史已有的顶层空中 Blend；该 Blend 同时承担 `WeaponUpperBody` 输入/输出路由，删除会使整个第一人称上半身失去动作。资产已恢复到检查点。随后确认第一人称模板有 3 个 Jump Transition 仍读取旧 `Is_InAir` 图节点，已保留原连线并统一重绑到原生 `bIsFalling`；`Velocity_Z` 分支保持不变。
 > **session257 最终职责收敛：** `TABP_CharacterBase_FirstPerson` 已移除本地 `FirstPersonLocomotionSM` 与顶层空中 Blend，只保留 `WeaponUpperBody` Linked Layer 路由及通用 Lean/Look。完整 Idle/WalkRun/JumpStart/JumpLoop/JumpEnd 状态机迁入 `TABP_FirstPersonFirearmBase.WeaponUpperBody`；具体动画由 `ABP_RepairGun_FirstPerson` Parent Asset Overrides 提供。换武器只替换 Linked Layer，即可整体替换地面与空中第一人称动画。
+> **session258 状态图清理：** 删除素材遗留 `Reset Animation` 及其 6 条放射状转换；Entry 直接进入 `Idle`。状态统一命名为 `Idle / Move / Jump Start / Fall Loop / Land`，并用 `Grounded` State Alias 合并 Idle 与 Move 到 Jump Start 的共同转换。状态图由 21 个节点降为 14 个节点，运行转换保持 7 条。
 
 > **FEAT-074 session148 临时边界：** `TABP_BodyLocomotion` 的第三人称身体输出已旁路 `WeaponUpperBody/AimOffset` 支路，改由 `DefaultSlot.Pose` 直接进入 `UpperBodySlot.Source`。原因是现有 RepairGun Linked Layer 在稳定状态返回参考姿势并覆盖 spine_01 以上，造成 CharacterMesh0/影子 T-Pose。第一人称 ArmsViewMesh 已独立使用 `ABP_VFXPack_FirstPerson`。在武器层能够保证有效 Pose 输出前，不得重新把该支路接回身体最终输出。
 

@@ -29,6 +29,9 @@
 #include "AnimGraphNode_StateResult.h"
 #include "AnimGraphNode_TransitionResult.h"
 #include "AnimStateTransitionNode.h"
+#include "AnimStateNode.h"
+#include "AnimStateAliasNode.h"
+#include "AnimStateEntryNode.h"
 #include "AnimationGraph.h"
 #include "AnimationGraphSchema.h"
 #include "AnimationBlueprintLibrary.h"
@@ -984,6 +987,117 @@ bool UTheManAnimationAssetLibrary::MoveFirstPersonLocomotionToFirearmLayer(
 		&& HostConcreteAnimBlueprint->Status != BS_Error
 		&& FirearmTemplateAnimBlueprint->Status != BS_Error
 		&& FirearmConcreteAnimBlueprint->Status != BS_Error;
+#else
+	return false;
+#endif
+}
+
+bool UTheManAnimationAssetLibrary::CleanFirstPersonWeaponStateMachine(
+	UAnimBlueprint* FirearmTemplateAnimBlueprint,
+	UAnimBlueprint* ConcreteFirearmAnimBlueprint,
+	FName StateMachineGraphName)
+{
+#if WITH_EDITOR
+	if (!FirearmTemplateAnimBlueprint || !ConcreteFirearmAnimBlueprint || StateMachineGraphName.IsNone())
+	{
+		return false;
+	}
+	UEdGraph* StateMachineGraph = nullptr;
+	TArray<UEdGraph*> Graphs;
+	FirearmTemplateAnimBlueprint->GetAllGraphs(Graphs);
+	for (UEdGraph* Graph : Graphs)
+	{
+		if (Graph && Graph->GetFName() == StateMachineGraphName)
+		{
+			StateMachineGraph = Graph;
+			break;
+		}
+	}
+	if (!StateMachineGraph) return false;
+
+	UAnimStateNode* Idle = nullptr;
+	UAnimStateNode* Run = nullptr;
+	UAnimStateNode* JumpStart = nullptr;
+	UAnimStateNode* JumpLoop = nullptr;
+	UAnimStateNode* JumpEnd = nullptr;
+	UAnimStateNode* Reset = nullptr;
+	UAnimStateEntryNode* Entry = nullptr;
+	for (UEdGraphNode* Node : StateMachineGraph->Nodes)
+	{
+		Entry = Entry ? Entry : Cast<UAnimStateEntryNode>(Node);
+		if (UAnimStateNode* State = Cast<UAnimStateNode>(Node))
+		{
+			const FString Name = State->GetStateName();
+			if (Name == TEXT("Idle")) Idle = State;
+			else if (Name == TEXT("Run")) Run = State;
+			else if (Name == TEXT("JumpStart")) JumpStart = State;
+			else if (Name == TEXT("JumpLoop")) JumpLoop = State;
+			else if (Name == TEXT("JumpEnd")) JumpEnd = State;
+			else if (Name == TEXT("Reset Animation")) Reset = State;
+		}
+	}
+	if (!Entry || !Idle || !Run || !JumpStart || !JumpLoop || !JumpEnd || !Reset) return false;
+
+	UAnimStateTransitionNode* IdleToJump = nullptr;
+	UAnimStateTransitionNode* RunToJump = nullptr;
+	TArray<UAnimStateTransitionNode*> ResetTransitions;
+	for (UEdGraphNode* Node : StateMachineGraph->Nodes)
+	{
+		UAnimStateTransitionNode* Transition = Cast<UAnimStateTransitionNode>(Node);
+		if (!Transition) continue;
+		const FString Title = Transition->GetNodeTitle(ENodeTitleType::FullTitle).ToString();
+		if (Title == TEXT("Idle to JumpStart")) IdleToJump = Transition;
+		else if (Title == TEXT("Run to JumpStart")) RunToJump = Transition;
+		if (Title.Contains(TEXT("Reset Animation"))) ResetTransitions.Add(Transition);
+	}
+	if (!IdleToJump || !RunToJump || ResetTransitions.Num() != 6) return false;
+	for (UAnimStateTransitionNode* Transition : ResetTransitions) Transition->DestroyNode();
+	Reset->DestroyNode();
+	Entry->GetOutputPin()->BreakAllPinLinks();
+	if (!StateMachineGraph->GetSchema()->TryCreateConnection(Entry->GetOutputPin(), Idle->GetInputPin()))
+	{
+		return false;
+	}
+
+	Run->OnRenameNode(TEXT("Move"));
+	JumpStart->OnRenameNode(TEXT("Jump Start"));
+	JumpLoop->OnRenameNode(TEXT("Fall Loop"));
+	JumpEnd->OnRenameNode(TEXT("Land"));
+
+	FGraphNodeCreator<UAnimStateAliasNode> AliasCreator(*StateMachineGraph);
+	UAnimStateAliasNode* GroundedAlias = AliasCreator.CreateNode();
+	GroundedAlias->NodePosX = (Idle->NodePosX + Run->NodePosX) / 2;
+	GroundedAlias->NodePosY = FMath::Min(Idle->NodePosY, Run->NodePosY) - 220;
+	AliasCreator.Finalize();
+	GroundedAlias->OnRenameNode(TEXT("Grounded"));
+	GroundedAlias->GetAliasedStates().Add(Idle);
+	GroundedAlias->GetAliasedStates().Add(Run);
+
+	UEdGraphPin* TransitionInput = IdleToJump->GetInputPin();
+	if (!TransitionInput || !GroundedAlias->GetOutputPin()) return false;
+	TransitionInput->BreakAllPinLinks();
+	if (!StateMachineGraph->GetSchema()->TryCreateConnection(GroundedAlias->GetOutputPin(), TransitionInput))
+	{
+		return false;
+	}
+	RunToJump->DestroyNode();
+
+	// Keep the graph readable left-to-right after removing the vendor reset hub.
+	Idle->NodePosX = -650; Idle->NodePosY = -80;
+	Run->NodePosX = -650; Run->NodePosY = 180;
+	GroundedAlias->NodePosX = -360; GroundedAlias->NodePosY = -250;
+	JumpStart->NodePosX = 0; JumpStart->NodePosY = -80;
+	JumpLoop->NodePosX = 300; JumpLoop->NodePosY = -80;
+	JumpEnd->NodePosX = 600; JumpEnd->NodePosY = -80;
+
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(FirearmTemplateAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(FirearmTemplateAnimBlueprint);
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(ConcreteFirearmAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(ConcreteFirearmAnimBlueprint);
+	FirearmTemplateAnimBlueprint->MarkPackageDirty();
+	ConcreteFirearmAnimBlueprint->MarkPackageDirty();
+	return FirearmTemplateAnimBlueprint->Status != BS_Error
+		&& ConcreteFirearmAnimBlueprint->Status != BS_Error;
 #else
 	return false;
 #endif

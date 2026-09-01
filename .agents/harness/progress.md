@@ -486,3 +486,8 @@
 - `TABP_FirstPersonFirearmBase.WeaponUpperBody` 唯一拥有 Idle、WalkRun、JumpStart、JumpLoop、JumpEnd 状态机；`ABP_RepairGun_FirstPerson` 提供具体动画覆盖。
 - 冷结构测试 `TheManTest.Player.Animation.WeaponOwnedLocomotion`、真实 PIE 跳跃测试 `WeaponOwnedJumpRuntime`、影子合成测试 `Shadow.UpperBodyEvidence` 全部 Success。
 - `FramingCapture` 的既有 FOV=77 与 GripPoint 命名断言仍和用户当前蓝图值不一致，与本动画迁移无关，本轮未修改。
+## 2026-09-01 session258 交接：第一人称武器状态机整理
+
+- `TABP_FirstPersonFirearmBase.FirstPersonLocomotionSM` 删除 `Reset Animation` 与6条旧转换，Entry 改为直接进入 Idle。
+- 状态现为 `Idle / Move / Jump Start / Fall Loop / Land`；`Grounded` State Alias 合并 Idle、Move 的共同起跳入口。节点数21→14，转换数固定为7。
+- 冷结构、真实 PIE 跳跃、完整身体上半身复制三项自动化全部 Success，编辑器冷回读与 Development Editor 构建通过。

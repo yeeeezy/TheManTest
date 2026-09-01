@@ -56,6 +56,9 @@
 #include "AnimGraphNode_BlendListByBool.h"
 #include "AnimGraphNode_LinkedAnimLayer.h"
 #include "AnimGraphNode_StateMachine.h"
+#include "AnimStateNode.h"
+#include "AnimStateAliasNode.h"
+#include "AnimStateTransitionNode.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFirstPersonWeaponOwnedLocomotionTest,
 	"TheManTest.Player.Animation.WeaponOwnedLocomotion",
@@ -108,6 +111,36 @@ bool FFirstPersonWeaponOwnedLocomotionTest::RunTest(const FString& Parameters)
 	}
 	TestEqual(TEXT("Weapon layer owns one complete locomotion state machine"), WeaponStateMachines, 1);
 	TestEqual(TEXT("Weapon layer owns no outer airborne blend"), WeaponAirBlends, 0);
+	UEdGraph* LocomotionGraph = nullptr;
+	for (UEdGraph* Graph : WeaponGraphs)
+	{
+		if (Graph && Graph->GetFName() == TEXT("FirstPersonLocomotionSM"))
+		{
+			LocomotionGraph = Graph;
+			break;
+		}
+	}
+	TestNotNull(TEXT("Weapon locomotion state graph"), LocomotionGraph);
+	if (LocomotionGraph)
+	{
+		TSet<FString> StateNames;
+		UAnimStateAliasNode* GroundedAlias = nullptr;
+		int32 TransitionCount = 0;
+		for (UEdGraphNode* Node : LocomotionGraph->Nodes)
+		{
+			if (UAnimStateNode* State = Cast<UAnimStateNode>(Node)) StateNames.Add(State->GetStateName());
+			if (UAnimStateAliasNode* Alias = Cast<UAnimStateAliasNode>(Node)) GroundedAlias = Alias;
+			TransitionCount += Node->IsA<UAnimStateTransitionNode>();
+		}
+		for (const FString& StateName : { TEXT("Idle"), TEXT("Move"), TEXT("Jump Start"), TEXT("Fall Loop"), TEXT("Land") })
+		{
+			TestTrue(FString::Printf(TEXT("Clean state machine contains %s"), *StateName), StateNames.Contains(StateName));
+		}
+		TestFalse(TEXT("Reset Animation state was removed"), StateNames.Contains(TEXT("Reset Animation")));
+		TestNotNull(TEXT("Grounded state alias"), GroundedAlias);
+		if (GroundedAlias) TestEqual(TEXT("Grounded aliases Idle and Move"), GroundedAlias->GetAliasedStates().Num(), 2);
+		TestEqual(TEXT("Clean state machine transition count"), TransitionCount, 7);
+	}
 
 	TSet<FString> OverrideNames;
 	for (const FAnimParentNodeAssetOverride& Override : WeaponChild->ParentAssetOverrides)

@@ -275,3 +275,10 @@
 - 宿主模板删除本地状态机和重复空中 Blend，只保留 Linked Layer 输出与通用 Lean/Look；武器层删除旧的外层 `bIsFalling` 二次旁路。
 - `ABP_RepairGun_FirstPerson` 持有 Still/WalkRun/JumpStart/JumpLoop/JumpEnd 的具体 Parent Asset Overrides；未来武器通过自己的 Linked Layer 子类替换整套动画。
 - 新增 `WeaponOwnedLocomotion` 结构回归和 `WeaponOwnedJumpRuntime` PIE 回归；后者实际 LaunchCharacter，验证武器层收到空中状态且 `hand_r` 进入 JumpStart 后发生姿态变化。两项及 `Shadow.UpperBodyEvidence` 均 Success；Development Editor 构建成功。
+
+## 2026-09-01 session258 — 武器 Locomotion 状态图清理
+
+- 删除无当前职责的 `Reset Animation` 状态和 6 条相关转换，并将 Entry 明确接入 Idle。
+- `Run / JumpStart / JumpLoop / JumpEnd` 重命名为 `Move / Jump Start / Fall Loop / Land`；新增 `Grounded` State Alias，同时代表 Idle 与 Move，并复用唯一的起跳转换。
+- 冷启动回读确认状态图为 5 个实际状态、1 个 Grounded Alias、7 条转换，共14个节点且不再含 Reset Animation。
+- `WeaponOwnedLocomotion`、真实 PIE `WeaponOwnedJumpRuntime`、`Shadow.UpperBodyEvidence` 均 Success；Development Editor 构建成功。
