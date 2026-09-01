@@ -46,10 +46,19 @@ void UGA_Shoot::ActivateAbility(
 		return;
 	}
 
-	// Ammo is authoritative on the equipped firearm. Empty weapons produce no
-	// projectile, montage, sound, muzzle effect, camera shake, or recoil.
+	// Ammo is authoritative on the equipped firearm. Empty weapons only produce
+	// their dedicated trigger/mechanism click; all live-fire feedback stays gated.
 	if (!Firearm->ConsumeRound())
 	{
+		if (Firearm->DryFireSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(
+				this,
+				Firearm->DryFireSound,
+				Firearm->GetMuzzleWorldTransform().GetLocation(),
+				Firearm->DryFireSoundVolumeMultiplier,
+				Firearm->DryFireSoundPitchMultiplier);
+		}
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}

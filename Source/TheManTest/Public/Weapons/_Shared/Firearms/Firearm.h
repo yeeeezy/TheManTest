@@ -97,6 +97,15 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Audio", meta = (ClampMin = "0.0"))
 	float FireSoundPitchMultiplier = 1.f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Audio")
+	USoundBase* DryFireSound = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Audio", meta = (ClampMin = "0.0"))
+	float DryFireSoundVolumeMultiplier = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Audio", meta = (ClampMin = "0.0"))
+	float DryFireSoundPitchMultiplier = 1.f;
+
 	/* ===== 枪口特效 ===== */
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|VFX")

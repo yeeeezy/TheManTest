@@ -567,3 +567,9 @@
 - 将下载文件 `408862-Future_Weapons_3_-Submachine_Gun_-Shot_3.wav` 正式导入并语义重命名为 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Fire`，不保留供应商/编号目录。
 - `BP_RepairGun.FireSound` 已绑定该 SoundWave，Volume/Pitch Multiplier 均为 1.0；冷启动回读为 1.654s、双声道、96kHz。
 - `UGA_Shoot` 仍只在成功扣弹后于真实枪口位置播放，空弹提前结束；`TheManTest.Player.CombatHUD.AmmoLifecycle` 复跑 Success。
+
+## 2026-09-01 session272 — RepairGun 空弹 Dry Fire
+
+- 将下载的 Springfield 1911 机械 WAV 正式导入并重命名为 `/Game/Weapons/RepairGun/Audio/S_RepairGun_DryFire`；冷读为 0.392s、双声道、192kHz。
+- `AFirearm` 新增每武器可配置的 `DryFireSound` 及独立 Volume/Pitch Multiplier；`BP_RepairGun` 已绑定新资产，倍率均为 1.0。
+- `UGA_Shoot` 在 `ConsumeRound()` 失败时仅于枪口播放 Dry Fire 后结束，不生成弹体，也不播放实弹音效、Niagara、Montage、震屏或后坐力。Development Editor 构建及扩展后的 AmmoLifecycle 回归 Success。

@@ -14,6 +14,7 @@
 #include "HighResScreenshot.h"
 #include "Misc/Paths.h"
 #include "AbilitySystemComponent.h"
+#include "Sound/SoundBase.h"
 
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FValidateCombatHUDCommand, FAutomationTestBase*, Test);
 bool FValidateCombatHUDCommand::Update()
@@ -40,6 +41,10 @@ bool FValidateCombatHUDCommand::Update()
 	Test->TestEqual(TEXT("Default current ammo"), Firearm->GetCurrentAmmo(), 30);
 	Test->TestEqual(TEXT("Default magazine capacity"), Firearm->GetMagazineCapacity(), 30);
 	Test->TestEqual(TEXT("Default spare magazine count"), Firearm->GetSpareMagazineCount(), 3);
+	USoundBase* ExpectedDryFireSound = LoadObject<USoundBase>(nullptr,
+		TEXT("/Game/Weapons/RepairGun/Audio/S_RepairGun_DryFire.S_RepairGun_DryFire"));
+	Test->TestNotNull(TEXT("RepairGun dry-fire sound asset loads"), ExpectedDryFireSound);
+	Test->TestEqual(TEXT("Equipped RepairGun uses its dedicated dry-fire sound"), Firearm->DryFireSound, ExpectedDryFireSound);
 	Test->TestEqual(TEXT("HUD displays current ammo"), Widget->GetDisplayedCurrentAmmoForTesting(), 30);
 	Test->TestEqual(TEXT("HUD displays magazine capacity"), Widget->GetDisplayedMagazineCapacityForTesting(), 30);
 	Test->TestEqual(TEXT("HUD displays spare magazines"), Widget->GetDisplayedSpareMagazineCountForTesting(), 3);

@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-01-session271",
+    "last_updated":  "2026-09-01-session272",
     "active_feature":  "FEAT-078",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -11,7 +11,7 @@
                          "description":  "由 PlayerController 管理本地 Combat HUD 生命周期；显示准星、血量和弹药；玩家枪械支持事件驱动弹药状态，以及 R/IA_Reload 经 Input.Weapon.Reload Gameplay Event 激活的换弹 Ability。",
                          "archive_file":  "archive/FEAT-078-combat-hud-player-ammo.md",
                          "created":  "2026-09-01",
-                         "updated":  "2026-09-01-session271",
+                         "updated":  "2026-09-01-session272",
                          "done_criteria":  [
                                                "本地 PlayerController 创建并持有 Combat HUD，大厅和非本地 Controller 不创建",
                                                "空心准星严格位于游戏视口中心；底部按参考图显示当前血量、大号当前子弹数和小号备用弹夹数，不显示弹夹容量",

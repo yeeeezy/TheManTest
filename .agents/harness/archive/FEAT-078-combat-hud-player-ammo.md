@@ -18,6 +18,12 @@
 - SoundWave 为 1.654s、Stereo、96kHz，武器 Volume/Pitch Multiplier 保持 1.0。
 - 播放点继续位于 `UGA_Shoot` 成功 `ConsumeRound` 之后，因此空弹不会播放实弹枪声；AmmoLifecycle 回归通过。
 
+## 2026-09-01 session272 — 当前弹匣为空时播放 Dry Fire
+
+- 新增共享枪械配置 `DryFireSound/DryFireSoundVolumeMultiplier/DryFireSoundPitchMultiplier`，与成功射击 `FireSound` 完全分离。
+- RepairGun 专属资产 `/Game/Weapons/RepairGun/Audio/S_RepairGun_DryFire` 已导入并绑定，时长 0.392s、Stereo、192kHz，Volume/Pitch=1.0。
+- `UGA_Shoot` 空弹分支只播放 Dry Fire 并立即结束，所有实弹反馈继续被门控。Development Editor 构建成功，AmmoLifecycle 新增资产绑定断言并通过。
+
 ## 2026-09-01 session250 — 中心准星缩小20%
 
 - 中心空心准星半径从57.6px缩小为46.08px，线宽从2.5px缩小为2px，圆周分段从96调整为80。
