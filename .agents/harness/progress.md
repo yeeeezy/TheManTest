@@ -474,3 +474,9 @@
 
 - 已删除一次性编辑器工具中重复的宿主 AnimGraph 空中旁路生成代码与旧 fallback 日志；当前武器基类资产内的正式空中分支保持不变。
 - 残留关键字扫描为0，Development Editor / Win64 构建成功。待用户前台 PIE 复核跳跃表现。
+
+## 2026-09-01 session255-256 交接
+
+- 错误删除宿主顶层空中 Blend 曾导致整个上半身无动作，已从 `3be9fb8` 恢复对应 AnimBP；该 Blend 不能直接删除，旧生成代码仍保持清理。
+- 3 个 Jump Transition 已从旧 `Is_InAir` Getter 改绑到原生 `bIsFalling` 并保留全部连线。冷启动编译4个相关 AnimBP、Development Editor 构建均成功。
+- 自测 PIE：地面持枪上半身恢复；强制腾空时 `bIsFalling=True/Is_InAir=True` 且关键骨骼发生变化。JumpLoop 素材本身接近 Idle，明显动作集中于 JumpStart/JumpEnd。

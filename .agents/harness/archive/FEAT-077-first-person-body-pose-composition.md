@@ -24,6 +24,13 @@
 - 该一次性编辑器迁移路径不参与运行时，并与 session253 已落在 `TABP_FirstPersonFirearmBase.WeaponUpperBody` 内的正式空中选择职责重复。
 - 保留新建 Linked Layer 的原始能力，以及 `ConfigureFirearmUpperBodyAirbornePassThrough()` 对现有武器基类的专用配置能力。残留关键字扫描为0；Development Editor / Win64 构建成功。
 
+## 2026-09-01 session255-256 — 回退破坏性节点删除并修复 Jump Transition 驱动
+
+- session255 曾错误删除 `TABP_CharacterBase_FirstPerson` 资产中已有的顶层空中 Blend，导致 `WeaponUpperBody` Pose 链断开、整个上半身无动作。用户前台发现后，已从安全检查点 `3be9fb8` 精准恢复该 AnimBP；旧旁路生成代码仍保持删除。
+- 自测 PIE 确认恢复后地面 Idle/持枪上半身正常；强制腾空时 AnimInstance 的 `bIsFalling=True`、`Is_InAir=True`，但 Jump Transition 仍未正确消费空中状态。
+- 图表审计发现 3 个 Jump Transition Getter 仍引用模板化前的 `Is_InAir`。已在保持所有 Transition Pin 连线的前提下改绑到原生 `bIsFalling`，模板及维修工/武器相关 4 个 AnimBP 冷启动编译成功。
+- 动画资产采样：JumpStart 22帧、JumpLoop 35帧、JumpEnd 14帧；JumpLoop 本身非常接近 Idle，明显变化主要集中在 JumpStart/JumpEnd。PIE 强制腾空验证 `bIsFalling/Is_InAir` 与关键手臂骨骼均发生变化；一次性变量迁移工具已删除，Development Editor 构建成功。
+
 ## 2026-09-01 session243 — 按最新截图更新 ArmsViewMesh 默认构图
 
 - 用户再次前台微调后，将 `ArmsViewMesh` C++ 默认 Location 更新为 `(-14.766994,-4.322017,-134.599387)`，默认 Rotation 更新为 `(Roll=5.752239°, Pitch=0.077753°, Yaw=-114.908449°)`；Scale 保持 `(1,1,1)`。
