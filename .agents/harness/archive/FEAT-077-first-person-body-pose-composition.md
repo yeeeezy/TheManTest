@@ -299,3 +299,9 @@
 - 将机械式目标插值替换为鼠标 delta 速度冲量 + 欠阻尼弹簧回正；默认冲量 7/5、刚度 85、阻尼 12，并保留 1.8/1.2cm 位移上限。
 - 按 Enhanced Input 实际轴向修正垂直符号，向上看时枪械先向下位移；仍只叠加在蓝图 authored 构图基准上，不添加旋转。
 - Development Editor 构建与 `PositionLagRuntime` 冷启动 PIE 回归均 Success。
+
+## 2026-09-01 session262 — 玩家可见文本英语规范
+
+- 按用户确认项目为英语游戏，将当前所有 C++ 屏幕 Debug 文本统一改为英语；倒计时显示为 `[Round N | Phase N] Time Remaining: M:SS.s`。
+- `UCharacterSelectWidgetBase` 的默认结束文案改为 `GAME OVER`，并扫描确认 Content 资产中没有对应中文序列化文本。
+- 项目 harness 新增长期规则：玩家可见 UI、HUD、通知和屏幕 Debug 输出必须使用英语。Development Editor 构建成功。

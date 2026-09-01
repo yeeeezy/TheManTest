@@ -34,6 +34,8 @@
 
 **调试**：`DebugSkipTime(Seconds=150)`（BlueprintCallable，复用 `AdvanceRound`，减过头钳 0 触发回合结束）；Controller `DebugSkipTimeAction`(IA) 绑键调用。屏幕显示剩余时间「分:秒」。
 
+**显示语言**：项目是英语游戏。倒计时格式为 `[Round N | Phase N] Time Remaining: M:SS.s`；所有玩家可见 UI、HUD 和屏幕 Debug 文本必须使用英语。中文只允许用于不会渲染到屏幕的源码注释、harness 文档和开发者日志。
+
 事件（BlueprintNativeEvent，蓝图覆写须调 Parent）：`OnRoundStarted(Round, Duration)` / `OnCountdownExpired()`。
 
 ---

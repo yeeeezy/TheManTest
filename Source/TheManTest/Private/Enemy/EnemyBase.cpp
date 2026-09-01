@@ -189,7 +189,7 @@ void AEnemyBase::HandleMidRoundStrengthIncrease()
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow,
-			FString::Printf(TEXT("[%s] 伤害增强一波 → 倍率 ×%.2f（强度 %d）"),
+			FString::Printf(TEXT("[%s] Damage wave applied | Multiplier x%.2f | Strength %d"),
 				*GetName(), CurrentDamageMultiplier, CurrentStrength));
 	}
 }
@@ -202,6 +202,6 @@ void AEnemyBase::HandleCombatPhaseChanged(int32 NewPhase)
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow,
-			FString::Printf(TEXT("[%s] 切换到战斗阶段 %d"), *GetName(), CurrentPhase));
+			FString::Printf(TEXT("[%s] Switched to combat phase %d"), *GetName(), CurrentPhase));
 	}
 }

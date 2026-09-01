@@ -30,7 +30,7 @@ void UTheManAttributeSetBase::PostGameplayEffectExecute(const FGameplayEffectMod
 			if (GEngine)
 			{
 				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange,
-					FString::Printf(TEXT("[%s] 剩余血量: %.0f / %.0f"),
+					FString::Printf(TEXT("[%s] Health: %.0f / %.0f"),
 						*DamagedEnemy->GetName(), GetHealth(), GetMaxHealth()));
 			}
 		}
@@ -40,7 +40,7 @@ void UTheManAttributeSetBase::PostGameplayEffectExecute(const FGameplayEffectMod
 			if (GEngine && DamageTaken > 0.f)
 			{
 				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red,
-					FString::Printf(TEXT("[%s] 受到伤害: -%.0f  剩余血量: %.0f / %.0f"),
+					FString::Printf(TEXT("[%s] Damage: -%.0f | Health: %.0f / %.0f"),
 						*DamagedCharacter->GetName(), DamageTaken, GetHealth(), GetMaxHealth()));
 			}
 		}

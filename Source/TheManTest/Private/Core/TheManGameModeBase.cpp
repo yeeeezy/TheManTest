@@ -23,36 +23,36 @@ UClass* ATheManGameModeBase::GetDefaultPawnClassForController_Implementation(ACo
 	UTheManGameInstance* GI = GetGameInstance<UTheManGameInstance>();
 	if (!GI)
 	{
-		Dbg(TEXT("GameInstance 不是 UTheManGameInstance（Project Settings 没设 GameInstance Class？）→ 回退默认 Pawn"), FColor::Red);
+		Dbg(TEXT("GameInstance is not UTheManGameInstance. Falling back to the default pawn."), FColor::Red);
 		return Super::GetDefaultPawnClassForController_Implementation(InController);
 	}
 
 	const FName ID = GI->GetSelectedCharacterID();
 	if (ID.IsNone())
 	{
-		Dbg(TEXT("SelectedCharacterID 为空（没经过选角色，或直接 PIE 进了 TestMap）→ 回退默认 Pawn"), FColor::Orange);
+		Dbg(TEXT("SelectedCharacterID is empty. Falling back to the default pawn."), FColor::Orange);
 		return Super::GetDefaultPawnClassForController_Implementation(InController);
 	}
 
 	if (!CharacterRosterTable)
 	{
-		Dbg(FString::Printf(TEXT("ID=%s 但 GameMode 的 CharacterRosterTable 没填 → 回退默认 Pawn"), *ID.ToString()), FColor::Red);
+		Dbg(FString::Printf(TEXT("ID=%s but CharacterRosterTable is not assigned. Falling back to the default pawn."), *ID.ToString()), FColor::Red);
 		return Super::GetDefaultPawnClassForController_Implementation(InController);
 	}
 
 	FCharacterType* Row = CharacterRosterTable->FindRow<FCharacterType>(ID, TEXT("GetDefaultPawnClass"));
 	if (!Row)
 	{
-		Dbg(FString::Printf(TEXT("花名册里找不到行名 '%s'（按钮 ID 与 DT 行名不一致？）→ 回退默认 Pawn"), *ID.ToString()), FColor::Red);
+		Dbg(FString::Printf(TEXT("Roster row '%s' was not found. Falling back to the default pawn."), *ID.ToString()), FColor::Red);
 		return Super::GetDefaultPawnClassForController_Implementation(InController);
 	}
 
 	if (!Row->CharacterClass)
 	{
-		Dbg(FString::Printf(TEXT("行 '%s' 的 CharacterClass 为空（DT 该行没填角色蓝图）→ 回退默认 Pawn"), *ID.ToString()), FColor::Red);
+		Dbg(FString::Printf(TEXT("Roster row '%s' has no CharacterClass. Falling back to the default pawn."), *ID.ToString()), FColor::Red);
 		return Super::GetDefaultPawnClassForController_Implementation(InController);
 	}
 
-	Dbg(FString::Printf(TEXT("生成选定角色：%s → %s"), *ID.ToString(), *Row->CharacterClass->GetName()), FColor::Green);
+	Dbg(FString::Printf(TEXT("Spawning selected character: %s -> %s"), *ID.ToString(), *Row->CharacterClass->GetName()), FColor::Green);
 	return Row->CharacterClass;
 }

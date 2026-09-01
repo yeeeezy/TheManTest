@@ -508,3 +508,9 @@
 - 目标位置插值改为速度冲量驱动的欠阻尼弹簧；默认水平/垂直冲量 7/5、刚度 85、阻尼 12，最大位移仍为 1.8/1.2cm。
 - 修正垂直方向：向上鼠标输入先令枪械下移，随后自然回到蓝图原构图；没有旋转滞后。
 - Development Editor 构建成功，更新后的 `TheManTest.Player.Viewmodel.PositionLagRuntime` 单独冷启动 Success。
+
+## 2026-09-01 session262 交接：玩家可见文本统一为英语
+
+- 屏幕倒计时改为 `[Round N | Phase N] Time Remaining: M:SS.s`；回合、阶段、快进、死亡、伤害、血量、切枪、角色生成与 GAS 初始化等现有屏幕 Debug 文本全部改为英语。
+- 角色选择 UI 的默认结束文案改为 `GAME OVER`；Content 二进制资产未发现相关中文序列化文本。
+- `.agents/harness/AGENTS.md` 与 `arch/13-game-flow.md` 已规定：所有玩家可见 UI、HUD 与屏幕 Debug 输出必须使用英语。Development Editor 构建成功。

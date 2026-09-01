@@ -131,7 +131,7 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
 
     if (Inventory.Num() <= 1) 
     {
-        if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("切枪失败：当前空手或背包中没有多余的装备！"));
+        if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Cannot switch weapons: no additional equipment in inventory."));
         return;
     }
 

@@ -42,7 +42,7 @@ void ATheManGameStateBase::Tick(float DeltaSeconds)
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::Cyan,
-			FString::Printf(TEXT("[回合 %d | 阶段 %d] 剩余时间: %s"),
+			FString::Printf(TEXT("[Round %d | Phase %d] Time Remaining: %s"),
 				RoundNumber, bPhase2Triggered ? 2 : 1, *FormatTimeMMSS(TimeRemaining)));
 	}
 }
@@ -73,7 +73,7 @@ void ATheManGameStateBase::AdvanceRound(float DeltaSeconds)
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow,
-				FString::Printf(TEXT("[回合 %d] 进入二阶段 —— 敌人切换二阶段技能集"), RoundNumber));
+				FString::Printf(TEXT("[Round %d] Phase 2 started - enemies switched ability sets."), RoundNumber));
 		}
 		UE_LOG(LogTemp, Warning,
 			TEXT("[TheManGameState] 回合 %d 半场，广播 OnCombatPhaseChanged(2)"), RoundNumber);
@@ -94,7 +94,7 @@ void ATheManGameStateBase::DebugSkipTime(float Seconds)
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Silver,
-				TEXT("[调试] 当前无活跃回合，快进无效"));
+				TEXT("[Debug] No active round. Time skip ignored."));
 		}
 		return;
 	}
@@ -105,7 +105,7 @@ void ATheManGameStateBase::DebugSkipTime(float Seconds)
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Green,
-			FString::Printf(TEXT("[调试] 快进 %.0fs → 剩余 %s（已增强 %d 波）"),
+			FString::Printf(TEXT("[Debug] Skipped %.0fs | Remaining: %s | Strength waves: %d"),
 				Skip, *FormatTimeMMSS(TimeRemaining), ElapsedStrengthWaves));
 	}
 }
@@ -123,7 +123,7 @@ void ATheManGameStateBase::StartNewRound()
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
-				FString::Printf(TEXT("[回合 %d] 时长已低于下限 %.0fs —— 游戏结束"), RoundNumber, MinCountdownDuration));
+				FString::Printf(TEXT("[Round %d] Duration is below the %.0fs minimum - Game Over."), RoundNumber, MinCountdownDuration));
 		}
 		if (UTheManGameInstance* GI = GetGameInstance<UTheManGameInstance>())
 		{
@@ -173,7 +173,7 @@ void ATheManGameStateBase::OnCountdownExpired_Implementation()
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
-			FString::Printf(TEXT("[回合 %d] 倒计时归零 —— 玩家死亡"), RoundNumber));
+			FString::Printf(TEXT("[Round %d] Time expired - player defeated."), RoundNumber));
 	}
 
 	RoutePlayerDeath();

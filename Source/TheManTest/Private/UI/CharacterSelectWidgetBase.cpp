@@ -84,7 +84,7 @@ void UCharacterSelectWidgetBase::ApplyGameOverState(bool bGameOver)
 	{
 		if (bGameOver)
 		{
-			const FText Msg = GameOverText.IsEmpty() ? FText::FromString(TEXT("游戏结束")) : GameOverText;
+			const FText Msg = GameOverText.IsEmpty() ? FText::FromString(TEXT("GAME OVER")) : GameOverText;
 			Text_GameOver->SetText(Msg);
 			Text_GameOver->SetVisibility(ESlateVisibility::Visible);
 		}

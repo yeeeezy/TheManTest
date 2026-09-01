@@ -308,7 +308,7 @@ void AFPSCharacterBase::PossessedBy(AController* NewController)
 			if (GEngine)
 			{
 				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green,
-					FString::Printf(TEXT("[%s] GAS 初始化完成 MaxHP:%.0f HP:%.0f"),
+					FString::Printf(TEXT("[%s] GAS initialized | Max HP: %.0f | HP: %.0f"),
 						*GetName(), CharacterData->InitialMaxHealth, CharacterData->InitialHealth));
 			}
 		}

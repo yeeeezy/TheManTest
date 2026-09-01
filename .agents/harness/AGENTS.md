@@ -260,6 +260,11 @@ AFPSInfiltrator::SetupPlayerInputComponent（override，先 Super）
 
 ---
 
+## Player-facing language
+
+- TheManTest is an English-language game. All player-visible UI copy, HUD labels, subtitles, notifications, and on-screen debug messages must be written in English.
+- Chinese is allowed in source comments, harness documentation, and developer-only logs that are not rendered on screen.
+
 ## 升级处理
 
 | 情况 | 处理方式 |
