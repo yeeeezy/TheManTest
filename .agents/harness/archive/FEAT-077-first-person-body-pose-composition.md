@@ -323,3 +323,8 @@
 - 手臂与腿部使用迁入的 UE 小白人 Mask/Normal 原贴图重建标准黑白灰分区材质；手臂继续使用 40cm/8cm 相机近距抖动渐隐。
 - 腿部不再按相机距离裁切。`AFPSCharacterBase` 为腿部创建运行时 MID，每帧写入左右上臂、前臂、前臂中点和手部共 8 个世界空间点；材质以最小距离生成 32cm/18cm 的 `DitherTemporalAA` 局部渐隐。
 - 新增低头跳跃截图证据与运行时参数回归；Development Editor 构建及 `ArmDistanceClipEvidence`、`LegArmProximityRuntime`、`WeaponOwnedJumpRuntime`、`LookDownJumpProximityEvidence` 全部通过。
+## 2026-09-01 session266 — 修正全灰材质回退
+
+- session265 迁入的 Footsteps 示例材质不是维修工手臂实际使用的完整材质链，并且旧 `M_UE4Man_Body` 存在缺 Texture/Function 的编译错误，实际渲染回退为默认灰色；已撤销错误资源和错误验收结论。
+- 从 `FPSShooter1` 的 `/Game/Characters/MaintenanceWorker/FirstPersonArms` 迁入可编译的完整 UE4 Mannequin 材质链，整理到正式 `FirstPerson/Materials/UE4Mannequin` 目录。
+- 手臂/腿部专用材质从正式源材质复制，保留完整材质分区，并分别叠加相机近距渐隐与手臂邻近渐隐。冷启动无专用材质错误，视觉截图确认不再全灰，三项相关回归 Success。

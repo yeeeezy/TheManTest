@@ -55,3 +55,7 @@ Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE
 
 - `ArmsViewMesh` 使用 UE 小白人 Mask/Normal 黑白灰分区材质，并保留 40cm/8cm 相机近距 `DitherTemporalAA`。
 - `LegsMesh` 不使用相机距离裁切。角色运行时为腿材质创建 MID，并写入双臂上臂、前臂、中点、手部 8 个世界空间采样点；腿材质按最近手臂点以 32cm/18cm 进行局部抖动渐隐。
+## 2026-09-01 session266：正式 UE4 Mannequin 材质源
+
+- 第一人称手臂/腿部材质底稿位于 `/Game/Characters/MaintenanceWorker/FirstPerson/Materials/UE4Mannequin/M_UE4Man_Body_Source`，其 Mask、Normal、Logo 与 Material Layer 依赖均位于同目录树。
+- 不得再使用 `Niagara_Stylized_Footsteps` 示例材质或项目内编译失败的旧 `M_UE4Man_Body` 作为第一人称专用材质底稿。
