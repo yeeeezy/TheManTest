@@ -16,6 +16,7 @@ class UGameplayAbility;
 class UAbilitySystemComponent;
 class AEquipmentBase;
 class UCameraShakeBase;
+class UMaterialInstanceDynamic;
 
 UCLASS()
 class THEMANTEST_API AFPSCharacterBase : public ACharacter, public IAbilitySystemInterface
@@ -202,6 +203,7 @@ private:
 	FVector ViewmodelAuthoredRelativeLocation = FVector::ZeroVector;
 	FVector CurrentViewmodelLookLagOffset = FVector::ZeroVector;
 	FVector CurrentViewmodelLookLagVelocity = FVector::ZeroVector;
+	TObjectPtr<UMaterialInstanceDynamic> LegsArmProximityMaterial;
 	float SprintTransitionAlpha = 0.f;
 	static constexpr float VFXSprintTransitionDuration = 0.2f;
 

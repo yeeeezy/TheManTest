@@ -2,6 +2,7 @@
 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Camera/CameraShakeBase.h"
@@ -85,6 +86,10 @@ AFPSCharacterBase::AFPSCharacterBase()
 	// 默认 OnlyTickPoseWhenRendered：隐藏时骨骼姿势不评估，导致切角色第一帧停在参考姿势
 	// （武器卡在左下角再飘到正确位置）。强制始终评估姿势，使首帧 socket 即就位。
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+	if (LegsMesh && LegsMesh->GetNumMaterials() > 0)
+	{
+		LegsArmProximityMaterial = LegsMesh->CreateAndSetMaterialInstanceDynamic(0);
+	}
 
 	// FEAT-038 修正：相机不再挂在会动/会俯仰的 head 骨骼上（消除 head bob + 低头时绕
 	// capsule 中心画弧把视角甩向前下方）。改挂 capsule，固定在眼高，只用控制器旋转转向。
@@ -510,6 +515,14 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 	// Body_Sway：原蓝图同时使用移动轴和本帧鼠标轴，再以 Walk=2 / Sprint=8 插值。
 	if (ArmsViewMesh && ViewmodelRoot)
 	{
+		if (LegsMesh && LegsMesh->GetMaterial(0)
+			&& LegsMesh->GetMaterial(0) != LegsArmProximityMaterial)
+		{
+			// Blueprint mesh/material overrides may finish after BeginPlay. Resolve the
+			// render MID lazily so the arm-proximity parameters always reach the live legs.
+			LegsArmProximityMaterial = LegsMesh->CreateAndSetMaterialInstanceDynamic(0);
+		}
+
 		// ArmsViewMesh owns all authored static framing. ViewmodelRoot is reserved
 		// for the runtime sprint pitch and is otherwise kept at identity rotation.
 		ViewmodelRoot->SetRelativeRotation(
@@ -608,6 +621,29 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		// independent body locomotion, then copies only the completed upper-body pose
 		// from ArmsViewMesh in the Body AnimGraph.
 		UpdateVFXPackAnimInstance(ArmsViewMesh->GetAnimInstance());
+
+		if (LegsArmProximityMaterial)
+		{
+			const FVector LeftUpperarm = ArmsViewMesh->GetSocketLocation(TEXT("upperarm_l"));
+			const FVector LeftLowerarm = ArmsViewMesh->GetSocketLocation(TEXT("lowerarm_l"));
+			const FVector LeftHand = ArmsViewMesh->GetSocketLocation(TEXT("hand_l"));
+			const FVector RightUpperarm = ArmsViewMesh->GetSocketLocation(TEXT("upperarm_r"));
+			const FVector RightLowerarm = ArmsViewMesh->GetSocketLocation(TEXT("lowerarm_r"));
+			const FVector RightHand = ArmsViewMesh->GetSocketLocation(TEXT("hand_r"));
+			auto SetWorldPoint = [this](const TCHAR* ParameterName, const FVector& Point)
+			{
+				LegsArmProximityMaterial->SetVectorParameterValue(
+					FName(ParameterName), FLinearColor(Point.X, Point.Y, Point.Z, 1.f));
+			};
+			SetWorldPoint(TEXT("ArmClip_LeftUpperarmWS"), LeftUpperarm);
+			SetWorldPoint(TEXT("ArmClip_LeftLowerarmWS"), LeftLowerarm);
+			SetWorldPoint(TEXT("ArmClip_LeftMidWS"), (LeftLowerarm + LeftHand) * 0.5f);
+			SetWorldPoint(TEXT("ArmClip_LeftHandWS"), LeftHand);
+			SetWorldPoint(TEXT("ArmClip_RightUpperarmWS"), RightUpperarm);
+			SetWorldPoint(TEXT("ArmClip_RightLowerarmWS"), RightLowerarm);
+			SetWorldPoint(TEXT("ArmClip_RightMidWS"), (RightLowerarm + RightHand) * 0.5f);
+			SetWorldPoint(TEXT("ArmClip_RightHandWS"), RightHand);
+		}
 
 		// Look action values are frame deltas. Consume them so a stopped mouse returns
 		// the viewmodel to its authored Blueprint framing instead of leaving a persistent offset.

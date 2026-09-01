@@ -29,6 +29,7 @@
 #include "Engine/Blueprint.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/World.h"
 #include "Engine/StaticMeshActor.h"
 #include "EngineUtils.h"
@@ -256,6 +257,51 @@ private:
 	FRotator AuthoredRotation = FRotator::ZeroRotator;
 };
 
+class FLegArmProximityRuntimeCommand final : public IAutomationLatentCommand
+{
+public:
+	explicit FLegArmProximityRuntimeCommand(FAutomationTestBase* InTest) : Test(InTest) {}
+	virtual bool Update() override
+	{
+		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+		APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		AFPSCharacterBase* Player = PC ? Cast<AFPSCharacterBase>(PC->GetPawn()) : nullptr;
+		USkeletalMeshComponent* Arms = Player ? Player->GetArmsMesh() : nullptr;
+		USkeletalMeshComponent* Legs = Player ? Player->GetLegsMesh() : nullptr;
+		if (!Arms || !Legs) return false;
+		UMaterialInstanceDynamic* MID = Cast<UMaterialInstanceDynamic>(Legs->GetMaterial(0));
+		Test->TestNotNull(TEXT("First-person legs use a runtime proximity MID"), MID);
+		if (!MID) return true;
+		Test->AddInfo(FString::Printf(TEXT("LEG_RUNTIME material=%s parent=%s"),
+			*MID->GetPathName(), MID->Parent ? *MID->Parent->GetPathName() : TEXT("None")));
+		float RuntimeRadius = 0.f;
+		MID->GetScalarParameterValue(TEXT("Arm Proximity Clip Radius"), RuntimeRadius);
+		Test->AddInfo(FString::Printf(TEXT("LEG_RUNTIME proximity radius=%.2f"), RuntimeRadius));
+
+		auto TestPoint = [this, MID](const TCHAR* ParameterName, const FVector& Expected)
+		{
+			FLinearColor Value;
+			const bool bFound = MID->GetVectorParameterValue(FName(ParameterName), Value);
+			Test->TestTrue(*FString::Printf(TEXT("%s is updated"), ParameterName), bFound);
+			Test->TestTrue(*FString::Printf(TEXT("%s follows the first-person arm pose"), ParameterName),
+				FVector(Value.R, Value.G, Value.B).Equals(Expected, 1.f));
+		};
+		const FVector LeftLowerarm = Arms->GetSocketLocation(TEXT("lowerarm_l"));
+		const FVector LeftHand = Arms->GetSocketLocation(TEXT("hand_l"));
+		const FVector RightLowerarm = Arms->GetSocketLocation(TEXT("lowerarm_r"));
+		const FVector RightHand = Arms->GetSocketLocation(TEXT("hand_r"));
+		TestPoint(TEXT("ArmClip_LeftLowerarmWS"), LeftLowerarm);
+		TestPoint(TEXT("ArmClip_LeftMidWS"), (LeftLowerarm + LeftHand) * 0.5f);
+		TestPoint(TEXT("ArmClip_LeftHandWS"), LeftHand);
+		TestPoint(TEXT("ArmClip_RightLowerarmWS"), RightLowerarm);
+		TestPoint(TEXT("ArmClip_RightMidWS"), (RightLowerarm + RightHand) * 0.5f);
+		TestPoint(TEXT("ArmClip_RightHandWS"), RightHand);
+		return true;
+	}
+private:
+	FAutomationTestBase* Test = nullptr;
+};
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFirstPersonWeaponJumpRuntimeTest,
 	"TheManTest.Player.Animation.WeaponOwnedJumpRuntime",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -280,6 +326,20 @@ bool FViewmodelPositionLagRuntimeTest::RunTest(const FString& Parameters)
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FViewmodelPositionLagRuntimeCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLegArmProximityRuntimeTest,
+	"TheManTest.Player.Viewmodel.LegArmProximityRuntime",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FLegArmProximityRuntimeTest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FLegArmProximityRuntimeCommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }
@@ -1100,7 +1160,8 @@ bool FPlayerArmClipScreenshotCommand::Update()
 	EvidenceLight->RegisterComponentWithWorld(World);
 	EvidenceLight->AttachToComponent(Player->GetHeadCamera(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	EvidenceLight->SetRelativeLocation(FVector(60.f, 0.f, -20.f));
-	EvidenceLight->SetIntensity(1500000.f);
+	// Bright enough to reveal the mannequin material layers without clipping them to white.
+	EvidenceLight->SetIntensity(5000.f);
 	EvidenceLight->SetAttenuationRadius(500.f);
 	Capture->CaptureScene();
 	TArray<FColor> Pixels;
@@ -1115,6 +1176,102 @@ bool FPlayerArmClipScreenshotCommand::Update()
 	if (Equipment) Equipment->SetActorHiddenInGame(false);
 	return bSaved;
 }
+
+class FLookDownJumpProximityEvidenceCommand final : public IAutomationLatentCommand
+{
+public:
+	explicit FLookDownJumpProximityEvidenceCommand(FAutomationTestBase* InTest) : Test(InTest) {}
+	virtual bool Update() override
+	{
+		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+		APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		AFPSCharacterBase* Player = PC ? Cast<AFPSCharacterBase>(PC->GetPawn()) : nullptr;
+		if (!Player || !Player->GetHeadCamera() || !Player->GetArmsMesh() || !Player->GetLegsMesh()) return false;
+		if (!bLaunched)
+		{
+			const FRotator ViewRotation = PC->GetControlRotation();
+			PC->SetControlRotation(FRotator(-70.f, ViewRotation.Yaw, 0.f));
+			Player->LaunchCharacter(FVector(0.f, 0.f, 520.f), false, true);
+			LaunchTime = World->GetTimeSeconds();
+			bLaunched = true;
+			return false;
+		}
+		if (World->GetTimeSeconds() - LaunchTime < 0.22f) return false;
+
+		USkeletalMeshComponent* Arms = Player->GetArmsMesh();
+		USkeletalMeshComponent* Legs = Player->GetLegsMesh();
+		const bool bArmsOnlyOwner = Arms->bOnlyOwnerSee;
+		const bool bLegsOnlyOwner = Legs->bOnlyOwnerSee;
+		const bool bLegsCastShadow = Legs->CastShadow;
+		Arms->SetOnlyOwnerSee(false);
+		Legs->SetOnlyOwnerSee(false);
+		Legs->SetCastShadow(false);
+		UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>();
+		RenderTarget->RenderTargetFormat = RTF_RGBA8;
+		RenderTarget->InitAutoFormat(1920, 1080);
+		RenderTarget->UpdateResourceImmediate(true);
+		USceneCaptureComponent2D* Capture = NewObject<USceneCaptureComponent2D>(Player);
+		Capture->RegisterComponentWithWorld(World);
+		Capture->AttachToComponent(Player->GetHeadCamera(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		Capture->FOVAngle = Player->GetHeadCamera()->FieldOfView;
+		Capture->CaptureSource = SCS_FinalColorLDR;
+		Capture->TextureTarget = RenderTarget;
+		Capture->bCaptureEveryFrame = false;
+		Capture->bCaptureOnMovement = false;
+		Capture->HideComponent(Player->GetMesh());
+		UPointLightComponent* Light = NewObject<UPointLightComponent>(Player);
+		Light->RegisterComponentWithWorld(World);
+		Light->AttachToComponent(Player->GetHeadCamera(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		Light->SetRelativeLocation(FVector(50.f, 0.f, -20.f));
+		Light->SetIntensity(5000.f);
+		Light->SetAttenuationRadius(500.f);
+		Light->SetCastShadows(false);
+		Capture->CaptureScene();
+		TArray<FColor> Pixels;
+		const bool bRead = RenderTarget->GameThread_GetRenderTargetResource()->ReadPixels(Pixels);
+		TArray64<uint8> PNGData;
+		if (bRead) FImageUtils::PNGCompressImageArray(1920, 1080, Pixels, PNGData);
+		const bool bSaved = bRead && FFileHelper::SaveArrayToFile(PNGData,
+			*FPaths::Combine(FPaths::ProjectSavedDir(),
+				TEXT("Screenshots/WindowsEditor/TMT_FP_LookDownJump_ArmProximity.png")));
+		Legs->SetVisibility(false, false);
+		Capture->CaptureScene();
+		TArray<FColor> ArmsOnlyPixels;
+		const bool bArmsOnlyRead = RenderTarget->GameThread_GetRenderTargetResource()->ReadPixels(ArmsOnlyPixels);
+		TArray64<uint8> ArmsOnlyPNGData;
+		if (bArmsOnlyRead) FImageUtils::PNGCompressImageArray(1920, 1080, ArmsOnlyPixels, ArmsOnlyPNGData);
+		const bool bArmsOnlySaved = bArmsOnlyRead && FFileHelper::SaveArrayToFile(ArmsOnlyPNGData,
+			*FPaths::Combine(FPaths::ProjectSavedDir(),
+				TEXT("Screenshots/WindowsEditor/TMT_FP_LookDownJump_ArmsOnly.png")));
+		Legs->SetVisibility(true, false);
+		Light->DestroyComponent();
+		Capture->DestroyComponent();
+		Arms->SetOnlyOwnerSee(bArmsOnlyOwner);
+		Legs->SetOnlyOwnerSee(bLegsOnlyOwner);
+		Legs->SetCastShadow(bLegsCastShadow);
+		float MinimumArmLegBoneDistance = TNumericLimits<float>::Max();
+		for (const FName ArmBone : { FName(TEXT("lowerarm_l")), FName(TEXT("hand_l")),
+			FName(TEXT("lowerarm_r")), FName(TEXT("hand_r")) })
+		{
+			for (const FName LegBone : { FName(TEXT("thigh_l")), FName(TEXT("calf_l")), FName(TEXT("foot_l")),
+				FName(TEXT("thigh_r")), FName(TEXT("calf_r")), FName(TEXT("foot_r")) })
+			{
+				MinimumArmLegBoneDistance = FMath::Min(MinimumArmLegBoneDistance,
+					FVector::Distance(Arms->GetSocketLocation(ArmBone), Legs->GetSocketLocation(LegBone)));
+			}
+		}
+		Test->AddInfo(FString::Printf(TEXT("LOOK_DOWN_JUMP minimum arm-to-leg bone distance: %.2f cm"),
+			MinimumArmLegBoneDistance));
+		Test->TestTrue(TEXT("Look-down jump enters falling movement"), Player->GetCharacterMovement()->IsFalling());
+		Test->TestTrue(TEXT("Look-down jump proximity evidence screenshot saved"), bSaved);
+		Test->TestTrue(TEXT("Look-down jump arms-only comparison screenshot saved"), bArmsOnlySaved);
+		return true;
+	}
+private:
+	FAutomationTestBase* Test = nullptr;
+	bool bLaunched = false;
+	float LaunchTime = 0.f;
+};
 
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FShadowUpperBodyEvidenceCommand, FAutomationTestBase*, Test);
 bool FShadowUpperBodyEvidenceCommand::Update()
@@ -1585,6 +1742,21 @@ bool FPlayerArmDistanceClipEvidenceTest::RunTest(const FString& Parameters)
 	ADD_LATENT_AUTOMATION_COMMAND(FStabilizePlayerViewmodelCommand());
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FPlayerArmClipScreenshotCommand());
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLookDownJumpProximityEvidenceTest,
+	"TheManTest.Player.Viewmodel.LookDownJumpProximityEvidence",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FLookDownJumpProximityEvidenceTest::RunTest(const FString& Parameters)
+{
+	if (GEngine) GEngine->Exec(nullptr, TEXT("r.MotionBlurQuality 0"));
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.0f));
+	ADD_LATENT_AUTOMATION_COMMAND(FLookDownJumpProximityEvidenceCommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }

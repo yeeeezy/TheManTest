@@ -318,3 +318,8 @@
 - 手臂本地专属材质改为原 Master/Instance 的副本，完整保留浅灰金属参数及 Noise/Dissolve，40cm / 8cm Dither 裁切乘在原 Opacity Mask 后。
 - 腿部专属材质改为项目现有 `M_UE4Man_Body` 的副本，保留其原图并只追加 55cm / 12cm 裁切；撤销 session263 的统一灰模外观。
 - 冷启动绑定/参数审计无错误；正常渲染 `ArmDistanceClipEvidence` 与 `WeaponOwnedJumpRuntime` 均 Success。
+## 2026-09-01 session265 — UE 小白人材质与腿部手臂邻近渐隐
+
+- 手臂与腿部使用迁入的 UE 小白人 Mask/Normal 原贴图重建标准黑白灰分区材质；手臂继续使用 40cm/8cm 相机近距抖动渐隐。
+- 腿部不再按相机距离裁切。`AFPSCharacterBase` 为腿部创建运行时 MID，每帧写入左右上臂、前臂、前臂中点和手部共 8 个世界空间点；材质以最小距离生成 32cm/18cm 的 `DitherTemporalAA` 局部渐隐。
+- 新增低头跳跃截图证据与运行时参数回归；Development Editor 构建及 `ArmDistanceClipEvidence`、`LegArmProximityRuntime`、`WeaponOwnedJumpRuntime`、`LookDownJumpProximityEvidence` 全部通过。

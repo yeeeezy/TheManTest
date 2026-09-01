@@ -526,3 +526,9 @@
 - 源 VFXPack 冷审计确认原手臂使用 `MI_Placeholder_Lambert_INST`；正式迁入其 Master、Instance、`MF_Disintegration` 与 Noise 贴图完整依赖。本地手臂专属副本保留原 `Color=0.802083 / Metallic=0.5 / Specular=0.5 / Roughness=0.8` 和 Dissolve，仅在原 Opacity Mask 后叠加 40cm / 8cm 裁切。
 - 纠正 session263 错误：腿部不再使用统一灰模；腿部专属父材质改由现有 `M_UE4Man_Body` 复制，只追加 55cm / 12cm 裁切，原外观图保持完整。
 - 冷回读确认两 Mesh 绑定、父材质和参数正确；正常渲染 `ArmDistanceClipEvidence` 与冷启动 `WeaponOwnedJumpRuntime` 均 Success。
+## 2026-09-01 session265 — 第一人称 UE 小白人材质与手臂邻近渐隐
+
+- 从外部 VFXPack 资源工程迁入 UE 小白人 `T_Male_Mask`、`T_Male_N` 等正式依赖；手臂与腿部改用基于这些原贴图的黑白灰分区材质，不再使用白色/灰模占位材质。
+- 手臂保留 40cm + 8cm 的相机近距 `DitherTemporalAA` 渐隐。
+- 腿部删除相机距离裁切，改由运行时 MID 接收双臂上臂、前臂、中点、手部共 8 个世界空间采样点；32cm 硬区 + 18cm 软区仅在接近第一人称手臂时渐隐。
+- `TheManTestEditor Win64 Development` 构建成功；`ArmDistanceClipEvidence`、`LegArmProximityRuntime`、`WeaponOwnedJumpRuntime`、`LookDownJumpProximityEvidence` 均 Success。

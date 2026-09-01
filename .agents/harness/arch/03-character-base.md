@@ -51,3 +51,7 @@ Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE
 > 旧 `ATheManCharacterBase` / `Infiltrator` / `MaintenanceWorker` / `TheExecutive` 及 `UTheManAnimInstanceBase` 已于 FEAT-041 删除，备份在 scratchpad/deprecated-char-backup-session43。
 
 > **MCP 审计遗留项（2026-07-26）：** 活动资产 `BP_Infiltrator` 仍硬引用 `/Game/Characters/Infiltrator/Blueprint/BP_Infiltrator_Old`。当前仅确认依赖存在，尚未定位具体属性或图节点；在用户手动确认前不得自动删除或重写该引用。
+## 2026-09-01 session265：第一人称材质与腿部邻近渐隐
+
+- `ArmsViewMesh` 使用 UE 小白人 Mask/Normal 黑白灰分区材质，并保留 40cm/8cm 相机近距 `DitherTemporalAA`。
+- `LegsMesh` 不使用相机距离裁切。角色运行时为腿材质创建 MID，并写入双臂上臂、前臂、中点、手部 8 个世界空间采样点；腿材质按最近手臂点以 32cm/18cm 进行局部抖动渐隐。
