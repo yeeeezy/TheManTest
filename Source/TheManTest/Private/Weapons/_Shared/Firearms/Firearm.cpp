@@ -152,6 +152,12 @@ void AFirearm::GrantAbilities(UAbilitySystemComponent* ASC)
 	{
 		SecondaryFireHandle = ASC->GiveAbility(FGameplayAbilitySpec(SecondaryFireAbilityClass, 1));
 	}
+
+	if (ReloadAbilityClass && !ReloadHandle.IsValid())
+	{
+		ReloadHandle = ASC->GiveAbility(FGameplayAbilitySpec(ReloadAbilityClass, 1));
+		UE_LOG(LogTemp, Log, TEXT("[Firearm] Reload ability granted."));
+	}
 }
 
 void AFirearm::RevokeAbilities(UAbilitySystemComponent* ASC)
@@ -171,6 +177,11 @@ void AFirearm::RevokeAbilities(UAbilitySystemComponent* ASC)
 	{
 		ASC->ClearAbility(SecondaryFireHandle);
 		SecondaryFireHandle = FGameplayAbilitySpecHandle();
+	}
+	if (ReloadHandle.IsValid())
+	{
+		ASC->ClearAbility(ReloadHandle);
+		ReloadHandle = FGameplayAbilitySpecHandle();
 	}
 
 	GrantedASC = nullptr;

@@ -353,6 +353,8 @@ void AFPSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EIC->BindAction(PC->GetPrimaryFireAction(),   ETriggerEvent::Started, this, &AFPSCharacterBase::PrimaryFire);
 	if (PC->GetSecondaryFireAction())
 		EIC->BindAction(PC->GetSecondaryFireAction(), ETriggerEvent::Started, this, &AFPSCharacterBase::SecondaryFire);
+	if (PC->GetReloadAction())
+		EIC->BindAction(PC->GetReloadAction(), ETriggerEvent::Started, this, &AFPSCharacterBase::Reload);
 
 	// 通用交互（E 键）：发送 Input.Character.Interact，由各角色已授予的技能监听处理
 	if (PC->GetInteractAction())
@@ -439,6 +441,16 @@ void AFPSCharacterBase::SecondaryFire()
 		FGameplayEventData Payload;
 		Payload.Instigator = this;
 		ASC->HandleGameplayEvent(TAG_Input_Weapon_SecondaryFire, &Payload);
+	}
+}
+
+void AFPSCharacterBase::Reload()
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		FGameplayEventData Payload;
+		Payload.Instigator = this;
+		ASC->HandleGameplayEvent(TAG_Input_Weapon_Reload, &Payload);
 	}
 }
 

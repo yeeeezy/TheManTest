@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-09-01 session251 交接：R键 Gameplay Tag 换弹
+
+- 新增 `IA_Reload` 并在 `IMC_Default` 映射 R；Controller 持有 Action，Character 绑定后发送 `Input.Weapon.Reload` Gameplay Event。
+- 新增共享 `UGA_Reload/BGA_Reload`；`BP_RepairGun` 通过独立 `ReloadAbilityClass` 配置，装备授予、卸下回收，不重构武器技能集。
+- 当前即时换弹；满弹拒绝，空弹补满并消耗一个备用弹夹，现有 `OnAmmoChanged` 自动刷新 HUD。
+- Development Editor 冷构建、相关蓝图编译保存、`TheManTest.Player.CombatHUD.AmmoLifecycle` 1/1 Success。
+
 ## 2026-09-01 session250 交接：中心准星缩小20%
 
 - 空心准星最终半径46.08px、线宽2px、80分段；HUD 其余布局不变。

@@ -35,6 +35,7 @@ bool FValidateCombatHUDCommand::Update()
 	}
 
 	Test->TestTrue(TEXT("Combat HUD is added to the local player screen"), Widget->IsInViewport());
+	Test->TestNotNull(TEXT("Player controller has IA_Reload configured"), Controller->GetReloadAction());
 	Test->TestTrue(TEXT("Ammo block is visible for a firearm"), Widget->IsAmmoVisibleForTesting());
 	Test->TestEqual(TEXT("Default current ammo"), Firearm->GetCurrentAmmo(), 30);
 	Test->TestEqual(TEXT("Default magazine capacity"), Firearm->GetMagazineCapacity(), 30);
@@ -42,6 +43,8 @@ bool FValidateCombatHUDCommand::Update()
 	Test->TestEqual(TEXT("HUD displays current ammo"), Widget->GetDisplayedCurrentAmmoForTesting(), 30);
 	Test->TestEqual(TEXT("HUD displays magazine capacity"), Widget->GetDisplayedMagazineCapacityForTesting(), 30);
 	Test->TestEqual(TEXT("HUD displays spare magazines"), Widget->GetDisplayedSpareMagazineCountForTesting(), 3);
+	PlayerCharacter->Reload();
+	Test->TestEqual(TEXT("Reload input does not consume a spare magazine while full"), Firearm->GetSpareMagazineCount(), 3);
 	Test->TestTrue(TEXT("Health block is visible for the possessed player"), Widget->IsHealthVisibleForTesting());
 	Test->TestEqual(TEXT("HUD displays default current health"), Widget->GetDisplayedCurrentHealthForTesting(), 100.f);
 	if (ATheManPlayerState* TheManPlayerState = Controller->GetPlayerState<ATheManPlayerState>())
@@ -68,7 +71,12 @@ bool FValidateCombatHUDCommand::Update()
 	Test->TestEqual(TEXT("Magazine reaches empty"), Firearm->GetCurrentAmmo(), 0);
 	Test->TestEqual(TEXT("HUD displays empty magazine"), Widget->GetDisplayedCurrentAmmoForTesting(), 0);
 	Test->TestFalse(TEXT("Empty magazine rejects an additional shot"), Firearm->ConsumeRound());
-	Test->TestTrue(TEXT("Empty magazine can reload"), Firearm->ReloadMagazine());
+	UAbilitySystemComponent* AbilitySystem = PlayerCharacter->GetAbilitySystemComponent();
+	Test->TestNotNull(TEXT("Player owns an ability system for reload input"), AbilitySystem);
+	if (AbilitySystem)
+	{
+		PlayerCharacter->Reload();
+	}
 	Test->TestEqual(TEXT("Reload fills current magazine"), Firearm->GetCurrentAmmo(), 30);
 	Test->TestEqual(TEXT("Reload consumes one spare magazine"), Firearm->GetSpareMagazineCount(), 2);
 	Test->TestEqual(TEXT("HUD displays reloaded ammo"), Widget->GetDisplayedCurrentAmmoForTesting(), 30);

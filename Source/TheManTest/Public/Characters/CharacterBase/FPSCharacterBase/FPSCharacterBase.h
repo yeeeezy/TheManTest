@@ -36,6 +36,7 @@ public:
 	void SwitchEquipment(const FInputActionValue& Value);
 	void PrimaryFire();
 	void SecondaryFire();
+	void Reload();
 
 	// 鍐插埡锛氭寜浣忔妸 MaxWalkSpeed 鎻愬埌 SprintSpeed锛屾澗寮€鍥?WalkSpeed
 	void StartSprint();

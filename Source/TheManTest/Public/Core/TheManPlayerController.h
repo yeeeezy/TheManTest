@@ -60,6 +60,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input|Weapon")
 	TObjectPtr<UInputAction> SecondaryFireAction;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input|Weapon")
+	TObjectPtr<UInputAction> ReloadAction;
+
 	// ── 通用交互输入（E 键，各角色按需监听）──
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input|Ability")
 	TObjectPtr<UInputAction> InteractAction;
@@ -127,5 +130,6 @@ public:
 	FORCEINLINE UInputAction* GetSwitchEquipmentAction() const { return SwitchEquipmentAction; }
 	FORCEINLINE UInputAction* GetPrimaryFireAction()     const { return PrimaryFireAction; }
 	FORCEINLINE UInputAction* GetSecondaryFireAction()   const { return SecondaryFireAction; }
+	FORCEINLINE UInputAction* GetReloadAction()          const { return ReloadAction; }
 	FORCEINLINE UInputAction* GetInteractAction()        const { return InteractAction; }
 };

@@ -13,7 +13,7 @@
 | `Source/TheManTest/Public/Core/CharacterSelectPlayerController.h` / `.cpp` | 新选角场景专用 Controller：GameAndUI 输入模式 + Enhanced Input IMC；点击非 UI 区域调用场景 `CharacterSelectCameraSwitcher` 切远近景；UI 可用 `SetPointerOverUI` 阻止空白点击逻辑 |
 | `Source/TheManTest/Public/Core/CharacterSelectCameraSwitcher.h` / `.cpp` | 新选角场景摄像机控制：引用远/近 Cine Camera 目标点；运行时自动生成内部 `ACineCameraActor` Rig 作为 ViewTarget；Rig 用弹簧切远近景、复制目标 Cine Camera 镜头参数，并叠加鼠标四方向视差 |
 | `Source/TheManTest/Public/Core/TheManGameInstance.h` / `.cpp` | 跨关卡持久容器：`SelectedCharacterID` / `CarriedRoundNumber`；`SelectCharacterAndStart` / `HandlePlayerDeath`（详见 13） |
-| `Source/TheManTest/Public/Core/TheManPlayerController.h` | 增强输入绑定、`SwitchCharacter(FName)`、`DT_CharacterRoster` 指针；`PrimaryFireAction` / `SecondaryFireAction`；`DebugSkipTimeAction`(调试快进)；本地 `CombatHUDWidget` 生命周期与 Equipment/Firearm 委托绑定 |
+| `Source/TheManTest/Public/Core/TheManPlayerController.h` | 增强输入绑定、`SwitchCharacter(FName)`、`DT_CharacterRoster` 指针；`PrimaryFireAction` / `SecondaryFireAction` / `ReloadAction`；`DebugSkipTimeAction`(调试快进)；本地 `CombatHUDWidget` 生命周期与 Equipment/Firearm 委托绑定 |
 | `Source/TheManTest/Private/Core/TheManPlayerController.cpp` | 输入回调；BeginPlay 加 IMC + **重置 GameOnly 输入模式**（覆盖大厅 UIOnly 残留，详见 13 BUG-037-001）；`HandleDebugSkipTime`；本地创建 `UCombatHUDWidgetBase`，在 Possess/UnPossess/切枪时解绑重绑装备、弹药和 PlayerState ASC 血量委托，不做 UI Tick |
 | `Source/TheManTest/Public/Core/TheManPlayerState.h` | ASC 和 AttributeSet 的声明（GAS 所有者） |
 | `Source/TheManTest/Private/Core/TheManPlayerState.cpp` | ASC / AttributeSet 构造 |

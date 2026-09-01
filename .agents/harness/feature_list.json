@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-01-session250",
+    "last_updated":  "2026-09-01-session251",
     "active_feature":  "FEAT-078",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -8,18 +8,19 @@
                          "id":  "FEAT-078",
                          "name":  "Combat HUD 与玩家枪械弹药",
                          "status":  "in_progress",
-                         "description":  "由 PlayerController 管理本地 Combat HUD 生命周期；显示屏幕中心空心准星、当前血量、大号当前子弹数和小号备用弹夹数，并为玩家生命值与 Firearm 建立事件驱动状态。",
+                         "description":  "由 PlayerController 管理本地 Combat HUD 生命周期；显示准星、血量和弹药；玩家枪械支持事件驱动弹药状态，以及 R/IA_Reload 经 Input.Weapon.Reload Gameplay Event 激活的换弹 Ability。",
                          "archive_file":  "archive/FEAT-078-combat-hud-player-ammo.md",
                          "created":  "2026-09-01",
-                         "updated":  "2026-09-01-session250",
+                         "updated":  "2026-09-01-session251",
                          "done_criteria":  [
                                                "本地 PlayerController 创建并持有 Combat HUD，大厅和非本地 Controller 不创建",
                                                "空心准星严格位于游戏视口中心；底部按参考图显示当前血量、大号当前子弹数和小号备用弹夹数，不显示弹夹容量",
                                                "玩家 Firearm 默认30发容量、3个备用弹夹，真实开火扣弹且空弹阻止全部开火反馈",
                                                "装备和弹药变化通过委托即时更新 HUD，不使用 UI Tick，切枪/切角色正确解绑重绑",
+                                               "R 键通过 IA_Reload 和 Input.Weapon.Reload Gameplay Event 激活当前枪械授予的 Reload Ability；满弹拒绝，空弹换弹扣除一个备用弹夹",
                                                "Development Editor 构建、弹药生命周期自动化和前台 PIE 视觉验收通过"
                                            ],
-                         "verification_evidence":  "session244：Development Editor 构建并验证弹药生命周期。session245/246：准星曾调整为57.6px半径。session247：新增事件驱动当前血量显示；弹药改为大号当前子弹数+右侧小号备用弹夹数，不显示容量。session249按截图反馈改为统一视觉中心线。session250：中心准星整体缩小20%，最终半径46.08px、线宽2px、80分段。Development Editor 构建与 TheManTest.Player.CombatHUD.AmmoLifecycle 1/1 Success；截图 Saved/Screenshots/WindowsEditor/TMT_CombatHUD.png。"
+                         "verification_evidence":  "session244-250：Combat HUD、事件驱动血量/弹药与最终准星布局完成。session251：新增 IA_Reload→R、Input.Weapon.Reload、UGA/BGA_Reload；BP_RepairGun 独立配置 ReloadAbilityClass，装备时授予/卸下时回收。Development Editor 构建与 TheManTest.Player.CombatHUD.AmmoLifecycle 1/1 Success，验证满弹拒绝换弹、空弹经实际 Gameplay Event/Ability 补至30、备用弹夹3→2且 HUD 同步。"
                      },
                      {
                          "id":  "FEAT-077",

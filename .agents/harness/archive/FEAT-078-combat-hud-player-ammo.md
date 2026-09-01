@@ -3,6 +3,15 @@
 **创建日期：** 2026-09-01
 **状态：** in_progress
 
+## 2026-09-01 session251 — R键 Gameplay Tag 换弹
+
+- 新增 `/Game/Core/Input/Actions/IA_Reload`，在 `IMC_Default` 映射键盘 R，并配置到 `BP_TheManPlayerController.ReloadAction`。
+- `AFPSCharacterBase` 绑定 Reload InputAction；按下后只发送 `Input.Weapon.Reload` Gameplay Event，不直接修改弹药。
+- 新增共享 `UGA_Reload` 与 `/Game/Weapons/_Shared/GAS/Abilities/BGA_Reload`；Ability 从当前装备取得 `AFirearm`，使用 `CanReload()` 门控并调用 `ReloadMagazine()`。
+- `AFirearm` 新增独立 `ReloadAbilityClass/ReloadHandle`，与主/副射击一样在装备时授予、卸下或切角色时可靠回收；`BP_RepairGun` 已配置 `BGA_Reload`。
+- 当前为即时换弹，不含换弹动画或延时；后续可在 Ability 内加入 Montage/AbilityTask 后于完成点补弹。
+- Development Editor 冷构建成功；相关蓝图在 Unreal 内编译保存成功；`TheManTest.Player.CombatHUD.AmmoLifecycle` 1/1 Success，验证满弹按换弹不扣备用弹夹、空弹经真实 Tag/Ability 链补至30、备用弹夹3→2且 HUD 即时更新。
+
 ## 2026-09-01 session250 — 中心准星缩小20%
 
 - 中心空心准星半径从57.6px缩小为46.08px，线宽从2.5px缩小为2px，圆周分段从96调整为80。

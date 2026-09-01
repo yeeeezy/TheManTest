@@ -142,6 +142,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|GAS")
 	TSubclassOf<UGameplayAbility> SecondaryFireAbilityClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|GAS")
+	TSubclassOf<UGameplayAbility> ReloadAbilityClass;
+
 	/* ===== 枪口偏移（AimIK 用） ===== */
 	UPROPERTY(EditDefaultsOnly, Category = "Equipment|Animation")
 	FTransform MuzzleLocalTransform;
@@ -164,6 +167,7 @@ private:
 
 	FGameplayAbilitySpecHandle PrimaryFireHandle;
 	FGameplayAbilitySpecHandle SecondaryFireHandle;
+	FGameplayAbilitySpecHandle ReloadHandle;
 
 	// 授予技能时所用的 ASC（位于持久的 PlayerState 上）。切换角色销毁旧角色时，
 	// 旧角色已被 UnPossess、PlayerState 置空，GetAbilitySystemComponent() 返回 null，
