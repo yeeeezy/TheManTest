@@ -12,6 +12,12 @@
 - 当前为即时换弹，不含换弹动画或延时；后续可在 Ability 内加入 Montage/AbilityTask 后于完成点补弹。
 - Development Editor 冷构建成功；相关蓝图在 Unreal 内编译保存成功；`TheManTest.Player.CombatHUD.AmmoLifecycle` 1/1 Success，验证满弹按换弹不扣备用弹夹、空弹经真实 Tag/Ability 链补至30、备用弹夹3→2且 HUD 即时更新。
 
+## 2026-09-01 session271 — RepairGun 成功射击音效
+
+- 外部 WAV 以 RepairGun 专属资源导入 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Fire`，并绑定 `BP_RepairGun.FireSound`；蓝图编译保存与冷启动引用回读通过。
+- SoundWave 为 1.654s、Stereo、96kHz，武器 Volume/Pitch Multiplier 保持 1.0。
+- 播放点继续位于 `UGA_Shoot` 成功 `ConsumeRound` 之后，因此空弹不会播放实弹枪声；AmmoLifecycle 回归通过。
+
 ## 2026-09-01 session250 — 中心准星缩小20%
 
 - 中心空心准星半径从57.6px缩小为46.08px，线宽从2.5px缩小为2px，圆周分段从96调整为80。

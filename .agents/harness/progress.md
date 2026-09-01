@@ -561,3 +561,9 @@
 - 仅在 `BP_RepairGun` 将 `RecoilPitch/RecoilYawMin/RecoilYawMax` 覆盖为 0；公共 `AFirearm` 默认值和 `AFPSCharacterBase::AddRecoil` 实现保留，未来可直接恢复或供其他武器使用。
 - `CS_RepairGun_Fire` 仍保持 0.14s 短冲击，将旋转 Pitch/Yaw/Roll 增强到 0.95/0.26/0.12°，位置 X/Y/Z 增强到 0.65/0.15/0.50cm，频率及 FOV=0 不变。
 - 资产与 `BP_RepairGun` 均编译保存；冷启动回读确认 Shake 引用、Scale=1.0、增强参数与 Recoil=0/0/0，`AmmoLifecycle` 回归 Success。
+
+## 2026-09-01 session271 — RepairGun 实弹射击音效
+
+- 将下载文件 `408862-Future_Weapons_3_-Submachine_Gun_-Shot_3.wav` 正式导入并语义重命名为 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Fire`，不保留供应商/编号目录。
+- `BP_RepairGun.FireSound` 已绑定该 SoundWave，Volume/Pitch Multiplier 均为 1.0；冷启动回读为 1.654s、双声道、96kHz。
+- `UGA_Shoot` 仍只在成功扣弹后于真实枪口位置播放，空弹提前结束；`TheManTest.Player.CombatHUD.AmmoLifecycle` 复跑 Success。
