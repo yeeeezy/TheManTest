@@ -12,6 +12,12 @@
 - 根因是 `TABP_CharacterBase_FirstPerson` 的 JumpStart Sequence Player 错误开启 Loop，同时 JumpStart→JumpLoop 使用自动剩余时间过渡，导致该自动过渡失效并产生编译警告。
 - 已将 JumpStart Loop 关闭；JumpLoop 保持循环，JumpEnd 保持不循环。模板和 `ABP_MaintenanceWorker_FirstPerson` 均在 UE 内编译保存，自动过渡警告消失；最终跳跃观感待用户前台 PIE 复核。
 
+## 2026-09-01 session253 — 武器基类保留持枪跳跃 Pose
+
+- 排查确认角色侧 `bIsFalling/Is_InAir/Velocity_Z` 驱动及三条 Jump Asset Override 均存在；实际可见输出被 `TABP_FirstPersonFirearmBase.WeaponUpperBody` 只有 Idle/WalkRun 的完整 Pose 覆盖。
+- 在共享武器基类 `WeaponUpperBody` 内新增 `bIsFalling` Pose 选择：地面继续使用原武器 Idle/WalkRun 状态机；空中使用 `UpperBodyInPose`，保留宿主已经播放的 VFXPack 持枪 JumpStart/JumpLoop/JumpEnd。
+- `ABP_RepairGun_FirstPerson` 继承该逻辑，无需复制状态机或重新迁移动画。模板和 RepairGun 子 AnimBP 在 UE 内编译保存成功；Development Editor / Win64 构建成功。待用户前台 PIE 验证起跳、坠落与落地观感。
+
 ## 2026-09-01 session243 — 按最新截图更新 ArmsViewMesh 默认构图
 
 - 用户再次前台微调后，将 `ArmsViewMesh` C++ 默认 Location 更新为 `(-14.766994,-4.322017,-134.599387)`，默认 Rotation 更新为 `(Roll=5.752239°, Pitch=0.077753°, Yaw=-114.908449°)`；Scale 保持 `(1,1,1)`。

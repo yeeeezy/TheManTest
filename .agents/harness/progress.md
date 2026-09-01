@@ -463,3 +463,9 @@
 - 外部 VFXPack 跳跃为 JumpStart/JumpLoop/JumpEnd 三段骨骼动画加状态机混合；本项目对应 `AS_MaintenanceWorker_FP_*` 三条正式资产已存在并被维修工第一人称 AnimBP 引用，无需迁移或重定向。
 - 已修复 `TABP_CharacterBase_FirstPerson`：JumpStart Sequence Player 从 Loop=true 改为 false；JumpLoop=true、JumpEnd=false 保持正确。模板与维修工子 AnimBP 已在 UE 内编译保存，原自动过渡警告消失。
 - 待用户前台 PIE 复核跳跃、坠落和落地观感。
+
+## 2026-09-01 session253 交接
+
+- 根因补充：角色第一人称 Jump 状态机可用，但 RepairGun `WeaponUpperBody` 仅输出 Idle/WalkRun，覆盖了宿主持枪 Jump Pose。
+- `TABP_FirstPersonFirearmBase.WeaponUpperBody` 现由 `bIsFalling` 选择：地面武器状态机、空中 `UpperBodyInPose`；RepairGun 子层继承。UE 编译保存与 Development Editor / Win64 构建成功。
+- 待用户前台 PIE 验证 JumpStart、持续坠落 JumpLoop 和落地 JumpEnd 是否完整可见。

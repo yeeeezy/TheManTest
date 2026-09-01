@@ -83,6 +83,14 @@ public:
 		FName StateGraphName,
 		FName CoordinatePropertyName);
 
+	/** In a firearm WeaponUpperBody layer, use the weapon ground state machine while
+	 * grounded and preserve the host's authored held-weapon jump pose while airborne. */
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Animation")
+	static bool ConfigureFirearmUpperBodyAirbornePassThrough(
+		UAnimBlueprint* FirearmTemplateAnimBlueprint,
+		UAnimBlueprint* ConcreteFirearmAnimBlueprint,
+		FName LayerName);
+
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Blueprint")
 	static bool SetInheritedSceneComponentRotation(
 		UBlueprint* Blueprint,

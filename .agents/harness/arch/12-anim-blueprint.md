@@ -193,6 +193,8 @@ ABP_BodyLocomotion:
 
 ## TABP_Firearm_UpperBodyBase（武器层模板）AimIK 目标流程
 
+> **第一人称持枪空中分支（session253）：** `TABP_FirstPersonFirearmBase.WeaponUpperBody` 在最终输出前由 `bIsFalling` 选择 Pose：地面使用武器层自己的 Idle/WalkRun 状态机；空中使用接口传入的 `UpperBodyInPose`，从而保留宿主 `JumpStart/JumpLoop/JumpEnd` 三段已持枪骨骼动画。该选择属于共享武器基类，具体枪械无需复制通用跳跃转换；将来若某把武器拥有专属空中动画，可在其武器层覆盖 Air Pose，而不是修改角色移动状态判断。
+
 > **FEAT-074 session148 临时边界：** `TABP_BodyLocomotion` 的第三人称身体输出已旁路 `WeaponUpperBody/AimOffset` 支路，改由 `DefaultSlot.Pose` 直接进入 `UpperBodySlot.Source`。原因是现有 RepairGun Linked Layer 在稳定状态返回参考姿势并覆盖 spine_01 以上，造成 CharacterMesh0/影子 T-Pose。第一人称 ArmsViewMesh 已独立使用 `ABP_VFXPack_FirstPerson`。在武器层能够保证有效 Pose 输出前，不得重新把该支路接回身体最终输出。
 
 ```

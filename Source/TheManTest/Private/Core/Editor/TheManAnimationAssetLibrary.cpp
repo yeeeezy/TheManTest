@@ -864,6 +864,101 @@ bool UTheManAnimationAssetLibrary::RestoreTemplateBlendSpaceState(
 #endif
 }
 
+bool UTheManAnimationAssetLibrary::ConfigureFirearmUpperBodyAirbornePassThrough(
+	UAnimBlueprint* FirearmTemplateAnimBlueprint,
+	UAnimBlueprint* ConcreteFirearmAnimBlueprint,
+	FName LayerName)
+{
+#if WITH_EDITOR
+	if (!FirearmTemplateAnimBlueprint || !ConcreteFirearmAnimBlueprint
+		|| ConcreteFirearmAnimBlueprint->ParentClass != FirearmTemplateAnimBlueprint->GeneratedClass)
+	{
+		return false;
+	}
+
+	UEdGraph* LayerGraph = nullptr;
+	TArray<UEdGraph*> Graphs;
+	FirearmTemplateAnimBlueprint->GetAllGraphs(Graphs);
+	for (UEdGraph* Graph : Graphs)
+	{
+		if (Graph && Graph->GetFName() == LayerName)
+		{
+			LayerGraph = Graph;
+			break;
+		}
+	}
+	if (!LayerGraph)
+	{
+		return false;
+	}
+
+	UAnimGraphNode_Root* Root = nullptr;
+	UAnimGraphNode_StateMachine* GroundStateMachine = nullptr;
+	UAnimGraphNode_LinkedInputPose* InputPose = nullptr;
+	for (UEdGraphNode* Node : LayerGraph->Nodes)
+	{
+		Root = Root ? Root : Cast<UAnimGraphNode_Root>(Node);
+		GroundStateMachine = GroundStateMachine ? GroundStateMachine : Cast<UAnimGraphNode_StateMachine>(Node);
+		InputPose = InputPose ? InputPose : Cast<UAnimGraphNode_LinkedInputPose>(Node);
+		if (Cast<UAnimGraphNode_BlendListByBool>(Node))
+		{
+			return true;
+		}
+	}
+	if (!Root || !GroundStateMachine || !InputPose)
+	{
+		return false;
+	}
+
+	UEdGraphPin* RootResult = Root->FindPin(TEXT("Result"));
+	UEdGraphPin* GroundPose = GroundStateMachine->FindPin(TEXT("Pose"));
+	UEdGraphPin* AirPose = InputPose->FindPin(TEXT("Pose"));
+	if (!RootResult || !GroundPose || !AirPose)
+	{
+		return false;
+	}
+	RootResult->BreakAllPinLinks();
+
+	FGraphNodeCreator<UAnimGraphNode_BlendListByBool> BlendCreator(*LayerGraph);
+	UAnimGraphNode_BlendListByBool* AirBlend = BlendCreator.CreateNode();
+	AirBlend->NodePosX = Root->NodePosX - 260;
+	AirBlend->NodePosY = Root->NodePosY;
+	BlendCreator.Finalize();
+
+	FGraphNodeCreator<UK2Node_VariableGet> FallingCreator(*LayerGraph);
+	UK2Node_VariableGet* FallingVariable = FallingCreator.CreateNode();
+	FallingVariable->VariableReference.SetSelfMember(TEXT("bIsFalling"));
+	FallingVariable->NodePosX = AirBlend->NodePosX - 220;
+	FallingVariable->NodePosY = AirBlend->NodePosY + 220;
+	FallingCreator.Finalize();
+
+	UEdGraphPin* BlendGround = AirBlend->FindPin(TEXT("BlendPose_0"));
+	UEdGraphPin* BlendAir = AirBlend->FindPin(TEXT("BlendPose_1"));
+	UEdGraphPin* ActiveValue = AirBlend->FindPin(TEXT("bActiveValue"));
+	UEdGraphPin* BlendOutput = AirBlend->FindPin(TEXT("Pose"));
+	const UEdGraphSchema* Schema = LayerGraph->GetSchema();
+	if (!BlendGround || !BlendAir || !ActiveValue || !BlendOutput
+		|| !Schema->TryCreateConnection(GroundPose, BlendGround)
+		|| !Schema->TryCreateConnection(AirPose, BlendAir)
+		|| !Schema->TryCreateConnection(FallingVariable->GetValuePin(), ActiveValue)
+		|| !Schema->TryCreateConnection(BlendOutput, RootResult))
+	{
+		return false;
+	}
+
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(FirearmTemplateAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(FirearmTemplateAnimBlueprint);
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(ConcreteFirearmAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(ConcreteFirearmAnimBlueprint);
+	FirearmTemplateAnimBlueprint->MarkPackageDirty();
+	ConcreteFirearmAnimBlueprint->MarkPackageDirty();
+	return FirearmTemplateAnimBlueprint->Status != BS_Error
+		&& ConcreteFirearmAnimBlueprint->Status != BS_Error;
+#else
+	return false;
+#endif
+}
+
 bool UTheManAnimationAssetLibrary::SetInheritedSceneComponentRotation(
 	UBlueprint* Blueprint,
 	FName ComponentVariableName,
