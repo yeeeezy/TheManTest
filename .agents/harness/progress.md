@@ -549,3 +549,9 @@
 - 腿部材质保留右手 `hand_r` 的 `Proximity Clip Radius/Fade Width=32/18cm`，新增独立相机参数 `Camera Proximity Clip Radius/Fade Width=55/12cm`。
 - 两条“近处 0、远处 1”的渐隐遮罩使用 `Min` 合并，因此腿部靠近右手或相机中的任意一个都会平滑消失；相机位置直接使用材质 `CameraPositionWS`，无需新增 Tick 参数。
 - 材质脚本执行及着色器编译 0 error，Development Editor 构建成功；`LegArmProximityRuntime`、正常渲染的 `ArmDistanceClipEvidence`、`WeaponOwnedJumpRuntime` 均 Success。`ArmDistanceClipEvidence` 在 `-nullrhi` 下的截图路径会触发现有空渲染资源崩溃，改用正常渲染复跑通过。
+
+## 2026-09-01 session269 — RepairGun 射击冲击震屏
+
+- 保留 `UGA_Shoot -> PlayerCameraManager -> FireCameraShake` 与角色真实后坐力两条独立链路，仅重调 `/Game/Weapons/RepairGun/Effects/Camera/CS_RepairGun_Fire`。
+- 旧资产为 0.3s、0.2s 淡出及 5Hz XYZ 慢晃；现改为 0.14s、0.01/0.08s 淡入淡出，高频旋转 Pitch/Yaw/Roll=0.65/0.18/0.08°，位置 X/Y/Z=0.45/0.10/0.35cm，FOV=0。
+- 冷启动回读参数持久化，`BP_RepairGun.FireCameraShake` 仍指向该资产且 Scale=1.0；没有修改 `AddRecoil` 数值、弹道或空弹门控，`TheManTest.Player.CombatHUD.AmmoLifecycle` 复跑 Success。

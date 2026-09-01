@@ -14,6 +14,7 @@
 `UGA_EnemyShoot` 公共基类统一处理人形敌人的渐进散射（基础、逐发扩散、上限、移动惩罚、恢复）和枪口 Niagara；三连发/扫射子类只负责节奏。默认人形步枪特效为 `/Game/Enemy/Humanoid/Phantom/Effects/Muzzle/Systems/NS_HumanoidRifle_Muzzle`，具体技能蓝图可覆盖；跨系统共享依赖位于 `/Game/Core/_Shared/Effects/Muzzle/`。
 
 FEAT-078 起，玩家 `UGA_Shoot` 取得当前 `AFirearm` 后首先调用 `ConsumeRound()`。空弹直接结束 Ability，不生成弹体，也不播放蒙太奇、音效、Niagara、震屏或后坐力；成功扣弹会同步广播 `OnAmmoChanged` 更新 Combat HUD。
+成功射击的震屏由 `UGA_Shoot` 读取当前枪械 `FireCameraShake/Scale` 并通过本地 `PlayerCameraManager` 播放，只负责短促打击感；随后 `AddRecoil` 才负责实际控制视角上抬。两者不得互相替代。
 session251 起，玩家 `UGA_Reload` 由 `IA_Reload(R)` 经 Character 发送 `Input.Weapon.Reload` Gameplay Event 激活。Ability 属于当前枪械，使用独立 `ReloadAbilityClass/Handle` 随 Equip/Unequip 授予回收；当前为即时换弹，满弹或无备用弹夹时拒绝激活。
 Phantom 的四个具体射击 Ability（Shoot1/Shoot2/Burst/Suppressive，FEAT-071）统一覆盖为 BaseSpread=3°、PerShot=0.8°、Max=9°、Recovery=2°/s、MovingPenalty=2°；其两种子弹 Damage=6。公共 C++ 默认值保持不变，避免无依据影响未来其他 Enemy。
 | `GA_EnemyAutomaticFire` | 数据化 `ShotsPerActivation`/`ShotInterval`；同一 C++ 能力配置成三连发或持续扫射；每发消费 `UEnemyMagazineComponent` |

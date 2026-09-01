@@ -338,3 +338,9 @@
 - 按用户指定源工程直接导出核验组件与 AnimBP：原 `SK_ArmMesh` Yaw=-15°，当前最终动画保持 root identity、`ArmsViewMesh` Yaw=-90°。因 Modify Bone 使用 Component Space，C++ 现将原版 Lean Roll / Look Pitch 按两种 Mesh 朝向的 75°基差进行二维换轴，避免同一骨骼旋转在当前坐标系形成错误方向的明显末端横移；Camera 与组件位置均不随 WASD 改变。
 - 实际 PIE 截图进一步推翻“组件 Transform 导致横移”的猜测：运行时 `ArmsViewMesh` 错误使用 `ABP_CharacterBase_Body_C`，而非原版第一人称 AnimBP，A/D 因而触发全身 Locomotion Pose 的大幅手臂换位。`BP_MaintenanceWorker.ArmsViewMesh.AnimClass` 已恢复为 `ABP_VFXPack_FirstPerson_C`；修复后 A 输入截图中枪械屏幕位置基本稳定，三层组件 Transform 未变化，运行时 AnimClass 冷回读正确。
 - 对 `BP_MaintenanceWorker` 相关 CDO 属性和三个继承组件 Transform 执行 Reset to Default，保留 Mesh/AnimClass 等蓝图资产绑定。蓝图编译保存、Development Editor / Win64 构建及冷回读均通过；前台 PIE 观感待用户确认。
+
+## 2026-09-01 session269：RepairGun 开火打击感震屏
+
+- 用户确认需要的是不改变实际瞄准方向的短促镜头冲击，而非继续增强 `AFPSCharacterBase::AddRecoil` 的真实后坐力。
+- 冷读发现原 `CS_RepairGun_Fire` 为 Duration=0.3s、BlendOut=0.2s，位置 XYZ 均为 1cm@5Hz，表现偏慢晃。现调整为 Duration=0.14s、BlendIn/Out=0.01/0.08s；旋转 Pitch/Yaw/Roll 为 0.65@32Hz、0.18@38Hz、0.08@42Hz；位置 X/Y/Z 为 0.45@34Hz、0.10@39Hz、0.35@30Hz；FOV 保持 0。
+- 资产编译保存并冷启动逐项回读成功；`BP_RepairGun.FireCameraShake` 引用正确、Scale=1.0、SingleInstance=false。射击成功后仍由 `UGA_Shoot` 本地播放，空弹在反馈链之前返回；`TheManTest.Player.CombatHUD.AmmoLifecycle` 复跑 Success。
