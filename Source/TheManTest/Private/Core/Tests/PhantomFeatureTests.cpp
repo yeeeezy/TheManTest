@@ -208,6 +208,53 @@ private:
 	FQuat GroundHandRotation = FQuat::Identity;
 };
 
+class FViewmodelPositionLagRuntimeCommand final : public IAutomationLatentCommand
+{
+public:
+	explicit FViewmodelPositionLagRuntimeCommand(FAutomationTestBase* InTest) : Test(InTest) {}
+	virtual bool Update() override
+	{
+		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+		APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		AFPSCharacterBase* Player = PC ? Cast<AFPSCharacterBase>(PC->GetPawn()) : nullptr;
+		USceneComponent* ViewmodelRoot = Player ? Player->GetViewmodelRoot() : nullptr;
+		if (!Player || !ViewmodelRoot) return false;
+		const double Now = FPlatformTime::Seconds();
+		if (Stage == 0)
+		{
+			AuthoredLocation = ViewmodelRoot->GetRelativeLocation();
+			AuthoredRotation = ViewmodelRoot->GetRelativeRotation();
+			StageStart = Now;
+			Stage = 1;
+		}
+		if (Stage == 1)
+		{
+			Player->SetViewmodelLookInputForTesting(FVector2D(1.f, 1.f));
+			if (Now - StageStart < 0.18) return false;
+			const FVector Offset = ViewmodelRoot->GetRelativeLocation() - AuthoredLocation;
+			Test->TestTrue(TEXT("Right look moves viewmodel left"), Offset.Y < -0.5f);
+			Test->TestTrue(TEXT("Up look moves viewmodel down"), Offset.Z < -0.3f);
+			Test->TestTrue(TEXT("Look lag does not move viewmodel forward"), FMath::Abs(Offset.X) < 0.01f);
+			const FRotator RotationDelta = ViewmodelRoot->GetRelativeRotation() - AuthoredRotation;
+			Test->TestTrue(TEXT("Position lag adds no yaw or roll"),
+				FMath::Abs(RotationDelta.Yaw) < 0.01f && FMath::Abs(RotationDelta.Roll) < 0.01f);
+			StageStart = Now;
+			Stage = 2;
+			return false;
+		}
+		if (Now - StageStart < 0.45) return false;
+		Test->TestTrue(TEXT("Viewmodel position lag returns to authored framing"),
+			ViewmodelRoot->GetRelativeLocation().Equals(AuthoredLocation, 0.02f));
+		return true;
+	}
+private:
+	FAutomationTestBase* Test = nullptr;
+	int32 Stage = 0;
+	double StageStart = 0.0;
+	FVector AuthoredLocation = FVector::ZeroVector;
+	FRotator AuthoredRotation = FRotator::ZeroRotator;
+};
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFirstPersonWeaponJumpRuntimeTest,
 	"TheManTest.Player.Animation.WeaponOwnedJumpRuntime",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -218,6 +265,20 @@ bool FFirstPersonWeaponJumpRuntimeTest::RunTest(const FString& Parameters)
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FFirstPersonWeaponJumpRuntimeCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FViewmodelPositionLagRuntimeTest,
+	"TheManTest.Player.Viewmodel.PositionLagRuntime",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FViewmodelPositionLagRuntimeTest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FViewmodelPositionLagRuntimeCommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }

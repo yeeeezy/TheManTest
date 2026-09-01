@@ -282,3 +282,14 @@
 - `Run / JumpStart / JumpLoop / JumpEnd` 重命名为 `Move / Jump Start / Fall Loop / Land`；新增 `Grounded` State Alias，同时代表 Idle 与 Move，并复用唯一的起跳转换。
 - 冷启动回读确认状态图为 5 个实际状态、1 个 Grounded Alias、7 条转换，共14个节点且不再含 Reset Animation。
 - `WeaponOwnedLocomotion`、真实 PIE `WeaponOwnedJumpRuntime`、`Shadow.UpperBodyEvidence` 均 Success；Development Editor 构建成功。
+
+## 2026-09-01 session259 — 第一人称枪械纯位置观察滞后
+
+- 按用户选择只恢复位置滞后：鼠标观察输入驱动 `ViewmodelRoot.RelativeLocation`，默认水平 1.8cm、垂直 1.2cm、进入速度 12、回正速度 16、死区 0.01；不添加任何旋转滞后。
+- 删除已停用且不参与输出的 `bArmsPitchFollow`、`ArmsPitchFollowAmount`、`ArmsPitchInterpSpeed`、`CurrentArmsPitch` 与旧鼠标输入缓存。
+- `PositionLagRuntime` 在 PIE 中验证右看左移、上看下移、X 轴不变、Yaw/Roll 不变以及停止后回零；跳跃和影子回归同时 Success。Development Editor 构建成功。
+
+## 2026-09-01 session260 — 修正位置滞后覆盖原构图
+
+- session259 首版把 `ViewmodelRoot.RelativeLocation` 直接写成滞后偏移，错误覆盖蓝图原有构图。现改为 BeginPlay 缓存 authored RelativeLocation，每帧只写“原构图 + 滞后偏移”，回正也回到原构图。
+- 自动化断言同步改为保存实际运行时基准并比较相对变化；`PositionLagRuntime` 单独冷启动 Success，Development Editor 构建成功。

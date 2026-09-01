@@ -87,17 +87,26 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera|Movement")
 	TSubclassOf<UCameraShakeBase> RunningCameraShake;
 
-	// ArmsMesh 鍩虹鐩稿鏃嬭浆銆傛柊鍏ㄨ韩楠ㄦ灦鍙傝€冨Э鍔挎湞 +Y锛岄渶 Yaw -90掳 杞鏈?+X銆?	// 姝﹀櫒鎽囨憜姣忓抚鍙犲姞鍦ㄥ畠涔嬩笂锛堣€岄潪瑕嗙洊锛夛紝鍚﹀垯韬綋浼氳鐢╁洖 identity 姝悜渚ч潰銆?	U_PROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
-	// 鈹€鈹€ 绗竴浜虹О viewmodel 璋冭瘯鍙傛暟锛堜繚鐣欑粰鍚庣画鎭㈠鎵嬭噦婊炲悗/鎯€э級鈹€鈹€
-	// 褰撳墠缁撴瀯涓?HeadCamera -> ViewmodelRoot -> ArmsViewMesh锛屾墜鑷傚ぉ鐒剁户鎵跨浉鏈烘棆杞€?	// 杩欎簺鍙傛暟鏆備笉椹卞姩 pitch锛涘悗缁嫢瑕佸仛鎵嬭噦鐩稿鐩告満鐨勫欢杩?鎯€э紝鍙鐢ㄦ垨鏇挎崲涓?viewmodel offset 鍙傛暟銆?	U_PROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ArmsAiming")
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ArmsAiming")
-	bool bArmsPitchFollow = true;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Lag", meta = (ClampMin = "0.0", Units = "cm"))
+	float ViewmodelLookLagHorizontalCm = 1.8f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ArmsAiming", meta = (ClampMin = "-1.0", ClampMax = "1.0"))
-	float ArmsPitchFollowAmount = 0.7f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Lag", meta = (ClampMin = "0.0", Units = "cm"))
+	float ViewmodelLookLagVerticalCm = 1.2f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ArmsAiming")
-	float ArmsPitchInterpSpeed = 12.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Lag", meta = (ClampMin = "0.1"))
+	float ViewmodelLookLagFollowSpeed = 12.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Lag", meta = (ClampMin = "0.1"))
+	float ViewmodelLookLagReturnSpeed = 16.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Lag", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float ViewmodelLookLagDeadZone = 0.01f;
+
+#if WITH_DEV_AUTOMATION_TESTS
+public:
+	void SetViewmodelLookInputForTesting(const FVector2D& Value) { PendingViewmodelLookInput = Value; }
+protected:
+#endif
 
 	// Keep the camera-authored viewmodel framing without moving the first-person
 	// skeleton off the authoritative body's world-space centre line.  The camera
@@ -180,12 +189,12 @@ private:
 
 	TSubclassOf<UCameraShakeBase> ActiveMovementCameraShakeClass;
 
-	float CurrentArmsPitch = 0.f;
 	float CurrentVFXLeanSides = 0.f;
 	float CurrentVFXLookUpDown = 0.f;
 	FVector2D CurrentVFXMoveInput = FVector2D::ZeroVector;
-	float CurrentVFXLookInputX = 0.f;
-	float CurrentVFXLookInputY = 0.f;
+	FVector2D PendingViewmodelLookInput = FVector2D::ZeroVector;
+	FVector ViewmodelAuthoredRelativeLocation = FVector::ZeroVector;
+	FVector CurrentViewmodelLookLagOffset = FVector::ZeroVector;
 	float SprintTransitionAlpha = 0.f;
 	static constexpr float VFXSprintTransitionDuration = 0.2f;
 

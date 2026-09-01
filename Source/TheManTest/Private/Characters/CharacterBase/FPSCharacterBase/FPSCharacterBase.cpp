@@ -182,6 +182,11 @@ static void HideMeshMaterialSlots(USkeletalMeshComponent* Mesh, const TArray<int
 void AFPSCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+	if (ViewmodelRoot)
+	{
+		// Preserve the Blueprint-authored framing and add transient look lag on top.
+		ViewmodelAuthoredRelativeLocation = ViewmodelRoot->GetRelativeLocation();
+	}
 	if (GetCharacterMovement())
 	{
 		GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
@@ -405,8 +410,7 @@ void AFPSCharacterBase::Look(const FInputActionValue& Value)
 {
 	if (!Controller) { return; }
 	const FVector2D V = Value.Get<FVector2D>();
-	CurrentVFXLookInputX = V.X;
-	CurrentVFXLookInputY = V.Y;
+	PendingViewmodelLookInput = V;
 	AddControllerYawInput(V.X   * LookSensitivity);
 	AddControllerPitchInput(V.Y * LookSensitivity);
 }
@@ -511,6 +515,25 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		ViewmodelRoot->SetRelativeRotation(
 			FRotator(SprintViewmodelPitchDegrees * SprintVisualAlpha, 0.f, 0.f));
 
+		FVector TargetLookLagOffset = FVector::ZeroVector;
+		if (PendingViewmodelLookInput.SizeSquared() > FMath::Square(ViewmodelLookLagDeadZone))
+		{
+			const FVector2D ClampedLookInput(
+				FMath::Clamp(PendingViewmodelLookInput.X, -1.f, 1.f),
+				FMath::Clamp(PendingViewmodelLookInput.Y, -1.f, 1.f));
+			TargetLookLagOffset = FVector(
+				0.f,
+				-ClampedLookInput.X * ViewmodelLookLagHorizontalCm,
+				-ClampedLookInput.Y * ViewmodelLookLagVerticalCm);
+		}
+		const float LookLagInterpSpeed = TargetLookLagOffset.IsNearlyZero()
+			? ViewmodelLookLagReturnSpeed
+			: ViewmodelLookLagFollowSpeed;
+		CurrentViewmodelLookLagOffset = FMath::VInterpTo(
+			CurrentViewmodelLookLagOffset, TargetLookLagOffset, DeltaTime, LookLagInterpSpeed);
+		ViewmodelRoot->SetRelativeLocation(
+			ViewmodelAuthoredRelativeLocation + CurrentViewmodelLookLagOffset);
+
 		// VFXPack FirstPerson_AnimBP 原 Event Blueprint Update Animation 的等价逻辑。
 		// 直接写原变量，保留其原 StateMachine / BlendSpace 资产，不另造动画状态机。
 		// Raw movement input drives only the source AnimBP's Modify Bone chain.
@@ -567,11 +590,9 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		// from ArmsViewMesh in the Body AnimGraph.
 		UpdateVFXPackAnimInstance(ArmsViewMesh->GetAnimInstance());
 
-		CurrentArmsPitch = 0.f;
-		// Mouse axis values in the source are frame deltas. Consume this frame's value
-		// so a stopped mouse cannot leave a persistent lean target.
-		CurrentVFXLookInputX = 0.f;
-		CurrentVFXLookInputY = 0.f;
+		// Look action values are frame deltas. Consume them so a stopped mouse returns
+		// the viewmodel to its authored Blueprint framing instead of leaving a persistent offset.
+		PendingViewmodelLookInput = FVector2D::ZeroVector;
 	}
 
 	// VFXPack 原蓝图：CharacterMovement.Velocity.Size() > 0 判定移动；走路 Shake Scale=0.5，

@@ -491,3 +491,14 @@
 - `TABP_FirstPersonFirearmBase.FirstPersonLocomotionSM` 删除 `Reset Animation` 与6条旧转换，Entry 改为直接进入 Idle。
 - 状态现为 `Idle / Move / Jump Start / Fall Loop / Land`；`Grounded` State Alias 合并 Idle、Move 的共同起跳入口。节点数21→14，转换数固定为7。
 - 冷结构、真实 PIE 跳跃、完整身体上半身复制三项自动化全部 Success，编辑器冷回读与 Development Editor 构建通过。
+
+## 2026-09-01 session259 交接：纯位置式 Viewmodel Look Lag
+
+- `ViewmodelRoot` 新增鼠标观察驱动的位置滞后：水平 1.8cm、垂直 1.2cm、进入速度 12、回正速度 16、死区 0.01；不改变旋转、相机、瞄准、弹道或 `ArmsViewMesh` 静态构图。
+- 已删除旧的停用 Arms Pitch Follow 参数、状态及无效鼠标缓存。
+- `TheManTest.Player.Viewmodel.PositionLagRuntime`、`WeaponOwnedJumpRuntime`、`Shadow.UpperBodyEvidence` 全部 Success；Development Editor 构建成功。
+
+## 2026-09-01 session260 交接：保留原 Viewmodel 构图基准
+
+- 修正 session259 首版错误地以零向量覆盖 `ViewmodelRoot.RelativeLocation`：现在 BeginPlay 保存蓝图 authored 位置，滞后只作为附加偏移，回正返回原构图。
+- `PositionLagRuntime` 已改为以运行时初始构图为基准验证偏移和回正，单独冷启动 Success；Development Editor 重新构建成功。跳跃回归也在修正后 Success。
