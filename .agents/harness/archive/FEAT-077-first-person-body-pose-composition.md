@@ -1,7 +1,9 @@
 # FEAT-077 — 第一人称手臂与完整身体双 AnimBP 合成
 
 **创建日期：** 2026-08-21
-**状态：** in_progress
+**状态：** needs_improvement
+
+> 2026-09-01 session244：用户转入 Combat HUD/玩家弹药工作；FEAT-077 保留待前台动画主观复核，不再作为 active feature。
 
 ## 2026-09-01 session243 — 按最新截图更新 ArmsViewMesh 默认构图
 

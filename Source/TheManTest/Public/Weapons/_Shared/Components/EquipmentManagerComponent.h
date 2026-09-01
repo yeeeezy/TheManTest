@@ -10,6 +10,11 @@
 class AEquipmentBase;
 class USkeletalMeshComponent;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+	FCurrentEquipmentChanged,
+	AEquipmentBase*, PreviousEquipment,
+	AEquipmentBase*, CurrentEquipment);
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class THEMANTEST_API UEquipmentManagerComponent : public UActorComponent
 {
@@ -38,6 +43,9 @@ public:
 	// 获取当前手里拿着的装备
 	UFUNCTION(BlueprintCallable, Category = "Equipment")
 	AEquipmentBase* GetCurrentEquipment() const;
+
+	UPROPERTY(BlueprintAssignable, Category = "Equipment|Events")
+	FCurrentEquipmentChanged OnCurrentEquipmentChanged;
 
 	// 武器挂载目标 Mesh，由 Character 在 BeginPlay 中赋值
 	UPROPERTY()

@@ -6,6 +6,10 @@
 
 class UInputMappingContext;
 class UInputAction;
+class UCombatHUDWidgetBase;
+class UEquipmentManagerComponent;
+class AEquipmentBase;
+class AFirearm;
 
 /**
  * ATheManPlayerController
@@ -21,6 +25,8 @@ class THEMANTEST_API ATheManPlayerController : public APlayerController
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
 
 	int32 CurrentRosterIndex = 0;
 
@@ -67,13 +73,40 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Data")
 	class UDataTable* CharacterRosterTable;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Combat")
+	TSubclassOf<UCombatHUDWidgetBase> CombatHUDWidgetClass;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UCombatHUDWidgetBase> CombatHUDWidget;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UEquipmentManagerComponent> BoundEquipmentManager;
+
+	UPROPERTY(Transient)
+	TObjectPtr<AFirearm> BoundFirearm;
+
 	void HandleTestSwitchCharacter();
 
 	// 调试快进：调用 GameState->DebugSkipTime()
 	void HandleDebugSkipTime();
 
+	void CreateCombatHUD();
+	void BindCombatHUDToPawn(APawn* InPawn);
+	void UnbindCombatHUD();
+	void BindCombatHUDToFirearm(AFirearm* Firearm);
+
+	UFUNCTION()
+	void HandleCurrentEquipmentChanged(AEquipmentBase* PreviousEquipment, AEquipmentBase* CurrentEquipment);
+
+	UFUNCTION()
+	void HandleAmmoChanged(int32 CurrentAmmo, int32 MagazineCapacity, int32 SpareMagazineCount);
+
 public:
 	void SwitchCharacter(FName TargetCharacterID);
+
+#if WITH_DEV_AUTOMATION_TESTS
+	UCombatHUDWidgetBase* GetCombatHUDWidgetForTesting() const { return CombatHUDWidget; }
+#endif
 
 	// ── Getters 供 Character::SetupPlayerInputComponent 调用 ──
 	FORCEINLINE UInputAction* GetMoveAction()            const { return MoveAction; }

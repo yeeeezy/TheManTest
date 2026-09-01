@@ -46,6 +46,14 @@ void UGA_Shoot::ActivateAbility(
 		return;
 	}
 
+	// Ammo is authoritative on the equipped firearm. Empty weapons produce no
+	// projectile, montage, sound, muzzle effect, camera shake, or recoil.
+	if (!Firearm->ConsumeRound())
+	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
+
 	UCameraComponent* Camera        = Character->GetHeadCamera();
 	const FVector CameraLocation    = Camera->GetComponentLocation();
 	const FVector CameraForward     = Camera->GetForwardVector();

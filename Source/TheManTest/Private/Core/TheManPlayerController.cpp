@@ -5,6 +5,11 @@
 #include "Core/TheManCharacterTypes.h"
 #include "Core/TheManGameStateBase.h"
 #include "Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h"
+#include "UI/Combat/CombatHUDWidgetBase.h"
+#include "Weapons/_Shared/Components/EquipmentManagerComponent.h"
+#include "Weapons/_Shared/EquipmentBase/EquipmentBase.h"
+#include "Weapons/_Shared/Firearms/Firearm.h"
+#include "Blueprint/UserWidget.h"
 
 void ATheManPlayerController::BeginPlay()
 {
@@ -19,6 +24,136 @@ void ATheManPlayerController::BeginPlay()
 	// 重置为游戏输入模式：ViewportClient 跨关卡持久，大厅设的 UI Only 会带进来挡住移动输入
 	SetInputMode(FInputModeGameOnly());
 	bShowMouseCursor = false;
+
+	if (IsLocalController())
+	{
+		CreateCombatHUD();
+		BindCombatHUDToPawn(GetPawn());
+	}
+}
+
+void ATheManPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+	if (IsLocalController())
+	{
+		BindCombatHUDToPawn(InPawn);
+	}
+}
+
+void ATheManPlayerController::OnUnPossess()
+{
+	UnbindCombatHUD();
+	Super::OnUnPossess();
+}
+
+void ATheManPlayerController::CreateCombatHUD()
+{
+	if (CombatHUDWidget || !IsLocalController())
+	{
+		return;
+	}
+
+	TSubclassOf<UCombatHUDWidgetBase> WidgetClass = CombatHUDWidgetClass;
+	if (!WidgetClass)
+	{
+		WidgetClass = UCombatHUDWidgetBase::StaticClass();
+	}
+
+	CombatHUDWidget = CreateWidget<UCombatHUDWidgetBase>(this, WidgetClass);
+	if (CombatHUDWidget)
+	{
+		CombatHUDWidget->AddToPlayerScreen(0);
+		CombatHUDWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+		CombatHUDWidget->SetAmmoVisible(false);
+	}
+}
+
+void ATheManPlayerController::BindCombatHUDToPawn(APawn* InPawn)
+{
+	UnbindCombatHUD();
+	if (!CombatHUDWidget)
+	{
+		CreateCombatHUD();
+	}
+
+	AFPSCharacterBase* PlayerCharacter = Cast<AFPSCharacterBase>(InPawn);
+	if (!PlayerCharacter || !CombatHUDWidget)
+	{
+		return;
+	}
+
+	BoundEquipmentManager = PlayerCharacter->GetEquipmentManager();
+	if (!BoundEquipmentManager)
+	{
+		return;
+	}
+
+	BoundEquipmentManager->OnCurrentEquipmentChanged.AddUniqueDynamic(
+		this, &ATheManPlayerController::HandleCurrentEquipmentChanged);
+	BindCombatHUDToFirearm(Cast<AFirearm>(BoundEquipmentManager->GetCurrentEquipment()));
+}
+
+void ATheManPlayerController::UnbindCombatHUD()
+{
+	if (BoundEquipmentManager)
+	{
+		BoundEquipmentManager->OnCurrentEquipmentChanged.RemoveDynamic(
+			this, &ATheManPlayerController::HandleCurrentEquipmentChanged);
+	}
+	if (BoundFirearm)
+	{
+		BoundFirearm->OnAmmoChanged.RemoveDynamic(this, &ATheManPlayerController::HandleAmmoChanged);
+	}
+	BoundEquipmentManager = nullptr;
+	BoundFirearm = nullptr;
+	if (CombatHUDWidget)
+	{
+		CombatHUDWidget->SetAmmoVisible(false);
+	}
+}
+
+void ATheManPlayerController::BindCombatHUDToFirearm(AFirearm* Firearm)
+{
+	if (BoundFirearm)
+	{
+		BoundFirearm->OnAmmoChanged.RemoveDynamic(this, &ATheManPlayerController::HandleAmmoChanged);
+	}
+	BoundFirearm = Firearm;
+
+	if (!CombatHUDWidget || !BoundFirearm)
+	{
+		if (CombatHUDWidget)
+		{
+			CombatHUDWidget->SetAmmoVisible(false);
+		}
+		return;
+	}
+
+	BoundFirearm->OnAmmoChanged.AddUniqueDynamic(this, &ATheManPlayerController::HandleAmmoChanged);
+	HandleAmmoChanged(
+		BoundFirearm->GetCurrentAmmo(),
+		BoundFirearm->GetMagazineCapacity(),
+		BoundFirearm->GetSpareMagazineCount());
+	CombatHUDWidget->SetAmmoVisible(true);
+}
+
+void ATheManPlayerController::HandleCurrentEquipmentChanged(
+	AEquipmentBase* PreviousEquipment,
+	AEquipmentBase* CurrentEquipment)
+{
+	BindCombatHUDToFirearm(Cast<AFirearm>(CurrentEquipment));
+}
+
+void ATheManPlayerController::HandleAmmoChanged(
+	int32 CurrentAmmo,
+	int32 MagazineCapacity,
+	int32 SpareMagazineCount)
+{
+	if (CombatHUDWidget)
+	{
+		CombatHUDWidget->SetAmmoState(CurrentAmmo, MagazineCapacity, SpareMagazineCount);
+	}
 }
 
 void ATheManPlayerController::SetupInputComponent()

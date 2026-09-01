@@ -14,6 +14,12 @@ class UNiagaraSystem;
 class UCameraShakeBase;
 class UStaticMeshComponent;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
+	FPlayerAmmoChanged,
+	int32, CurrentAmmo,
+	int32, MagazineCapacity,
+	int32, SpareMagazineCount);
+
 UCLASS()
 class THEMANTEST_API AFirearm : public AWeaponBase
 {
@@ -21,6 +27,7 @@ class THEMANTEST_API AFirearm : public AWeaponBase
 
 public:
 	AFirearm();
+	virtual void BeginPlay() override;
 
 	virtual void Equip(AActor* NewOwner) override;
 	virtual void Unequip() override;
@@ -47,6 +54,32 @@ public:
 	// 最小射击间隔（秒），后续可用 Cooldown GE 替代
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Shooting", meta = (ClampMin = "0.0"))
 	float FireRate = 0.1f;
+
+	/* ===== 弹药（蓝图 Defaults 配置） ===== */
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Ammo", meta = (ClampMin = "1"))
+	int32 MagazineCapacity = 30;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Ammo", meta = (ClampMin = "0"))
+	int32 SpareMagazineCount = 3;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Weapon|Ammo")
+	int32 CurrentAmmo = 30;
+
+	UPROPERTY(BlueprintAssignable, Category = "Weapon|Ammo")
+	FPlayerAmmoChanged OnAmmoChanged;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon|Ammo")
+	bool ConsumeRound();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon|Ammo")
+	bool ReloadMagazine();
+
+	UFUNCTION(BlueprintPure, Category = "Weapon|Ammo")
+	bool CanFire() const { return CurrentAmmo > 0; }
+
+	UFUNCTION(BlueprintPure, Category = "Weapon|Ammo")
+	bool CanReload() const { return CurrentAmmo < MagazineCapacity && SpareMagazineCount > 0; }
 
 	/* ===== 动画（蓝图 Defaults 配置） ===== */
 
@@ -120,6 +153,9 @@ public:
 	FTransform GetMuzzleWorldTransform() const;
 	FORCEINLINE TSubclassOf<ABulletBase> GetBulletClass() const { return BulletClass; }
 	FORCEINLINE float GetFireRate() const { return FireRate; }
+	FORCEINLINE int32 GetCurrentAmmo() const { return CurrentAmmo; }
+	FORCEINLINE int32 GetMagazineCapacity() const { return MagazineCapacity; }
+	FORCEINLINE int32 GetSpareMagazineCount() const { return SpareMagazineCount; }
 
 private:
 	// 可选的静态枪体叠加壳（例如 VFXPack Rifle Outline）；附着主 StaticMesh，不参与碰撞/弹道。

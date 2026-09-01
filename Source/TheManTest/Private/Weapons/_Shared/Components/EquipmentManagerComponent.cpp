@@ -87,6 +87,7 @@ void UEquipmentManagerComponent::InitializeEquipment(const TArray<TSubclassOf<AE
             FirstEquipment->SetActorTickEnabled(true);
             
             FirstEquipment->AttachToComponent(TargetMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, FirstEquipment->GetEquipSocketName());
+			OnCurrentEquipmentChanged.Broadcast(nullptr, FirstEquipment);
         }
     }
 }
@@ -217,4 +218,6 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
                 }));
         }
     }
+
+	OnCurrentEquipmentChanged.Broadcast(OldEquipment, NewEquipment);
 }

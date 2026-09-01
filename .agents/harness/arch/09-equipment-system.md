@@ -11,12 +11,14 @@
 
 Equip Montage 兼容代码仍保留，但 FEAT-074 session178 起不再由开局或切枪流程播放。当前切枪在新层求值一帧后直接用材质溶解显示枪体，并标记一次无位移 Camera Cut 清除 TAA/TSR 的旧枪颜色历史。
 | `Source/TheManTest/Public/Weapons/_Shared/WeaponBase/WeaponBase.h` | 武器基类（继承 EquipmentBase，当前为空壳） |
-| `Source/TheManTest/Public/Weapons/_Shared/Firearms/Firearm.h` | 射击参数：`bIsHitscan` / `HitscanRange` / `FireRate` / `BulletClass` / `MuzzleSocketName`；开火反馈：`FireMontage` / `FireSound` / 后坐力；技能：`PrimaryFireAbilityClass` / `SecondaryFireAbilityClass`；`GrantAbilities()` / `RevokeAbilities()`；**`GrantedASC`(TWeakObjectPtr 缓存，切角色回收技能用)** |
-| `Source/TheManTest/Private/Weapons/_Shared/Firearms/Firearm.cpp` | `Equip()` 在基类链接层后写入 Arms/Body AimSource 并 GrantAbilities；`Unequip()` 先 RevokeAbilities 再由基类解链 |
+| `Source/TheManTest/Public/Weapons/_Shared/Firearms/Firearm.h` | 射击参数：`bIsHitscan` / `HitscanRange` / `FireRate` / `BulletClass` / `MuzzleSocketName`；弹药：`MagazineCapacity=30` / `CurrentAmmo` / `SpareMagazineCount=3`、Consume/Reload/CanFire/CanReload 与 `OnAmmoChanged`；开火反馈和技能；**`GrantedASC` 缓存** |
+| `Source/TheManTest/Private/Weapons/_Shared/Firearms/Firearm.cpp` | BeginPlay 按蓝图容量初始化满弹；Consume/Reload 广播弹药事件；`Equip()` 写 AimSource 并 GrantAbilities；`Unequip()` 回收技能 |
 
 `AFirearm` 还提供可按具体武器覆盖的 `MuzzleEffect / MuzzleEffectRotation / MuzzleEffectScale`；`UGA_Shoot` 每发在实际 Muzzle Socket 附着一次性 Niagara。RepairGun 当前使用 `/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_SniperScout_Muzzle`（FEAT-072，从外部 Sniper Scout 精确迁入，包含枪口闪光与烟雾）；专属前向烟雾材质/纹理位于同一 RepairGun Muzzle 目录，其余复用依赖位于 `/Game/Core/_Shared/Effects/Muzzle/`。
 
 FEAT-074 起，玩家枪口统一由 `AFirearm::GetMuzzleWorldTransform()` 解析：优先 SkeletalMesh 的命名 Socket，其次 StaticMesh 的命名 Socket，最后使用 `MuzzleLocalTransform * ActorTransform`。因此纯静态枪模也必须在武器 BP 配置正确的 `MuzzleLocalTransform`，不得退回相机位置伪造枪口。
+
+FEAT-078 起，`UEquipmentManagerComponent::OnCurrentEquipmentChanged` 在首次装备和切枪后广播；Combat HUD 依靠它切换 Firearm 数据源。切角色销毁旧 Pawn 前必须解绑 Equipment/Ammo 委托，禁止 UI 每帧轮询。
 
 `AFirearm` 提供可选 `StaticMeshOverlay`，附着主 StaticMesh、无碰撞且不投影，用于 VFXPack Rifle 的反法线 Outline 壳。`BP_RepairGun` 的实体枪仍为 `SM_RepairGun_Rifle`，描边壳为 `SM_RepairGun_Rifle_Outline`；不得单独拿 Outline 壳替代实体枪。
 | `Source/TheManTest/Public/Weapons/_Shared/Firearms/Bullets/BulletBase.h` | CollisionSphere(QueryOnly) + BulletMesh + ProjectileMovement；`Damage`(SetByCaller 传入 HitEffectClass) / `HitEffectClass` / `bDestroyOnHit`；`InitBullet(发射者, SourceASC)`(忽略发射者防自撞) / `ProcessHit()` BlueprintNativeEvent。FEAT-073 起，玩家/非敌方弹体有效命中 `AEnemyBase` 时统一调用 `ReactToProjectileHit`，穿透判定优先。 |

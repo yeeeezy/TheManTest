@@ -29,6 +29,40 @@ AFirearm::AFirearm()
 	}
 }
 
+void AFirearm::BeginPlay()
+{
+	Super::BeginPlay();
+	MagazineCapacity = FMath::Max(1, MagazineCapacity);
+	SpareMagazineCount = FMath::Max(0, SpareMagazineCount);
+	CurrentAmmo = MagazineCapacity;
+	OnAmmoChanged.Broadcast(CurrentAmmo, MagazineCapacity, SpareMagazineCount);
+}
+
+bool AFirearm::ConsumeRound()
+{
+	if (!CanFire())
+	{
+		return false;
+	}
+
+	--CurrentAmmo;
+	OnAmmoChanged.Broadcast(CurrentAmmo, MagazineCapacity, SpareMagazineCount);
+	return true;
+}
+
+bool AFirearm::ReloadMagazine()
+{
+	if (!CanReload())
+	{
+		return false;
+	}
+
+	--SpareMagazineCount;
+	CurrentAmmo = MagazineCapacity;
+	OnAmmoChanged.Broadcast(CurrentAmmo, MagazineCapacity, SpareMagazineCount);
+	return true;
+}
+
 FTransform AFirearm::GetMuzzleWorldTransform() const
 {
 	if (const USkeletalMeshComponent* Mesh = GetSkeletalMesh();

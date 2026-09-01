@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-09-01 session244 交接：Combat HUD 与玩家弹药第一阶段
+
+- 当前 active feature 切换为 FEAT-078；FEAT-077 保持 `needs_improvement` 等待前台动画主观复核。
+- `ATheManPlayerController` 本地创建原生 Combat HUD：屏幕中心8px空心圆；右下角两行显示 `当前弹药 / 容量` 与 `弹夹 数量`，Hit Test Invisible、无 Tick。
+- `AFirearm` 默认30发容量、当前30发、备用弹夹3；开火前真实扣弹，空弹不产生任何开火反馈；提供换弹接口。EquipmentManager/Firearm 委托驱动 HUD，切枪和切角色会解绑重绑。
+- Development Editor 构建成功；`TheManTest.Player.CombatHUD.AmmoLifecycle` 1/1 Success；截图 `Saved/Screenshots/WindowsEditor/TMT_CombatHUD.png`。待用户前台确认布局观感；换弹输入/动画尚未接。
+
 ## 2026-09-01 session243 交接：按最新截图更新 ArmsViewMesh 默认值
 
 - `AFPSCharacterBase` 的 `ArmsViewMesh` 默认 Transform 更新为 Location `(-14.766994,-4.322017,-134.599387)`、Rotation `(Roll=5.752239°, Pitch=0.077753°, Yaw=-114.908449°)`、Scale `(1,1,1)`。
