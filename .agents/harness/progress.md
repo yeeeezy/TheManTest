@@ -1,5 +1,10 @@
 # 进度日志
 
+## 2026-09-01 session249 交接：HUD 改为视觉中心对齐
+
+- 撤销仅按字体基线判断对齐的方案；四个 HUD 文本元素现按同一条视觉中心线排列，小号 `+` 与备用弹夹数居中于大号数字。
+- Development Editor 构建和 `TheManTest.Player.CombatHUD.AmmoLifecycle` 1/1 Success；最新截图已覆盖，待用户确认。
+
 ## 2026-09-01 session248 交接：HUD 字体基线对齐
 
 - 血量图标、血量值、当前子弹和备用弹夹改为同一条 Slate 字体基线，修复小字号数字下沉造成的横向不齐。
