@@ -15,7 +15,7 @@
 
 **第一人称手臂近距离裁切（session236）：** `SKM_MaintenanceWorker_FirstPersonArms` 唯一材质槽使用 `/Game/Characters/MaintenanceWorker/FirstPerson/Materials/MI_MaintenanceWorker_FirstPersonArms`。其专属 Masked 父材质计算 `Distance(CameraPositionWS, AbsoluteWorldPosition)`，以 `(Distance - Arm Near Clip Distance) / Arm Near Clip Fade Width` 经 Saturate 和引擎 `DitherTemporalAA` Material Function 输出到 Opacity Mask：贴近相机的肘部裁掉，较远的手和前臂保留。实例参数为 40cm / 8cm；只影响第一人称 Arms，不影响完整身体、影子或武器材质。
 
-**第一人称灰模与腿部近距离裁切（session263）：** 手臂专属 Masked 父材质的 Base Color 使用 `Viewmodel Base Color=(0.18,0.18,0.18)` 中性灰，替代旧白色常量，原 40cm / 8cm 裁切不变。`SKM_MaintenanceWorker_LowerBody` 唯一槽绑定独立 `MI_MaintenanceWorker_FirstPersonLegs`，复用同一距离抖动裁切图但使用 55cm / 12cm，使跳跃时贴近相机的腿柔和消失；完整身体和影子的原 `MI_clothes` 不变。
+**第一人称原材质与近距离裁切（session263-264）：** session263 的临时统一灰模方案已被替代。手臂从外部原 VFXPack 项目正式迁入 `MI_Placeholder_Lambert_INST`、`M_Placeholder_Lambert_Master`、`MF_Disintegration` 与 Noise 贴图；本地专属副本保留原参数 `Color=0.802083 / Metallic=0.5 / Specular=0.5 / Roughness=0.8`、Noise/Dissolve 图，并在原 Opacity Mask 后乘入 40cm / 8cm 相机距离抖动裁切。腿部不使用手臂材质；`M_MaintenanceWorker_FirstPersonLegs` 由项目现有 `M_UE4Man_Body` 复制并只追加 55cm / 12cm 裁切，完整身体和影子的原材质不变。
 
 **MaintenanceWorker 第一人称 Skeleton（session241）：** `SKM_MaintenanceWorker_FirstPersonArms` 已改为直接使用 `/Game/Characters/MaintenanceWorker/FirstPerson/Meshes/SK_Mannequin_Arms_Skeleton`，与 `ABP_MaintenanceWorker_FirstPerson`、`AS_MaintenanceWorker_FP_*` 和 `BS_MaintenanceWorker_FP_WalkRun` 统一。旧 `SKEL_MaintenanceWorker_FirstPersonArms` 暂未删除；不要再为该旧 Skeleton 新增动画。
 

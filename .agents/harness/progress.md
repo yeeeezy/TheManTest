@@ -520,3 +520,9 @@
 - 手臂专属 Masked 材质 Base Color 改为中性灰 `0.18`，保留原 40cm / 8cm 相机距离抖动裁切。
 - 新增腿部专属 `M/MI_MaintenanceWorker_FirstPersonLegs`，参数 55cm / 12cm，并绑定 `SKM_MaintenanceWorker_LowerBody` 唯一材质槽；完整身体和影子原材质未改。
 - 冷启动回读确认 Mesh 绑定、父实例和参数正确；`ArmDistanceClipEvidence` 与 `WeaponOwnedJumpRuntime` Success。`FramingCapture` 仍只因既有 FOV=77、GripPoint 命名旧断言失败，与本材质改动无关。
+
+## 2026-09-01 session264 交接：恢复手臂/腿部各自原材质并保留裁切
+
+- 源 VFXPack 冷审计确认原手臂使用 `MI_Placeholder_Lambert_INST`；正式迁入其 Master、Instance、`MF_Disintegration` 与 Noise 贴图完整依赖。本地手臂专属副本保留原 `Color=0.802083 / Metallic=0.5 / Specular=0.5 / Roughness=0.8` 和 Dissolve，仅在原 Opacity Mask 后叠加 40cm / 8cm 裁切。
+- 纠正 session263 错误：腿部不再使用统一灰模；腿部专属父材质改由现有 `M_UE4Man_Body` 复制，只追加 55cm / 12cm 裁切，原外观图保持完整。
+- 冷回读确认两 Mesh 绑定、父材质和参数正确；正常渲染 `ArmDistanceClipEvidence` 与冷启动 `WeaponOwnedJumpRuntime` 均 Success。

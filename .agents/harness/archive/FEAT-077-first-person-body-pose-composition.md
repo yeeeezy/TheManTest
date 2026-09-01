@@ -311,3 +311,10 @@
 - 手臂裁切父材质新增 `Viewmodel Base Color=(0.18,0.18,0.18)` 并接入 Base Color，替代纯白输出；原 40cm / 8cm Opacity Mask 链保持不变。
 - `SKM_MaintenanceWorker_LowerBody` 冷读确认只有一个材质槽；新增并绑定独立腿部 Masked 灰模实例，使用 55cm / 12cm 距离裁切。完整身体/影子仍使用原材质。
 - 冷启动资产回读正确且无材质错误；`ArmDistanceClipEvidence`、`WeaponOwnedJumpRuntime` Success。`FramingCapture` 的失败仍为已知旧 FOV/GripPoint 断言，不属于本轮回归。
+
+## 2026-09-01 session264 — 以原材质为基底重做相机裁切
+
+- 用户指出手臂来自外部 VFXPack、腿部原材质也未缺失。只读源项目确认手臂原槽实际绑定 `MI_Placeholder_Lambert_INST`；其 Instance、Master、`MF_Disintegration` 与 `T_VFX_Noise_SoftPerlin_03` 四项完整依赖已通过 Unreal AssetTools 正式迁入。
+- 手臂本地专属材质改为原 Master/Instance 的副本，完整保留浅灰金属参数及 Noise/Dissolve，40cm / 8cm Dither 裁切乘在原 Opacity Mask 后。
+- 腿部专属材质改为项目现有 `M_UE4Man_Body` 的副本，保留其原图并只追加 55cm / 12cm 裁切；撤销 session263 的统一灰模外观。
+- 冷启动绑定/参数审计无错误；正常渲染 `ArmDistanceClipEvidence` 与 `WeaponOwnedJumpRuntime` 均 Success。
