@@ -1283,6 +1283,12 @@ bool FValidatePlayerViewmodelPIECommand::Update()
 	Test->TestNotNull(TEXT("Player has initial equipment"), Equipment);
 	if (Equipment)
 	{
+		Test->TestNotNull(TEXT("RepairGun uses its configured skeletal presentation"),
+			Equipment->GetSkeletalMesh()->GetSkeletalMeshAsset());
+		Test->TestTrue(TEXT("Configured skeletal presentation is visible in PIE"),
+			Equipment->GetSkeletalMesh()->IsVisible());
+		Test->TestFalse(TEXT("Legacy static presentation is hidden when skeletal presentation is assigned"),
+			Equipment->GetStaticMesh()->IsVisible());
 		const FName VFXPackGripSocket(TEXT("GripPoint"));
 		Test->TestEqual(TEXT("VFXPack arms expose the original GripPoint socket"),
 			Player->GetArmsMesh()->DoesSocketExist(VFXPackGripSocket), true);

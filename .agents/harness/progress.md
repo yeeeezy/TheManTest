@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-08-23 session239 交接：RepairGun 可见枪体切换为 SK_SCFRIFLE
+
+- `BP_RepairGun.SkeletalMesh` 已指定 `/Game/Weapons/RepairGun/Meshes/SK_SCFRIFLE`；装备 BeginPlay 在 Skeletal Mesh 有资产时显示它并隐藏旧 `StaticMesh` 及其 Overlay 子组件。旧 Static Mesh 资产仍保留，继续作为现有世界空间枪械影子的复制源。
+- 用户将自行在 `BP_RepairGun.SkeletalMesh` 上调整握持 Relative Transform；当前未替用户校准 GripPoint。枪口仍优先读取 Skeletal Mesh 的 `MuzzleSocketName`，不存在时回退现有 `MuzzleLocalTransform`。
+- 已确认并记录两个暂不处理的 Bug：RepairGun 描边无可见效果；装备消融无可见效果。
+- Development Editor 构建成功；运行时断言确认 Skeletal Mesh 已加载且可见、旧 Static Mesh 已隐藏，截图 `Saved/Screenshots/PlayerFramingCurrent.png` 显示新枪体进入画面。FramingCapture 仅继续被用户当前 FOV 与旧 77° 断言不一致阻断。
+
 ## 2026-08-23 session237 交接：蓝图预览与 PIE 手臂朝向差异已实证定位
 
 - 临时逐骨探针确认 `ArmsViewMesh` 蓝图 CDO 与 PIE Relative Transform 完全一致：Rotation `(-0.087114,-82.335250,0.647280)`、Location `(-1.615754,0.000001,-141.738776)`；不存在 PIE 强制覆盖组件构图。

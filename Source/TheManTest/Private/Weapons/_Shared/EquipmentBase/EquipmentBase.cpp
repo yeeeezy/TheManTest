@@ -125,6 +125,20 @@ void AEquipmentBase::Equip(AActor* NewOwner)
 
     if (!NewOwner) { return; }
 
+    // Equip runs after Blueprint component overrides and assigned assets are final.
+    // Prefer the skeletal presentation when present; retain StaticMesh only as the
+    // source asset/transform for the separate world-space shadow proxy below.
+    const bool bUseSkeletalPresentation = SkeletalMesh && SkeletalMesh->GetSkeletalMeshAsset();
+    if (StaticMesh)
+    {
+        StaticMesh->SetVisibility(!bUseSkeletalPresentation, true);
+    }
+    if (SkeletalMesh)
+    {
+		SkeletalMesh->SetHiddenInGame(!bUseSkeletalPresentation, true);
+        SkeletalMesh->SetVisibility(bUseSkeletalPresentation, true);
+    }
+
     if (AFPSCharacterBase* FPSChar = Cast<AFPSCharacterBase>(NewOwner))
     {
         ShadowStaticMesh->SetStaticMesh(StaticMesh->GetStaticMesh());

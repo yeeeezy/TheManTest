@@ -3,6 +3,13 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-08-23 session239 — RepairGun 切换为 Skeletal Mesh 可见枪体
+
+- `BP_RepairGun` 的继承 `SkeletalMesh` 组件指定 `/Game/Weapons/RepairGun/Meshes/SK_SCFRIFLE`。`AEquipmentBase::BeginPlay` 在蓝图覆盖落定后自动选择表现组件：有 Skeletal Mesh 时显示它，并递归隐藏旧 Static Mesh 与 `StaticMeshOverlay`；旧 Static Mesh 资产继续供 `ShadowStaticMesh` 复制世界空间投影。
+- 不修改 SkeletalMesh Relative Transform，用户自行按 `GripPoint` 手调。`AFirearm::GetMuzzleWorldTransform` 已有 Skeletal Mesh Socket 优先、Static Mesh 次之、`MuzzleLocalTransform` 兜底，无需改弹道代码。
+- 已确认但按用户要求暂不修复：RepairGun 描边无可见效果；装备消融无可见效果。
+- Development Editor 构建成功；PIE 断言确认 Skeletal Mesh 已加载且可见、旧 Static Mesh 已隐藏，`PlayerFramingCurrent.png` 显示新枪体进入画面。FramingCapture 的旧 77° FOV 断言仍与用户当前蓝图值冲突。
+
 ## 2026-08-23 session237 — 实证定位蓝图组件预览与 PIE 姿势差异
 
 - 临时自动化探针逐项记录蓝图生成类 CDO 与 PIE：`ArmsViewMesh.RelativeTransform` 完全相同，Rotation `(-0.087114,-82.335250,0.647280)`、Location `(-1.615754,0.000001,-141.738776)`，排除运行时代码覆盖组件 Transform。
