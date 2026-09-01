@@ -333,3 +333,9 @@
 - 腿部材质不再取双臂 8 点最短距离，只使用 `hand_r` 写入的 `Proximity Origin WS`。
 - 手臂与腿部实例参数统一重命名为 `Proximity Clip Radius` / `Proximity Fade Width`，数值分别保持 40/8cm 与 32/18cm。
 - Development Editor 构建及腿部 MID、手臂渐隐、武器跳跃三项回归全部通过。
+
+## 2026-09-01 session268 — 右手/相机任一邻近即渐隐
+
+- 腿部材质新增基于 `CameraPositionWS` 的独立相机距离链，实例参数为 `Camera Proximity Clip Radius=55cm`、`Camera Proximity Fade Width=12cm`。
+- 相机距离链与既有 `hand_r` 距离链的归一化遮罩使用 `Min` 合并：靠近右手或靠近相机任意一处都会触发 `DitherTemporalAA` 平滑消失。
+- `LegArmProximityRuntime` 已扩展为校验两项相机参数，并与手臂裁切、武器跳跃回归一同通过。

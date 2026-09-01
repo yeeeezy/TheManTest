@@ -275,8 +275,18 @@ public:
 		Test->AddInfo(FString::Printf(TEXT("LEG_RUNTIME material=%s parent=%s"),
 			*MID->GetPathName(), MID->Parent ? *MID->Parent->GetPathName() : TEXT("None")));
 		float RuntimeRadius = 0.f;
-		MID->GetScalarParameterValue(TEXT("Proximity Clip Radius"), RuntimeRadius);
+		const bool bHasHandRadius = MID->GetScalarParameterValue(TEXT("Proximity Clip Radius"), RuntimeRadius);
+		Test->TestTrue(TEXT("Leg material exposes the right-hand proximity radius"), bHasHandRadius);
+		Test->TestEqual(TEXT("Right-hand proximity radius remains authored"), RuntimeRadius, 32.f);
 		Test->AddInfo(FString::Printf(TEXT("LEG_RUNTIME proximity radius=%.2f"), RuntimeRadius));
+		float CameraRadius = 0.f;
+		float CameraFadeWidth = 0.f;
+		const bool bHasCameraRadius = MID->GetScalarParameterValue(TEXT("Camera Proximity Clip Radius"), CameraRadius);
+		const bool bHasCameraFadeWidth = MID->GetScalarParameterValue(TEXT("Camera Proximity Fade Width"), CameraFadeWidth);
+		Test->TestTrue(TEXT("Leg material exposes an independent camera proximity radius"), bHasCameraRadius);
+		Test->TestTrue(TEXT("Leg material exposes an independent camera fade width"), bHasCameraFadeWidth);
+		Test->TestEqual(TEXT("Camera proximity radius is authored"), CameraRadius, 55.f);
+		Test->TestEqual(TEXT("Camera proximity fade width is authored"), CameraFadeWidth, 12.f);
 
 		auto TestPoint = [this, MID](const TCHAR* ParameterName, const FVector& Expected)
 		{

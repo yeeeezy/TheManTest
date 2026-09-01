@@ -63,3 +63,8 @@ Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE
 
 - 手臂和腿部材质实例统一暴露 `Proximity Clip Radius`、`Proximity Fade Width`。
 - 腿部渐隐只读取 `ArmsViewMesh.hand_r` 的世界位置，通过 `Proximity Origin WS` 写入运行时 MID；不再计算左右双臂多点最短距离。
+
+## 2026-09-01 session268：腿部双来源邻近渐隐
+
+- 腿部材质同时计算像素到 `hand_r` 世界位置与 `CameraPositionWS` 的距离；两条归一化渐隐遮罩取 `Min`，所以靠近任意来源都会渐隐。
+- 右手侧参数沿用 `Proximity Clip Radius/Fade Width`；相机侧独立使用 `Camera Proximity Clip Radius/Fade Width`，不得由 C++ 每帧重复写相机位置。

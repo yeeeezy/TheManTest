@@ -543,3 +543,9 @@
 - 腿部渐隐源由双臂 8 点改为唯一的右手骨 `hand_r` 世界位置，运行时参数名为 `Proximity Origin WS`。
 - 手臂和腿部实例参数统一为 `Proximity Clip Radius` / `Proximity Fade Width`；手臂保持 40/8cm，腿部保持 32/18cm。
 - Development Editor 构建成功；冷审计确认两套实例参数正确，`LegArmProximityRuntime`、`ArmDistanceClipEvidence`、`WeaponOwnedJumpRuntime` 均 Success。
+
+## 2026-09-01 session268 — 腿部同时支持右手与相机邻近渐隐
+
+- 腿部材质保留右手 `hand_r` 的 `Proximity Clip Radius/Fade Width=32/18cm`，新增独立相机参数 `Camera Proximity Clip Radius/Fade Width=55/12cm`。
+- 两条“近处 0、远处 1”的渐隐遮罩使用 `Min` 合并，因此腿部靠近右手或相机中的任意一个都会平滑消失；相机位置直接使用材质 `CameraPositionWS`，无需新增 Tick 参数。
+- 材质脚本执行及着色器编译 0 error，Development Editor 构建成功；`LegArmProximityRuntime`、正常渲染的 `ArmDistanceClipEvidence`、`WeaponOwnedJumpRuntime` 均 Success。`ArmDistanceClipEvidence` 在 `-nullrhi` 下的截图路径会触发现有空渲染资源崩溃，改用正常渲染复跑通过。
