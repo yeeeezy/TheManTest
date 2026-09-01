@@ -1,5 +1,10 @@
 # 进度日志
 
+## 2026-09-01 session248 交接：HUD 字体基线对齐
+
+- 血量图标、血量值、当前子弹和备用弹夹改为同一条 Slate 字体基线，修复小字号数字下沉造成的横向不齐。
+- Development Editor 构建和 `TheManTest.Player.CombatHUD.AmmoLifecycle` 1/1 Success；最新截图已覆盖并打开，待用户确认。
+
 ## 2026-09-01 session247 交接：按参考图加入血量并重排弹药
 
 - HUD 底部新增当前血量；只显示当前值，不显示最大值。

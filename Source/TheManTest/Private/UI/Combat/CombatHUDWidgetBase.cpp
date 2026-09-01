@@ -75,6 +75,12 @@ public:
 
 		const TSharedRef<FSlateFontMeasure> FontMeasure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
 		const float HudBaselineY = Size.Y - 70.f;
+		const auto GetTopForBaseline = [&FontMeasure, HudBaselineY](const FSlateFontInfo& Font)
+		{
+			const float FontBaselineFromTop =
+				static_cast<float>(FontMeasure->GetMaxCharacterHeight(Font) + FontMeasure->GetBaseline(Font));
+			return HudBaselineY - FontBaselineFromTop;
+		};
 
 		if (bHealthVisible)
 		{
@@ -87,10 +93,10 @@ public:
 			const float HealthX = Size.X * 0.30f;
 
 			FSlateDrawElement::MakeText(OutDrawElements, LayerId + 1,
-				AllottedGeometry.ToPaintGeometry(HealthIconSize, FSlateLayoutTransform(FVector2D(HealthX, HudBaselineY - HealthIconSize.Y))),
+				AllottedGeometry.ToPaintGeometry(HealthIconSize, FSlateLayoutTransform(FVector2D(HealthX, GetTopForBaseline(HealthIconFont)))),
 				HealthIconText, HealthIconFont, ESlateDrawEffect::None, FLinearColor(0.86f, 0.9f, 0.9f, 0.9f));
 			FSlateDrawElement::MakeText(OutDrawElements, LayerId + 1,
-				AllottedGeometry.ToPaintGeometry(HealthSize, FSlateLayoutTransform(FVector2D(HealthX + HealthIconSize.X + 12.f, HudBaselineY - HealthSize.Y))),
+				AllottedGeometry.ToPaintGeometry(HealthSize, FSlateLayoutTransform(FVector2D(HealthX + HealthIconSize.X + 12.f, GetTopForBaseline(HealthFont)))),
 				HealthText, HealthFont, ESlateDrawEffect::None, FLinearColor::White);
 		}
 
@@ -105,10 +111,10 @@ public:
 			const float AmmoX = Size.X * 0.64f;
 
 			FSlateDrawElement::MakeText(OutDrawElements, LayerId + 1,
-				AllottedGeometry.ToPaintGeometry(AmmoSize, FSlateLayoutTransform(FVector2D(AmmoX, HudBaselineY - AmmoSize.Y))),
+				AllottedGeometry.ToPaintGeometry(AmmoSize, FSlateLayoutTransform(FVector2D(AmmoX, GetTopForBaseline(AmmoFont)))),
 				AmmoText, AmmoFont, ESlateDrawEffect::None, FLinearColor::White);
 			FSlateDrawElement::MakeText(OutDrawElements, LayerId + 1,
-				AllottedGeometry.ToPaintGeometry(MagazineSize, FSlateLayoutTransform(FVector2D(AmmoX + AmmoSize.X + 18.f, HudBaselineY - MagazineSize.Y))),
+				AllottedGeometry.ToPaintGeometry(MagazineSize, FSlateLayoutTransform(FVector2D(AmmoX + AmmoSize.X + 18.f, GetTopForBaseline(MagazineFont)))),
 				MagazineText, MagazineFont, ESlateDrawEffect::None, FLinearColor(0.72f, 0.76f, 0.78f, 1.f));
 		}
 
