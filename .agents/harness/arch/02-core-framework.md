@@ -19,5 +19,5 @@
 | `Source/TheManTest/Private/Core/TheManPlayerState.cpp` | ASC / AttributeSet 构造 |
 | `Source/TheManTest/Public/Core/TheManCharacterTypes.h` | `FCharacterType` 结构体（DataTable 行类型，含角色类引用、图标、描述） |
 | `Source/TheManTest/Public/UI/CharacterSelectWidgetBase.h` / `.cpp` | 选角色 UI 基类（BindWidget 三按钮自动绑点击，详见 13） |
-| `Source/TheManTest/Public/UI/Combat/CombatHUDWidgetBase.h` / `.cpp` | 原生战斗 HUD：视口中心半径57.6px、线宽2.5px的96段空心圆；底部显示当前血量、大号当前子弹数和小号备用弹夹数，不显示容量；Slate Paint 绘制、Hit Test Invisible、事件驱动更新 |
+| `Source/TheManTest/Public/UI/Combat/CombatHUDWidgetBase.h` / `.cpp` | 原生战斗 HUD：视口中心半径46.08px、线宽2px的80段空心圆；底部显示当前血量、大号当前子弹数和小号备用弹夹数，不显示容量；Slate Paint 绘制、Hit Test Invisible、事件驱动更新 |
 | `Source/TheManTest/Public/Core/TheManGameStateBase.h` / `.cpp` | 回合倒计时 + 半场二阶段 + 强度波 + DebugSkipTime（详见 13） |

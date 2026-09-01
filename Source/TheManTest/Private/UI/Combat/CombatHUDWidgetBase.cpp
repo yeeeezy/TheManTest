@@ -52,8 +52,8 @@ public:
 	{
 		const FVector2D Size = AllottedGeometry.GetLocalSize();
 		const FVector2D Center = Size * 0.5f;
-		constexpr float Radius = 57.6f;
-		constexpr int32 Segments = 96;
+		constexpr float Radius = 46.08f;
+		constexpr int32 Segments = 80;
 
 		TArray<FVector2D> CirclePoints;
 		CirclePoints.Reserve(Segments + 1);
@@ -71,7 +71,7 @@ public:
 			ESlateDrawEffect::None,
 			FLinearColor(1.f, 1.f, 1.f, 0.85f),
 			true,
-			2.5f);
+			2.f);
 
 		const TSharedRef<FSlateFontMeasure> FontMeasure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
 		const float HudCenterY = Size.Y - 75.f;

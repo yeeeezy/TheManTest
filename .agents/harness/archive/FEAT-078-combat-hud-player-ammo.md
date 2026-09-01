@@ -3,6 +3,12 @@
 **创建日期：** 2026-09-01
 **状态：** in_progress
 
+## 2026-09-01 session250 — 中心准星缩小20%
+
+- 中心空心准星半径从57.6px缩小为46.08px，线宽从2.5px缩小为2px，圆周分段从96调整为80。
+- 圆心、血量与弹药布局均不变。
+- Development Editor 构建与 `TheManTest.Player.CombatHUD.AmmoLifecycle` 1/1 Success；截图已更新。
+
 ## 2026-09-01 session249 — HUD 视觉中心对齐
 
 - 用户截图复核确认字体基线对齐仍有视觉错位；改为统一视觉中心线。

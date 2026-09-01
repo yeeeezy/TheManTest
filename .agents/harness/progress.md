@@ -1,5 +1,10 @@
 # 进度日志
 
+## 2026-09-01 session250 交接：中心准星缩小20%
+
+- 空心准星最终半径46.08px、线宽2px、80分段；HUD 其余布局不变。
+- Development Editor 构建和 `TheManTest.Player.CombatHUD.AmmoLifecycle` 1/1 Success；最新截图已覆盖并打开，待用户确认。
+
 ## 2026-09-01 session249 交接：HUD 改为视觉中心对齐
 
 - 撤销仅按字体基线判断对齐的方案；四个 HUD 文本元素现按同一条视觉中心线排列，小号 `+` 与备用弹夹数居中于大号数字。
