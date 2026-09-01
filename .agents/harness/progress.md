@@ -480,3 +480,9 @@
 - 错误删除宿主顶层空中 Blend 曾导致整个上半身无动作，已从 `3be9fb8` 恢复对应 AnimBP；该 Blend 不能直接删除，旧生成代码仍保持清理。
 - 3 个 Jump Transition 已从旧 `Is_InAir` Getter 改绑到原生 `bIsFalling` 并保留全部连线。冷启动编译4个相关 AnimBP、Development Editor 构建均成功。
 - 自测 PIE：地面持枪上半身恢复；强制腾空时 `bIsFalling=True/Is_InAir=True` 且关键骨骼发生变化。JumpLoop 素材本身接近 Idle，明显动作集中于 JumpStart/JumpEnd。
+## 2026-09-01 session257 交接：第一人称完整 Locomotion 收敛到武器 Linked Layer
+
+- `TABP_CharacterBase_FirstPerson` 现在只负责武器 Linked Layer 路由和通用 Lean/Look，不再保存 Idle/WalkRun/Jump 状态机或空中 Blend。
+- `TABP_FirstPersonFirearmBase.WeaponUpperBody` 唯一拥有 Idle、WalkRun、JumpStart、JumpLoop、JumpEnd 状态机；`ABP_RepairGun_FirstPerson` 提供具体动画覆盖。
+- 冷结构测试 `TheManTest.Player.Animation.WeaponOwnedLocomotion`、真实 PIE 跳跃测试 `WeaponOwnedJumpRuntime`、影子合成测试 `Shadow.UpperBodyEvidence` 全部 Success。
+- `FramingCapture` 的既有 FOV=77 与 GripPoint 命名断言仍和用户当前蓝图值不一致，与本动画迁移无关，本轮未修改。

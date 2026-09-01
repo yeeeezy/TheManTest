@@ -83,12 +83,14 @@ public:
 		FName StateGraphName,
 		FName CoordinatePropertyName);
 
-	/** In a firearm WeaponUpperBody layer, use the weapon ground state machine while
-	 * grounded and preserve the host's authored held-weapon jump pose while airborne. */
+	/** Move the complete first-person locomotion state machine into the firearm layer.
+	 * The host is reduced to a single linked-layer route followed by its common pose corrections. */
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Animation")
-	static bool ConfigureFirearmUpperBodyAirbornePassThrough(
+	static bool MoveFirstPersonLocomotionToFirearmLayer(
+		UAnimBlueprint* HostTemplateAnimBlueprint,
+		UAnimBlueprint* HostConcreteAnimBlueprint,
 		UAnimBlueprint* FirearmTemplateAnimBlueprint,
-		UAnimBlueprint* ConcreteFirearmAnimBlueprint,
+		UAnimBlueprint* FirearmConcreteAnimBlueprint,
 		FName LayerName);
 
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Blueprint")

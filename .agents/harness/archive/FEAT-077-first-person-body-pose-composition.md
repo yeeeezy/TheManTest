@@ -268,3 +268,10 @@
 - Body 模板原已采用子类 Asset Override，无需迁移。FirstPerson 模板的 7 个播放器绑定迁入 `ABP_MaintenanceWorker_FirstPerson.ParentAssetOverrides`：Idle、Still 两处、JumpStart、JumpLoop、JumpEnd 和 WalkRun BlendSpace。
 - 因模板 Sequence Player 不再绑定资产，Jump 的 3 条剩余时间 Getter 改为状态机原生自动剩余时间过渡，模板与具体子类均重新编译保存。
 - `TheManTestEditor Win64 Development` 构建成功；冷启动 `Shadow.UpperBodyEvidence`、`Viewmodel.FramingCapture`、`Viewmodel.EquipDissolveEvidence` 均为 1/1 Success。仍待用户前台主观复核。
+
+## 2026-09-01 session257 — 第一人称完整 Locomotion 归属武器层
+
+- 用户确认不同武器必须能整体替换 Idle、WalkRun 与 JumpStart/JumpLoop/JumpEnd，因此五状态状态机从 `TABP_CharacterBase_FirstPerson` 迁入 `TABP_FirstPersonFirearmBase.WeaponUpperBody`。
+- 宿主模板删除本地状态机和重复空中 Blend，只保留 Linked Layer 输出与通用 Lean/Look；武器层删除旧的外层 `bIsFalling` 二次旁路。
+- `ABP_RepairGun_FirstPerson` 持有 Still/WalkRun/JumpStart/JumpLoop/JumpEnd 的具体 Parent Asset Overrides；未来武器通过自己的 Linked Layer 子类替换整套动画。
+- 新增 `WeaponOwnedLocomotion` 结构回归和 `WeaponOwnedJumpRuntime` PIE 回归；后者实际 LaunchCharacter，验证武器层收到空中状态且 `hand_r` 进入 JumpStart 后发生姿态变化。两项及 `Shadow.UpperBodyEvidence` 均 Success；Development Editor 构建成功。

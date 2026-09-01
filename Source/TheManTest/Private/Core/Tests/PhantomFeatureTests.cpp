@@ -16,6 +16,7 @@
 #include "Actors/PatrolPoint.h"
 #include "Enemy/_Shared/GAS/Abilities/GA_EnemyShoot.h"
 #include "Weapons/_Shared/Firearms/Firearm.h"
+#include "Weapons/_Shared/Firearms/FirearmAnimInstance.h"
 #include "NiagaraSystem.h"
 #include "NiagaraComponent.h"
 #include "AbilitySystemComponent.h"
@@ -52,6 +53,141 @@
 #include "Animation/AnimNode_StateMachine.h"
 #include "Animation/AnimNode_AssetPlayerBase.h"
 #include "AnimNodes/AnimNode_BlendSpacePlayer.h"
+#include "AnimGraphNode_BlendListByBool.h"
+#include "AnimGraphNode_LinkedAnimLayer.h"
+#include "AnimGraphNode_StateMachine.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFirstPersonWeaponOwnedLocomotionTest,
+	"TheManTest.Player.Animation.WeaponOwnedLocomotion",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FFirstPersonWeaponOwnedLocomotionTest::RunTest(const FString& Parameters)
+{
+	UAnimBlueprint* Host = LoadObject<UAnimBlueprint>(nullptr,
+		TEXT("/Game/Characters/CharacterBase/Animations/FirstPerson/Logic/TABP_CharacterBase_FirstPerson.TABP_CharacterBase_FirstPerson"));
+	UAnimBlueprint* WeaponTemplate = LoadObject<UAnimBlueprint>(nullptr,
+		TEXT("/Game/Weapons/_Shared/Animations/Templates/TABP_FirstPersonFirearmBase.TABP_FirstPersonFirearmBase"));
+	UAnimBlueprint* WeaponChild = LoadObject<UAnimBlueprint>(nullptr,
+		TEXT("/Game/Weapons/RepairGun/Animations/FirstPerson/Logic/ABP_RepairGun_FirstPerson.ABP_RepairGun_FirstPerson"));
+	TestNotNull(TEXT("First-person host template"), Host);
+	TestNotNull(TEXT("Firearm animation template"), WeaponTemplate);
+	TestNotNull(TEXT("RepairGun animation child"), WeaponChild);
+	if (!Host || !WeaponTemplate || !WeaponChild) return false;
+
+	int32 HostStateMachines = 0;
+	int32 HostAirBlends = 0;
+	int32 HostLinkedLayers = 0;
+	TArray<UEdGraph*> HostGraphs;
+	Host->GetAllGraphs(HostGraphs);
+	for (UEdGraph* Graph : HostGraphs)
+	{
+		if (!Graph || Graph->GetFName() != UEdGraphSchema_K2::GN_AnimGraph) continue;
+		for (UEdGraphNode* Node : Graph->Nodes)
+		{
+			HostStateMachines += Node->IsA<UAnimGraphNode_StateMachine>();
+			HostAirBlends += Node->IsA<UAnimGraphNode_BlendListByBool>();
+			HostLinkedLayers += Node->IsA<UAnimGraphNode_LinkedAnimLayer>();
+		}
+	}
+	TestEqual(TEXT("Host owns no locomotion state machine"), HostStateMachines, 0);
+	TestEqual(TEXT("Host owns no duplicate airborne blend"), HostAirBlends, 0);
+	TestEqual(TEXT("Host has one weapon linked layer"), HostLinkedLayers, 1);
+
+	int32 WeaponStateMachines = 0;
+	int32 WeaponAirBlends = 0;
+	TArray<UEdGraph*> WeaponGraphs;
+	WeaponTemplate->GetAllGraphs(WeaponGraphs);
+	for (UEdGraph* Graph : WeaponGraphs)
+	{
+		if (!Graph || Graph->GetFName() != TEXT("WeaponUpperBody")) continue;
+		for (UEdGraphNode* Node : Graph->Nodes)
+		{
+			WeaponStateMachines += Node->IsA<UAnimGraphNode_StateMachine>();
+			WeaponAirBlends += Node->IsA<UAnimGraphNode_BlendListByBool>();
+		}
+	}
+	TestEqual(TEXT("Weapon layer owns one complete locomotion state machine"), WeaponStateMachines, 1);
+	TestEqual(TEXT("Weapon layer owns no outer airborne blend"), WeaponAirBlends, 0);
+
+	TSet<FString> OverrideNames;
+	for (const FAnimParentNodeAssetOverride& Override : WeaponChild->ParentAssetOverrides)
+	{
+		if (Override.NewAsset) OverrideNames.Add(Override.NewAsset->GetName());
+	}
+	for (const FString& Token : { TEXT("WalkRun"), TEXT("JumpStart"), TEXT("JumpLoop"), TEXT("JumpEnd") })
+	{
+		bool bFound = false;
+		for (const FString& Name : OverrideNames)
+		{
+			bFound |= Name.Contains(Token);
+		}
+		TestTrue(FString::Printf(TEXT("RepairGun owns %s override"), *Token),
+			bFound);
+	}
+	TestTrue(TEXT("RepairGun owns an idle/still override"),
+		OverrideNames.Contains(TEXT("AS_MaintenanceWorker_FP_Idle"))
+		|| OverrideNames.Contains(TEXT("AS_MaintenanceWorker_FP_Still")));
+	return true;
+}
+
+class FFirstPersonWeaponJumpRuntimeCommand final : public IAutomationLatentCommand
+{
+public:
+	explicit FFirstPersonWeaponJumpRuntimeCommand(FAutomationTestBase* InTest) : Test(InTest) {}
+	virtual bool Update() override
+	{
+		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+		APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		AFPSCharacterBase* Player = PC ? Cast<AFPSCharacterBase>(PC->GetPawn()) : nullptr;
+		USkeletalMeshComponent* Arms = Player ? Player->GetArmsMesh() : nullptr;
+		if (!Player || !Arms || !Arms->GetAnimInstance()) return false;
+		if (!bLaunched)
+		{
+			GroundHandRotation = Arms->GetSocketTransform(TEXT("hand_r"), RTS_ParentBoneSpace).GetRotation();
+			Player->LaunchCharacter(FVector(0.f, 0.f, 700.f), false, true);
+			LaunchTime = FPlatformTime::Seconds();
+			bLaunched = true;
+			return false;
+		}
+		if (FPlatformTime::Seconds() - LaunchTime < 0.18) return false;
+		Test->TestTrue(TEXT("Player is falling during first-person jump probe"),
+			Player->GetCharacterMovement()->IsFalling());
+		UClass* WeaponLayerClass = LoadClass<UAnimInstance>(nullptr,
+			TEXT("/Game/Weapons/RepairGun/Animations/FirstPerson/Logic/ABP_RepairGun_FirstPerson.ABP_RepairGun_FirstPerson_C"));
+		UFirearmAnimInstance* WeaponAnim = WeaponLayerClass
+			? Cast<UFirearmAnimInstance>(Arms->GetAnimInstance()->GetLinkedAnimLayerInstanceByClass(WeaponLayerClass)) : nullptr;
+		Test->TestNotNull(TEXT("RepairGun linked animation instance is active"), WeaponAnim);
+		if (WeaponAnim)
+		{
+			const FBoolProperty* FallingProperty = FindFProperty<FBoolProperty>(WeaponAnim->GetClass(), TEXT("bIsFalling"));
+			Test->TestTrue(TEXT("Weapon locomotion receives airborne state"),
+				FallingProperty && FallingProperty->GetPropertyValue_InContainer(WeaponAnim));
+		}
+		const FQuat AirHandRotation = Arms->GetSocketTransform(TEXT("hand_r"), RTS_ParentBoneSpace).GetRotation();
+		Test->TestTrue(TEXT("First-person hand pose changes after entering JumpStart"),
+			FMath::Abs(GroundHandRotation | AirHandRotation) < 0.9999f);
+		return true;
+	}
+private:
+	FAutomationTestBase* Test = nullptr;
+	bool bLaunched = false;
+	double LaunchTime = 0.0;
+	FQuat GroundHandRotation = FQuat::Identity;
+};
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFirstPersonWeaponJumpRuntimeTest,
+	"TheManTest.Player.Animation.WeaponOwnedJumpRuntime",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FFirstPersonWeaponJumpRuntimeTest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FFirstPersonWeaponJumpRuntimeCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomAnimationOverridesTest,
 	"TheManTest.Enemy.Phantom.AnimationOverrides",

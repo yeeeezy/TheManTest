@@ -725,96 +725,265 @@ bool UTheManAnimationAssetLibrary::RestoreTemplateBlendSpaceState(
 #endif
 }
 
-bool UTheManAnimationAssetLibrary::ConfigureFirearmUpperBodyAirbornePassThrough(
+bool UTheManAnimationAssetLibrary::MoveFirstPersonLocomotionToFirearmLayer(
+	UAnimBlueprint* HostTemplateAnimBlueprint,
+	UAnimBlueprint* HostConcreteAnimBlueprint,
 	UAnimBlueprint* FirearmTemplateAnimBlueprint,
-	UAnimBlueprint* ConcreteFirearmAnimBlueprint,
+	UAnimBlueprint* FirearmConcreteAnimBlueprint,
 	FName LayerName)
 {
 #if WITH_EDITOR
-	if (!FirearmTemplateAnimBlueprint || !ConcreteFirearmAnimBlueprint
-		|| ConcreteFirearmAnimBlueprint->ParentClass != FirearmTemplateAnimBlueprint->GeneratedClass)
+	if (!HostTemplateAnimBlueprint || !HostConcreteAnimBlueprint
+		|| !FirearmTemplateAnimBlueprint || !FirearmConcreteAnimBlueprint
+		|| LayerName.IsNone())
 	{
 		return false;
 	}
 
-	UEdGraph* LayerGraph = nullptr;
-	TArray<UEdGraph*> Graphs;
-	FirearmTemplateAnimBlueprint->GetAllGraphs(Graphs);
-	for (UEdGraph* Graph : Graphs)
+	auto FindGraph = [](UAnimBlueprint* Blueprint, FName GraphName) -> UEdGraph*
 	{
-		if (Graph && Graph->GetFName() == LayerName)
+		TArray<UEdGraph*> Graphs;
+		Blueprint->GetAllGraphs(Graphs);
+		for (UEdGraph* Graph : Graphs)
 		{
-			LayerGraph = Graph;
+			if (Graph && Graph->GetFName() == GraphName)
+			{
+				return Graph;
+			}
+		}
+		return nullptr;
+	};
+
+	UEdGraph* HostGraph = FindGraph(HostTemplateAnimBlueprint, UEdGraphSchema_K2::GN_AnimGraph);
+	UEdGraph* LayerGraph = FindGraph(FirearmTemplateAnimBlueprint, LayerName);
+	if (!HostGraph || !LayerGraph)
+	{
+		return false;
+	}
+	for (const FBPVariableDescription& Variable : HostTemplateAnimBlueprint->NewVariables)
+	{
+		if (!FirearmTemplateAnimBlueprint->NewVariables.ContainsByPredicate(
+			[&Variable](const FBPVariableDescription& Existing)
+			{
+				return Existing.VarName == Variable.VarName;
+			}))
+		{
+			FirearmTemplateAnimBlueprint->NewVariables.Add(Variable);
+		}
+	}
+
+	UAnimGraphNode_StateMachine* HostStateMachine = nullptr;
+	UAnimGraphNode_LinkedAnimLayer* HostLayer = nullptr;
+	UAnimGraphNode_BlendListByBool* HostAirBlend = nullptr;
+	for (UEdGraphNode* Node : HostGraph->Nodes)
+	{
+		HostStateMachine = HostStateMachine ? HostStateMachine : Cast<UAnimGraphNode_StateMachine>(Node);
+		HostLayer = HostLayer ? HostLayer : Cast<UAnimGraphNode_LinkedAnimLayer>(Node);
+		HostAirBlend = HostAirBlend ? HostAirBlend : Cast<UAnimGraphNode_BlendListByBool>(Node);
+	}
+	if (!HostStateMachine || !HostLayer || !HostAirBlend)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Weapon locomotion migration: host route is incomplete"));
+		return false;
+	}
+	TMap<FName, TObjectPtr<UAnimationAsset>> HostOverridesByGraph;
+	TObjectPtr<UAnimationAsset> HostIdleOverride = nullptr;
+	for (const FAnimParentNodeAssetOverride& Override : FirearmConcreteAnimBlueprint->ParentAssetOverrides)
+	{
+		if (Override.NewAsset && Override.NewAsset->GetName().Contains(TEXT("Idle")))
+		{
+			HostIdleOverride = Override.NewAsset;
 			break;
 		}
 	}
-	if (!LayerGraph)
+	if (!HostIdleOverride)
 	{
-		return false;
+		HostIdleOverride = LoadObject<UAnimationAsset>(nullptr,
+			TEXT("/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Locomotion/AS_MaintenanceWorker_FP_Idle.AS_MaintenanceWorker_FP_Idle"));
 	}
-
-	UAnimGraphNode_Root* Root = nullptr;
-	UAnimGraphNode_StateMachine* GroundStateMachine = nullptr;
-	UAnimGraphNode_LinkedInputPose* InputPose = nullptr;
-	for (UEdGraphNode* Node : LayerGraph->Nodes)
+	TArray<UEdGraph*> HostAllGraphs;
+	HostTemplateAnimBlueprint->GetAllGraphs(HostAllGraphs);
+	for (UEdGraph* Graph : HostAllGraphs)
 	{
-		Root = Root ? Root : Cast<UAnimGraphNode_Root>(Node);
-		GroundStateMachine = GroundStateMachine ? GroundStateMachine : Cast<UAnimGraphNode_StateMachine>(Node);
-		InputPose = InputPose ? InputPose : Cast<UAnimGraphNode_LinkedInputPose>(Node);
-		if (Cast<UAnimGraphNode_BlendListByBool>(Node))
+		if (!Graph) continue;
+		for (UEdGraphNode* Node : Graph->Nodes)
 		{
-			return true;
+			const UAnimGraphNode_AssetPlayerBase* Player = Cast<UAnimGraphNode_AssetPlayerBase>(Node);
+			if (!Player) continue;
+			for (const FAnimParentNodeAssetOverride& Override : HostConcreteAnimBlueprint->ParentAssetOverrides)
+			{
+				if (Override.ParentNodeGuid == Player->NodeGuid && Override.NewAsset)
+				{
+					HostOverridesByGraph.Add(Graph->GetFName(), Override.NewAsset);
+					if (Override.NewAsset->GetName().Contains(TEXT("Idle"))) HostIdleOverride = Override.NewAsset;
+					break;
+				}
+			}
 		}
 	}
-	if (!Root || !GroundStateMachine || !InputPose)
+
+	UAnimGraphNode_Root* LayerRoot = nullptr;
+	UAnimGraphNode_LinkedInputPose* LayerInput = nullptr;
+	for (UEdGraphNode* Node : LayerGraph->Nodes)
+	{
+		LayerRoot = LayerRoot ? LayerRoot : Cast<UAnimGraphNode_Root>(Node);
+		LayerInput = LayerInput ? LayerInput : Cast<UAnimGraphNode_LinkedInputPose>(Node);
+	}
+	if (!LayerRoot || !LayerInput)
 	{
 		return false;
 	}
 
-	UEdGraphPin* RootResult = Root->FindPin(TEXT("Result"));
-	UEdGraphPin* GroundPose = GroundStateMachine->FindPin(TEXT("Pose"));
-	UEdGraphPin* AirPose = InputPose->FindPin(TEXT("Pose"));
-	if (!RootResult || !GroundPose || !AirPose)
+	for (int32 Index = LayerGraph->Nodes.Num() - 1; Index >= 0; --Index)
+	{
+		UEdGraphNode* Node = LayerGraph->Nodes[Index];
+		if (Node != LayerRoot && Node != LayerInput)
+		{
+			Node->DestroyNode();
+		}
+	}
+
+	TSet<UObject*> NodesToCopy;
+	NodesToCopy.Add(HostStateMachine);
+	FString ExportedStateMachine;
+	FEdGraphUtilities::ExportNodesToText(NodesToCopy, ExportedStateMachine);
+	TSet<UEdGraphNode*> ImportedNodes;
+	FEdGraphUtilities::ImportNodesFromText(LayerGraph, ExportedStateMachine, ImportedNodes);
+	UAnimGraphNode_StateMachine* WeaponStateMachine = nullptr;
+	for (UEdGraphNode* Node : ImportedNodes)
+	{
+		if (UAnimGraphNode_StateMachine* StateMachine = Cast<UAnimGraphNode_StateMachine>(Node))
+		{
+			WeaponStateMachine = StateMachine;
+			break;
+		}
+	}
+	if (!WeaponStateMachine)
 	{
 		return false;
 	}
-	RootResult->BreakAllPinLinks();
 
-	FGraphNodeCreator<UAnimGraphNode_BlendListByBool> BlendCreator(*LayerGraph);
-	UAnimGraphNode_BlendListByBool* AirBlend = BlendCreator.CreateNode();
-	AirBlend->NodePosX = Root->NodePosX - 260;
-	AirBlend->NodePosY = Root->NodePosY;
-	BlendCreator.Finalize();
-
-	FGraphNodeCreator<UK2Node_VariableGet> FallingCreator(*LayerGraph);
-	UK2Node_VariableGet* FallingVariable = FallingCreator.CreateNode();
-	FallingVariable->VariableReference.SetSelfMember(TEXT("bIsFalling"));
-	FallingVariable->NodePosX = AirBlend->NodePosX - 220;
-	FallingVariable->NodePosY = AirBlend->NodePosY + 220;
-	FallingCreator.Finalize();
-
-	UEdGraphPin* BlendGround = AirBlend->FindPin(TEXT("BlendPose_0"));
-	UEdGraphPin* BlendAir = AirBlend->FindPin(TEXT("BlendPose_1"));
-	UEdGraphPin* ActiveValue = AirBlend->FindPin(TEXT("bActiveValue"));
-	UEdGraphPin* BlendOutput = AirBlend->FindPin(TEXT("Pose"));
-	const UEdGraphSchema* Schema = LayerGraph->GetSchema();
-	if (!BlendGround || !BlendAir || !ActiveValue || !BlendOutput
-		|| !Schema->TryCreateConnection(GroundPose, BlendGround)
-		|| !Schema->TryCreateConnection(AirPose, BlendAir)
-		|| !Schema->TryCreateConnection(FallingVariable->GetValuePin(), ActiveValue)
-		|| !Schema->TryCreateConnection(BlendOutput, RootResult))
+	for (UEdGraphNode* Node : ImportedNodes)
+	{
+		if (Node != WeaponStateMachine && Node != LayerRoot && Node != LayerInput)
+		{
+			if (Node->GetGraph() == LayerGraph)
+			{
+				Node->DestroyNode();
+			}
+		}
+	}
+	TArray<UEdGraph*> ImportedGraphs;
+	FirearmTemplateAnimBlueprint->GetAllGraphs(ImportedGraphs);
+	for (UEdGraph* Graph : ImportedGraphs)
+	{
+		if (!Graph) continue;
+		for (UEdGraphNode* Node : Graph->Nodes)
+		{
+			if (UK2Node_VariableGet* VariableGet = Cast<UK2Node_VariableGet>(Node))
+			{
+				UClass* MemberParent = VariableGet->VariableReference.GetMemberParentClass();
+				if (MemberParent && MemberParent->ClassGeneratedBy == HostTemplateAnimBlueprint)
+				{
+					VariableGet->VariableReference.SetSelfMember(VariableGet->VariableReference.GetMemberName());
+					VariableGet->ReconstructNode();
+				}
+			}
+		}
+	}
+	UEdGraphPin* LayerResult = LayerRoot->FindPin(TEXT("Result"));
+	UEdGraphPin* WeaponPose = WeaponStateMachine->FindPin(TEXT("Pose"));
+	if (!LayerResult || !WeaponPose)
 	{
 		return false;
 	}
+	LayerResult->BreakAllPinLinks();
+	if (!LayerGraph->GetSchema()->TryCreateConnection(WeaponPose, LayerResult))
+	{
+		return false;
+	}
+
+	UEdGraphPin* BlendPose = HostAirBlend->FindPin(TEXT("Pose"));
+	UEdGraphPin* LinkedPose = HostLayer->FindPin(TEXT("Pose"));
+	if (!BlendPose || !LinkedPose || BlendPose->LinkedTo.IsEmpty())
+	{
+		return false;
+	}
+	TArray<UEdGraphPin*> Consumers = BlendPose->LinkedTo;
+	BlendPose->BreakAllPinLinks();
+	for (UEdGraphPin* Consumer : Consumers)
+	{
+		if (!HostGraph->GetSchema()->TryCreateConnection(LinkedPose, Consumer))
+		{
+			return false;
+		}
+	}
+	HostAirBlend->DestroyNode();
+	HostStateMachine->DestroyNode();
 
 	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(FirearmTemplateAnimBlueprint);
 	FKismetEditorUtilities::CompileBlueprint(FirearmTemplateAnimBlueprint);
-	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(ConcreteFirearmAnimBlueprint);
-	FKismetEditorUtilities::CompileBlueprint(ConcreteFirearmAnimBlueprint);
+	FirearmConcreteAnimBlueprint->ParentAssetOverrides.Reset();
+	TArray<UEdGraph*> FirearmGraphs;
+	FirearmTemplateAnimBlueprint->GetAllGraphs(FirearmGraphs);
+	auto NormalizeGraphName = [](FName Name)
+	{
+		FString Result = Name.ToString();
+		int32 Underscore = INDEX_NONE;
+		if (Result.FindLastChar(TEXT('_'), Underscore))
+		{
+			const FString Suffix = Result.Mid(Underscore + 1);
+			if (Suffix.IsNumeric()) Result.LeftInline(Underscore);
+		}
+		return Result;
+	};
+	for (UEdGraph* Graph : FirearmGraphs)
+	{
+		if (!Graph) continue;
+		TObjectPtr<UAnimationAsset>* OverrideAsset = HostOverridesByGraph.Find(Graph->GetFName());
+		if (!OverrideAsset)
+		{
+			const FString TargetName = NormalizeGraphName(Graph->GetFName());
+			for (TPair<FName, TObjectPtr<UAnimationAsset>>& Pair : HostOverridesByGraph)
+			{
+				if (NormalizeGraphName(Pair.Key) == TargetName)
+				{
+					OverrideAsset = &Pair.Value;
+					break;
+				}
+			}
+		}
+		TObjectPtr<UAnimationAsset> IdleFallback = nullptr;
+		const FString NormalizedTargetName = NormalizeGraphName(Graph->GetFName());
+		if (!OverrideAsset && HostIdleOverride
+			&& (NormalizedTargetName.Contains(TEXT("Idle")) || NormalizedTargetName.Contains(TEXT("Still"))))
+		{
+			IdleFallback = HostIdleOverride;
+			OverrideAsset = &IdleFallback;
+		}
+		if (!OverrideAsset || !OverrideAsset->Get()) continue;
+		for (UEdGraphNode* Node : Graph->Nodes)
+		{
+			if (const UAnimGraphNode_AssetPlayerBase* Player = Cast<UAnimGraphNode_AssetPlayerBase>(Node))
+			{
+				FirearmConcreteAnimBlueprint->ParentAssetOverrides.Emplace(Player->NodeGuid, OverrideAsset->Get());
+			}
+		}
+	}
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(FirearmConcreteAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(FirearmConcreteAnimBlueprint);
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(HostTemplateAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(HostTemplateAnimBlueprint);
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(HostConcreteAnimBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(HostConcreteAnimBlueprint);
+	HostTemplateAnimBlueprint->MarkPackageDirty();
+	HostConcreteAnimBlueprint->MarkPackageDirty();
 	FirearmTemplateAnimBlueprint->MarkPackageDirty();
-	ConcreteFirearmAnimBlueprint->MarkPackageDirty();
-	return FirearmTemplateAnimBlueprint->Status != BS_Error
-		&& ConcreteFirearmAnimBlueprint->Status != BS_Error;
+	FirearmConcreteAnimBlueprint->MarkPackageDirty();
+	return HostTemplateAnimBlueprint->Status != BS_Error
+		&& HostConcreteAnimBlueprint->Status != BS_Error
+		&& FirearmTemplateAnimBlueprint->Status != BS_Error
+		&& FirearmConcreteAnimBlueprint->Status != BS_Error;
 #else
 	return false;
 #endif
