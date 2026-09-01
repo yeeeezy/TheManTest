@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-01-session245",
+    "last_updated":  "2026-09-01-session246",
     "active_feature":  "FEAT-078",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -11,7 +11,7 @@
                          "description":  "由 PlayerController 管理本地 Combat HUD 生命周期；显示屏幕中心空心准星和右下角当前弹药/容量、备用弹夹数量，并为玩家 Firearm 建立事件驱动弹药状态。",
                          "archive_file":  "archive/FEAT-078-combat-hud-player-ammo.md",
                          "created":  "2026-09-01",
-                         "updated":  "2026-09-01-session245",
+                         "updated":  "2026-09-01-session246",
                          "done_criteria":  [
                                                "本地 PlayerController 创建并持有 Combat HUD，大厅和非本地 Controller 不创建",
                                                "空心准星严格位于游戏视口中心，弹药以当前/容量和备用弹夹两行简洁显示",
@@ -19,7 +19,7 @@
                                                "装备和弹药变化通过委托即时更新 HUD，不使用 UI Tick，切枪/切角色正确解绑重绑",
                                                "Development Editor 构建、弹药生命周期自动化和前台 PIE 视觉验收通过"
                                            ],
-                         "verification_evidence":  "2026-09-01-session244：Development Editor 构建成功；TheManTest.Player.CombatHUD.AmmoLifecycle 1/1 Success，验证本地 HUD 入视口、30/30+备用弹夹3、扣弹即时更新、换弹后30/30+备用弹夹2。session245：按用户反馈将准星半径放大为32px、线宽2px、64分段。截图 Saved/Screenshots/WindowsEditor/TMT_CombatHUD.png。待用户前台主观确认尺寸与位置。"
+                         "verification_evidence":  "2026-09-01-session244：Development Editor 构建成功；TheManTest.Player.CombatHUD.AmmoLifecycle 1/1 Success，验证本地 HUD 入视口、30/30+备用弹夹3、扣弹即时更新、换弹后30/30+备用弹夹2。session245：准星半径放大为32px。session246：再乘1.8调整为57.6px、线宽2.5px、96分段。截图 Saved/Screenshots/WindowsEditor/TMT_CombatHUD.png。待用户前台主观确认尺寸与位置。"
                      },
                      {
                          "id":  "FEAT-077",
