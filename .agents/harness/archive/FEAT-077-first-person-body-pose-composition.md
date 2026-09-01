@@ -3,6 +3,12 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-09-01 session241 — 手臂 Mesh 统一到正式动画 Skeleton
+
+- 用户纠正方案：不恢复短名称动画、不配置 Compatible Skeleton、不从外部项目重新迁移；直接将 `SKM_MaintenanceWorker_FirstPersonArms` 的 Skeleton 从 `SKEL_MaintenanceWorker_FirstPersonArms` 改为正式动画使用的 `SK_Mannequin_Arms_Skeleton`。
+- 写入前通过 UE 5.7 `SkeletonModifier` 比较两侧参考骨架：均为68骨，逐骨名称与父骨关系完全一致；随后使用 Editor-only `USkeletalMesh::SetSkeleton` 保存资产，临时工具代码已移除。
+- 冷启动回读确认 Mesh、六条 `AS_MaintenanceWorker_FP_*`、`BS_MaintenanceWorker_FP_WalkRun` 与 `ABP_MaintenanceWorker_FirstPerson` 全部指向同一 Skeleton；最终 Development Editor 构建成功。旧 `SKEL_MaintenanceWorker_FirstPersonArms` 暂不删除。
+
 ## 2026-09-01 session240 — 删除未使用的短名称第一人称动画副本
 
 - 确认两套动画绑定不同 Skeleton：短名称 `AS_MW_FP_*` 绑定 `SKEL_MaintenanceWorker_FirstPersonArms`；正式完整名称 `AS_MaintenanceWorker_FP_*` 与 `ABP_MaintenanceWorker_FirstPerson` 绑定 `SK_Mannequin_Arms_Skeleton`。这解释了前者只会出现在对应 Skeleton 的兼容资产筛选中，但不代表运行时使用。

@@ -1,5 +1,11 @@
 # 进度日志
 
+## 2026-09-01 session241 交接：维修工手臂 Mesh 与正式动画 Skeleton 统一
+
+- `SKM_MaintenanceWorker_FirstPersonArms` 已从旧 `SKEL_MaintenanceWorker_FirstPersonArms` 改为正式 `SK_Mannequin_Arms_Skeleton`；不恢复短名称动画、不配置兼容 Skeleton、不重新迁移动画。
+- 修改前逐骨验证两侧均为68骨，名称和父子层级完全一致。冷启动确认 Mesh、完整名称六条 Sequence、BlendSpace 与第一人称 AnimBP 全部使用同一个 Skeleton。
+- 临时 Editor-only 赋值/验证代码已清除，最终 `TheManTestEditor Win64 Development` 构建成功。旧 Skeleton 资产暂未删除；用户原有 `BP_RepairGun` 与 TestMap ExternalActor 改动未触碰。
+
 ## 2026-09-01 session240 交接：删除未使用的短名称第一人称动画副本
 
 - 已确认短名称 `AS_MW_FP_*` 使用 `SKEL_MaintenanceWorker_FirstPersonArms`，完整名称正式资产使用 `SK_Mannequin_Arms_Skeleton`；因此骨骼编辑器的兼容资产筛选结果不同。
