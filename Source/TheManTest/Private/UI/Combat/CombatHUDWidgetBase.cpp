@@ -39,8 +39,8 @@ public:
 	{
 		const FVector2D Size = AllottedGeometry.GetLocalSize();
 		const FVector2D Center = Size * 0.5f;
-		constexpr float Radius = 8.f;
-		constexpr int32 Segments = 32;
+		constexpr float Radius = 32.f;
+		constexpr int32 Segments = 64;
 
 		TArray<FVector2D> CirclePoints;
 		CirclePoints.Reserve(Segments + 1);
@@ -58,7 +58,7 @@ public:
 			ESlateDrawEffect::None,
 			FLinearColor(1.f, 1.f, 1.f, 0.85f),
 			true,
-			1.5f);
+			2.f);
 
 		if (bAmmoVisible)
 		{

@@ -1,5 +1,10 @@
 # 进度日志
 
+## 2026-09-01 session245 交接：Combat HUD 准星放大四倍
+
+- 中心空心圆半径由8px改为32px，线宽2px、64分段；弹药布局与逻辑不变。
+- Development Editor 构建与弹药生命周期专项自动化均成功；新截图已覆盖 `TMT_CombatHUD.png`，待用户确认观感。
+
 ## 2026-09-01 session244 交接：Combat HUD 与玩家弹药第一阶段
 
 - 当前 active feature 切换为 FEAT-078；FEAT-077 保持 `needs_improvement` 等待前台动画主观复核。

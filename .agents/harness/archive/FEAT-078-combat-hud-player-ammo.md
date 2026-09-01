@@ -3,6 +3,12 @@
 **创建日期：** 2026-09-01
 **状态：** in_progress
 
+## 2026-09-01 session245 — 准星放大四倍
+
+- 按用户前台反馈将空心圆半径从8px提高到32px（直径16→64px，四倍）；线宽从1.5px提高到2px，圆周分段从32提高到64以保持平滑。
+- 弹药两行布局、颜色、透明度和事件驱动逻辑不变。
+- Development Editor 构建与 `TheManTest.Player.CombatHUD.AmmoLifecycle` 复跑成功；`TMT_CombatHUD.png` 已覆盖为放大后的准星截图。
+
 ## 目标
 
 - `ATheManPlayerController` 管理本地战斗 HUD 生命周期。
@@ -19,7 +25,7 @@
 
 ## 验证
 
-- `TheManTestEditor Win64 Development`：Success。
+- `TheManTestEditor Win64 Development`：Success（session244/session245）。
 - `TheManTest.Player.CombatHUD.AmmoLifecycle`：1/1 Success。验证默认30/30与备用弹夹3、扣弹同步为29、换弹恢复30且备用弹夹变2。
 - 含 UI 的视口截图：`Saved/Screenshots/WindowsEditor/TMT_CombatHUD.png`。中心圆与右下角两行弹药均可见。
 - 既有 `FramingCapture` 仍因本功能之前的 FOV=77 与 GripPoint/GripPoint1 断言不一致失败；与 Combat HUD 无关。
