@@ -458,3 +458,8 @@
 - PIE 截图与运行时探针最终定位明显横移根因：`ArmsViewMesh` 被 BP 错绑为全身 `ABP_CharacterBase_Body_C`，A/D 时播放身体 Locomotion 导致整套手臂/枪明显换位。现恢复为原版第一人称 `ABP_VFXPack_FirstPerson_C`；复测 A 输入时 HeadCamera/ViewmodelRoot/ArmsViewMesh Transform 全部稳定，运行 AnimClass 与 Lean/Look 输入正确。证据截图：`TMT_Viewmodel_Idle_Audit.png`、`TMT_Viewmodel_Left_Audit.png`（修复前）及 `TMT_Viewmodel_Idle_Fixed.png`、`TMT_Viewmodel_Left_Fixed.png`（修复后）。
 - `BP_MaintenanceWorker` 的 framing、sprint 参数以及 HeadCamera/ViewmodelRoot/ArmsViewMesh Transform 已执行 Reset to Default，蓝图继续只保留 Mesh/AnimBP 等资产配置。
 - `TheManTestEditor Win64 Development` 完整构建成功；MaintenanceWorker 蓝图编译保存成功，冷回读 Transform 与 C++ 默认值一致。待用户前台 PIE 主观确认移动幅度和奔跑压枪观感。
+## 2026-09-01 session252 交接
+
+- 外部 VFXPack 跳跃为 JumpStart/JumpLoop/JumpEnd 三段骨骼动画加状态机混合；本项目对应 `AS_MaintenanceWorker_FP_*` 三条正式资产已存在并被维修工第一人称 AnimBP 引用，无需迁移或重定向。
+- 已修复 `TABP_CharacterBase_FirstPerson`：JumpStart Sequence Player 从 Loop=true 改为 false；JumpLoop=true、JumpEnd=false 保持正确。模板与维修工子 AnimBP 已在 UE 内编译保存，原自动过渡警告消失。
+- 待用户前台 PIE 复核跳跃、坠落和落地观感。

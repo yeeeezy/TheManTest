@@ -5,6 +5,13 @@
 
 > 2026-09-01 session244：用户转入 Combat HUD/玩家弹药工作；FEAT-077 保留待前台动画主观复核，不再作为 active feature。
 
+## 2026-09-01 session252 — 修复第一人称 JumpStart 无法进入空中循环
+
+- 只读核对外部原版 VFXPack：丝滑跳跃由 `FirstPerson_JumpStart`、`FirstPerson_JumpLoop`、`FirstPerson_JumpEnd` 三段骨骼动画和 `IsFalling` 驱动的状态机混合完成，不是角色蓝图 Timeline 或骨骼物理。
+- 本项目已经拥有并实际引用迁移完成的 `AS_MaintenanceWorker_FP_JumpStart/JumpLoop/JumpEnd`，无需重新迁移或重定向。
+- 根因是 `TABP_CharacterBase_FirstPerson` 的 JumpStart Sequence Player 错误开启 Loop，同时 JumpStart→JumpLoop 使用自动剩余时间过渡，导致该自动过渡失效并产生编译警告。
+- 已将 JumpStart Loop 关闭；JumpLoop 保持循环，JumpEnd 保持不循环。模板和 `ABP_MaintenanceWorker_FirstPerson` 均在 UE 内编译保存，自动过渡警告消失；最终跳跃观感待用户前台 PIE 复核。
+
 ## 2026-09-01 session243 — 按最新截图更新 ArmsViewMesh 默认构图
 
 - 用户再次前台微调后，将 `ArmsViewMesh` C++ 默认 Location 更新为 `(-14.766994,-4.322017,-134.599387)`，默认 Rotation 更新为 `(Roll=5.752239°, Pitch=0.077753°, Yaw=-114.908449°)`；Scale 保持 `(1,1,1)`。
