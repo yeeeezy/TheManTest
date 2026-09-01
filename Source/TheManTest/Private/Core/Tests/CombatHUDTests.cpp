@@ -4,13 +4,16 @@
 #include "Tests/AutomationCommon.h"
 #include "Tests/AutomationEditorCommon.h"
 #include "Core/TheManPlayerController.h"
+#include "Core/TheManPlayerState.h"
 #include "Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h"
+#include "Characters/CharacterBase/TheManAttributeSetBase.h"
 #include "UI/Combat/CombatHUDWidgetBase.h"
 #include "Weapons/_Shared/Components/EquipmentManagerComponent.h"
 #include "Weapons/_Shared/Firearms/Firearm.h"
 #include "Editor.h"
 #include "HighResScreenshot.h"
 #include "Misc/Paths.h"
+#include "AbilitySystemComponent.h"
 
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FValidateCombatHUDCommand, FAutomationTestBase*, Test);
 bool FValidateCombatHUDCommand::Update()
@@ -39,6 +42,21 @@ bool FValidateCombatHUDCommand::Update()
 	Test->TestEqual(TEXT("HUD displays current ammo"), Widget->GetDisplayedCurrentAmmoForTesting(), 30);
 	Test->TestEqual(TEXT("HUD displays magazine capacity"), Widget->GetDisplayedMagazineCapacityForTesting(), 30);
 	Test->TestEqual(TEXT("HUD displays spare magazines"), Widget->GetDisplayedSpareMagazineCountForTesting(), 3);
+	Test->TestTrue(TEXT("Health block is visible for the possessed player"), Widget->IsHealthVisibleForTesting());
+	Test->TestEqual(TEXT("HUD displays default current health"), Widget->GetDisplayedCurrentHealthForTesting(), 100.f);
+	if (ATheManPlayerState* TheManPlayerState = Controller->GetPlayerState<ATheManPlayerState>())
+	{
+		UAbilitySystemComponent* AbilitySystem = TheManPlayerState->GetAbilitySystemComponent();
+		Test->TestNotNull(TEXT("Player state owns an ability system"), AbilitySystem);
+		if (AbilitySystem)
+		{
+			AbilitySystem->ApplyModToAttribute(
+				UTheManAttributeSetBase::GetHealthAttribute(), EGameplayModOp::Additive, -25.f);
+			Test->TestEqual(TEXT("Health delegate updates HUD immediately"), Widget->GetDisplayedCurrentHealthForTesting(), 75.f);
+			AbilitySystem->ApplyModToAttribute(
+				UTheManAttributeSetBase::GetHealthAttribute(), EGameplayModOp::Additive, 25.f);
+		}
+	}
 
 	Test->TestTrue(TEXT("A round can be consumed"), Firearm->ConsumeRound());
 	Test->TestEqual(TEXT("Firing decrements weapon ammo"), Firearm->GetCurrentAmmo(), 29);

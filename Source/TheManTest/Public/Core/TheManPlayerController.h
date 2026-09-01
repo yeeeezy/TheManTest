@@ -10,6 +10,8 @@ class UCombatHUDWidgetBase;
 class UEquipmentManagerComponent;
 class AEquipmentBase;
 class AFirearm;
+class UAbilitySystemComponent;
+struct FOnAttributeChangeData;
 
 /**
  * ATheManPlayerController
@@ -85,6 +87,12 @@ protected:
 	UPROPERTY(Transient)
 	TObjectPtr<AFirearm> BoundFirearm;
 
+	UPROPERTY(Transient)
+	TObjectPtr<UAbilitySystemComponent> BoundAbilitySystem;
+
+	FDelegateHandle HealthChangedDelegateHandle;
+	FDelegateHandle MaxHealthChangedDelegateHandle;
+
 	void HandleTestSwitchCharacter();
 
 	// 调试快进：调用 GameState->DebugSkipTime()
@@ -94,6 +102,9 @@ protected:
 	void BindCombatHUDToPawn(APawn* InPawn);
 	void UnbindCombatHUD();
 	void BindCombatHUDToFirearm(AFirearm* Firearm);
+	void BindCombatHUDToHealth();
+	void RefreshCombatHUDHealth();
+	void HandleHealthChanged(const FOnAttributeChangeData& ChangeData);
 
 	UFUNCTION()
 	void HandleCurrentEquipmentChanged(AEquipmentBase* PreviousEquipment, AEquipmentBase* CurrentEquipment);

@@ -9,3 +9,5 @@
 | `Source/TheManTest/Public/Enemy/EnemyAttributeSetBase.h` | 继承 `UTheManAttributeSetBase`，怪物专属属性扩展点 |
 
 > 新增属性后，还需要创建对应的 `GE_` 蓝图来初始化数值，并在角色蓝图的 `InitGEClass` 中引用。
+
+Combat HUD 由 `ATheManPlayerController` 绑定 PlayerState ASC 的 Health/MaxHealth 属性变化委托；界面当前只绘制取整后的 Health，不绘制 MaxHealth。

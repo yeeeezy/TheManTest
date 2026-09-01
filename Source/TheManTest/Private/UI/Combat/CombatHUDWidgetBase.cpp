@@ -28,6 +28,19 @@ public:
 		Invalidate(EInvalidateWidgetReason::Paint);
 	}
 
+	void SetHealthState(float InCurrentHealth, float InMaxHealth)
+	{
+		CurrentHealth = InCurrentHealth;
+		MaxHealth = InMaxHealth;
+		Invalidate(EInvalidateWidgetReason::Paint);
+	}
+
+	void SetHealthVisible(bool bInVisible)
+	{
+		bHealthVisible = bInVisible;
+		Invalidate(EInvalidateWidgetReason::Paint);
+	}
+
 	virtual FVector2D ComputeDesiredSize(float) const override
 	{
 		return FVector2D(1920.f, 1080.f);
@@ -60,24 +73,43 @@ public:
 			true,
 			2.5f);
 
-		if (bAmmoVisible)
+		const TSharedRef<FSlateFontMeasure> FontMeasure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
+		const float HudBaselineY = Size.Y - 70.f;
+
+		if (bHealthVisible)
 		{
-			const FSlateFontInfo AmmoFont = FCoreStyle::GetDefaultFontStyle("Bold", 28);
-			const FSlateFontInfo MagazineFont = FCoreStyle::GetDefaultFontStyle("Regular", 16);
-			const FText AmmoText = FText::FromString(FString::Printf(TEXT("%d / %d"), CurrentAmmo, MagazineCapacity));
-			const FText MagazineText = FText::FromString(FString::Printf(TEXT("弹夹  %d"), SpareMagazineCount));
-			const TSharedRef<FSlateFontMeasure> FontMeasure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
-			const FVector2D AmmoSize = FontMeasure->Measure(AmmoText, AmmoFont);
-			const FVector2D MagazineSize = FontMeasure->Measure(MagazineText, MagazineFont);
-			const float Right = Size.X - 48.f;
-			const float Bottom = Size.Y - 48.f;
+			const FSlateFontInfo HealthIconFont = FCoreStyle::GetDefaultFontStyle("Bold", 30);
+			const FSlateFontInfo HealthFont = FCoreStyle::GetDefaultFontStyle("Bold", 48);
+			const FText HealthIconText = FText::FromString(TEXT("+"));
+			const FText HealthText = FText::AsNumber(FMath::RoundToInt(FMath::Clamp(CurrentHealth, 0.f, MaxHealth)));
+			const FVector2D HealthIconSize = FontMeasure->Measure(HealthIconText, HealthIconFont);
+			const FVector2D HealthSize = FontMeasure->Measure(HealthText, HealthFont);
+			const float HealthX = Size.X * 0.30f;
 
 			FSlateDrawElement::MakeText(OutDrawElements, LayerId + 1,
-				AllottedGeometry.ToPaintGeometry(AmmoSize, FSlateLayoutTransform(FVector2D(Right - AmmoSize.X, Bottom - 58.f))),
+				AllottedGeometry.ToPaintGeometry(HealthIconSize, FSlateLayoutTransform(FVector2D(HealthX, HudBaselineY - HealthIconSize.Y))),
+				HealthIconText, HealthIconFont, ESlateDrawEffect::None, FLinearColor(0.86f, 0.9f, 0.9f, 0.9f));
+			FSlateDrawElement::MakeText(OutDrawElements, LayerId + 1,
+				AllottedGeometry.ToPaintGeometry(HealthSize, FSlateLayoutTransform(FVector2D(HealthX + HealthIconSize.X + 12.f, HudBaselineY - HealthSize.Y))),
+				HealthText, HealthFont, ESlateDrawEffect::None, FLinearColor::White);
+		}
+
+		if (bAmmoVisible)
+		{
+			const FSlateFontInfo AmmoFont = FCoreStyle::GetDefaultFontStyle("Bold", 48);
+			const FSlateFontInfo MagazineFont = FCoreStyle::GetDefaultFontStyle("Regular", 24);
+			const FText AmmoText = FText::AsNumber(CurrentAmmo);
+			const FText MagazineText = FText::AsNumber(SpareMagazineCount);
+			const FVector2D AmmoSize = FontMeasure->Measure(AmmoText, AmmoFont);
+			const FVector2D MagazineSize = FontMeasure->Measure(MagazineText, MagazineFont);
+			const float AmmoX = Size.X * 0.64f;
+
+			FSlateDrawElement::MakeText(OutDrawElements, LayerId + 1,
+				AllottedGeometry.ToPaintGeometry(AmmoSize, FSlateLayoutTransform(FVector2D(AmmoX, HudBaselineY - AmmoSize.Y))),
 				AmmoText, AmmoFont, ESlateDrawEffect::None, FLinearColor::White);
 			FSlateDrawElement::MakeText(OutDrawElements, LayerId + 1,
-				AllottedGeometry.ToPaintGeometry(MagazineSize, FSlateLayoutTransform(FVector2D(Right - MagazineSize.X, Bottom - 22.f))),
-				MagazineText, MagazineFont, ESlateDrawEffect::None, FLinearColor(0.8f, 0.8f, 0.8f, 1.f));
+				AllottedGeometry.ToPaintGeometry(MagazineSize, FSlateLayoutTransform(FVector2D(AmmoX + AmmoSize.X + 18.f, HudBaselineY - MagazineSize.Y))),
+				MagazineText, MagazineFont, ESlateDrawEffect::None, FLinearColor(0.72f, 0.76f, 0.78f, 1.f));
 		}
 
 		return LayerId + 1;
@@ -88,6 +120,9 @@ private:
 	int32 MagazineCapacity = 30;
 	int32 SpareMagazineCount = 3;
 	bool bAmmoVisible = false;
+	float CurrentHealth = 100.f;
+	float MaxHealth = 100.f;
+	bool bHealthVisible = false;
 };
 
 TSharedRef<SWidget> UCombatHUDWidgetBase::RebuildWidget()
@@ -98,7 +133,28 @@ TSharedRef<SWidget> UCombatHUDWidgetBase::RebuildWidget()
 		DisplayedMagazineCapacity,
 		DisplayedSpareMagazineCount);
 	CombatHUDRoot->SetAmmoVisible(bDisplayedAmmoVisible);
+	CombatHUDRoot->SetHealthState(DisplayedCurrentHealth, DisplayedMaxHealth);
+	CombatHUDRoot->SetHealthVisible(bDisplayedHealthVisible);
 	return CombatHUDRoot.ToSharedRef();
+}
+
+void UCombatHUDWidgetBase::SetHealthState(float CurrentHealth, float MaxHealth)
+{
+	DisplayedCurrentHealth = CurrentHealth;
+	DisplayedMaxHealth = MaxHealth;
+	if (CombatHUDRoot)
+	{
+		CombatHUDRoot->SetHealthState(CurrentHealth, MaxHealth);
+	}
+}
+
+void UCombatHUDWidgetBase::SetHealthVisible(bool bVisible)
+{
+	bDisplayedHealthVisible = bVisible;
+	if (CombatHUDRoot)
+	{
+		CombatHUDRoot->SetHealthVisible(bVisible);
+	}
 }
 
 void UCombatHUDWidgetBase::ReleaseSlateResources(bool bReleaseChildren)

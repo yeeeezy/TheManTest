@@ -3,6 +3,14 @@
 **创建日期：** 2026-09-01
 **状态：** in_progress
 
+## 2026-09-01 session247 — 参考图血量与弹药布局
+
+- 按用户指定参考图新增底部当前血量显示；只显示当前值，不显示最大血量。
+- 弹药区改为大号当前子弹数与右侧小号备用弹夹数，不再绘制弹夹容量或“弹夹”文字。
+- Controller 通过 PlayerState ASC 的 Health/MaxHealth 属性变化委托更新 HUD，切角色时正确解绑重绑，不使用 UI Tick。
+- Development Editor 构建成功；`TheManTest.Player.CombatHUD.AmmoLifecycle` 1/1 Success，包含默认血量100与受伤后即时更新至75的断言；最终截图恢复100血量，弹药为30、备用弹夹2。
+- 最新截图：`Saved/Screenshots/WindowsEditor/TMT_CombatHUD.png`。
+
 ## 2026-09-01 session246 — 准星再次放大1.8倍
 
 - 按用户反馈将准星半径从32px乘1.8调整为57.6px（直径115.2px）；线宽提高至2.5px，圆周分段提高至96。
@@ -38,5 +46,5 @@
 
 ## 待办
 
-- 用户前台确认准星半径、线宽和右下角留白是否符合主观观感。
+- 用户前台确认血量/弹药参考图布局与留白是否符合主观观感。
 - 换弹输入与换弹动画尚未接入；当前仅提供可调用的 `ReloadMagazine()` 状态接口。

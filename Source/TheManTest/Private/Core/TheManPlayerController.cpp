@@ -4,12 +4,15 @@
 #include "Engine/DataTable.h"
 #include "Core/TheManCharacterTypes.h"
 #include "Core/TheManGameStateBase.h"
+#include "Core/TheManPlayerState.h"
+#include "Characters/CharacterBase/TheManAttributeSetBase.h"
 #include "Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h"
 #include "UI/Combat/CombatHUDWidgetBase.h"
 #include "Weapons/_Shared/Components/EquipmentManagerComponent.h"
 #include "Weapons/_Shared/EquipmentBase/EquipmentBase.h"
 #include "Weapons/_Shared/Firearms/Firearm.h"
 #include "Blueprint/UserWidget.h"
+#include "AbilitySystemComponent.h"
 
 void ATheManPlayerController::BeginPlay()
 {
@@ -66,6 +69,7 @@ void ATheManPlayerController::CreateCombatHUD()
 		CombatHUDWidget->AddToPlayerScreen(0);
 		CombatHUDWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
 		CombatHUDWidget->SetAmmoVisible(false);
+		CombatHUDWidget->SetHealthVisible(false);
 	}
 }
 
@@ -82,6 +86,8 @@ void ATheManPlayerController::BindCombatHUDToPawn(APawn* InPawn)
 	{
 		return;
 	}
+
+	BindCombatHUDToHealth();
 
 	BoundEquipmentManager = PlayerCharacter->GetEquipmentManager();
 	if (!BoundEquipmentManager)
@@ -105,12 +111,59 @@ void ATheManPlayerController::UnbindCombatHUD()
 	{
 		BoundFirearm->OnAmmoChanged.RemoveDynamic(this, &ATheManPlayerController::HandleAmmoChanged);
 	}
+	if (BoundAbilitySystem)
+	{
+		BoundAbilitySystem->GetGameplayAttributeValueChangeDelegate(UTheManAttributeSetBase::GetHealthAttribute())
+			.Remove(HealthChangedDelegateHandle);
+		BoundAbilitySystem->GetGameplayAttributeValueChangeDelegate(UTheManAttributeSetBase::GetMaxHealthAttribute())
+			.Remove(MaxHealthChangedDelegateHandle);
+	}
 	BoundEquipmentManager = nullptr;
 	BoundFirearm = nullptr;
+	BoundAbilitySystem = nullptr;
+	HealthChangedDelegateHandle.Reset();
+	MaxHealthChangedDelegateHandle.Reset();
 	if (CombatHUDWidget)
 	{
 		CombatHUDWidget->SetAmmoVisible(false);
+		CombatHUDWidget->SetHealthVisible(false);
 	}
+}
+
+void ATheManPlayerController::BindCombatHUDToHealth()
+{
+	ATheManPlayerState* TheManPlayerState = GetPlayerState<ATheManPlayerState>();
+	BoundAbilitySystem = TheManPlayerState ? TheManPlayerState->GetAbilitySystemComponent() : nullptr;
+	if (!BoundAbilitySystem || !CombatHUDWidget)
+	{
+		return;
+	}
+
+	HealthChangedDelegateHandle = BoundAbilitySystem
+		->GetGameplayAttributeValueChangeDelegate(UTheManAttributeSetBase::GetHealthAttribute())
+		.AddUObject(this, &ATheManPlayerController::HandleHealthChanged);
+	MaxHealthChangedDelegateHandle = BoundAbilitySystem
+		->GetGameplayAttributeValueChangeDelegate(UTheManAttributeSetBase::GetMaxHealthAttribute())
+		.AddUObject(this, &ATheManPlayerController::HandleHealthChanged);
+	RefreshCombatHUDHealth();
+	CombatHUDWidget->SetHealthVisible(true);
+}
+
+void ATheManPlayerController::RefreshCombatHUDHealth()
+{
+	if (!BoundAbilitySystem || !CombatHUDWidget)
+	{
+		return;
+	}
+
+	CombatHUDWidget->SetHealthState(
+		BoundAbilitySystem->GetNumericAttribute(UTheManAttributeSetBase::GetHealthAttribute()),
+		BoundAbilitySystem->GetNumericAttribute(UTheManAttributeSetBase::GetMaxHealthAttribute()));
+}
+
+void ATheManPlayerController::HandleHealthChanged(const FOnAttributeChangeData&)
+{
+	RefreshCombatHUDHealth();
 }
 
 void ATheManPlayerController::BindCombatHUDToFirearm(AFirearm* Firearm)

@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-09-01 session247 交接：按参考图加入血量并重排弹药
+
+- HUD 底部新增当前血量；只显示当前值，不显示最大值。
+- 弹药改为大号当前子弹数与右侧小号备用弹夹数，不显示弹夹容量；中心准心保持不变。
+- PlayerController 绑定 PlayerState ASC 血量委托，切角色时解绑重绑；无 UI Tick。
+- Development Editor 构建和 `TheManTest.Player.CombatHUD.AmmoLifecycle` 1/1 Success；最新截图 `Saved/Screenshots/WindowsEditor/TMT_CombatHUD.png`，待用户确认观感。
+
 ## 2026-09-01 session246 交接：Combat HUD 准星再放大1.8倍
 
 - 中心空心圆半径由32px改为57.6px，线宽2.5px、96分段；弹药布局与逻辑不变。
