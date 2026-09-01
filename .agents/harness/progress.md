@@ -555,3 +555,9 @@
 - 保留 `UGA_Shoot -> PlayerCameraManager -> FireCameraShake` 与角色真实后坐力两条独立链路，仅重调 `/Game/Weapons/RepairGun/Effects/Camera/CS_RepairGun_Fire`。
 - 旧资产为 0.3s、0.2s 淡出及 5Hz XYZ 慢晃；现改为 0.14s、0.01/0.08s 淡入淡出，高频旋转 Pitch/Yaw/Roll=0.65/0.18/0.08°，位置 X/Y/Z=0.45/0.10/0.35cm，FOV=0。
 - 冷启动回读参数持久化，`BP_RepairGun.FireCameraShake` 仍指向该资产且 Scale=1.0；没有修改 `AddRecoil` 数值、弹道或空弹门控，`TheManTest.Player.CombatHUD.AmmoLifecycle` 复跑 Success。
+
+## 2026-09-01 session270 — 暂停 RepairGun 真实后坐力并增强震屏
+
+- 仅在 `BP_RepairGun` 将 `RecoilPitch/RecoilYawMin/RecoilYawMax` 覆盖为 0；公共 `AFirearm` 默认值和 `AFPSCharacterBase::AddRecoil` 实现保留，未来可直接恢复或供其他武器使用。
+- `CS_RepairGun_Fire` 仍保持 0.14s 短冲击，将旋转 Pitch/Yaw/Roll 增强到 0.95/0.26/0.12°，位置 X/Y/Z 增强到 0.65/0.15/0.50cm，频率及 FOV=0 不变。
+- 资产与 `BP_RepairGun` 均编译保存；冷启动回读确认 Shake 引用、Scale=1.0、增强参数与 Recoil=0/0/0，`AmmoLifecycle` 回归 Success。

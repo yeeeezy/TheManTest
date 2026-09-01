@@ -17,6 +17,7 @@ Equip Montage 兼容代码仍保留，但 FEAT-074 session178 起不再由开局
 `AFirearm` 还提供可按具体武器覆盖的 `MuzzleEffect / MuzzleEffectRotation / MuzzleEffectScale`；`UGA_Shoot` 每发在实际 Muzzle Socket 附着一次性 Niagara。RepairGun 当前使用 `/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_SniperScout_Muzzle`（FEAT-072，从外部 Sniper Scout 精确迁入，包含枪口闪光与烟雾）；专属前向烟雾材质/纹理位于同一 RepairGun Muzzle 目录，其余复用依赖位于 `/Game/Core/_Shared/Effects/Muzzle/`。
 
 `AFirearm::FireCameraShake/FireCameraShakeScale` 是每把枪独立的纯视觉冲击配置，不得与改变 Controller Rotation 的真实 `AddRecoil` 合并。RepairGun 使用 `/Game/Weapons/RepairGun/Effects/Camera/CS_RepairGun_Fire`，当前为 0.14 秒高频短冲击、Scale=1.0。
+RepairGun 当前为单独验收震屏而在武器蓝图覆盖 `RecoilPitch/RecoilYawMin/RecoilYawMax=0/0/0`；这是武器数据配置，不代表公共后坐力系统已删除。
 
 FEAT-074 起，玩家枪口统一由 `AFirearm::GetMuzzleWorldTransform()` 解析：优先 SkeletalMesh 的命名 Socket，其次 StaticMesh 的命名 Socket，最后使用 `MuzzleLocalTransform * ActorTransform`。因此纯静态枪模也必须在武器 BP 配置正确的 `MuzzleLocalTransform`，不得退回相机位置伪造枪口。
 

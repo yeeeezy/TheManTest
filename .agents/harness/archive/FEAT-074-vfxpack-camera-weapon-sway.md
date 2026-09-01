@@ -344,3 +344,9 @@
 - 用户确认需要的是不改变实际瞄准方向的短促镜头冲击，而非继续增强 `AFPSCharacterBase::AddRecoil` 的真实后坐力。
 - 冷读发现原 `CS_RepairGun_Fire` 为 Duration=0.3s、BlendOut=0.2s，位置 XYZ 均为 1cm@5Hz，表现偏慢晃。现调整为 Duration=0.14s、BlendIn/Out=0.01/0.08s；旋转 Pitch/Yaw/Roll 为 0.65@32Hz、0.18@38Hz、0.08@42Hz；位置 X/Y/Z 为 0.45@34Hz、0.10@39Hz、0.35@30Hz；FOV 保持 0。
 - 资产编译保存并冷启动逐项回读成功；`BP_RepairGun.FireCameraShake` 引用正确、Scale=1.0、SingleInstance=false。射击成功后仍由 `UGA_Shoot` 本地播放，空弹在反馈链之前返回；`TheManTest.Player.CombatHUD.AmmoLifecycle` 复跑 Success。
+
+## 2026-09-01 session270：关闭 RepairGun 真实后坐力并增强纯视觉冲击
+
+- 按用户要求只关闭 RepairGun 蓝图覆盖值：`RecoilPitch=0`、`RecoilYawMin/Max=0/0`。没有删除公共后坐力代码或改变其他武器默认值。
+- Camera Shake 幅度提高约 40–50%：旋转 Pitch/Yaw/Roll=0.95/0.26/0.12°；位置 X/Y/Z=0.65/0.15/0.50cm。Duration=0.14s、Blend=0.01/0.08s、频率和 FOV=0 保持不变。
+- 冷启动逐项回读及弹药/空弹生命周期回归通过，当前可在无真实视角上抬干扰的情况下单独验收震屏打击感。
