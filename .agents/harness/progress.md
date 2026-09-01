@@ -502,3 +502,9 @@
 
 - 修正 session259 首版错误地以零向量覆盖 `ViewmodelRoot.RelativeLocation`：现在 BeginPlay 保存蓝图 authored 位置，滞后只作为附加偏移，回正返回原构图。
 - `PositionLagRuntime` 已改为以运行时初始构图为基准验证偏移和回正，单独冷启动 Success；Development Editor 重新构建成功。跳跃回归也在修正后 Success。
+
+## 2026-09-01 session261 交接：Viewmodel 位置弹簧
+
+- 目标位置插值改为速度冲量驱动的欠阻尼弹簧；默认水平/垂直冲量 7/5、刚度 85、阻尼 12，最大位移仍为 1.8/1.2cm。
+- 修正垂直方向：向上鼠标输入先令枪械下移，随后自然回到蓝图原构图；没有旋转滞后。
+- Development Editor 构建成功，更新后的 `TheManTest.Player.Viewmodel.PositionLagRuntime` 单独冷启动 Success。

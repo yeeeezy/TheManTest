@@ -515,22 +515,41 @@ void AFPSCharacterBase::Tick(float DeltaTime)
 		ViewmodelRoot->SetRelativeRotation(
 			FRotator(SprintViewmodelPitchDegrees * SprintVisualAlpha, 0.f, 0.f));
 
-		FVector TargetLookLagOffset = FVector::ZeroVector;
+		// Mouse deltas add a short inertial impulse. A damped spring then returns the
+		// viewmodel to its Blueprint-authored framing without moving the camera.
 		if (PendingViewmodelLookInput.SizeSquared() > FMath::Square(ViewmodelLookLagDeadZone))
 		{
 			const FVector2D ClampedLookInput(
 				FMath::Clamp(PendingViewmodelLookInput.X, -1.f, 1.f),
 				FMath::Clamp(PendingViewmodelLookInput.Y, -1.f, 1.f));
-			TargetLookLagOffset = FVector(
+			CurrentViewmodelLookLagVelocity += FVector(
 				0.f,
-				-ClampedLookInput.X * ViewmodelLookLagHorizontalCm,
-				-ClampedLookInput.Y * ViewmodelLookLagVerticalCm);
+				-ClampedLookInput.X * ViewmodelLookLagHorizontalImpulse,
+				ClampedLookInput.Y * ViewmodelLookLagVerticalImpulse);
+			CurrentViewmodelLookLagVelocity.Y = FMath::Clamp(CurrentViewmodelLookLagVelocity.Y, -20.f, 20.f);
+			CurrentViewmodelLookLagVelocity.Z = FMath::Clamp(CurrentViewmodelLookLagVelocity.Z, -16.f, 16.f);
 		}
-		const float LookLagInterpSpeed = TargetLookLagOffset.IsNearlyZero()
-			? ViewmodelLookLagReturnSpeed
-			: ViewmodelLookLagFollowSpeed;
-		CurrentViewmodelLookLagOffset = FMath::VInterpTo(
-			CurrentViewmodelLookLagOffset, TargetLookLagOffset, DeltaTime, LookLagInterpSpeed);
+		const float SpringDeltaTime = FMath::Min(DeltaTime, 1.f / 30.f);
+		const FVector SpringAcceleration =
+			-CurrentViewmodelLookLagOffset * ViewmodelLookLagSpringStiffness
+			-CurrentViewmodelLookLagVelocity * ViewmodelLookLagSpringDamping;
+		CurrentViewmodelLookLagVelocity += SpringAcceleration * SpringDeltaTime;
+		CurrentViewmodelLookLagOffset += CurrentViewmodelLookLagVelocity * SpringDeltaTime;
+		CurrentViewmodelLookLagOffset.X = 0.f;
+		CurrentViewmodelLookLagOffset.Y = FMath::Clamp(
+			CurrentViewmodelLookLagOffset.Y, -ViewmodelLookLagHorizontalCm, ViewmodelLookLagHorizontalCm);
+		CurrentViewmodelLookLagOffset.Z = FMath::Clamp(
+			CurrentViewmodelLookLagOffset.Z, -ViewmodelLookLagVerticalCm, ViewmodelLookLagVerticalCm);
+		if (FMath::IsNearlyEqual(FMath::Abs(CurrentViewmodelLookLagOffset.Y), ViewmodelLookLagHorizontalCm)
+			&& FMath::Sign(CurrentViewmodelLookLagVelocity.Y) == FMath::Sign(CurrentViewmodelLookLagOffset.Y))
+		{
+			CurrentViewmodelLookLagVelocity.Y = 0.f;
+		}
+		if (FMath::IsNearlyEqual(FMath::Abs(CurrentViewmodelLookLagOffset.Z), ViewmodelLookLagVerticalCm)
+			&& FMath::Sign(CurrentViewmodelLookLagVelocity.Z) == FMath::Sign(CurrentViewmodelLookLagOffset.Z))
+		{
+			CurrentViewmodelLookLagVelocity.Z = 0.f;
+		}
 		ViewmodelRoot->SetRelativeLocation(
 			ViewmodelAuthoredRelativeLocation + CurrentViewmodelLookLagOffset);
 

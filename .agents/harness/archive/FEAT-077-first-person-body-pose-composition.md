@@ -293,3 +293,9 @@
 
 - session259 首版把 `ViewmodelRoot.RelativeLocation` 直接写成滞后偏移，错误覆盖蓝图原有构图。现改为 BeginPlay 缓存 authored RelativeLocation，每帧只写“原构图 + 滞后偏移”，回正也回到原构图。
 - 自动化断言同步改为保存实际运行时基准并比较相对变化；`PositionLagRuntime` 单独冷启动 Success，Development Editor 构建成功。
+
+## 2026-09-01 session261 — 第一人称枪械位置弹簧
+
+- 将机械式目标插值替换为鼠标 delta 速度冲量 + 欠阻尼弹簧回正；默认冲量 7/5、刚度 85、阻尼 12，并保留 1.8/1.2cm 位移上限。
+- 按 Enhanced Input 实际轴向修正垂直符号，向上看时枪械先向下位移；仍只叠加在蓝图 authored 构图基准上，不添加旋转。
+- Development Editor 构建与 `PositionLagRuntime` 冷启动 PIE 回归均 Success。

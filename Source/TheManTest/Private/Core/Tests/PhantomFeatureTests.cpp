@@ -229,7 +229,8 @@ public:
 		}
 		if (Stage == 1)
 		{
-			Player->SetViewmodelLookInputForTesting(FVector2D(1.f, 1.f));
+			// Enhanced Input reports an upward mouse movement as negative Y.
+			Player->SetViewmodelLookInputForTesting(FVector2D(1.f, -1.f));
 			if (Now - StageStart < 0.18) return false;
 			const FVector Offset = ViewmodelRoot->GetRelativeLocation() - AuthoredLocation;
 			Test->TestTrue(TEXT("Right look moves viewmodel left"), Offset.Y < -0.5f);
@@ -242,7 +243,7 @@ public:
 			Stage = 2;
 			return false;
 		}
-		if (Now - StageStart < 0.45) return false;
+		if (Now - StageStart < 0.8) return false;
 		Test->TestTrue(TEXT("Viewmodel position lag returns to authored framing"),
 			ViewmodelRoot->GetRelativeLocation().Equals(AuthoredLocation, 0.02f));
 		return true;

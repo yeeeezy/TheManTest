@@ -93,11 +93,17 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Lag", meta = (ClampMin = "0.0", Units = "cm"))
 	float ViewmodelLookLagVerticalCm = 1.2f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Lag", meta = (ClampMin = "0.1"))
-	float ViewmodelLookLagFollowSpeed = 12.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Lag", meta = (ClampMin = "0.0"))
+	float ViewmodelLookLagHorizontalImpulse = 7.f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Lag", meta = (ClampMin = "0.1"))
-	float ViewmodelLookLagReturnSpeed = 16.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Lag", meta = (ClampMin = "0.0"))
+	float ViewmodelLookLagVerticalImpulse = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Lag", meta = (ClampMin = "0.0"))
+	float ViewmodelLookLagSpringStiffness = 85.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Lag", meta = (ClampMin = "0.0"))
+	float ViewmodelLookLagSpringDamping = 12.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel|Lag", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float ViewmodelLookLagDeadZone = 0.01f;
@@ -195,6 +201,7 @@ private:
 	FVector2D PendingViewmodelLookInput = FVector2D::ZeroVector;
 	FVector ViewmodelAuthoredRelativeLocation = FVector::ZeroVector;
 	FVector CurrentViewmodelLookLagOffset = FVector::ZeroVector;
+	FVector CurrentViewmodelLookLagVelocity = FVector::ZeroVector;
 	float SprintTransitionAlpha = 0.f;
 	static constexpr float VFXSprintTransitionDuration = 0.2f;
 

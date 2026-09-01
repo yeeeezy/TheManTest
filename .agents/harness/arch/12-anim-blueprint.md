@@ -404,6 +404,7 @@ Cache_Locomotion → WeaponUpperBody → Slot"UpperBody" → WeaponAimOffset →
 - session165：取消项目补充的 5cm `ViewmodelRoot` Y 向横移；A/D 最终视觉只来自上述 AnimBP 骨骼链，构图根节点不再随侧移输入改变位置或旋转。
 - session166：冲刺恢复原蓝图职责：按键意图驱动 0.2s 可逆时间线，同时插值 MaxWalkSpeed 550→750 并旋转 `BodyRotator` 等价节点 `ViewmodelRoot` Pitch 0→-12.5°；不再把压枪角写入 `spine_03` 的 `Look_Up_Amount`。
 - session259-260：`ViewmodelRoot.RelativeLocation` 增加纯位置式鼠标观察滞后，默认水平 1.8cm、垂直 1.2cm、进入速度 12、回正速度 16、死区 0.01。BeginPlay 保存蓝图 authored RelativeLocation，Tick 只写“该基准 + 瞬时滞后偏移”，停止输入后回到蓝图基准；不得把构图原点强制归零。右看时 Viewmodel 左移、上看时下移；不增加旋转，不修改 `ArmsViewMesh` 静态 Transform，也不影响相机、瞄准或弹道。旧停用的 Arms Pitch Follow 字段和无效鼠标缓存已删除。
+- session261：位置滞后由目标插值升级为欠阻尼弹簧。鼠标 delta 只施加一次反向速度冲量，之后通过刚度 85 / 阻尼 12 自然回正；默认水平/垂直冲量 7/5，位移仍限制在 1.8/1.2cm。Enhanced Input 向上为负 Y，因此垂直冲量同号写入 Viewmodel Z，保证向上看时枪先向下。纯位置、原构图基准及其他系统边界不变。
 
 ## 2026-08-04 玩家最终统一链
 
