@@ -102,9 +102,11 @@ AFPSCharacterBase::AFPSCharacterBase()
 	ViewmodelRoot->SetupAttachment(HeadCamera);
 
 	// FEAT-042：独立 FP 手臂 mesh。挂 ViewmodelRoot 下，跑自己的武器 ABP（持枪 pose），
-	// 只给自己看、不投影、始终评估姿势。骨架/相对 Transform/AnimClass 在 BP 配。
+	// 只给自己看、不投影、始终评估姿势。骨架/AnimClass 在 BP 配；这里保存经前台确认的默认构图。
 	ArmsViewMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmsViewMesh"));
 	ArmsViewMesh->SetupAttachment(ViewmodelRoot);
+	ArmsViewMesh->SetRelativeLocation(FVector(-6.330288f, -6.449130f, -141.685038f));
+	ArmsViewMesh->SetRelativeRotation(FRotator(0.297436f, -117.090375f, 0.581459f));
 	ArmsViewMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ArmsViewMesh->SetOnlyOwnerSee(true);
 	ArmsViewMesh->bCastDynamicShadow = false;

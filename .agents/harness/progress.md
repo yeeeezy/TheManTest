@@ -1,5 +1,11 @@
 # 进度日志
 
+## 2026-09-01 session242 交接：ArmsViewMesh 当前构图设为父类默认值
+
+- 根据用户截图，将 `AFPSCharacterBase` 构造默认 `ArmsViewMesh` Transform 设为 Location `(-6.330288,-6.449130,-141.685038)`、Rotation `(Roll=0.581459°, Pitch=0.297436°, Yaw=-117.090375°)`。
+- 不新增 BeginPlay/Tick 静态覆盖；BP 仍可改构图。当前 `BP_MaintenanceWorker` 原值与新默认一致，无需重写蓝图资产即可保持相同画面。
+- Development Editor 构建成功；冷启动 Native/BP CDO 回读均与目标值一致。待用户打开蓝图确认默认值显示及前台构图。
+
 ## 2026-09-01 session241 交接：维修工手臂 Mesh 与正式动画 Skeleton 统一
 
 - `SKM_MaintenanceWorker_FirstPersonArms` 已从旧 `SKEL_MaintenanceWorker_FirstPersonArms` 改为正式 `SK_Mannequin_Arms_Skeleton`；不恢复短名称动画、不配置兼容 Skeleton、不重新迁移动画。

@@ -3,6 +3,12 @@
 **创建日期：** 2026-08-21
 **状态：** in_progress
 
+## 2026-09-01 session242 — 当前 ArmsViewMesh 构图固化为 C++ 默认值
+
+- 按用户最新截图将 `ArmsViewMesh` 默认 Location 固化为 `(-6.330288,-6.449130,-141.685038)`，默认 Rotation 固化为 `(Roll=0.581459°, Pitch=0.297436°, Yaw=-117.090375°)`。
+- 仍不在 BeginPlay/Tick 覆盖静态 Transform；具体角色蓝图可以继续覆盖。当前 `BP_MaintenanceWorker` 原有值与新父类默认完全一致，因此无需改写其 `.uasset` 即可保持画面。
+- Development Editor 构建成功；冷启动回读 Native CDO 与 `BP_MaintenanceWorker` CDO 的 Location/Rotation 均与截图值在0.001容差内一致。
+
 ## 2026-09-01 session241 — 手臂 Mesh 统一到正式动画 Skeleton
 
 - 用户纠正方案：不恢复短名称动画、不配置 Compatible Skeleton、不从外部项目重新迁移；直接将 `SKM_MaintenanceWorker_FirstPersonArms` 的 Skeleton 从 `SKEL_MaintenanceWorker_FirstPersonArms` 改为正式动画使用的 `SK_Mannequin_Arms_Skeleton`。
