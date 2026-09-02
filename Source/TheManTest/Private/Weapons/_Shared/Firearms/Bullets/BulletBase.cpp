@@ -109,7 +109,12 @@ void ABulletBase::ProcessHit_Implementation(
 		FGameplayEffectContextHandle CueContext = SourceASC->MakeEffectContext();
 		CueContext.AddHitResult(HitResult, true);
 		CueParameters.EffectContext = CueContext;
-		SourceASC->ExecuteGameplayCue(ImpactCueTag, CueParameters);
+		// Projectile impacts can occur after the LocalOnly firing ability has ended. At that point
+		// ExecuteGameplayCue has neither authority nor a live prediction key, so its pending RPC
+		// path silently drops the cue. This project is single-player and impact feedback is local,
+		// therefore invoke the Executed event immediately on the source ASC.
+		SourceASC->InvokeGameplayCueEvent(
+			ImpactCueTag, EGameplayCueEvent::Executed, CueParameters);
 	}
 
 	// 命中目标若带 ASC 则施加伤害 GE；打墙/地等无 ASC 目标跳过此步，但子弹仍会按下方逻辑销毁。

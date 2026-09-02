@@ -621,3 +621,9 @@
 - `S_RepairGun_Impact` 已用离线软限幅版本原路径覆盖，平均响度从 -21.22 提升至 -14.30dBFS（约 +6.91dB），峰值控制为 -1.00dBFS。
 - `GC_RepairGun_Impact.VolumeMultiplier` 已恢复 1.0，声音引用、0.859969 秒时长、双声道与 96kHz 冷回读正确。
 - `TheManTest.Player.CombatHUD.AmmoLifecycle` 冷启动 Success；待用户前台 PIE 主观试听。
+
+## 2026-09-01 session280 — RepairGun 命中 Cue 本地执行修复
+
+- 运行时探针确认旧 `ExecuteGameplayCue` 在 `LocalOnly` Ability 已结束、Projectile 延迟撞地时被 GAS 网络/预测队列静默丢弃，`OnExecute` 未进入。
+- `ABulletBase` 改为 `InvokeGameplayCueEvent(Executed)` 立即本地执行；配置明确扫描 RepairGun 与 Enemy Gameplay Cue 目录。
+- 临时探针已全部删除，残留扫描0；Development Editor 冷构建与 `AmmoLifecycle` 均 Success。待前台 PIE 最终确认撞地声音。

@@ -112,3 +112,10 @@
 - 诊断确认原 `S_RepairGun_Impact` 峰值已达 -0.08dBFS、RMS 为 -21.22dBFS；将 Cue 倍率提高到 10 只会把瞬态推入 Audio Mixer 限幅，无法等比例提高听感。
 - 从原下载 WAV 离线生成软限幅响度版并覆盖同路径 SoundWave：输出峰值 -1.00dBFS、RMS -14.30dBFS，实际平均响度提高约 6.91dB；时长仍为 0.859969 秒、双声道、96kHz。
 - `GC_RepairGun_Impact.VolumeMultiplier` 从用户试验值 10 恢复为 1.0，ImpactSound 引用保持 `S_RepairGun_Impact`；`AmmoLifecycle` 冷启动回归 Success。
+
+## 2026-09-01 session280 — 修复 Projectile 命中 Cue 被静默丢弃
+
+- 临时运行时探针实测：RepairGun 撞地进入 `ProcessHit`，`SourceASC` 与 `GameplayCue.Weapon.RepairGun.Impact` 均有效，旧 `ExecuteGameplayCue` 返回，但 `GC_RepairGun_Impact.OnExecute` 从未进入。
+- 根因是 Projectile 在 `LocalOnly` 射击 Ability 结束后才命中；旧调用进入 GAS 待发送队列时没有可用 Authority/Prediction Key，因此引擎静默丢弃 Cue。
+- `ABulletBase` 改用 `SourceASC->InvokeGameplayCueEvent(..., Executed, Parameters)` 立即执行本地单人命中反馈；`DefaultGame.ini` 同时明确登记 RepairGun 与 Enemy Gameplay Cue 扫描目录，移除全 `/Game` fallback 警告。
+- 所有 `[TEMP ImpactDiag]` 探针已删除并扫描为0；Development Editor 冷构建成功，`AmmoLifecycle` 冷启动回归 Success。待用户前台 PIE 最终听感确认。
