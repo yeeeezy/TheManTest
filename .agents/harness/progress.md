@@ -609,3 +609,9 @@
 ### 下次提醒
 
 - 用户准备下机，要求下次继续时提醒增强 `/Game/Weapons/RepairGun/GAS/GameplayCues/GC_RepairGun_Impact` 的 `Volume Multiplier`；当前保持 1.0，本次不调整。
+
+## 2026-09-01 session278 — RepairGun 实弹音源替换
+
+- `/Game/Weapons/RepairGun/Audio/S_RepairGun_Fire` 已使用下载文件 `307536-PM-FN-Weapons-7B.wav` 原路径覆盖，现为 1.000 秒、双声道、96kHz。
+- `BP_RepairGun.FireSound` 引用保持原资产路径；`TheManTest.Player.CombatHUD.AmmoLifecycle` 冷启动 Success。
+- 一次性导入脚本已删除，结果未提交 Git。

@@ -100,3 +100,9 @@
 
 - 删除无 Referencer 的 `/Game/VFX_SciFi_Muzzle_And_Impact_Pack_1` 四项遗留资产及整个磁盘目录后，AmmoLifecycle 冷启动仍为 Success，无缺失 Package。
 - 后续待用户验收时提醒：提高 `GC_RepairGun_Impact.VolumeMultiplier`；当前值 1.0。
+
+## 2026-09-01 session278 — 更换 RepairGun 实弹射击音源
+
+- 使用下载文件 `307536-PM-FN-Weapons-7B.wav` 重新导入并覆盖 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Fire`；资产路径与名称保持不变，`BP_RepairGun.FireSound` 引用无需重绑。
+- 冷导入回读确认新 SoundWave 为 1.000 秒、双声道、96kHz；源文件为 24-bit PCM。
+- `TheManTest.Player.CombatHUD.AmmoLifecycle` 冷启动复跑 Success，确认 RepairGun 资产绑定、射击/弹药与既有 Dry Fire 链路无回归。
