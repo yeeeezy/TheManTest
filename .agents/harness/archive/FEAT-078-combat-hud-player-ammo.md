@@ -106,3 +106,9 @@
 - 使用下载文件 `307536-PM-FN-Weapons-7B.wav` 重新导入并覆盖 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Fire`；资产路径与名称保持不变，`BP_RepairGun.FireSound` 引用无需重绑。
 - 冷导入回读确认新 SoundWave 为 1.000 秒、双声道、96kHz；源文件为 24-bit PCM。
 - `TheManTest.Player.CombatHUD.AmmoLifecycle` 冷启动复跑 Success，确认 RepairGun 资产绑定、射击/弹药与既有 Dry Fire 链路无回归。
+
+## 2026-09-01 session279 — 提升 RepairGun 命中声实际响度
+
+- 诊断确认原 `S_RepairGun_Impact` 峰值已达 -0.08dBFS、RMS 为 -21.22dBFS；将 Cue 倍率提高到 10 只会把瞬态推入 Audio Mixer 限幅，无法等比例提高听感。
+- 从原下载 WAV 离线生成软限幅响度版并覆盖同路径 SoundWave：输出峰值 -1.00dBFS、RMS -14.30dBFS，实际平均响度提高约 6.91dB；时长仍为 0.859969 秒、双声道、96kHz。
+- `GC_RepairGun_Impact.VolumeMultiplier` 从用户试验值 10 恢复为 1.0，ImpactSound 引用保持 `S_RepairGun_Impact`；`AmmoLifecycle` 冷启动回归 Success。

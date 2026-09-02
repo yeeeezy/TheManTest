@@ -615,3 +615,9 @@
 - `/Game/Weapons/RepairGun/Audio/S_RepairGun_Fire` 已使用下载文件 `307536-PM-FN-Weapons-7B.wav` 原路径覆盖，现为 1.000 秒、双声道、96kHz。
 - `BP_RepairGun.FireSound` 引用保持原资产路径；`TheManTest.Player.CombatHUD.AmmoLifecycle` 冷启动 Success。
 - 一次性导入脚本已删除，结果未提交 Git。
+
+## 2026-09-01 session279 — RepairGun 命中声响度处理
+
+- `S_RepairGun_Impact` 已用离线软限幅版本原路径覆盖，平均响度从 -21.22 提升至 -14.30dBFS（约 +6.91dB），峰值控制为 -1.00dBFS。
+- `GC_RepairGun_Impact.VolumeMultiplier` 已恢复 1.0，声音引用、0.859969 秒时长、双声道与 96kHz 冷回读正确。
+- `TheManTest.Player.CombatHUD.AmmoLifecycle` 冷启动 Success；待用户前台 PIE 主观试听。
