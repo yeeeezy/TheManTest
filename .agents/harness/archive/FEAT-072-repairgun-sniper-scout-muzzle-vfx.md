@@ -39,3 +39,9 @@
 - Niagara System 验证：valid，0 errors，0 warnings。
 - RepairGun 蓝图与 Muzzle 目录资产验证：全部可加载，目录共 4 个正式资产（含保留的旧 System）。
 - PIE 中触发 LMB 开火并即时截图，确认新枪口效果在枪口生成；近期日志无 Niagara、Socket、加载或运行错误。
+
+## 2026-09-01 session273 — 专属枪口颜色改为中性灰
+
+- 按用户要求只修改 RepairGun 专属 `NS_RepairGun_SniperScout_Muzzle`，共享 Muzzle 依赖和敌人效果保持不变。
+- 枚举并灰度化 System 内 57 条 `UNiagaraDataInterfaceColorCurve`：每个时间点取原 RGB 最大值作为 R/G/B，保留 HDR 亮度峰值；Alpha、粒子形状、寿命、尺寸、速度、烟雾和折射均未改变。
+- 临时资产处理 C++ 入口执行后已移除，最终源码无功能改动；Development Editor 重新构建成功，冷启动定向 Data Validation 报告目标 Niagara 数据有效。
