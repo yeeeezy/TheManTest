@@ -131,7 +131,7 @@ bool FCombatHUDAndAmmoTest::RunTest(const FString& Parameters)
 		RepairGunBullet->ImpactCueTag.MatchesTagExact(TAG_GameplayCue_Weapon_RepairGun_Impact));
 
 	UClass* EnemyCueClass = LoadClass<UGCN_EnemyHit>(nullptr,
-		TEXT("/Game/Enemy/_Shared/GAS/GameplayCues/GC_Enemy_Hit.GC_Enemy_Hit_C"));
+		TEXT("/Game/Enemy/_Shared/GAS/GameplayCues/GC_Character_Enemy_Hit.GC_Character_Enemy_Hit_C"));
 	const UGCN_EnemyHit* EnemyCue = EnemyCueClass
 		? Cast<UGCN_EnemyHit>(EnemyCueClass->GetDefaultObject()) : nullptr;
 	TestNotNull(TEXT("Enemy-owned hit cue loads"), EnemyCue);

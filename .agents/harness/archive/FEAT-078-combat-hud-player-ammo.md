@@ -125,3 +125,9 @@
 - session280 调用方式修复后前台仍无声；进一步核对 UE 5.7 `DeriveGameplayCueTagFromAssetName` 与二进制 Registry 数据，确认旧名 `GC_RepairGun_Impact` 只能派生不存在的 `GameplayCue.RepairGun.Impact`，导致 `GameplayCueName` 为空。C++ CDO 的正确 Tag 不足以让运行时 Registry 扫描发现该资产。
 - 通过 Unreal AssetTools 将资产正式重命名为 `/Game/Weapons/RepairGun/GAS/GameplayCues/GC_Weapon_RepairGun_Impact`；新 `.uasset` 已明确包含 `GameplayCueName=GameplayCue.Weapon.RepairGun.Impact`，旧磁盘文件消失。
 - 自动化硬编码加载路径已更新；一次性脚本已删除。Development Editor 冷构建与 `AmmoLifecycle` 均 Success，待前台 PIE 最终声音确认。
+
+## 2026-09-01 session282 — 修复 Enemy Hit Cue Registry 命名并固化规则
+
+- 同类审计确认旧 `/Game/Enemy/_Shared/GAS/GameplayCues/GC_Enemy_Hit` 无法从资产名派生完整 `GameplayCue.Character.Enemy.Hit`。
+- 通过 Unreal AssetTools 正式重命名为 `GC_Character_Enemy_Hit`；旧文件消失，新 `.uasset` Registry 明确包含 `GameplayCueName=GameplayCue.Character.Enemy.Hit`。自动化加载路径同步更新。
+- `.agents/harness/AGENTS.md` 新增全局 Gameplay Cue 规则：资产名必须完整镜像 Tag 层级，创建/重命名后必须冷回读 Registry 的 `GameplayCueName`，仅验证 CDO Tag 不足以验收；`arch/11-enemy-ai.md` 已同步当前正式路径。

@@ -23,7 +23,7 @@ AEnemyBase（Public/Enemy/）  ← 所有敌人基类，ASC+属性挂自身（�
 
 | 文件 | 关键内容 |
 |---|---|
-| `Public/Enemy/EnemyBase.h` | ASC + `UEnemyAttributeSetBase` 挂自身；`InitGEClass`；`DefaultAbilities`（常驻技能）；**技能集系统**：`PhaseSkillSets`(阶段数组)/`CurrentPhase`/`SetCombatPhase()`/`UseRandomSkill(Target,Range)`/`GrantAbilities()`/virtual `AimAtTarget()`；`CurrentStrength`；`OnDeath()`。FEAT-073 新增 `ReactToProjectileHit` 与可刷新限时 `ApplyMovementSlow`；`SetDesiredMaxWalkSpeed` 将状态基础速度和临时倍率分离。`HitReactionCueTag` 由每类敌人配置，Health 实际扣减后由目标 ASC 执行受击 Cue。`Tick` 默认关闭。 |
+| `Public/Enemy/EnemyBase.h` | ASC + `UEnemyAttributeSetBase` 挂自身；`InitGEClass`；`DefaultAbilities`（常驻技能）；**技能集系统**：`PhaseSkillSets`(阶段数组)/`CurrentPhase`/`SetCombatPhase()`/`UseRandomSkill(Target,Range)`/`GrantAbilities()`/virtual `AimAtTarget()`；`CurrentStrength`；`OnDeath()`。FEAT-073 新增 `ReactToProjectileHit` 与可刷新限时 `ApplyMovementSlow`；`SetDesiredMaxWalkSpeed` 将状态基础速度和临时倍率分离。`HitReactionCueTag` 由每类敌人配置，Health 实际扣减后由目标 ASC 执行受击 Cue。默认 `GameplayCue.Character.Enemy.Hit` 对应 Registry 可发现资产 `/Game/Enemy/_Shared/GAS/GameplayCues/GC_Character_Enemy_Hit`；名称必须保留完整 `Character.Enemy.Hit` 层级。`Tick` 默认关闭。 |
 | `Private/Enemy/EnemyBase.cpp` | BeginPlay：InitAbilityActorInfo(self,self) + 应用 InitGE + 授予 DefaultAbilities & 所有阶段技能 + 强度初始化（绑 `OnMidRoundStrengthIncrease`）；`UseRandomSkill`（当前阶段+距离档随机→AimAtTarget→TryActivateAbilityByClass）；`OnDeath` 默认 Destroy |
 | `Public/Enemy/EnemyAttributeSetBase.h` | 继承 `UTheManAttributeSetBase`，怪物专属属性在此扩展（当前为空） |
 | `EEnemySkillRange`（EnemyBase.h 内） | 交战距离档枚举：`Near` / `Mid` / `Far` |

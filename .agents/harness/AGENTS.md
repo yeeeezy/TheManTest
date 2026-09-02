@@ -51,6 +51,7 @@ TheManTest — UE 5.7.4 单人游戏项目。C++ 负责数据结构、GAS 配置
 - **功能归属优先，资产类型次之。** 专属资源放在具体所有者目录下，例如 RepairGun 特效放 `/Game/Weapons/RepairGun/Effects/`，Phantom 特效放 `/Game/Enemy/Humanoid/Phantom/Effects/`；然后再拆分 `Systems`、`Materials`、`Textures`、`Niagara`、`Meshes` 等类型子目录。
 - **共享必须有实际证据。** 只有至少两个已存在使用方共同引用的资源才进入最近共同语义根的 `_Shared`；跨顶层系统共用的基础资源进入 `/Game/Core/_Shared/`。不得为了省事先建共享目录再把整包素材塞入。
 - **资产按用途命名。** 正式资产使用项目语义名称和 UE 前缀（`M_` / `MI_` / `MF_` / `T_` 等），不得继续使用素材包名称作为功能命名。迁入后必须验证依赖、引用和本次目录范围内的 Redirector。
+- **Gameplay Cue 名称必须完整对应 Tag。** `UGameplayCueNotify_Static/Actor` 资产必须使用 `GC_<Tag 去掉 GameplayCue. 后将点替换为下划线>`，例如 `GameplayCue.Character.Enemy.Hit` 对应 `GC_Character_Enemy_Hit`。创建或重命名后必须冷回读 Asset Registry 的 `GameplayCueName` 与正式 Tag 完全一致；只检查 CDO 的 `GameplayCueTag` 不算完成。优先从 Gameplay Cue 专用入口按 Tag 创建，不得用缩短名称的普通 Blueprint 子类代替。
 - **导入收尾必须清场。** 每次导入/迁移完成后检查并清理供应商目录、空目录、迁移工作目录和 Redirector；旧路径不得仅因“已经空了”而长期保留。清场必须同时验证 Unreal Asset Registry 与磁盘实体目录：Asset Registry 为 0 不等于目录已删除；旧资产目录及其变空的无用途父目录仍存在时，不得宣布迁移完成。
 
 ### C++ 语义目录规则

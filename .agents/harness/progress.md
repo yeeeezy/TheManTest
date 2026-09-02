@@ -633,3 +633,8 @@
 - 旧 `GC_RepairGun_Impact` 因资产名缺少 `Weapon` 层，Registry 的 `GameplayCueName` 为空；即使运行时 CDO Tag 正确，Cue 管理器也无法发现。
 - 正式重命名为 `GC_Weapon_RepairGun_Impact`，新资产二进制已包含完整 `GameplayCue.Weapon.RepairGun.Impact` Registry 值；旧文件已消失。
 - 测试路径已同步，一次性脚本已删除；Development Editor 冷构建与 `AmmoLifecycle` Success。待前台 PIE 最终试听。
+
+## 2026-09-01 session282 — Enemy Hit Cue Registry 命名修复
+
+- Enemy 受击 Cue 已从 `GC_Enemy_Hit` 正式重命名为 `GC_Character_Enemy_Hit`，Registry 冷检包含完整 `GameplayCue.Character.Enemy.Hit`，旧文件已消失。
+- 自动化路径、Enemy 架构文档与全局 Gameplay Cue 命名/Registry 验收规则已同步；一次性脚本已删除。
