@@ -95,3 +95,8 @@
 ## 2026-09-01 session276 — 命中 Cue 回归断言纠正
 
 - 回归断言改为验证 RepairGun 专属音效/Cue/子弹 Tag、敌人自有 HitReaction Cue，以及共享 `GE_BulletDamage` 不携带表现 Cue；AmmoLifecycle 冷启动 Success。
+
+## 2026-09-01 session277 — 供应商残留清场回归
+
+- 删除无 Referencer 的 `/Game/VFX_SciFi_Muzzle_And_Impact_Pack_1` 四项遗留资产及整个磁盘目录后，AmmoLifecycle 冷启动仍为 Success，无缺失 Package。
+- 后续待用户验收时提醒：提高 `GC_RepairGun_Impact.VolumeMultiplier`；当前值 1.0。

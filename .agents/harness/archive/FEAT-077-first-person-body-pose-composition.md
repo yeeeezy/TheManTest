@@ -339,3 +339,8 @@
 - 腿部材质新增基于 `CameraPositionWS` 的独立相机距离链，实例参数为 `Camera Proximity Clip Radius=55cm`、`Camera Proximity Fade Width=12cm`。
 - 相机距离链与既有 `hand_r` 距离链的归一化遮罩使用 `Min` 合并：靠近右手或靠近相机任意一处都会触发 `DitherTemporalAA` 平滑消失。
 - `LegArmProximityRuntime` 已扩展为校验两项相机参数，并与手臂裁切、武器跳跃回归一同通过。
+
+## 2026-09-01 session277 — 旧手臂 Placeholder 材质依赖清场
+
+- session264 曾迁入供应商目录的 Placeholder Master/Instance、`MF_Disintegration` 与 Noise Texture，在后续改用正式 UE4 Mannequin 材质后已无外部 Referencer。
+- 4 项孤立资产已通过 Unreal 删除，`/Game/VFX_SciFi_Muzzle_And_Impact_Pack_1` 的 Asset Registry 与磁盘目录均清空；冷启动未出现缺失引用。

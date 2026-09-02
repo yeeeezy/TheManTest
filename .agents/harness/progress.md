@@ -599,3 +599,13 @@
 - `ABulletBase` 仅提供可配置 `ImpactCueTag`；`ARepairGunBullet` 选择 `GameplayCue.Weapon.RepairGun.Impact`。未来其他武器可选择自己的 Cue，未配置时不产生武器命中表现。
 - `GE_BulletDamage` 已清空 Gameplay Cues，只负责伤害。敌人 Health 确认发生负向修改后，由目标 ASC 按敌人自己的 `HitReactionCueTag` 执行 `GameplayCue.Character.Enemy.Hit`；Cue 资产位于 `/Game/Enemy/_Shared/GAS/GameplayCues/GC_Enemy_Hit`。
 - 通用 GC 基类支持 Sound、Niagara、音量、音调、特效缩放，并从 Cue 参数读取位置/法线。Development Editor 冷构建与 AmmoLifecycle 回归 Success；旧共享 Cue/Audio 目录已清空移除。
+
+## 2026-09-01 session277 — 清理遗留 VFX 供应商目录
+
+- `/Game/VFX_SciFi_Muzzle_And_Impact_Pack_1` 残留的 `MF_Disintegration`、Placeholder Master/Instance 与 Noise Texture 共 4 项，经 Unreal `load_assets_to_confirm` 检查均无外部 Referencer。
+- 通过 Unreal Editor 删除全部 4 项资产；Asset Registry 定向回查为 0，磁盘上的整个供应商目录也已消失，没有 Redirector 或空父目录残留。
+- 冷启动 `TheManTest.Player.CombatHUD.AmmoLifecycle` Success，日志没有该供应商路径、缺失 Package 或正式资产加载失败。
+
+### 下次提醒
+
+- 用户准备下机，要求下次继续时提醒增强 `/Game/Weapons/RepairGun/GAS/GameplayCues/GC_RepairGun_Impact` 的 `Volume Multiplier`；当前保持 1.0，本次不调整。
