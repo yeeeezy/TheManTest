@@ -10,6 +10,7 @@
 #include "UI/Combat/CombatHUDWidgetBase.h"
 #include "Weapons/_Shared/Components/EquipmentManagerComponent.h"
 #include "Weapons/_Shared/Firearms/Firearm.h"
+#include "Weapons/RepairGun/Bullets/RepairGunBullet.h"
 #include "Editor.h"
 #include "HighResScreenshot.h"
 #include "Misc/Paths.h"
@@ -45,6 +46,18 @@ bool FValidateCombatHUDCommand::Update()
 		TEXT("/Game/Weapons/RepairGun/Audio/S_RepairGun_DryFire.S_RepairGun_DryFire"));
 	Test->TestNotNull(TEXT("RepairGun dry-fire sound asset loads"), ExpectedDryFireSound);
 	Test->TestEqual(TEXT("Equipped RepairGun uses its dedicated dry-fire sound"), Firearm->DryFireSound, ExpectedDryFireSound);
+	USoundBase* ExpectedGroundImpactSound = LoadObject<USoundBase>(nullptr,
+		TEXT("/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact_Ground.S_RepairGun_Impact_Ground"));
+	UClass* RepairBulletClass = LoadClass<ARepairGunBullet>(nullptr,
+		TEXT("/Game/Weapons/RepairGun/Blueprint/BP_RepairGunBullet.BP_RepairGunBullet_C"));
+	Test->TestNotNull(TEXT("RepairGun ground-impact sound asset loads"), ExpectedGroundImpactSound);
+	Test->TestNotNull(TEXT("RepairGun bullet class loads"), RepairBulletClass);
+	if (RepairBulletClass)
+	{
+		const ARepairGunBullet* RepairBulletCDO = RepairBulletClass->GetDefaultObject<ARepairGunBullet>();
+		Test->TestEqual(TEXT("RepairGun bullet uses its dedicated ground-impact sound"),
+			RepairBulletCDO->EnvironmentImpactSound.Get(), ExpectedGroundImpactSound);
+	}
 	Test->TestEqual(TEXT("HUD displays current ammo"), Widget->GetDisplayedCurrentAmmoForTesting(), 30);
 	Test->TestEqual(TEXT("HUD displays magazine capacity"), Widget->GetDisplayedMagazineCapacityForTesting(), 30);
 	Test->TestEqual(TEXT("HUD displays spare magazines"), Widget->GetDisplayedSpareMagazineCountForTesting(), 3);

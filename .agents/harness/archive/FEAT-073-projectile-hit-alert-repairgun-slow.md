@@ -31,3 +31,8 @@
 - 速度回读：基础 600 → 40% 减速后 360 → 重复命中仍为 360，证实不叠加。
 - `BP_RepairGunBullet` CDO：`SlowPercent=0.4`、`SlowDuration=2.5`。
 - 生命周期分支由同一 `ProcessHit` 路径保证：敌人分支 `Destroy` 后返回，环境分支继续原有膨胀逻辑。
+## 2026-09-01 session274 — RepairGun 环境命中音效
+
+- 新增 RepairGun 专属 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact_Ground`，并由 `BP_RepairGunBullet.EnvironmentImpactSound` 配置。
+- `ARepairGunBullet::ProcessHit_Implementation` 仅在非敌人环境命中时于 `HitResult.ImpactPoint` 播放；敌人命中不混入地面音效，原减速/销毁和环境膨胀/压制生命周期保持不变。
+- 音频为 0.860s、Stereo、96kHz，Volume/Pitch=1.0；Development Editor 构建成功，自动化冷启动加载和蓝图 CDO 绑定断言通过。

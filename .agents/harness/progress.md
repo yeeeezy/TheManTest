@@ -579,3 +579,9 @@
 - 仅修改 RepairGun 专属 `/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_SniperScout_Muzzle`，未改 `/Game/Core/_Shared` 或敌人枪口资产。
 - 将 System 包内 57 条 `ColorFromCurve` RGB 曲线按每个时间点原 HDR 最大通道亮度转换为 R=G=B，中性灰化核心火焰、Glow、Lens Flare、Y 形火焰与火花；Alpha 曲线、烟雾、折射、尺寸和时序不变。
 - 一次性编辑器转换入口已删除，最终 Development Editor 构建成功；冷启动定向 Data Validation 确认目标 Niagara `contains valid data`。全项目验证仍有三个既有 CyberpunkMetalhead 无 Skeleton 错误，与本次无关。
+
+## 2026-09-01 session274 — RepairGun 地面命中音效
+
+- 将下载文件 `508873-Bullet-Impact-Ground-05.wav` 导入并语义重命名为 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact_Ground`；SoundWave 为 0.860s、双声道、96kHz。
+- `ARepairGunBullet` 新增专属 `EnvironmentImpactSound` 及独立 Volume/Pitch Multiplier，`BP_RepairGunBullet` 已绑定新资产且倍率为 1.0。
+- 仅 `HitEnemy == nullptr` 的环境/地面命中在 `HitResult.ImpactPoint` 播放；命中敌人仍只执行减速并销毁。Development Editor 构建及扩展后的 AmmoLifecycle 资产绑定回归 Success。
