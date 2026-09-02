@@ -36,3 +36,9 @@
 - 新增 RepairGun 专属 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact_Ground`，并由 `BP_RepairGunBullet.EnvironmentImpactSound` 配置。
 - `ARepairGunBullet::ProcessHit_Implementation` 仅在非敌人环境命中时于 `HitResult.ImpactPoint` 播放；敌人命中不混入地面音效，原减速/销毁和环境膨胀/压制生命周期保持不变。
 - 音频为 0.860s、Stereo、96kHz，Volume/Pitch=1.0；Development Editor 构建成功，自动化冷启动加载和蓝图 CDO 绑定断言通过。
+
+## 2026-09-01 session275 — 双层 Gameplay Cue 命中反馈
+
+- session274 的 RepairGun 专属直接播放方案已被通用实现替代：声音迁为 `/Game/Weapons/_Shared/Audio/S_ProjectileImpact`，`ABulletBase` 对每次有效碰撞直接执行 `GameplayCue.Combat.ProjectileImpact`，因此环境与 Enemy 都有统一撞击声。
+- 敌人伤害仍只使用现有 `GE_BulletDamage`；该 GE 内嵌 `GameplayCue.Combat.EnemyHit`，伤害成功应用后自动提供第二层敌人受击反馈。当前 `GC_EnemyHit` 无附加资源，作为之后配置血花、命中确认音等反馈的稳定扩展点。
+- Phantom 穿透过滤早于通用 Cue；现有 Projectile/Hitscan 都汇入 `ProcessHit`。Development Editor 构建与 AmmoLifecycle 资产绑定回归均通过。

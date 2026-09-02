@@ -10,11 +10,13 @@
 #include "UI/Combat/CombatHUDWidgetBase.h"
 #include "Weapons/_Shared/Components/EquipmentManagerComponent.h"
 #include "Weapons/_Shared/Firearms/Firearm.h"
-#include "Weapons/RepairGun/Bullets/RepairGunBullet.h"
+#include "Weapons/_Shared/GAS/GameplayCues/GCN_ProjectileImpact.h"
+#include "Core/_Shared/GAS/TheManGameplayTags.h"
 #include "Editor.h"
 #include "HighResScreenshot.h"
 #include "Misc/Paths.h"
 #include "AbilitySystemComponent.h"
+#include "GameplayEffect.h"
 #include "Sound/SoundBase.h"
 
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FValidateCombatHUDCommand, FAutomationTestBase*, Test);
@@ -46,18 +48,6 @@ bool FValidateCombatHUDCommand::Update()
 		TEXT("/Game/Weapons/RepairGun/Audio/S_RepairGun_DryFire.S_RepairGun_DryFire"));
 	Test->TestNotNull(TEXT("RepairGun dry-fire sound asset loads"), ExpectedDryFireSound);
 	Test->TestEqual(TEXT("Equipped RepairGun uses its dedicated dry-fire sound"), Firearm->DryFireSound, ExpectedDryFireSound);
-	USoundBase* ExpectedGroundImpactSound = LoadObject<USoundBase>(nullptr,
-		TEXT("/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact_Ground.S_RepairGun_Impact_Ground"));
-	UClass* RepairBulletClass = LoadClass<ARepairGunBullet>(nullptr,
-		TEXT("/Game/Weapons/RepairGun/Blueprint/BP_RepairGunBullet.BP_RepairGunBullet_C"));
-	Test->TestNotNull(TEXT("RepairGun ground-impact sound asset loads"), ExpectedGroundImpactSound);
-	Test->TestNotNull(TEXT("RepairGun bullet class loads"), RepairBulletClass);
-	if (RepairBulletClass)
-	{
-		const ARepairGunBullet* RepairBulletCDO = RepairBulletClass->GetDefaultObject<ARepairGunBullet>();
-		Test->TestEqual(TEXT("RepairGun bullet uses its dedicated ground-impact sound"),
-			RepairBulletCDO->EnvironmentImpactSound.Get(), ExpectedGroundImpactSound);
-	}
 	Test->TestEqual(TEXT("HUD displays current ammo"), Widget->GetDisplayedCurrentAmmoForTesting(), 30);
 	Test->TestEqual(TEXT("HUD displays magazine capacity"), Widget->GetDisplayedMagazineCapacityForTesting(), 30);
 	Test->TestEqual(TEXT("HUD displays spare magazines"), Widget->GetDisplayedSpareMagazineCountForTesting(), 3);
@@ -119,6 +109,36 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 bool FCombatHUDAndAmmoTest::RunTest(const FString& Parameters)
 {
+	USoundBase* SharedImpactSound = LoadObject<USoundBase>(nullptr,
+		TEXT("/Game/Weapons/_Shared/Audio/S_ProjectileImpact.S_ProjectileImpact"));
+	TestNotNull(TEXT("Shared projectile impact sound loads"), SharedImpactSound);
+	UClass* ProjectileCueClass = LoadClass<UGCN_ProjectileImpact>(nullptr,
+		TEXT("/Game/Weapons/_Shared/GAS/GameplayCues/GC_ProjectileImpact.GC_ProjectileImpact_C"));
+	const UGCN_ProjectileImpact* ProjectileCue = ProjectileCueClass
+		? Cast<UGCN_ProjectileImpact>(ProjectileCueClass->GetDefaultObject()) : nullptr;
+	TestNotNull(TEXT("Universal projectile impact cue loads"), ProjectileCue);
+	if (ProjectileCue)
+	{
+		TestEqual(TEXT("Projectile impact cue uses shared sound"), ProjectileCue->ImpactSound.Get(), SharedImpactSound);
+		TestTrue(TEXT("Projectile impact cue uses the universal tag"),
+			ProjectileCue->GameplayCueTag.MatchesTagExact(TAG_GameplayCue_Combat_ProjectileImpact));
+	}
+
+	UClass* DamageEffectClass = LoadClass<UGameplayEffect>(nullptr,
+		TEXT("/Game/Weapons/_Shared/GAS/Effects/GE_BulletDamage.GE_BulletDamage_C"));
+	const UGameplayEffect* DamageEffect = DamageEffectClass
+		? Cast<UGameplayEffect>(DamageEffectClass->GetDefaultObject()) : nullptr;
+	TestNotNull(TEXT("Shared bullet damage effect loads"), DamageEffect);
+	bool bHasEnemyHitCue = false;
+	if (DamageEffect)
+	{
+		for (const FGameplayEffectCue& Cue : DamageEffect->GameplayCues)
+		{
+			bHasEnemyHitCue |= Cue.GameplayCueTags.HasTagExact(TAG_GameplayCue_Combat_EnemyHit);
+		}
+	}
+	TestTrue(TEXT("Damage effect triggers the EnemyHit cue"), bHasEnemyHitCue);
+
 	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.8f));

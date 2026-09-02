@@ -87,3 +87,7 @@
 
 - 用户前台确认血量/弹药参考图布局与留白是否符合主观观感。
 - 换弹输入与换弹动画尚未接入；当前仅提供可调用的 `ReloadMagazine()` 状态接口。
+
+## 2026-09-01 session275 — 射击回归覆盖补充
+
+- `AmmoLifecycle` 新增通用弹体撞击 Gameplay Cue 的共享声音/Tag，以及 `GE_BulletDamage` 内嵌 EnemyHit Cue 的冷加载断言；原 HUD、弹药、换弹与 Dry Fire 覆盖保持不变并通过。

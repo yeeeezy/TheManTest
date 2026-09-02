@@ -7,3 +7,6 @@ UE_DEFINE_GAMEPLAY_TAG(TAG_Input_Weapon_Reload,        "Input.Weapon.Reload")
 UE_DEFINE_GAMEPLAY_TAG(TAG_Input_Character_Interact,   "Input.Character.Interact")
 
 UE_DEFINE_GAMEPLAY_TAG(TAG_Data_Damage,                "Data.Damage")
+
+UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_Combat_ProjectileImpact, "GameplayCue.Combat.ProjectileImpact")
+UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_Combat_EnemyHit,          "GameplayCue.Combat.EnemyHit")

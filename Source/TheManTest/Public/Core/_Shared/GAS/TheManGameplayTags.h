@@ -12,3 +12,6 @@ UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Input_Character_Interact)
 
 // SetByCaller 数据 Tag：子弹命中时把 Damage 数值传入伤害 GE，由 GE 的 Health 修改器读取
 UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Data_Damage)
+
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_GameplayCue_Combat_ProjectileImpact)
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_GameplayCue_Combat_EnemyHit)

@@ -3,7 +3,6 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Enemy/EnemyBase.h"
-#include "Kismet/GameplayStatics.h"
 
 ARepairGunBullet::ARepairGunBullet()
 {
@@ -27,16 +26,6 @@ void ARepairGunBullet::ProcessHit_Implementation(
 	}
 
 	Super::ProcessHit_Implementation(HitResult, HitInstigator, SourceASC);
-
-	if (!HitEnemy && EnvironmentImpactSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(
-			this,
-			EnvironmentImpactSound,
-			HitResult.ImpactPoint,
-			EnvironmentImpactSoundVolumeMultiplier,
-			EnvironmentImpactSoundPitchMultiplier);
-	}
 
 	if (ProjectileMovement)
 	{

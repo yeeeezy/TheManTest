@@ -5,7 +5,6 @@
 #include "Environment/Hazards/HazardSuppressorInterface.h"
 #include "RepairGunBullet.generated.h"
 
-class USoundBase;
 
 /**
  * ARepairGunBullet
@@ -42,15 +41,6 @@ public:
 	// 敌人减速持续时间；连续命中刷新持续时间，不叠加强度。
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Bullet|Slow", meta = (ClampMin = "0.0"))
 	float SlowDuration = 2.5f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Bullet|Audio")
-	TObjectPtr<USoundBase> EnvironmentImpactSound;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Bullet|Audio", meta = (ClampMin = "0.0"))
-	float EnvironmentImpactSoundVolumeMultiplier = 1.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Bullet|Audio", meta = (ClampMin = "0.0"))
-	float EnvironmentImpactSoundPitchMultiplier = 1.f;
 
 private:
 	bool  bIsExpanding     = false;

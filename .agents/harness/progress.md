@@ -585,3 +585,10 @@
 - 将下载文件 `508873-Bullet-Impact-Ground-05.wav` 导入并语义重命名为 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact_Ground`；SoundWave 为 0.860s、双声道、96kHz。
 - `ARepairGunBullet` 新增专属 `EnvironmentImpactSound` 及独立 Volume/Pitch Multiplier，`BP_RepairGunBullet` 已绑定新资产且倍率为 1.0。
 - 仅 `HitEnemy == nullptr` 的环境/地面命中在 `HitResult.ImpactPoint` 播放；命中敌人仍只执行减速并销毁。Development Editor 构建及扩展后的 AmmoLifecycle 资产绑定回归 Success。
+
+## 2026-09-01 session275 — 通用弹体撞击与敌人受击 Gameplay Cue
+
+- 将撞击声迁至 `/Game/Weapons/_Shared/Audio/S_ProjectileImpact`，由 `/Game/Weapons/_Shared/GAS/GameplayCues/GC_ProjectileImpact` 统一播放；删除 RepairGun 子弹专属音效字段与分支。
+- `ABulletBase::ProcessHit` 在 Phantom 穿透过滤之后，对所有有效碰撞（含 Enemy）直接执行 `GameplayCue.Combat.ProjectileImpact`，位置、法线、物理材质和 HitResult 随 Cue 参数传递；Projectile 与现有 Hitscan 均经过该入口。
+- 现有 `/Game/Weapons/_Shared/GAS/Effects/GE_BulletDamage` 内嵌 `GameplayCue.Combat.EnemyHit`，成功伤害 Enemy 时额外触发 `/Game/Weapons/_Shared/GAS/GameplayCues/GC_EnemyHit`；不新增空壳 GE。EnemyHit 当前为无资源的正式扩展点。
+- 一次性 GE 写入接口已删除；Development Editor 冷构建成功，扩展后的 `TheManTest.Player.CombatHUD.AmmoLifecycle` 验证共享声音、两个 Cue Tag 和 GE 绑定后 Success。
