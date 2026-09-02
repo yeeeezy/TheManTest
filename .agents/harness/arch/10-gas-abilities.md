@@ -14,7 +14,7 @@
 `UGA_EnemyShoot` 公共基类统一处理人形敌人的渐进散射（基础、逐发扩散、上限、移动惩罚、恢复）和枪口 Niagara；三连发/扫射子类只负责节奏。默认人形步枪特效为 `/Game/Enemy/Humanoid/Phantom/Effects/Muzzle/Systems/NS_HumanoidRifle_Muzzle`，具体技能蓝图可覆盖；跨系统共享依赖位于 `/Game/Core/_Shared/Effects/Muzzle/`。
 
 FEAT-078 起，玩家 `UGA_Shoot` 取得当前 `AFirearm` 后首先调用 `ConsumeRound()`。空弹仅播放当前枪械独立的 `DryFireSound` 后结束 Ability，不生成弹体，也不播放实弹蒙太奇/音效、Niagara、震屏或后坐力；成功扣弹会同步广播 `OnAmmoChanged` 更新 Combat HUD。
-弹体命中反馈采用两层 Cue：`ABulletBase::ProcessHit` 对所有有效碰撞直接执行 `GameplayCue.Combat.ProjectileImpact`；现有 `GE_BulletDamage` 内嵌 `GameplayCue.Combat.EnemyHit`，仅在伤害 GE 成功应用到带 ASC 的目标后自动触发额外敌人反馈。不要为 Cue 单独创建空壳 Gameplay Effect。
+命中反馈采用独立所有权的两层 Cue：`ABulletBase::ImpactCueTag` 由具体武器/弹体选择武器命中表现；敌人 Health 确认扣减后，由目标 ASC 按 `AEnemyBase::HitReactionCueTag` 选择敌人受击表现。共享 `GE_BulletDamage` 只负责伤害，不绑定表现 Cue，也不要为 Cue 单独创建空壳 Gameplay Effect。
 成功射击的震屏由 `UGA_Shoot` 读取当前枪械 `FireCameraShake/Scale` 并通过本地 `PlayerCameraManager` 播放，只负责短促打击感；随后 `AddRecoil` 才负责实际控制视角上抬。两者不得互相替代。
 session251 起，玩家 `UGA_Reload` 由 `IA_Reload(R)` 经 Character 发送 `Input.Weapon.Reload` Gameplay Event 激活。Ability 属于当前枪械，使用独立 `ReloadAbilityClass/Handle` 随 Equip/Unequip 授予回收；当前为即时换弹，满弹或无备用弹夹时拒绝激活。
 Phantom 的四个具体射击 Ability（Shoot1/Shoot2/Burst/Suppressive，FEAT-071）统一覆盖为 BaseSpread=3°、PerShot=0.8°、Max=9°、Recovery=2°/s、MovingPenalty=2°；其两种子弹 Damage=6。公共 C++ 默认值保持不变，避免无依据影响未来其他 Enemy。

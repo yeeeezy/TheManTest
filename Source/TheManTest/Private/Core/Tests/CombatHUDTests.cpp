@@ -10,7 +10,10 @@
 #include "UI/Combat/CombatHUDWidgetBase.h"
 #include "Weapons/_Shared/Components/EquipmentManagerComponent.h"
 #include "Weapons/_Shared/Firearms/Firearm.h"
-#include "Weapons/_Shared/GAS/GameplayCues/GCN_ProjectileImpact.h"
+#include "Weapons/RepairGun/GAS/GameplayCues/GCN_RepairGunImpact.h"
+#include "Enemy/_Shared/GAS/GameplayCues/GCN_EnemyHit.h"
+#include "Weapons/RepairGun/Bullets/RepairGunBullet.h"
+#include "Enemy/EnemyBase.h"
 #include "Core/_Shared/GAS/TheManGameplayTags.h"
 #include "Editor.h"
 #include "HighResScreenshot.h"
@@ -109,35 +112,44 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 bool FCombatHUDAndAmmoTest::RunTest(const FString& Parameters)
 {
-	USoundBase* SharedImpactSound = LoadObject<USoundBase>(nullptr,
-		TEXT("/Game/Weapons/_Shared/Audio/S_ProjectileImpact.S_ProjectileImpact"));
-	TestNotNull(TEXT("Shared projectile impact sound loads"), SharedImpactSound);
-	UClass* ProjectileCueClass = LoadClass<UGCN_ProjectileImpact>(nullptr,
-		TEXT("/Game/Weapons/_Shared/GAS/GameplayCues/GC_ProjectileImpact.GC_ProjectileImpact_C"));
-	const UGCN_ProjectileImpact* ProjectileCue = ProjectileCueClass
-		? Cast<UGCN_ProjectileImpact>(ProjectileCueClass->GetDefaultObject()) : nullptr;
-	TestNotNull(TEXT("Universal projectile impact cue loads"), ProjectileCue);
-	if (ProjectileCue)
+	USoundBase* RepairGunImpactSound = LoadObject<USoundBase>(nullptr,
+		TEXT("/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact.S_RepairGun_Impact"));
+	TestNotNull(TEXT("RepairGun impact sound loads"), RepairGunImpactSound);
+	UClass* RepairGunCueClass = LoadClass<UGCN_RepairGunImpact>(nullptr,
+		TEXT("/Game/Weapons/RepairGun/GAS/GameplayCues/GC_RepairGun_Impact.GC_RepairGun_Impact_C"));
+	const UGCN_RepairGunImpact* RepairGunCue = RepairGunCueClass
+		? Cast<UGCN_RepairGunImpact>(RepairGunCueClass->GetDefaultObject()) : nullptr;
+	TestNotNull(TEXT("RepairGun impact cue loads"), RepairGunCue);
+	if (RepairGunCue)
 	{
-		TestEqual(TEXT("Projectile impact cue uses shared sound"), ProjectileCue->ImpactSound.Get(), SharedImpactSound);
-		TestTrue(TEXT("Projectile impact cue uses the universal tag"),
-			ProjectileCue->GameplayCueTag.MatchesTagExact(TAG_GameplayCue_Combat_ProjectileImpact));
+		TestEqual(TEXT("RepairGun impact cue owns its sound"), RepairGunCue->ImpactSound.Get(), RepairGunImpactSound);
+		TestTrue(TEXT("RepairGun impact cue uses its weapon tag"),
+			RepairGunCue->GameplayCueTag.MatchesTagExact(TAG_GameplayCue_Weapon_RepairGun_Impact));
 	}
+	const ARepairGunBullet* RepairGunBullet = GetDefault<ARepairGunBullet>();
+	TestTrue(TEXT("RepairGun bullet selects the RepairGun impact cue"),
+		RepairGunBullet->ImpactCueTag.MatchesTagExact(TAG_GameplayCue_Weapon_RepairGun_Impact));
+
+	UClass* EnemyCueClass = LoadClass<UGCN_EnemyHit>(nullptr,
+		TEXT("/Game/Enemy/_Shared/GAS/GameplayCues/GC_Enemy_Hit.GC_Enemy_Hit_C"));
+	const UGCN_EnemyHit* EnemyCue = EnemyCueClass
+		? Cast<UGCN_EnemyHit>(EnemyCueClass->GetDefaultObject()) : nullptr;
+	TestNotNull(TEXT("Enemy-owned hit cue loads"), EnemyCue);
+	if (EnemyCue)
+	{
+		TestTrue(TEXT("Enemy hit cue uses the enemy tag"),
+			EnemyCue->GameplayCueTag.MatchesTagExact(TAG_GameplayCue_Character_Enemy_Hit));
+	}
+	TestTrue(TEXT("Enemy base selects its independently configurable hit cue"),
+		GetDefault<AEnemyBase>()->GetHitReactionCueTag().MatchesTagExact(TAG_GameplayCue_Character_Enemy_Hit));
 
 	UClass* DamageEffectClass = LoadClass<UGameplayEffect>(nullptr,
 		TEXT("/Game/Weapons/_Shared/GAS/Effects/GE_BulletDamage.GE_BulletDamage_C"));
 	const UGameplayEffect* DamageEffect = DamageEffectClass
 		? Cast<UGameplayEffect>(DamageEffectClass->GetDefaultObject()) : nullptr;
 	TestNotNull(TEXT("Shared bullet damage effect loads"), DamageEffect);
-	bool bHasEnemyHitCue = false;
-	if (DamageEffect)
-	{
-		for (const FGameplayEffectCue& Cue : DamageEffect->GameplayCues)
-		{
-			bHasEnemyHitCue |= Cue.GameplayCueTags.HasTagExact(TAG_GameplayCue_Combat_EnemyHit);
-		}
-	}
-	TestTrue(TEXT("Damage effect triggers the EnemyHit cue"), bHasEnemyHitCue);
+	TestTrue(TEXT("Shared damage effect remains presentation-free"),
+		DamageEffect && DamageEffect->GameplayCues.IsEmpty());
 
 	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));

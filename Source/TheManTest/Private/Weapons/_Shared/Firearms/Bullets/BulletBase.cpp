@@ -98,7 +98,7 @@ void ABulletBase::ProcessHit_Implementation(
 	}
 	bHasProcessedHit = true;
 
-	if (SourceASC)
+	if (SourceASC && ImpactCueTag.IsValid())
 	{
 		FGameplayCueParameters CueParameters;
 		CueParameters.Location = HitResult.ImpactPoint;
@@ -109,7 +109,7 @@ void ABulletBase::ProcessHit_Implementation(
 		FGameplayEffectContextHandle CueContext = SourceASC->MakeEffectContext();
 		CueContext.AddHitResult(HitResult, true);
 		CueParameters.EffectContext = CueContext;
-		SourceASC->ExecuteGameplayCue(TAG_GameplayCue_Combat_ProjectileImpact, CueParameters);
+		SourceASC->ExecuteGameplayCue(ImpactCueTag, CueParameters);
 	}
 
 	// 命中目标若带 ASC 则施加伤害 GE；打墙/地等无 ASC 目标跳过此步，但子弹仍会按下方逻辑销毁。
@@ -123,6 +123,7 @@ void ABulletBase::ProcessHit_Implementation(
 				{
 					FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
 					Context.AddInstigator(HitInstigator, nullptr);
+					Context.AddHitResult(HitResult, true);
 
 					FGameplayEffectSpecHandle Spec = SourceASC->MakeOutgoingSpec(HitEffectClass, 1.f, Context);
 					if (Spec.IsValid())

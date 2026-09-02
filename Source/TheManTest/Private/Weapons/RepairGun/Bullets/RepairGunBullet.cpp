@@ -3,6 +3,7 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Enemy/EnemyBase.h"
+#include "Core/_Shared/GAS/TheManGameplayTags.h"
 
 ARepairGunBullet::ARepairGunBullet()
 {
@@ -11,6 +12,7 @@ ARepairGunBullet::ARepairGunBullet()
 
 	// 泡泡命中后自行膨胀并定时销毁，不走基类的命中即销毁逻辑
 	bDestroyOnHit = false;
+	ImpactCueTag = TAG_GameplayCue_Weapon_RepairGun_Impact;
 }
 
 void ARepairGunBullet::ProcessHit_Implementation(

@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
+#include "GameplayTagContainer.h"
+#include "GameplayEffectTypes.h"
 #include "EnemyBase.generated.h"
 
 class UAbilitySystemComponent;
@@ -48,6 +50,12 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 	void OnDeath();
+
+	// Health 确认受到伤害后调用；由敌人自身配置的 Cue 决定受击声音/特效。
+	void ExecuteHitReactionCue(const FGameplayEffectContextHandle& EffectContext, float DamageTaken);
+
+	UFUNCTION(BlueprintPure, Category = "Enemy|Feedback")
+	FGameplayTag GetHitReactionCueTag() const { return HitReactionCueTag; }
 
 	// 从「当前阶段」技能集里、指定交战距离档(近/中/远)随机释放一个技能。返回是否成功放出。
 	UFUNCTION(BlueprintCallable, Category = "Enemy|Combat")
@@ -95,6 +103,9 @@ protected:
 
 	UPROPERTY()
 	UEnemyAttributeSetBase* AttributeSet;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Feedback", meta = (Categories = "GameplayCue.Character"))
+	FGameplayTag HitReactionCueTag;
 
 	// 初始化血量的 Instant GE（蓝图配置，与玩家共用 GE_CharacterBaseBase_Init）
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS")

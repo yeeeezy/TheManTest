@@ -3,6 +3,7 @@
 #include "Enemy/EnemyAttributeSetBase.h"
 #include "Core/TheManGameStateBase.h"
 #include "GameplayEffect.h"
+#include "Core/_Shared/GAS/TheManGameplayTags.h"
 #include "Abilities/GameplayAbility.h"
 #include "Engine/Engine.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -13,6 +14,32 @@ AEnemyBase::AEnemyBase()
 
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AttributeSet = CreateDefaultSubobject<UEnemyAttributeSetBase>(TEXT("AttributeSet"));
+	HitReactionCueTag = TAG_GameplayCue_Character_Enemy_Hit;
+}
+
+void AEnemyBase::ExecuteHitReactionCue(const FGameplayEffectContextHandle& EffectContext, float DamageTaken)
+{
+	if (!AbilitySystemComponent || !HitReactionCueTag.IsValid() || DamageTaken <= 0.f)
+	{
+		return;
+	}
+
+	FGameplayCueParameters Parameters;
+	Parameters.EffectContext = EffectContext;
+	Parameters.RawMagnitude = DamageTaken;
+	Parameters.Instigator = EffectContext.GetOriginalInstigator();
+	Parameters.EffectCauser = EffectContext.GetEffectCauser();
+	if (const FHitResult* HitResult = EffectContext.GetHitResult())
+	{
+		Parameters.Location = HitResult->ImpactPoint;
+		Parameters.Normal = HitResult->ImpactNormal;
+		Parameters.PhysicalMaterial = HitResult->PhysMaterial.Get();
+	}
+	else
+	{
+		Parameters.Location = GetActorLocation();
+	}
+	AbilitySystemComponent->ExecuteGameplayCue(HitReactionCueTag, Parameters);
 }
 
 UAbilitySystemComponent* AEnemyBase::GetAbilitySystemComponent() const

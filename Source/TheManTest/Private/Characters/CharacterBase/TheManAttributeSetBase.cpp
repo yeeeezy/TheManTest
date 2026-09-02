@@ -27,6 +27,7 @@ void UTheManAttributeSetBase::PostGameplayEffectExecute(const FGameplayEffectMod
 		// 调试：敌人血量变化时屏幕输出剩余血量
 		if (AEnemyBase* DamagedEnemy = Cast<AEnemyBase>(Avatar))
 		{
+			DamagedEnemy->ExecuteHitReactionCue(Data.EffectSpec.GetContext(), DamageTaken);
 			if (GEngine)
 			{
 				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange,

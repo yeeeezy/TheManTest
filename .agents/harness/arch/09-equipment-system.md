@@ -33,7 +33,7 @@ FEAT-078 session251 起，玩家枪械可独立配置 `ReloadAbilityClass`；`Gr
 | `Source/TheManTest/Public/Weapons/_Shared/Firearms/Bullets/BulletBase.h` | CollisionSphere(QueryOnly) + BulletMesh + ProjectileMovement；`Damage`(SetByCaller 传入 HitEffectClass) / `HitEffectClass` / `bDestroyOnHit`；`InitBullet(发射者, SourceASC)`(忽略发射者防自撞) / `ProcessHit()` BlueprintNativeEvent。FEAT-073 起，玩家/非敌方弹体有效命中 `AEnemyBase` 时统一调用 `ReactToProjectileHit`，穿透判定优先。 |
 | `Source/TheManTest/Public/Weapons/RepairGun/Bullets/RepairGunBullet.h` | 环境命中保持指数膨胀（e^(Rate×t)）与危险区压制；敌人命中施加 `SlowPercent`/`SlowDuration`（默认40%/2.5秒）后立即销毁。连续命中刷新时长、不叠加强度。 |
 
-所有玩家弹体的有效碰撞由 `ABulletBase::ProcessHit` 统一执行 `GameplayCue.Combat.ProjectileImpact`，使用 `/Game/Weapons/_Shared/Audio/S_ProjectileImpact`；环境与 Enemy 都会播放，Phantom 穿透过滤不触发。Projectile 和当前 Hitscan 路径均汇入该入口，具体武器子弹不应重复持有通用撞击声音字段。
+`ABulletBase` 提供可配置 `ImpactCueTag`，有效碰撞时由攻击者 ASC 执行，但基类不绑定任何具体枪械表现。RepairGun 子弹默认使用 `GameplayCue.Weapon.RepairGun.Impact`，对应 `/Game/Weapons/RepairGun/GAS/GameplayCues/GC_RepairGun_Impact` 与 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact`；环境与 Enemy 都播放同一 RepairGun 反馈，Phantom 穿透不触发。Projectile 和当前 Hitscan 均汇入 `ProcessHit`。
 
 抛射体的根 `CollisionSphere` 必须保持 `Movable`；`ProjectileMovementComponent` 移动的是根碰撞组件，仅把子级 `BulletMesh` 设为 Movable 不足以让 Actor 飞行。若根球体为 Static，PIE 会报告 `CollisionSphere has to be 'Movable'`，子弹将停在生成点，直到其他物体碰到它才触发命中逻辑。
 

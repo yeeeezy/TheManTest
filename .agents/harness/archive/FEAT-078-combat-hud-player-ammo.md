@@ -91,3 +91,7 @@
 ## 2026-09-01 session275 — 射击回归覆盖补充
 
 - `AmmoLifecycle` 新增通用弹体撞击 Gameplay Cue 的共享声音/Tag，以及 `GE_BulletDamage` 内嵌 EnemyHit Cue 的冷加载断言；原 HUD、弹药、换弹与 Dry Fire 覆盖保持不变并通过。
+
+## 2026-09-01 session276 — 命中 Cue 回归断言纠正
+
+- 回归断言改为验证 RepairGun 专属音效/Cue/子弹 Tag、敌人自有 HitReaction Cue，以及共享 `GE_BulletDamage` 不携带表现 Cue；AmmoLifecycle 冷启动 Success。

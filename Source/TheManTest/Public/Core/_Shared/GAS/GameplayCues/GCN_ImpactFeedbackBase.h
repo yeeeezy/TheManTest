@@ -2,20 +2,22 @@
 
 #include "CoreMinimal.h"
 #include "GameplayCueNotify_Static.h"
-#include "GCN_ProjectileImpact.generated.h"
+#include "GCN_ImpactFeedbackBase.generated.h"
 
+class UNiagaraSystem;
 class USoundBase;
 
-UCLASS(Blueprintable)
-class THEMANTEST_API UGCN_ProjectileImpact : public UGameplayCueNotify_Static
+UCLASS(Abstract, Blueprintable)
+class THEMANTEST_API UGCN_ImpactFeedbackBase : public UGameplayCueNotify_Static
 {
 	GENERATED_BODY()
 
 public:
-	UGCN_ProjectileImpact();
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Impact")
 	TObjectPtr<USoundBase> ImpactSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Impact")
+	TObjectPtr<UNiagaraSystem> ImpactEffect;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Impact", meta = (ClampMin = "0.0"))
 	float VolumeMultiplier = 1.f;
@@ -23,15 +25,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Impact", meta = (ClampMin = "0.0"))
 	float PitchMultiplier = 1.f;
 
-	virtual bool OnExecute_Implementation(AActor* Target, const FGameplayCueParameters& Parameters) const override;
-};
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Impact", meta = (ClampMin = "0.0"))
+	float EffectScale = 1.f;
 
-UCLASS(Blueprintable)
-class THEMANTEST_API UGCN_EnemyHit : public UGameplayCueNotify_Static
-{
-	GENERATED_BODY()
-
-public:
-	UGCN_EnemyHit();
 	virtual bool OnExecute_Implementation(AActor* Target, const FGameplayCueParameters& Parameters) const override;
 };

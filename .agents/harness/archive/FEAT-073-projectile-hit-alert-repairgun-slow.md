@@ -42,3 +42,9 @@
 - session274 的 RepairGun 专属直接播放方案已被通用实现替代：声音迁为 `/Game/Weapons/_Shared/Audio/S_ProjectileImpact`，`ABulletBase` 对每次有效碰撞直接执行 `GameplayCue.Combat.ProjectileImpact`，因此环境与 Enemy 都有统一撞击声。
 - 敌人伤害仍只使用现有 `GE_BulletDamage`；该 GE 内嵌 `GameplayCue.Combat.EnemyHit`，伤害成功应用后自动提供第二层敌人受击反馈。当前 `GC_EnemyHit` 无附加资源，作为之后配置血花、命中确认音等反馈的稳定扩展点。
 - Phantom 穿透过滤早于通用 Cue；现有 Projectile/Hitscan 都汇入 `ProcessHit`。Development Editor 构建与 AmmoLifecycle 资产绑定回归均通过。
+
+## 2026-09-01 session276 — 命中反馈所有权纠正
+
+- session275 的跨武器共享撞击 Cue 与 GE 内嵌 EnemyHit 方案已撤销。`ABulletBase` 改为可选 `ImpactCueTag` 插槽，RepairGun 子弹默认选择其专属 `GameplayCue.Weapon.RepairGun.Impact`。
+- RepairGun 音效/Cue 分别归档于 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact` 和 `GAS/GameplayCues/GC_RepairGun_Impact`；击中环境或敌人都执行，Phantom 穿透仍不执行。
+- 共享 `GE_BulletDamage` 恢复为纯伤害。敌人受击反馈由 Health 实际扣减回调目标自己的 `HitReactionCueTag`，默认 `GameplayCue.Character.Enemy.Hit`；不同敌人蓝图可独立覆盖而不复制 GE。

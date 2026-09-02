@@ -592,3 +592,10 @@
 - `ABulletBase::ProcessHit` 在 Phantom 穿透过滤之后，对所有有效碰撞（含 Enemy）直接执行 `GameplayCue.Combat.ProjectileImpact`，位置、法线、物理材质和 HitResult 随 Cue 参数传递；Projectile 与现有 Hitscan 均经过该入口。
 - 现有 `/Game/Weapons/_Shared/GAS/Effects/GE_BulletDamage` 内嵌 `GameplayCue.Combat.EnemyHit`，成功伤害 Enemy 时额外触发 `/Game/Weapons/_Shared/GAS/GameplayCues/GC_EnemyHit`；不新增空壳 GE。EnemyHit 当前为无资源的正式扩展点。
 - 一次性 GE 写入接口已删除；Development Editor 冷构建成功，扩展后的 `TheManTest.Player.CombatHUD.AmmoLifecycle` 验证共享声音、两个 Cue Tag 和 GE 绑定后 Success。
+
+## 2026-09-01 session276 — 按武器与敌人所有权拆分命中 Cue
+
+- 纠正 session275 对“通用”的误解：撞击声只在 RepairGun 的所有命中间复用，不跨武器共享。资产迁至 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact` 与 `GAS/GameplayCues/GC_RepairGun_Impact`。
+- `ABulletBase` 仅提供可配置 `ImpactCueTag`；`ARepairGunBullet` 选择 `GameplayCue.Weapon.RepairGun.Impact`。未来其他武器可选择自己的 Cue，未配置时不产生武器命中表现。
+- `GE_BulletDamage` 已清空 Gameplay Cues，只负责伤害。敌人 Health 确认发生负向修改后，由目标 ASC 按敌人自己的 `HitReactionCueTag` 执行 `GameplayCue.Character.Enemy.Hit`；Cue 资产位于 `/Game/Enemy/_Shared/GAS/GameplayCues/GC_Enemy_Hit`。
+- 通用 GC 基类支持 Sound、Niagara、音量、音调、特效缩放，并从 Cue 参数读取位置/法线。Development Editor 冷构建与 AmmoLifecycle 回归 Success；旧共享 Cue/Audio 目录已清空移除。
