@@ -35,3 +35,12 @@ Desktop.ini
 # Local Blender working files belong under D:\Blender Projects
 *.blend1
 *.blend2
+notes/PROJECT_KNOWLEDGE_BASE.md
+README.md
+sources/DRIVE_MATERIALS_INDEX.md
+sources/originals/Haoyu Yang_The Man I Invented_High Level Schedule_5-8.xlsm
+sources/originals/Haoyu Yang_The Man I Invented_Risk Summary_5-8.xlsm
+sources/originals/Haoyu Yang_The Man I Invented_Team Composition_5-8.xlsm
+sources/originals/high_level_schedule_extracted.tsv
+sources/originals/risk_summary_extracted.tsv
+sources/originals/team_composition_extracted.tsv
