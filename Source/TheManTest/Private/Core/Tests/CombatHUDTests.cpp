@@ -116,7 +116,7 @@ bool FCombatHUDAndAmmoTest::RunTest(const FString& Parameters)
 		TEXT("/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact.S_RepairGun_Impact"));
 	TestNotNull(TEXT("RepairGun impact sound loads"), RepairGunImpactSound);
 	UClass* RepairGunCueClass = LoadClass<UGCN_RepairGunImpact>(nullptr,
-		TEXT("/Game/Weapons/RepairGun/GAS/GameplayCues/GC_RepairGun_Impact.GC_RepairGun_Impact_C"));
+		TEXT("/Game/Weapons/RepairGun/GAS/GameplayCues/GC_Weapon_RepairGun_Impact.GC_Weapon_RepairGun_Impact_C"));
 	const UGCN_RepairGunImpact* RepairGunCue = RepairGunCueClass
 		? Cast<UGCN_RepairGunImpact>(RepairGunCueClass->GetDefaultObject()) : nullptr;
 	TestNotNull(TEXT("RepairGun impact cue loads"), RepairGunCue);

@@ -595,7 +595,7 @@
 
 ## 2026-09-01 session276 — 按武器与敌人所有权拆分命中 Cue
 
-- 纠正 session275 对“通用”的误解：撞击声只在 RepairGun 的所有命中间复用，不跨武器共享。资产迁至 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact` 与 `GAS/GameplayCues/GC_RepairGun_Impact`。
+- 纠正 session275 对“通用”的误解：撞击声只在 RepairGun 的所有命中间复用，不跨武器共享。资产迁至 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact` 与 `GAS/GameplayCues/GC_Weapon_RepairGun_Impact`。
 - `ABulletBase` 仅提供可配置 `ImpactCueTag`；`ARepairGunBullet` 选择 `GameplayCue.Weapon.RepairGun.Impact`。未来其他武器可选择自己的 Cue，未配置时不产生武器命中表现。
 - `GE_BulletDamage` 已清空 Gameplay Cues，只负责伤害。敌人 Health 确认发生负向修改后，由目标 ASC 按敌人自己的 `HitReactionCueTag` 执行 `GameplayCue.Character.Enemy.Hit`；Cue 资产位于 `/Game/Enemy/_Shared/GAS/GameplayCues/GC_Enemy_Hit`。
 - 通用 GC 基类支持 Sound、Niagara、音量、音调、特效缩放，并从 Cue 参数读取位置/法线。Development Editor 冷构建与 AmmoLifecycle 回归 Success；旧共享 Cue/Audio 目录已清空移除。
@@ -608,7 +608,7 @@
 
 ### 下次提醒
 
-- 用户准备下机，要求下次继续时提醒增强 `/Game/Weapons/RepairGun/GAS/GameplayCues/GC_RepairGun_Impact` 的 `Volume Multiplier`；当前保持 1.0，本次不调整。
+- RepairGun 命中 Cue 当前为 `/Game/Weapons/RepairGun/GAS/GameplayCues/GC_Weapon_RepairGun_Impact`，`Volume Multiplier=1.0`；响度已在 SoundWave 源侧处理。
 
 ## 2026-09-01 session278 — RepairGun 实弹音源替换
 
@@ -619,7 +619,7 @@
 ## 2026-09-01 session279 — RepairGun 命中声响度处理
 
 - `S_RepairGun_Impact` 已用离线软限幅版本原路径覆盖，平均响度从 -21.22 提升至 -14.30dBFS（约 +6.91dB），峰值控制为 -1.00dBFS。
-- `GC_RepairGun_Impact.VolumeMultiplier` 已恢复 1.0，声音引用、0.859969 秒时长、双声道与 96kHz 冷回读正确。
+- `GC_Weapon_RepairGun_Impact.VolumeMultiplier` 已恢复 1.0，声音引用、0.859969 秒时长、双声道与 96kHz 冷回读正确。
 - `TheManTest.Player.CombatHUD.AmmoLifecycle` 冷启动 Success；待用户前台 PIE 主观试听。
 
 ## 2026-09-01 session280 — RepairGun 命中 Cue 本地执行修复
@@ -627,3 +627,9 @@
 - 运行时探针确认旧 `ExecuteGameplayCue` 在 `LocalOnly` Ability 已结束、Projectile 延迟撞地时被 GAS 网络/预测队列静默丢弃，`OnExecute` 未进入。
 - `ABulletBase` 改为 `InvokeGameplayCueEvent(Executed)` 立即本地执行；配置明确扫描 RepairGun 与 Enemy Gameplay Cue 目录。
 - 临时探针已全部删除，残留扫描0；Development Editor 冷构建与 `AmmoLifecycle` 均 Success。待前台 PIE 最终确认撞地声音。
+
+## 2026-09-01 session281 — RepairGun Cue Registry 命名修复
+
+- 旧 `GC_RepairGun_Impact` 因资产名缺少 `Weapon` 层，Registry 的 `GameplayCueName` 为空；即使运行时 CDO Tag 正确，Cue 管理器也无法发现。
+- 正式重命名为 `GC_Weapon_RepairGun_Impact`，新资产二进制已包含完整 `GameplayCue.Weapon.RepairGun.Impact` Registry 值；旧文件已消失。
+- 测试路径已同步，一次性脚本已删除；Development Editor 冷构建与 `AmmoLifecycle` Success。待前台 PIE 最终试听。

@@ -119,3 +119,9 @@
 - 根因是 Projectile 在 `LocalOnly` 射击 Ability 结束后才命中；旧调用进入 GAS 待发送队列时没有可用 Authority/Prediction Key，因此引擎静默丢弃 Cue。
 - `ABulletBase` 改用 `SourceASC->InvokeGameplayCueEvent(..., Executed, Parameters)` 立即执行本地单人命中反馈；`DefaultGame.ini` 同时明确登记 RepairGun 与 Enemy Gameplay Cue 扫描目录，移除全 `/Game` fallback 警告。
 - 所有 `[TEMP ImpactDiag]` 探针已删除并扫描为0；Development Editor 冷构建成功，`AmmoLifecycle` 冷启动回归 Success。待用户前台 PIE 最终听感确认。
+
+## 2026-09-01 session281 — 修复 RepairGun Cue 的 Asset Registry 映射
+
+- session280 调用方式修复后前台仍无声；进一步核对 UE 5.7 `DeriveGameplayCueTagFromAssetName` 与二进制 Registry 数据，确认旧名 `GC_RepairGun_Impact` 只能派生不存在的 `GameplayCue.RepairGun.Impact`，导致 `GameplayCueName` 为空。C++ CDO 的正确 Tag 不足以让运行时 Registry 扫描发现该资产。
+- 通过 Unreal AssetTools 将资产正式重命名为 `/Game/Weapons/RepairGun/GAS/GameplayCues/GC_Weapon_RepairGun_Impact`；新 `.uasset` 已明确包含 `GameplayCueName=GameplayCue.Weapon.RepairGun.Impact`，旧磁盘文件消失。
+- 自动化硬编码加载路径已更新；一次性脚本已删除。Development Editor 冷构建与 `AmmoLifecycle` 均 Success，待前台 PIE 最终声音确认。
