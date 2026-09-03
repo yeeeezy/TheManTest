@@ -1,5 +1,12 @@
 # 进度日志
 
+## 2026-09-03 交接：记录跨回合世界状态持久化方案
+
+- 新增 planned 功能 `FEAT-079`，仅记录设计，未修改任何游戏代码或资产；当前 active feature 仍为 `FEAT-078`。
+- 暂定架构：`UWorldPersistenceSubsystem` 跨关卡保存；`UPersistentStateComponent` 提供实例级 `None/AcrossRounds`、稳定 GUID 与通用配置；`IPersistentActorInterface` 使用 `FInstancedStruct` 采集/应用 Actor 自定义数据。
+- 回合结束统一采集全部启用持久化的存活 Actor，不采用 `MarkDirty`；非持久对象依靠现有 `OpenLevel` 流程恢复。销毁对象需在 Destroy 前写 `bExists=false` 墓碑。
+- 同类实例可分别配置；固定动态刷新物由固定 SpawnPoint 持有 GUID，随机刷新物不参与持久化。完整决策见 `archive/FEAT-079-round-world-persistence.md`，后续仍可修改，未经再次确认不得实施。
+
 ## 2026-09-01 session251 交接：R键 Gameplay Tag 换弹
 
 - 新增 `IA_Reload` 并在 `IMC_Default` 映射 R；Controller 持有 Action，Character 绑定后发送 `Input.Weapon.Reload` Gameplay Event。

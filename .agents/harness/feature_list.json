@@ -461,6 +461,26 @@
                                                "PIE 同时验证 RepairGun 子弹与潜伏者扫描效果无回归"
                                            ],
                          "verification_evidence":  "2026-07-29-session112：TMIIR 两个材质实例及 9 个依赖已通过 Unreal AssetTools 迁入主项目临时 /Game/ShapesFX_Pack，共 11 个资产；只读核对母材质为 Opaque/Unlit Surface。正式目录整理、RepairGun 蓝图赋材质、扫描地形叠加和 PIE 均尚未完成。整理命令被用户中断后核对确认目标 Effects 目录不存在且 BP_RepairGunBullet 未变脏；恢复时不得重复迁移。"
+                     },
+                     {
+                         "id":  "FEAT-079",
+                         "name":  "跨回合世界状态持久化",
+                         "status":  "planned",
+                         "description":  "利用现有死亡/倒计时归零→大厅→重新 OpenLevel 测试地图的流程，让非持久对象依靠地图重载恢复默认状态；仅保存明确启用 AcrossRounds 的 Actor 改动。新增 UWorldPersistenceSubsystem（UGameInstanceSubsystem）跨关卡保存按地图与 PersistentId 索引的 FPersistentActorState；UPersistentStateComponent 提供实例级策略、稳定 FGuid 与通用配置；IPersistentActorInterface 负责各 Actor 自定义状态的采集和应用；自定义数据使用 FInstancedStruct。回合结束统一采集全部启用持久化的存活 Actor，不采用 MarkDirty；被拾取/销毁对象必须在 Destroy 前写入 bExists=false 墓碑。固定刷新内容由固定 SpawnPoint 持有 GUID 和状态，随机地图刷新内容不参与持久化。当前仅记录方案，未修改代码或资产，后续仍可调整。",
+                         "archive_file":  "archive/FEAT-079-round-world-persistence.md",
+                         "created":  "2026-09-03",
+                         "updated":  "2026-09-03-design",
+                         "done_criteria":  [
+                                               "同一 Actor 类可按关卡实例选择 None 或 AcrossRounds；只有 AcrossRounds 实例需要稳定且唯一的 PersistentId",
+                                               "UWorldPersistenceSubsystem 跨关卡保存按地图名与 GUID 索引的 FPersistentActorState，地图重载前采集、目标地图加载完成后恢复",
+                                               "UPersistentStateComponent 管理实例级持久化策略、GUID 与是否保存 Transform；IPersistentActorInterface 采集/应用 FInstancedStruct 自定义业务数据",
+                                               "回合结束统一采集所有启用持久化的存活 Actor；非持久 Actor 不保存并由 OpenLevel 自动恢复，系统不依赖 MarkDirty",
+                                               "持久 Actor 被拾取或销毁前立即写入 bExists=false 墓碑；重新加载后对应预放置 Actor 不再存在",
+                                               "固定 SpawnPoint 自身持有 GUID 并保存生成/领取状态；随机刷新点与随机物品不参与持久化",
+                                               "GUID 无效或重复时有明确编辑器/运行时校验；不得依赖 Actor 名称、GetUniqueID 或编辑器内部 ActorGuid 作为存档契约",
+                                               "Development Editor 构建通过；自动化或 PIE 验证持久门、自定义数据、Transform、已拾取对象、固定刷新点和随机刷新物跨回合行为"
+                                           ],
+                         "verification_evidence":  "仅完成设计讨论与 harness 记录，尚未实施或验证。"
                      }
                  ],
     "_说明":  "主索引仅保留未完成、受阻及待改进功能；已完成项移至 feature_archive.json。功能详细历史仍以 archive/FEAT-*.md 为准。"
