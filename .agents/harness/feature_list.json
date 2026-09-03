@@ -466,19 +466,19 @@
                          "id":  "FEAT-079",
                          "name":  "跨回合世界状态持久化",
                          "status":  "planned",
-                         "description":  "利用现有死亡/倒计时归零→大厅→重新 OpenLevel 测试地图的流程，让非持久对象依靠地图重载恢复默认状态；仅保存明确启用 AcrossRounds 的 Actor 改动。新增 UWorldPersistenceSubsystem（UGameInstanceSubsystem）跨关卡保存按地图与 PersistentId 索引的 FPersistentActorState；UPersistentStateComponent 提供实例级策略、稳定 FGuid 与通用配置；IPersistentActorInterface 负责各 Actor 自定义状态的采集和应用；自定义数据使用 FInstancedStruct。回合结束统一采集全部启用持久化的存活 Actor，不采用 MarkDirty；被拾取/销毁对象必须在 Destroy 前写入 bExists=false 墓碑。固定刷新内容由固定 SpawnPoint 持有 GUID 和状态，随机地图刷新内容不参与持久化。当前仅记录方案，未修改代码或资产，后续仍可调整。",
+                         "description":  "利用现有死亡/倒计时归零→大厅→重新 OpenLevel 测试地图的流程，在单次游戏进程内保存世界状态。只有挂载 UPersistentStateComponent 的 Actor 接入系统，实例策略默认 AcrossRounds、可显式设为 None；门、道具、Enemy 与运行时生成对象统一按实例处理，不区分随机刷新来源。UWorldPersistenceSubsystem（UGameInstanceSubsystem）按稳定地图 Package 与 PersistentId 保存 FPersistentActorState；所有持久实例固定保存 Transform、存在状态和接口提供的 FInstancedStruct 自定义数据。组件 BeginPlay 主动注册、EndPlay 只注销，Subsystem 在回合结束时遍历弱引用注册表而不扫描整个 World；Gameplay 永久销毁必须在 Destroy 前写入 bExists=false 墓碑。第一阶段不写 USaveGame，但数据保持可序列化和版本化以便后续扩展。当前仅记录方案，未修改代码或资产。",
                          "archive_file":  "archive/FEAT-079-round-world-persistence.md",
                          "created":  "2026-09-03",
                          "updated":  "2026-09-03-design",
                          "done_criteria":  [
-                                               "同一 Actor 类可按关卡实例选择 None 或 AcrossRounds；只有 AcrossRounds 实例需要稳定且唯一的 PersistentId",
+                                               "只有挂载 UPersistentStateComponent 的 Actor 接入系统；同一 Actor 类可按实例选择 None 或 AcrossRounds，默认 AcrossRounds，且 AcrossRounds 实例必须具有稳定唯一的 PersistentId",
                                                "UWorldPersistenceSubsystem 跨关卡保存按地图名与 GUID 索引的 FPersistentActorState，地图重载前采集、目标地图加载完成后恢复",
-                                               "UPersistentStateComponent 管理实例级持久化策略、GUID 与是否保存 Transform；IPersistentActorInterface 采集/应用 FInstancedStruct 自定义业务数据",
-                                               "回合结束统一采集所有启用持久化的存活 Actor；非持久 Actor 不保存并由 OpenLevel 自动恢复，系统不依赖 MarkDirty",
+                                               "UPersistentStateComponent 只管理实例级策略与 GUID；所有 AcrossRounds 实例固定保存并恢复 Transform、存在状态和 IPersistentActorInterface 提供的 FInstancedStruct 自定义业务数据",
+                                               "组件 BeginPlay 主动注册、EndPlay 只注销；Subsystem 通过弱引用注册表统一采集，不扫描整个 World，地图卸载不得误写墓碑",
                                                "持久 Actor 被拾取或销毁前立即写入 bExists=false 墓碑；重新加载后对应预放置 Actor 不再存在",
-                                               "固定 SpawnPoint 自身持有 GUID 并保存生成/领取状态；随机刷新点与随机物品不参与持久化",
+                                               "预放置实例按关卡中序列化的自定义 GUID 匹配；运行时持久实例保存 Class、Transform 与 GUID 并可在下一回合重建，且不得与原生成逻辑重复生成",
                                                "GUID 无效或重复时有明确编辑器/运行时校验；不得依赖 Actor 名称、GetUniqueID 或编辑器内部 ActorGuid 作为存档契约",
-                                               "Development Editor 构建通过；自动化或 PIE 验证持久门、自定义数据、Transform、已拾取对象、固定刷新点和随机刷新物跨回合行为"
+                                               "Development Editor 构建通过；自动化或 PIE 验证策略默认值、注册注销、GUID、Transform、自定义数据、墓碑以及预放置/运行时实例跨回合行为"
                                            ],
                          "verification_evidence":  "仅完成设计讨论与 harness 记录，尚未实施或验证。"
                      }

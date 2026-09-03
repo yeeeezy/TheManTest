@@ -3,9 +3,10 @@
 ## 2026-09-03 交接：记录跨回合世界状态持久化方案
 
 - 新增 planned 功能 `FEAT-079`，仅记录设计，未修改任何游戏代码或资产；当前 active feature 仍为 `FEAT-078`。
-- 暂定架构：`UWorldPersistenceSubsystem` 跨关卡保存；`UPersistentStateComponent` 提供实例级 `None/AcrossRounds`、稳定 GUID 与通用配置；`IPersistentActorInterface` 使用 `FInstancedStruct` 采集/应用 Actor 自定义数据。
-- 回合结束统一采集全部启用持久化的存活 Actor，不采用 `MarkDirty`；非持久对象依靠现有 `OpenLevel` 流程恢复。销毁对象需在 Destroy 前写 `bExists=false` 墓碑。
-- 同类实例可分别配置；固定动态刷新物由固定 SpawnPoint 持有 GUID，随机刷新物不参与持久化。完整决策见 `archive/FEAT-079-round-world-persistence.md`，后续仍可修改，未经再次确认不得实施。
+- 暂定架构：`UWorldPersistenceSubsystem` 在单次游戏进程内跨关卡保存；`UPersistentStateComponent` 提供实例级 `None/AcrossRounds` 与自定义稳定 GUID，默认 `AcrossRounds`；`IPersistentActorInterface` 使用 `FInstancedStruct` 采集/应用业务数据。暂不写 `USaveGame`，但数据保持可序列化和版本化以便后续扩展。
+- 只要实例为 `AcrossRounds`，就固定保存 Transform、存在状态与自定义数据，不再设置 `bSaveTransform`。门、道具、Enemy 和运行时生成对象统一按实例处理，不对随机刷新来源设特殊规则。
+- Component 在 `BeginPlay` 主动注册到 Subsystem，`EndPlay` 只注销；Subsystem 保存时遍历 `TSet<TWeakObjectPtr<UPersistentStateComponent>>`，不扫描整个 World。只有明确的 Gameplay 永久销毁才在 `Destroy()` 前写 `bExists=false` 墓碑，地图卸载不得误记。
+- 预放置 GUID 由本系统维护并随关卡实例序列化；运行时持久实例保存 Class、Transform、GUID 和自定义状态，由 Subsystem 在下一回合重建。完整决策见 `archive/FEAT-079-round-world-persistence.md`，后续仍可修改，未经再次确认不得实施。
 
 ## 2026-09-01 session251 交接：R键 Gameplay Tag 换弹
 
