@@ -22,6 +22,7 @@
 #include "GameplayEffect.h"
 #include "Animation/AnimMontage.h"
 #include "Animation/AnimInstance.h"
+#include "Components/PointLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Core/_Shared/GAS/GameplayCues/GCN_ImpactFeedbackBase.h"
@@ -98,6 +99,8 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 		RepairGun ? RepairGun->bEnableViewRecoil : true);
 	TestNotNull(TEXT("RepairGun camera shake remains configured"),
 		RepairGun ? RepairGun->FireCameraShake.Get() : nullptr);
+	TestFalse(TEXT("RepairGun muzzle flash light stays disabled"),
+		RepairGun ? RepairGun->bEnableMuzzleFlashLight : true);
 
 	for (const FWeaponExpectation& Expected : Expectations)
 	{
@@ -116,6 +119,25 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 			Weapon->bEnableViewRecoil);
 		TestNotNull(FString::Printf(TEXT("%s camera shake remains configured"), Expected.Name),
 			Weapon->FireCameraShake.Get());
+		TestNotNull(FString::Printf(TEXT("%s owns a muzzle flash light component"), Expected.Name),
+			Weapon->GetMuzzleFlashLight());
+		const bool bExpectedMuzzleLight = FCString::Strcmp(Expected.Name, TEXT("ElectricGun")) == 0;
+		TestEqual(FString::Printf(TEXT("%s muzzle flash light enablement is correct"), Expected.Name),
+			Weapon->bEnableMuzzleFlashLight, bExpectedMuzzleLight);
+		if (bExpectedMuzzleLight)
+		{
+			TestTrue(TEXT("ElectricGun muzzle VFX uses source scale"),
+				Weapon->MuzzleEffectScale.Equals(FVector::OneVector));
+			TestTrue(TEXT("ElectricGun muzzle light uses source cyan-green color"),
+				Weapon->MuzzleFlashLightColor.Equals(
+					FLinearColor(0.305882f, 1.f, 0.827451f, 1.f), KINDA_SMALL_NUMBER));
+			TestEqual(TEXT("ElectricGun muzzle light intensity matches source"),
+				Weapon->MuzzleFlashLightIntensity, 600.f);
+			TestEqual(TEXT("ElectricGun muzzle light radius matches source"),
+				Weapon->MuzzleFlashLightAttenuationRadius, 200.f);
+			TestEqual(TEXT("ElectricGun muzzle light fade is short"),
+				Weapon->MuzzleFlashLightDuration, 0.1f);
+		}
 		TestTrue(FString::Printf(TEXT("%s owns its fire montage"), Expected.Name),
 			Weapon->FireMontage && Weapon->FireMontage->GetPathName().Contains(Expected.Name));
 		TestTrue(FString::Printf(TEXT("%s owns its equip montage"), Expected.Name),
@@ -202,6 +224,41 @@ bool FValidateEquippedWeaponAnimationCommand::Update()
 			MontageLength > 0.f && ArmsAnimInstance->Montage_IsPlaying(Weapon->FireMontage));
 		ArmsAnimInstance->Montage_Stop(0.f, Weapon->FireMontage);
 	}
+
+	if (ExpectedWeaponName == TEXT("ElectricGun"))
+	{
+		Weapon->PlayMuzzleFlashLight();
+		Test->TestTrue(TEXT("ElectricGun muzzle flash light becomes visible when fired"),
+			Weapon->GetMuzzleFlashLight() && Weapon->GetMuzzleFlashLight()->IsVisible());
+		Test->TestEqual(TEXT("ElectricGun muzzle flash light starts at configured intensity"),
+			Weapon->GetMuzzleFlashLight() ? Weapon->GetMuzzleFlashLight()->Intensity : 0.f,
+			Weapon->MuzzleFlashLightIntensity);
+	}
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(
+	FValidateElectricMuzzleLightFadedCommand,
+	FAutomationTestBase*, Test);
+
+bool FValidateElectricMuzzleLightFadedCommand::Update()
+{
+	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+	APlayerController* Controller = World ? World->GetFirstPlayerController() : nullptr;
+	AFPSCharacterBase* Player = Controller ? Cast<AFPSCharacterBase>(Controller->GetPawn()) : nullptr;
+	AFirearm* Weapon = Player && Player->GetEquipmentManager()
+		? Cast<AFirearm>(Player->GetEquipmentManager()->GetCurrentEquipment()) : nullptr;
+	Test->TestNotNull(TEXT("ElectricGun remains equipped while muzzle light fades"), Weapon);
+	if (Weapon)
+	{
+		Test->TestTrue(TEXT("ElectricGun remains current during muzzle light fade check"),
+			Weapon->GetClass()->GetPathName().Contains(TEXT("ElectricGun")));
+		Test->TestFalse(TEXT("ElectricGun muzzle flash light hides after its short fade"),
+			Weapon->GetMuzzleFlashLight() && Weapon->GetMuzzleFlashLight()->IsVisible());
+		Test->TestEqual(TEXT("ElectricGun muzzle flash light reaches zero intensity"),
+			Weapon->GetMuzzleFlashLight() ? Weapon->GetMuzzleFlashLight()->Intensity : -1.f,
+			0.f);
+	}
 	return true;
 }
 
@@ -235,6 +292,8 @@ bool FThreeWeaponPIESwitchTest::RunTest(const FString& Parameters)
 	ADD_LATENT_AUTOMATION_COMMAND(FSwitchToNextWeaponCommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.7f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidateEquippedWeaponAnimationCommand(this, TEXT("ElectricGun")));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
+	ADD_LATENT_AUTOMATION_COMMAND(FValidateElectricMuzzleLightFadedCommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FSwitchToNextWeaponCommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.7f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidateEquippedWeaponAnimationCommand(this, TEXT("ExplosionGun")));

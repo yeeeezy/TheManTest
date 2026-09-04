@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-04-feat080-model-swap-laser-material-repair",
+    "last_updated":  "2026-09-04-feat080-electric-muzzle-flash-light",
     "active_feature":  "FEAT-080",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -471,8 +471,8 @@
                          "description":  "为 RepairGun 正式接通现有第一人称开火蒙太奇；以 RepairGun 为完整配置基线创建电击枪和爆炸枪，两把新枪仅替换各自模型、枪口与命中特效。源模型和 VFX 来自外部 VFXPack 项目；不迁移源角色、武器蓝图或动画。即使表现依赖内容相同，也按武器所有权复制到各自语义目录并重命名，使三把枪后续可以独立调整。",
                          "archive_file":  "archive/FEAT-080-three-weapon-setup.md",
                          "created":  "2026-09-03",
-                         "updated":  "2026-09-04-model-swap-laser-material-repair",
-                         "latest_verification_evidence":  "2026-09-04-model-swap-laser-material-repair：电击枪与爆炸枪的主模型、Outline、握持偏移及 MuzzleLocalTransform 已成套互换，同时保留各自 owner-local 语义路径与枪体材质；冷启动回读 ElectricGun LOD0=10272 顶点、ExplosionGun LOD0=8706 顶点。定位 Laser 方形面片由 11 个材质实例 Main_Texture 空引用造成，源工程对应引用完整且主材质仍为 Translucent；已恢复全部 11 个 ElectricGun 本地贴图引用。冷启动精确资产校验与定向依赖扫描 DONE，ThreeWeaponBaseline 与 ThreeWeaponPIESwitch 在 NullRHI 和真实 D3D 渲染设备下均为 Success。",
+                         "updated":  "2026-09-04-electric-muzzle-flash-light",
+                         "latest_verification_evidence":  "2026-09-04-electric-muzzle-flash-light：AFirearm 新增默认关闭的可配置枪口 PointLight 与定时平方淡出；UGA_Shoot 在成功开火反馈链触发。BP_ElectricGun 单独启用青绿色 (78,255,211) 点光，Intensity=600、AttenuationRadius=200、Duration=0.1s，并把 MuzzleEffectScale 从 0.85 调至 1.0；RepairGun/ExplosionGun 不受影响。Development Editor / Win64 构建成功；ThreeWeaponBaseline 与 ThreeWeaponPIESwitch（含运行时点亮及淡出归零断言）在 NullRHI 和真实 D3D12/SM6 渲染路径下均为 Success。",
                          "done_criteria":  [
                                                "RepairGun、电击枪和爆炸枪都使用现有 MaintenanceWorker 第一人称持枪动画体系，并分别引用所属武器目录内的独立开火序列、开火蒙太奇、装备蒙太奇和 AnimBP 副本",
                                                "电击枪使用原爆炸枪的 SM_Weapon_Ballistics_Rifle_02 几何体；枪口使用 NE_VFX_Muzzle_Laser_Burst_2，所有目标统一使用 NE_VFX_Projectile_Impact_Laser_2，并保留仅环境生成的紫色贴花和 1.1 尺寸倍率",

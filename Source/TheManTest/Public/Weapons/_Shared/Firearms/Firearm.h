@@ -13,6 +13,7 @@ class UAbilitySystemComponent;
 class UNiagaraSystem;
 class UCameraShakeBase;
 class UStaticMeshComponent;
+class UPointLightComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
 	FPlayerAmmoChanged,
@@ -117,6 +118,24 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|VFX")
 	FVector MuzzleEffectScale = FVector::OneVector;
 
+	// Optional fire-time light. Disabled by default so existing firearms keep their current look.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|VFX|Muzzle Light")
+	bool bEnableMuzzleFlashLight = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|VFX|Muzzle Light")
+	FLinearColor MuzzleFlashLightColor = FLinearColor(0.305882f, 1.f, 0.827451f, 1.f);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|VFX|Muzzle Light", meta = (ClampMin = "0.0"))
+	float MuzzleFlashLightIntensity = 600.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|VFX|Muzzle Light", meta = (ClampMin = "0.0"))
+	float MuzzleFlashLightAttenuationRadius = 200.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|VFX|Muzzle Light", meta = (ClampMin = "0.01"))
+	float MuzzleFlashLightDuration = 0.1f;
+
+	void PlayMuzzleFlashLight();
+
 	/* ===== 相机反馈 ===== */
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Camera")
@@ -172,11 +191,21 @@ public:
 	FORCEINLINE int32 GetCurrentAmmo() const { return CurrentAmmo; }
 	FORCEINLINE int32 GetMagazineCapacity() const { return MagazineCapacity; }
 	FORCEINLINE int32 GetSpareMagazineCount() const { return SpareMagazineCount; }
+	FORCEINLINE UPointLightComponent* GetMuzzleFlashLight() const { return MuzzleFlashLight; }
 
 private:
 	// 可选的静态枪体叠加壳（例如 VFXPack Rifle Outline）；附着主 StaticMesh，不参与碰撞/弹道。
 	UPROPERTY(VisibleAnywhere, Category = "Weapon|Visual")
 	TObjectPtr<UStaticMeshComponent> StaticMeshOverlay;
+
+	UPROPERTY(VisibleAnywhere, Category = "Weapon|VFX|Muzzle Light")
+	TObjectPtr<UPointLightComponent> MuzzleFlashLight;
+
+	void UpdateMuzzleFlashLight();
+	void StopMuzzleFlashLight();
+
+	FTimerHandle MuzzleFlashLightTimerHandle;
+	float MuzzleFlashLightStartTime = 0.f;
 
 	FGameplayAbilitySpecHandle PrimaryFireHandle;
 	FGameplayAbilitySpecHandle SecondaryFireHandle;

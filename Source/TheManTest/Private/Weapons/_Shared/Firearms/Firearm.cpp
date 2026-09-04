@@ -1,4 +1,5 @@
 #include "Weapons/_Shared/Firearms/Firearm.h"
+#include "Components/PointLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Weapons/_Shared/Firearms/FirearmAnimInstance.h"
@@ -9,7 +10,9 @@
 #include "Animation/AnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Engine.h"
+#include "Engine/World.h"
 #include "NiagaraSystem.h"
+#include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 
 AFirearm::AFirearm()
@@ -19,6 +22,13 @@ AFirearm::AFirearm()
 	StaticMeshOverlay->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	StaticMeshOverlay->SetGenerateOverlapEvents(false);
 	StaticMeshOverlay->SetCastShadow(false);
+
+	MuzzleFlashLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("MuzzleFlashLight"));
+	MuzzleFlashLight->SetupAttachment(RootComponent);
+	MuzzleFlashLight->SetMobility(EComponentMobility::Movable);
+	MuzzleFlashLight->SetCastShadows(true);
+	MuzzleFlashLight->SetIntensity(0.f);
+	MuzzleFlashLight->SetVisibility(false);
 
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> DefaultPlayerMuzzle(
 		TEXT("/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_Muzzle.NS_RepairGun_Muzzle"));
@@ -36,6 +46,68 @@ void AFirearm::BeginPlay()
 	SpareMagazineCount = FMath::Max(0, SpareMagazineCount);
 	CurrentAmmo = MagazineCapacity;
 	OnAmmoChanged.Broadcast(CurrentAmmo, MagazineCapacity, SpareMagazineCount);
+	StopMuzzleFlashLight();
+}
+
+void AFirearm::PlayMuzzleFlashLight()
+{
+	UWorld* World = GetWorld();
+	if (!bEnableMuzzleFlashLight || !MuzzleFlashLight || !World ||
+		MuzzleFlashLightIntensity <= 0.f || MuzzleFlashLightAttenuationRadius <= 0.f)
+	{
+		return;
+	}
+
+	const FTransform MuzzleTransform = GetMuzzleWorldTransform();
+	MuzzleFlashLight->SetWorldLocationAndRotation(
+		MuzzleTransform.GetLocation(), MuzzleTransform.Rotator());
+	MuzzleFlashLight->SetLightColor(MuzzleFlashLightColor);
+	MuzzleFlashLight->SetAttenuationRadius(MuzzleFlashLightAttenuationRadius);
+	MuzzleFlashLight->SetIntensity(MuzzleFlashLightIntensity);
+	MuzzleFlashLight->SetVisibility(true);
+
+	MuzzleFlashLightStartTime = World->GetTimeSeconds();
+	World->GetTimerManager().ClearTimer(MuzzleFlashLightTimerHandle);
+	World->GetTimerManager().SetTimer(
+		MuzzleFlashLightTimerHandle,
+		this,
+		&AFirearm::UpdateMuzzleFlashLight,
+		1.f / 60.f,
+		true);
+}
+
+void AFirearm::UpdateMuzzleFlashLight()
+{
+	UWorld* World = GetWorld();
+	if (!World || !MuzzleFlashLight)
+	{
+		StopMuzzleFlashLight();
+		return;
+	}
+
+	const float Duration = FMath::Max(MuzzleFlashLightDuration, 0.01f);
+	const float Elapsed = World->GetTimeSeconds() - MuzzleFlashLightStartTime;
+	const float FadeAlpha = 1.f - FMath::Clamp(Elapsed / Duration, 0.f, 1.f);
+	MuzzleFlashLight->SetIntensity(MuzzleFlashLightIntensity * FadeAlpha * FadeAlpha);
+
+	if (FadeAlpha <= 0.f)
+	{
+		StopMuzzleFlashLight();
+	}
+}
+
+void AFirearm::StopMuzzleFlashLight()
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(MuzzleFlashLightTimerHandle);
+	}
+
+	if (MuzzleFlashLight)
+	{
+		MuzzleFlashLight->SetIntensity(0.f);
+		MuzzleFlashLight->SetVisibility(false);
+	}
 }
 
 bool AFirearm::ConsumeRound()
@@ -120,6 +192,8 @@ void AFirearm::Equip(AActor* NewOwner)
 
 void AFirearm::Unequip()
 {
+	StopMuzzleFlashLight();
+
 	// 回收技能
 	if (AActor* CurrentOwner = GetOwner())
 	{

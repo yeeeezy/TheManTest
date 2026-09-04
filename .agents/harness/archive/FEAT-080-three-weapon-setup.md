@@ -99,3 +99,10 @@
 - 排查原工程和目标工程的 Laser 材质后确认：主材质均为 Translucent/Surface/TwoSided，问题不是 Niagara 加载或 BlendMode；目标工程有 11 个材质实例的 `Main_Texture` 参数为空，而源工程对应参数均有效，导致白色默认纹理把 Niagara Sprite 卡片显示成明显方块。
 - 已恢复 LensFlare 1 项、Lightning 5 项、MuzzleFlash 1 项、Smoke 2 项、Fire 1 项与 Rocks 1 项，共 11 个 owner-local 贴图引用。冷启动精确回读 11/11 材质参数、两把枪主模型/Outline/材质/握持/枪口位置及两个 Laser System 均通过，临时交换目录在 Asset Registry 与磁盘均不存在。
 - Blueprint 在 UE 内重新编译保存；`TheManTest.Player.Weapons.ThreeWeaponBaseline` 与 `TheManTest.Player.Weapons.ThreeWeaponPIESwitch` 在 NullRHI 和真实 D3D 渲染设备下均为 Success，未出现 Material、Niagara、Shader 或 D3D 错误；定向依赖扫描为 DONE。写入前的地图归档和 Laser 初次迁移结果已封存于 WIP checkpoint `6549004`；本轮结果等待用户明确要求后再更新 Git。
+
+## 2026-09-04 电击枪开火点光增强
+
+- 对比源项目持枪开火状态后确认双方使用同一 Laser Burst 2 枪口 Niagara；源武器更强的局部青绿色反光主要来自开火时的 `MuzzleLight`，而 `Weapon_Idle_Particle` 只属于拾取/展示状态。本轮不提高测试地图全局 Bloom。
+- `AFirearm` 新增默认关闭的可配置 `MuzzleFlashLight` PointLight，配置包含颜色、强度、衰减半径和持续时间。`UGA_Shoot` 在实弹开火反馈链触发点光；快速连射会重置计时，`Unequip` 会立即清灯，定时器以平方曲线淡出至 0 后隐藏组件。
+- `BP_ElectricGun` 单独设置 `MuzzleEffectScale=(1,1,1)`、点光颜色 `(78,255,211)`、Intensity=600、AttenuationRadius=200、Duration=0.1s。RepairGun 与 ExplosionGun 继续继承默认关闭，不改变现有表现。
+- Development Editor / Win64 构建成功。`ThreeWeaponBaseline` 增加三枪启用状态与电击枪参数断言；`ThreeWeaponPIESwitch` 增加运行时立即点亮、0.2 秒后隐藏且强度归零断言。两项测试在 NullRHI 与真实 D3D12/SM6 路径均为 Success。D3D 日志仍会报告项目既有 `M_UE4Man_Body` 缺失输入纹理警告，与本轮武器改动无关。

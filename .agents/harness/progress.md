@@ -4,7 +4,7 @@
 
 - `FEAT-080`：RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 - 状态：`in_progress`
-- 当前阶段：暗场地图已整理到 `/Game/Maps/VFXTest/VFXTestMap`；电击枪与爆炸枪的枪体/Outline/握持和枪口位置已互换，电击枪 Laser 材质的 11 个空贴图引用已修复；Phantom 静止命中目标、EnemyBase 通用血条和无视角后坐测试配置已就绪，可继续开发爆炸弹逻辑。
+- 当前阶段：暗场地图已整理到 `/Game/Maps/VFXTest/VFXTestMap`；两枪模型互换与 Laser 材质修复完成；电击枪已按源武器补上开火瞬间青绿色点光并恢复 1.0 枪口特效倍率；Phantom 静止命中目标、EnemyBase 通用血条和无视角后坐测试配置已就绪，可继续开发爆炸弹逻辑。
 - 详细历史：`archive/FEAT-080-three-weapon-setup.md`
 
 ## 已确认方案
@@ -15,6 +15,7 @@
 - 两把新枪除模型和 VFX 外直接复制 RepairGun 配置。
 - 即使素材相同，也复制并重命名到各武器所有者目录，确保后续独立修改。
 - 不迁移外部项目的角色、武器蓝图或动画，不进行动画重定向。
+- 不提高测试地图全局 Bloom；电击枪单独使用 `MuzzleEffectScale=1.0` 和青绿色短时枪口点光（600 强度、200 半径、0.1 秒淡出），其他枪默认关闭该点光。
 
 ## 最近完成
 
@@ -33,6 +34,7 @@
 - 从外部 VFXPack 迁入 Laser Burst 2 与 Laser Impact 2 共 51 项依赖，全部重命名/合并到 `/Game/Weapons/ElectricGun`。新枪口与命中 Niagara 的依赖闭包全部为武器本地路径；旧 `NS_ElectricGun_Muzzle`、`NS_ElectricGun_Impact`、无引用旧依赖、供应商目录和 Redirector 已删除。
 - 电击枪与爆炸枪的主枪体、Outline、模型握持偏移和 `MuzzleLocalTransform` 已成套互换；最终语义路径仍分别为各自 owner-local `SM_ElectricGun` / `SM_ExplosionGun`，枪体材质继续保持电击青蓝与爆破橙色主题。
 - 查明 Laser 方形边缘来自迁移后 11 个材质实例 `Main_Texture` 为空，而非 Niagara 或混合模式加载失败；已按源工程恢复 LensFlare、Lightning、MuzzleFlash、Smoke、Fire 与 Rocks 的本地贴图引用。冷启动精确回读 11/11 通过，ThreeWeaponBaseline 与 ThreeWeaponPIESwitch 在 NullRHI 和真实 D3D 渲染设备下均为 Success。
+- `AFirearm` 新增默认关闭的可配置枪口 `PointLight` 和定时淡出；`BP_ElectricGun` 单独启用源武器青绿色 `(78,255,211)`、强度 600、半径 200、0.1 秒平方淡出，并把 Laser 枪口倍率由 0.85 恢复为 1.0。Development Editor 构建、NullRHI 与 D3D12/SM6 两项三枪自动化均通过。
 
 ## 当前待办
 
@@ -47,4 +49,4 @@
 - 2026-09-04 删除武器 Cue 的 CharacterImpactEffect 分支与两套 HitBox Flash 资产；默认 `GameplayCue.Character.Enemy.Hit` 保留，具体敌人需要差异时再新增专属 Character Hit Tag。
 - 2026-09-04 创建 `BT_Phantom_TestIdle` 与 `BP_Phantom_TestIdleAIController` 并挂到 `BP_Phantom`；PIE 验证 Phantom 静止。正式 AI 的恢复值已记录在 archive 与 `arch/11-enemy-ai.md`。
 - 2026-09-04 `AEnemyBase` 通用血条与三枪临时无视角后坐配置已实现；恢复视角后坐只需把 `bEnableViewRecoil` 默认值或武器 Blueprint 覆盖改为 true，Camera Shake 无需恢复。
-- 默认 Bullet GE 改动及此前现场已封存于本地 WIP checkpoint `3419214`；统一武器命中 Cue、CharacterImpact 资产清理以及用户调整的 `BP_ExplosionGun` 已封存于本地 WIP checkpoint `5ecbdec`；暗场地图初版已封存在 WIP checkpoint `ddf7085`；地图归档和电击枪 Laser VFX 初次迁移已封存在 WIP checkpoint `6549004`。当前模型交换与 Laser 材质参数修复尚未提交，不要重复迁移或重新生成武器资产。
+- 默认 Bullet GE 改动及此前现场已封存于本地 WIP checkpoint `3419214`；统一武器命中 Cue、CharacterImpact 资产清理以及用户调整的 `BP_ExplosionGun` 已封存于 `5ecbdec`；暗场地图初版为 `ddf7085`；地图归档和电击枪 Laser VFX 初次迁移为 `6549004`；模型交换与 Laser 材质修复已封存于 `a2bd562`。当前枪口点光改动尚未提交，等待用户明确说“更新 Git”。

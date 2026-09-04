@@ -126,6 +126,7 @@ void UGA_Shoot::ActivateAbility(
 			Effect->Activate(true);
 		}
 	}
+	Firearm->PlayMuzzleFlashLight();
 
 	if (Firearm->FireMontage)
 	{

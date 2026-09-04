@@ -17,6 +17,8 @@ Equip Montage 兼容代码仍保留，但 FEAT-074 session178 起不再由开局
 `AFirearm` 还提供可按具体武器覆盖的 `MuzzleEffect / MuzzleEffectRotation / MuzzleEffectScale`；`UGA_Shoot` 每发在实际 Muzzle Socket 附着一次性 Niagara。RepairGun 当前使用 `/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_SniperScout_Muzzle`（FEAT-072，从外部 Sniper Scout 精确迁入，包含枪口闪光与烟雾）；专属前向烟雾材质/纹理位于同一 RepairGun Muzzle 目录，其余复用依赖位于 `/Game/Core/_Shared/Effects/Muzzle/`。
 该 RepairGun 专属 System 的火焰、Glow、Lens Flare、Y 形火焰和火花颜色曲线已灰度化为中性灰；共享依赖仍保持原色，不得为了 RepairGun 外观修改 `/Game/Core/_Shared`。
 
+`AFirearm` 同时提供默认关闭的 `MuzzleFlashLight` PointLight，以及 `bEnableMuzzleFlashLight / Color / Intensity / AttenuationRadius / Duration` 配置。`UGA_Shoot` 只在成功消耗实弹后的开火反馈链调用；连续开火重置淡出计时，`Unequip` 立即清理。当前仅 `BP_ElectricGun` 启用：Laser 枪口倍率 1.0，点光颜色 `(78,255,211)`、强度 600、半径 200、0.1 秒平方淡出；RepairGun 与 ExplosionGun 保持关闭。该局部灯光用于还原源武器开火时的青绿色环境反光，不得用提高地图全局 Bloom 代替。
+
 FEAT-080 起，MaintenanceWorker 的三把初始枪均为 `AFirearm` Blueprint 配置：`BP_RepairGun`、`BP_ElectricGun`、`BP_ExplosionGun`。2026-09-04 用户要求互换两把新枪的枪体：电击枪的 owner-local `SM_ElectricGun` 当前承载 Ballistics Rifle 02 几何体，使用 `NS_ElectricGun_LaserMuzzle + NS_ElectricGun_LaserImpact`；爆炸枪的 owner-local `SM_ExplosionGun` 当前承载 SMG 02 几何体，使用 `NS_ExplosionGun_Muzzle + NS_ExplosionGun_Impact`。主模型、Outline、握持偏移与 `MuzzleLocalTransform` 必须作为一组保持对应。两把新枪的玩法数据复制 RepairGun，但动画、AnimBP、音频、CameraShake、Bullet、GameplayCue、弹体 Mesh/材质以及迁入的模型/VFX 依赖均位于各自 `/Game/Weapons/<WeaponName>/`，不得重新指回 RepairGun 专属资产。
 
 RepairGun 的成功射击 SoundWave 为 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Fire`，由 `BP_RepairGun.FireSound` 配置；`UGA_Shoot` 在真实枪口世界位置播放。空弹音效应使用独立字段/反馈链，不得复用实弹 `FireSound`。
