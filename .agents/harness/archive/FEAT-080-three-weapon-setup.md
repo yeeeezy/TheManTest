@@ -91,3 +91,11 @@
 - 删除被替换的 `NS_ElectricGun_Muzzle`、`NS_ElectricGun_Impact` 及 5 个确认无外部引用的旧专属效果依赖；保留紫色环境贴花、命中音效、CameraShake 与所有仍被新系统或其他电击枪资产引用的资源。
 - 将测试地图从 `/Game/Maps/VFXTestMap` 整理到 `/Game/Maps/VFXTest/VFXTestMap`，与 `/Game/Maps/VFXTest/Materials/M_VFXTest_Dark` 同目录归档。冷启动打开新地图确认 13 个预置 Actor、`VFXTest_Phantom` 与 `VFXTest_PlayerStart` 均保留，旧根目录地图不存在。
 - `CombatHUDTests.cpp` 的 ThreeWeaponBaseline 硬编码路径同步更新为新 Laser 系统；Blueprint/Cue 已在 Unreal 内编译保存。Development Editor / Win64 构建成功；冷启动校验输出 `CODEX_ELECTRIC_LASER_VALIDATE|DONE|dependencies=51|actors=13`；`TheManTest.Player.Weapons.ThreeWeaponBaseline` 为 Success。
+
+## 2026-09-04 两枪模型互换与 Laser 方形面片修复
+
+- 按用户要求互换电击枪与爆炸枪的主模型和 Outline。最终仍保留 owner-local 语义路径：`SM_ElectricGun` 现承载原 Ballistics Rifle 02 几何体（LOD0 10272 顶点），`SM_ExplosionGun` 现承载原 SMG 02 几何体（LOD0 8706 顶点），未建立跨武器目录引用。
+- 与几何体绑定的 StaticMesh 相对位置及 `MuzzleLocalTransform` 同步交换；电击枪使用原步枪握持/枪口位置，爆炸枪使用原 SMG 握持/枪口位置。枪体材质没有跟随来源交叉引用，仍分别使用 `MI_ElectricGun` 青蓝主题与 `MI_ExplosionGun` 橙色主题。
+- 排查原工程和目标工程的 Laser 材质后确认：主材质均为 Translucent/Surface/TwoSided，问题不是 Niagara 加载或 BlendMode；目标工程有 11 个材质实例的 `Main_Texture` 参数为空，而源工程对应参数均有效，导致白色默认纹理把 Niagara Sprite 卡片显示成明显方块。
+- 已恢复 LensFlare 1 项、Lightning 5 项、MuzzleFlash 1 项、Smoke 2 项、Fire 1 项与 Rocks 1 项，共 11 个 owner-local 贴图引用。冷启动精确回读 11/11 材质参数、两把枪主模型/Outline/材质/握持/枪口位置及两个 Laser System 均通过，临时交换目录在 Asset Registry 与磁盘均不存在。
+- Blueprint 在 UE 内重新编译保存；`TheManTest.Player.Weapons.ThreeWeaponBaseline` 与 `TheManTest.Player.Weapons.ThreeWeaponPIESwitch` 在 NullRHI 和真实 D3D 渲染设备下均为 Success，未出现 Material、Niagara、Shader 或 D3D 错误；定向依赖扫描为 DONE。写入前的地图归档和 Laser 初次迁移结果已封存于 WIP checkpoint `6549004`；本轮结果等待用户明确要求后再更新 Git。
