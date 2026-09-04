@@ -82,3 +82,12 @@
 - `VFXTest_PlayerStart` 朝向正前方的 `VFXTest_Phantom`；Phantom 沿用专属静止 AI、0 移速和 EnemyBase 通用血条。地图 GameMode 为 `BP_TheManGamemodeBase_C`。
 - 冷启动校验确认 13 个预期 Actor、Phantom 位置 `(250,0,96)`、MaxWalkSpeed=0、1 个继承血条组件、正确 GameMode 与 Manual Exposure；MapCheck 为 0 Error / 0 Warning。
 - 实际 `-game` 启动确认地图进入 Play、默认玩家 Pawn 与 RepairGun 成功生成；渲染截帧确认深灰房间、冷暖分区、Phantom 和环境靶面均清晰可见。截图保存在 `Saved/Screenshots/WindowsEditor/ScreenShot00002.png`。
+
+## 2026-09-04 电击枪 Laser VFX 替换与地图归档
+
+- 按用户要求从外部资源项目迁入 `/Game/VFX_SciFi_Muzzle_And_Impact_Pack_1/VFX/Presets/Muzzle/NE_VFX_Muzzle_Laser_Burst_2` 与 `/Game/VFX_SciFi_Muzzle_And_Impact_Pack_1/VFX/Presets/Impacts/NE_VFX_Projectile_Impact_Laser_2`，连同依赖共 51 个包；未迁移源武器蓝图、角色或动画。
+- 两个 Niagara System 在目标项目内分别语义化命名为 `/Game/Weapons/ElectricGun/Effects/Muzzle/Systems/NS_ElectricGun_LaserMuzzle` 与 `/Game/Weapons/ElectricGun/Effects/Impact/Systems/NS_ElectricGun_LaserImpact`。`BP_ElectricGun.MuzzleEffect` 和 `GC_Weapon_ElectricGun_Impact.ImpactEffect` 已改为对应新系统。
+- 依赖按 ElectricGun 所有权合并/重命名到 `/Game/Weapons/ElectricGun/Effects`；冷启动递归检查覆盖 51 个依赖包，所有 `/Game` 依赖均位于 ElectricGun 目录。迁移期 40 个 Redirector 通过 UE 5.7 `ResavePackages -FixupRedirects` 删除，供应商路径为空。
+- 删除被替换的 `NS_ElectricGun_Muzzle`、`NS_ElectricGun_Impact` 及 5 个确认无外部引用的旧专属效果依赖；保留紫色环境贴花、命中音效、CameraShake 与所有仍被新系统或其他电击枪资产引用的资源。
+- 将测试地图从 `/Game/Maps/VFXTestMap` 整理到 `/Game/Maps/VFXTest/VFXTestMap`，与 `/Game/Maps/VFXTest/Materials/M_VFXTest_Dark` 同目录归档。冷启动打开新地图确认 13 个预置 Actor、`VFXTest_Phantom` 与 `VFXTest_PlayerStart` 均保留，旧根目录地图不存在。
+- `CombatHUDTests.cpp` 的 ThreeWeaponBaseline 硬编码路径同步更新为新 Laser 系统；Blueprint/Cue 已在 Unreal 内编译保存。Development Editor / Win64 构建成功；冷启动校验输出 `CODEX_ELECTRIC_LASER_VALIDATE|DONE|dependencies=51|actors=13`；`TheManTest.Player.Weapons.ThreeWeaponBaseline` 为 Success。

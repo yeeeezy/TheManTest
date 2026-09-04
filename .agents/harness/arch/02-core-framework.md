@@ -24,4 +24,4 @@
 
 ## 测试地图
 
-- `/Game/Maps/VFXTestMap`：FEAT-080 使用的独立暗场武器 VFX 测试房。World Settings 使用 `BP_TheManGamemodeBase_C`，PlayerStart 正对预放置的静止 `BP_Phantom`；固定 Manual Exposure，包含冷暖低强度灯光和环境命中靶面。它不替代主流程 `TestMap`。
+- `/Game/Maps/VFXTest/VFXTestMap`：FEAT-080 使用的独立暗场武器 VFX 测试房。地图及专属材质统一收在 `/Game/Maps/VFXTest/`；World Settings 使用 `BP_TheManGamemodeBase_C`，PlayerStart 正对预放置的静止 `BP_Phantom`；固定 Manual Exposure，包含冷暖低强度灯光和环境命中靶面。它不替代主流程 `TestMap`。
