@@ -38,7 +38,7 @@ FEAT-080 session251 起，玩家枪械可独立配置 `ReloadAbilityClass`；`Gr
 
 `ABulletBase` 提供可配置 `ImpactCueTag`，有效碰撞时由攻击者 ASC 执行，但基类不绑定任何具体枪械表现。RepairGun 子弹默认使用 `GameplayCue.Weapon.RepairGun.Impact`，对应 `/Game/Weapons/RepairGun/GAS/GameplayCues/GC_Weapon_RepairGun_Impact` 与 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact`；Gameplay Cue 资产名中的 `Weapon_RepairGun_Impact` 必须完整匹配 Tag 层级，确保 Asset Registry 的 `GameplayCueName` 可被运行时管理器发现。环境与 Enemy 都播放同一 RepairGun 反馈，Phantom 穿透不触发。命中 WAV 已离线压缩/软限幅，平均响度较原文件提高约 6.9dB、峰值为 -1dBFS，Cue `VolumeMultiplier` 保持 1.0，避免把近满幅瞬态用超大倍率直接推入总线限幅。Projectile 和当前 Hitscan 均汇入 `ProcessHit`。由于射击 Ability 为 `LocalOnly` 且 Projectile 可在 Ability 结束后才命中，命中反馈必须用 `InvokeGameplayCueEvent(Executed)` 立即本地执行；不得使用依赖 Authority/Prediction Key 的延迟 `ExecuteGameplayCue` 队列。
 
-`UGCN_ImpactFeedbackBase` 还支持 `ImpactDecalMaterial / DecalSizeMultiplier / DecalLifeSpan`。电击枪 Cue 使用 `GameplayCue.Weapon.ElectricGun.Impact`，不生成 Niagara 命中粒子，只生成紫色贴花（1.1）；爆炸枪 Cue 使用 `GameplayCue.Weapon.ExplosionGun.Impact`，生成 Physical Impact Niagara 与黄色贴花（2.0）。两个 Cue 的资产名与 Asset Registry `GameplayCueName` 必须完整匹配对应 Tag。
+`UGCN_ImpactFeedbackBase` 对所有命中目标统一播放 `ImpactEffect`，不再按 Character 切换武器 Niagara；角色专用受击表现由目标自身的 `HitReactionCueTag` 负责。武器贴花仍只生成在环境表面。电击枪 Cue 使用 `GameplayCue.Weapon.ElectricGun.Impact`、Energy Impact 3 与紫色贴花（1.1）；爆炸枪 Cue 使用 `GameplayCue.Weapon.ExplosionGun.Impact`、Physical Impact 3 与黄色贴花（2.0）。两个 Cue 的资产名与 Asset Registry `GameplayCueName` 必须完整匹配对应 Tag。
 
 抛射体的根 `CollisionSphere` 必须保持 `Movable`；`ProjectileMovementComponent` 移动的是根碰撞组件，仅把子级 `BulletMesh` 设为 Movable 不足以让 Actor 飞行。若根球体为 Static，PIE 会报告 `CollisionSphere has to be 'Movable'`，子弹将停在生成点，直到其他物体碰到它才触发命中逻辑。
 

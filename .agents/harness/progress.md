@@ -22,7 +22,7 @@
 - 创建并配置两把新枪及各自的动画、AnimBP、音频、CameraShake、Bullet、GameplayCue 和表现依赖副本；RepairGun 同时接通并归档开火动画。
 - 通过 BlenderMCP 制作并导入电击弹与爆破弹，分别配置三槽独立材质；枪体材质同步完成电击青蓝和爆破黑金橙配色调校，生成纹理均归属各自武器目录。
 - 两个新 Bullet Blueprint 已改为直接继承 `ABulletBase`，不再携带 RepairGun 专属泡泡/减速行为；旧复制弹体 Mesh/Material 已删除。
-- 通用命中 Cue 已支持区分环境与角色命中：电击枪使用 Energy Impact 3、HitBox Flash 和紫色 1.1 贴花；爆炸枪使用 Physical Impact 3、HitBox Flash 和黄色 2.0 贴花。
+- 武器命中 Cue 已统一：电击枪无论目标均使用 Energy Impact 3，爆炸枪无论目标均使用 Physical Impact 3；紫色 1.1/黄色 2.0 贴花仍只落环境。敌人额外受击表现由自身 Character Hit Cue 负责。
 - `BP_MaintenanceWorker` 初始装备列表包含 RepairGun、电击枪和爆炸枪。
 - Development Editor 构建成功；最新冷启动资产验证、ThreeWeaponBaseline 和定向依赖检查通过；先前 PIE 切枪/实时开火蒙太奇测试及 AmmoLifecycle 仍为 Success。
 - 新建 Phantom 专属静止行为树与测试 AI Controller，并挂到 `BP_Phantom`；所有移动速度临时锁为 0。NullRHI PIE 连续 5 秒位置不变、速度为 0，行为树组件保持运行；编辑器重启冷加载确认配置已持久化。
@@ -33,13 +33,14 @@
 ## 当前待办
 
 - 继续实现并验证爆炸弹玩法逻辑；当前 Phantom 可作为不会移动的命中目标。
-- 用户在带渲染窗口的 PIE 中确认枪体和弹体材质、弹体尺寸/朝向、模型握持位置、枪口 VFX、环境/角色命中 VFX 和贴花最终观感。
+- 用户在带渲染窗口的 PIE 中确认枪体和弹体材质、弹体尺寸/朝向、模型握持位置、枪口 VFX、统一武器命中 VFX 和环境贴花最终观感。
 - 用户确认后将 FEAT-080 归档为 done；当前不自动提交，等待用户明确说“更新 Git”。
 
 ## 会话交接
 
 - FEAT-079 核心实现与 5/5 自动化保持有效，已封存在 WIP checkpoint `5a39440`；用户因暂无实际业务 Actor 暂缓其前台验收。
-- FEAT-080 三枪基础实现及无渲染自动化已完成。两把新枪与 RepairGun 可在 PIE 顺序切换并启动各自开火蒙太奇；两把新枪已有独立弹体、材质和环境/角色命中表现。
+- FEAT-080 三枪基础实现及无渲染自动化已完成。两把新枪与 RepairGun 可在 PIE 顺序切换并启动各自开火蒙太奇；两把新枪已有独立弹体、材质和统一武器命中表现。
+- 2026-09-04 删除武器 Cue 的 CharacterImpactEffect 分支与两套 HitBox Flash 资产；默认 `GameplayCue.Character.Enemy.Hit` 保留，具体敌人需要差异时再新增专属 Character Hit Tag。
 - 2026-09-04 创建 `BT_Phantom_TestIdle` 与 `BP_Phantom_TestIdleAIController` 并挂到 `BP_Phantom`；PIE 验证 Phantom 静止。正式 AI 的恢复值已记录在 archive 与 `arch/11-enemy-ai.md`。
 - 2026-09-04 `AEnemyBase` 通用血条与三枪临时无视角后坐配置已实现；恢复视角后坐只需把 `bEnableViewRecoil` 默认值或武器 Blueprint 覆盖改为 true，Camera Shake 无需恢复。
-- 血条/后坐源码、用户的 `BP_ExplosionGunBullet` 配置及此前现场已封存于本地 WIP checkpoint `cd3bf4f`；本次 BulletBase 默认 GE 改动和文档尚未提交。不要重复迁移或重新生成武器资产。
+- 默认 Bullet GE 改动及此前现场已封存于本地 WIP checkpoint `3419214`；本次统一武器命中 Cue、删除 CharacterImpact 资产和文档尚未提交。不要重复迁移或重新生成武器资产。

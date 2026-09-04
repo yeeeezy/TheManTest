@@ -52,7 +52,6 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 		const TCHAR* MeshPath;
 		const TCHAR* MuzzlePath;
 		const TCHAR* ImpactPath;
-		const TCHAR* CharacterImpactPath;
 		const TCHAR* DecalPath;
 		const TCHAR* CueClassPath;
 		const TCHAR* BulletClassPath;
@@ -68,7 +67,6 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 			TEXT("/Game/Weapons/ElectricGun/Meshes/SM_ElectricGun.SM_ElectricGun"),
 			TEXT("/Game/Weapons/ElectricGun/Effects/Muzzle/Systems/NS_ElectricGun_Muzzle.NS_ElectricGun_Muzzle"),
 			TEXT("/Game/Weapons/ElectricGun/Effects/Impact/Systems/NS_ElectricGun_Impact.NS_ElectricGun_Impact"),
-			TEXT("/Game/Weapons/ElectricGun/Effects/Impact/Systems/NS_ElectricGun_EnemyImpact.NS_ElectricGun_EnemyImpact"),
 			TEXT("/Game/Weapons/ElectricGun/Effects/Impact/Materials/MI_ElectricGun_ImpactDecal.MI_ElectricGun_ImpactDecal"),
 			TEXT("/Game/Weapons/ElectricGun/GAS/GameplayCues/GC_Weapon_ElectricGun_Impact.GC_Weapon_ElectricGun_Impact_C"),
 			TEXT("/Game/Weapons/ElectricGun/Blueprint/BP_ElectricGunBullet.BP_ElectricGunBullet_C"),
@@ -82,7 +80,6 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 			TEXT("/Game/Weapons/ExplosionGun/Meshes/SM_ExplosionGun.SM_ExplosionGun"),
 			TEXT("/Game/Weapons/ExplosionGun/Effects/Muzzle/Systems/NS_ExplosionGun_Muzzle.NS_ExplosionGun_Muzzle"),
 			TEXT("/Game/Weapons/ExplosionGun/Effects/Impact/Systems/NS_ExplosionGun_Impact.NS_ExplosionGun_Impact"),
-			TEXT("/Game/Weapons/ExplosionGun/Effects/Impact/Systems/NS_ExplosionGun_EnemyImpact.NS_ExplosionGun_EnemyImpact"),
 			TEXT("/Game/Weapons/ExplosionGun/Effects/Impact/Materials/MI_ExplosionGun_ImpactDecal.MI_ExplosionGun_ImpactDecal"),
 			TEXT("/Game/Weapons/ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Impact.GC_Weapon_ExplosionGun_Impact_C"),
 			TEXT("/Game/Weapons/ExplosionGun/Blueprint/BP_ExplosionGunBullet.BP_ExplosionGunBullet_C"),
@@ -145,6 +142,11 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 		const UGCN_ImpactFeedbackBase* Cue = CueClass
 			? CueClass->GetDefaultObject<UGCN_ImpactFeedbackBase>() : nullptr;
 		TestNotNull(FString::Printf(TEXT("%s impact cue loads"), Expected.Name), Cue);
+		const FString RemovedCharacterImpactPath = FString::Printf(
+			TEXT("/Game/Weapons/%s/Effects/Impact/Systems/NS_%s_EnemyImpact.NS_%s_EnemyImpact"),
+			Expected.Name, Expected.Name, Expected.Name);
+		TestNull(FString::Printf(TEXT("%s character-only impact asset is removed"), Expected.Name),
+			LoadObject<UNiagaraSystem>(nullptr, *RemovedCharacterImpactPath));
 		if (Cue)
 		{
 			TestTrue(FString::Printf(TEXT("%s cue uses unique tag"), Expected.Name),
@@ -152,8 +154,6 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 			TestEqual(FString::Printf(TEXT("%s uses requested impact VFX"), Expected.Name),
 				Cue->ImpactEffect.Get(), Expected.ImpactPath
 					? LoadObject<UNiagaraSystem>(nullptr, Expected.ImpactPath) : nullptr);
-			TestEqual(FString::Printf(TEXT("%s uses requested character impact VFX"), Expected.Name),
-				Cue->CharacterImpactEffect.Get(), LoadObject<UNiagaraSystem>(nullptr, Expected.CharacterImpactPath));
 			TestEqual(FString::Printf(TEXT("%s uses requested decal"), Expected.Name),
 				Cue->ImpactDecalMaterial.Get(), LoadObject<UMaterialInterface>(nullptr, Expected.DecalPath));
 			TestEqual(FString::Printf(TEXT("%s uses requested decal scale"), Expected.Name),

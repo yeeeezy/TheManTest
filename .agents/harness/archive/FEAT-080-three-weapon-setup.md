@@ -51,10 +51,10 @@
 - 通过 BlenderMCP 在外部专用工程 `D:\Blender Projects\TheManTestWeaponProjectiles\TheManTestWeaponProjectiles.blend` 制作两个低模弹体，并导出 `SM_ElectricGun_Projectile.fbx`（约 842 面，26.65×8.55×8.55 cm）与 `SM_ExplosionGun_Projectile.fbx`（约 1156 面，21.8×10.33×10.33 cm）。TheManTest 只接收最终 FBX，不包含 Blender 工作文件。
 - 为两类弹体生成独立无缝表面纹理，并在各武器目录创建参数化主材质与三组材质实例。电击弹使用深蓝金属、青色导体和紫青发光核心；爆破弹使用黑化金属、黄铜结构和橙色发光核心。枪体材质同步使用相同色彩语言调校，仍沿用原枪体主材质和溶解能力。
 - `BP_ElectricGunBullet`、`BP_ExplosionGunBullet` 从 `ARepairGunBullet` 改为直接继承 `ABulletBase`，保留通用伤害、命中 Cue 与销毁流程，但不再误继承 RepairGun 专属泡泡膨胀、减速和危险区抑制行为。旧复制弹体 Mesh/Material 已经通过 Unreal Editor 删除。
-- 重新核对 VFXPack 实现后，确认电击枪环境命中应为 Energy Impact 3，而不是空效果；敌人命中两把枪都使用 HitBox Flash。最终 Niagara 依赖均迁入各武器所有者目录并语义重命名，不依赖供应商目录。
-- 保持现有架构：`UGA_Shoot → AFirearm.MuzzleEffect` 负责枪口 Niagara；`ABulletBase → GameplayCue → UGCN_ImpactFeedbackBase` 负责命中表现。通用 Cue 新增可配置 `CharacterImpactEffect`，根据 HitResult 区分角色与环境；角色默认不生成墙面贴花。
+- 重新核对 VFXPack 实现后接入电击枪 Energy Impact 3 与爆炸枪 Physical Impact 3。2026-09-04 用户调整反馈分层：武器 Cue 无论命中环境或角色均播放各自同一个 `ImpactEffect`；敌人额外受击表现只由目标自己的 Character Hit Cue 负责。
+- 保持现有架构：`UGA_Shoot → AFirearm.MuzzleEffect` 负责枪口 Niagara；`ABulletBase → GameplayCue → UGCN_ImpactFeedbackBase` 负责武器命中表现。`CharacterImpactEffect` 与角色分支已删除，武器贴花仍只生成在环境表面。
 - 验证结果：Development Editor / Win64 构建成功；冷启动资产验证输出 `CODEX_FEAT080_VALIDATE|DONE`；`TheManTest.Player.Weapons.ThreeWeaponBaseline` 为 Success；定向依赖扫描输出 `CODEX_FEAT080_DEP|DONE`，未发现 RepairGun 或供应商目录依赖。
-- 当前仅剩带渲染窗口的 PIE 观感验收：弹体尺寸/朝向、飞行可读性、枪体材质、枪口 Niagara、环境/角色命中 Niagara 与贴花尺寸。
+- 当前仅剩带渲染窗口的 PIE 观感验收：弹体尺寸/朝向、飞行可读性、枪体材质、枪口 Niagara、统一武器命中 Niagara 与环境贴花尺寸。
 
 ## 2026-09-04 Phantom 静止测试 AI
 
@@ -72,3 +72,4 @@
 - `AFirearm` 新增 `bEnableViewRecoil`，公共默认暂时为 false；`UGA_Shoot` 保留 `FireCameraShake` 播放，只跳过改变 Controller Rotation 的 `AddRecoil`。Pitch/Yaw/Damping 原配置完整保留，恢复时把开关改回 true。
 - Development Editor / Win64 构建成功。`TheManTest.Enemy.Shared.EnemyBaseHealthBar` 在 NullRHI PIE 中直接生成 `BP_Phantom`，确认继承的屏幕空间组件和原生 Widget 已初始化，并验证 Health 从 100 改为 75 后界面立即同步；`TheManTest.Player.Weapons.ThreeWeaponBaseline` 确认三把枪视角后坐关闭且 CameraShake 资产仍配置，两项测试均为 Success。
 - `ABulletBase` 构造函数通过共享资产路径默认加载 `GE_BulletDamage` 作为 HitEffectClass；之后新建普通伤害子弹只需填写 Damage，仍允许特殊子弹覆盖或清空。Development Editor 构建及冷启动 `ThreeWeaponBaseline` 默认类断言为 Success。
+- 按用户确认移除 `UGCN_ImpactFeedbackBase.CharacterImpactEffect` 与 Character Niagara 选择分支；电击枪/爆炸枪现在对所有目标分别统一使用 Energy Impact 3/Physical Impact 3，敌人额外反馈交给自身 Character Hit Cue。两个 `NS_*_EnemyImpact` 和 12 个确认无引用的专属材质/纹理已通过 Unreal 资产接口删除；被枪口或环境命中引用的依赖保留。两项 Cue 编译保存、冷启动 `ThreeWeaponBaseline` 与删除资产断言均为 Success。

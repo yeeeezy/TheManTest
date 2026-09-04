@@ -21,18 +21,15 @@ bool UGCN_ImpactFeedbackBase::OnExecute_Implementation(
 	}
 	const FHitResult* HitResult = Parameters.EffectContext.GetHitResult();
 	const bool bCharacterImpact = HitResult && Cast<ACharacter>(HitResult->GetActor()) != nullptr;
-	UNiagaraSystem* SelectedImpactEffect = bCharacterImpact && CharacterImpactEffect
-		? CharacterImpactEffect.Get()
-		: ImpactEffect.Get();
-	if (SelectedImpactEffect)
+	if (ImpactEffect)
 	{
 		const FRotator Rotation = Parameters.Normal.IsNearlyZero()
 			? FRotator::ZeroRotator
 			: Parameters.Normal.Rotation();
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-			World, SelectedImpactEffect, Parameters.Location, Rotation, FVector(EffectScale));
+			World, ImpactEffect, Parameters.Location, Rotation, FVector(EffectScale));
 	}
-	if (ImpactDecalMaterial && (!bCharacterImpact || bSpawnDecalOnCharacters))
+	if (ImpactDecalMaterial && !bCharacterImpact)
 	{
 		const FVector Normal = Parameters.Normal.GetSafeNormal(UE_SMALL_NUMBER, FVector::UpVector);
 		const FRotator Rotation = FRotationMatrix::MakeFromX(-Normal).Rotator();
@@ -48,6 +45,5 @@ bool UGCN_ImpactFeedbackBase::OnExecute_Implementation(
 			Decal->SetFadeOut(FMath::Max(0.f, DecalLifeSpan - 1.f), 1.f, false);
 		}
 	}
-	return ImpactSound != nullptr || ImpactEffect != nullptr || CharacterImpactEffect != nullptr
-		|| ImpactDecalMaterial != nullptr;
+	return ImpactSound != nullptr || ImpactEffect != nullptr || ImpactDecalMaterial != nullptr;
 }
