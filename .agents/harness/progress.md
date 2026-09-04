@@ -28,6 +28,7 @@
 - 新建 Phantom 专属静止行为树与测试 AI Controller，并挂到 `BP_Phantom`；所有移动速度临时锁为 0。NullRHI PIE 连续 5 秒位置不变、速度为 0，行为树组件保持运行；编辑器重启冷加载确认配置已持久化。
 - `AEnemyBase` 新增通用头顶简易血条，所有敌人子类自动继承并随 GAS Health/MaxHealth 即时刷新；Phantom PIE 测试确认 100→75 同步成功。
 - `AFirearm::bEnableViewRecoil` 默认临时关闭，三把枪开火不再推动玩家视角；Camera Shake 配置与播放链保持启用。Development Editor 构建与定向自动化均通过。
+- `ABulletBase` 现在默认使用共享 `GE_BulletDamage`；新建普通子弹 Blueprint 无需再手动填写 Hit Effect Class，只需配置 Damage，特殊子弹仍可覆盖。
 
 ## 当前待办
 
@@ -41,4 +42,4 @@
 - FEAT-080 三枪基础实现及无渲染自动化已完成。两把新枪与 RepairGun 可在 PIE 顺序切换并启动各自开火蒙太奇；两把新枪已有独立弹体、材质和环境/角色命中表现。
 - 2026-09-04 创建 `BT_Phantom_TestIdle` 与 `BP_Phantom_TestIdleAIController` 并挂到 `BP_Phantom`；PIE 验证 Phantom 静止。正式 AI 的恢复值已记录在 archive 与 `arch/11-enemy-ai.md`。
 - 2026-09-04 `AEnemyBase` 通用血条与三枪临时无视角后坐配置已实现；恢复视角后坐只需把 `bEnableViewRecoil` 默认值或武器 Blueprint 覆盖改为 true，Camera Shake 无需恢复。
-- 静止测试资产、BP_Phantom 与地图外部 Actor 现场已封存于本地 WIP checkpoint `f1f623a`；本次血条/后坐开关源码和文档尚未提交。不要重复迁移或重新生成武器资产。
+- 血条/后坐源码、用户的 `BP_ExplosionGunBullet` 配置及此前现场已封存于本地 WIP checkpoint `cd3bf4f`；本次 BulletBase 默认 GE 改动和文档尚未提交。不要重复迁移或重新生成武器资产。

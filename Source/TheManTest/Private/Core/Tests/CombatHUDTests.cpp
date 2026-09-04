@@ -36,6 +36,15 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 {
+	const ABulletBase* BulletBaseDefault = GetDefault<ABulletBase>();
+	TestNotNull(TEXT("BulletBase supplies a default hit effect"),
+		BulletBaseDefault ? BulletBaseDefault->HitEffectClass.Get() : nullptr);
+	TestEqual(TEXT("BulletBase default hit effect is shared GE_BulletDamage"),
+		BulletBaseDefault && BulletBaseDefault->HitEffectClass
+			? BulletBaseDefault->HitEffectClass->GetPathName()
+			: FString(),
+		FString(TEXT("/Game/Weapons/_Shared/GAS/Effects/GE_BulletDamage.GE_BulletDamage_C")));
+
 	struct FWeaponExpectation
 	{
 		const TCHAR* Name;

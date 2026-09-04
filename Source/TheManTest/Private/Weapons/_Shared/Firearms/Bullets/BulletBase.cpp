@@ -7,10 +7,18 @@
 #include "GameplayEffect.h"
 #include "Core/_Shared/GAS/TheManGameplayTags.h"
 #include "Enemy/EnemyBase.h"
+#include "UObject/ConstructorHelpers.h"
 
 ABulletBase::ABulletBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
+
+	static ConstructorHelpers::FClassFinder<UGameplayEffect> DefaultDamageEffect(
+		TEXT("/Game/Weapons/_Shared/GAS/Effects/GE_BulletDamage"));
+	if (DefaultDamageEffect.Succeeded())
+	{
+		HitEffectClass = DefaultDamageEffect.Class;
+	}
 
 	CollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionSphere"));
 	// QueryOnly：仅做查询碰撞，不参与物理求解。否则高速抛射体与 enemy 胶囊体的物理碰撞
