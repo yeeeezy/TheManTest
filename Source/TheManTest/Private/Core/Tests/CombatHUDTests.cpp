@@ -88,6 +88,10 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 	const AFirearm* RepairGun = RepairClass ? RepairClass->GetDefaultObject<AFirearm>() : nullptr;
 	TestNotNull(TEXT("RepairGun baseline loads"), RepairGun);
 	TestNotNull(TEXT("RepairGun fire montage is configured"), RepairGun ? RepairGun->FireMontage : nullptr);
+	TestFalse(TEXT("RepairGun view recoil is temporarily disabled"),
+		RepairGun ? RepairGun->bEnableViewRecoil : true);
+	TestNotNull(TEXT("RepairGun camera shake remains configured"),
+		RepairGun ? RepairGun->FireCameraShake.Get() : nullptr);
 
 	for (const FWeaponExpectation& Expected : Expectations)
 	{
@@ -102,6 +106,10 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 		TestEqual(FString::Printf(TEXT("%s keeps RepairGun fire rate"), Expected.Name), Weapon->FireRate, RepairGun->FireRate);
 		TestEqual(FString::Printf(TEXT("%s keeps RepairGun magazine"), Expected.Name), Weapon->MagazineCapacity, RepairGun->MagazineCapacity);
 		TestEqual(FString::Printf(TEXT("%s keeps RepairGun recoil"), Expected.Name), Weapon->RecoilDamping, RepairGun->RecoilDamping);
+		TestFalse(FString::Printf(TEXT("%s view recoil is temporarily disabled"), Expected.Name),
+			Weapon->bEnableViewRecoil);
+		TestNotNull(FString::Printf(TEXT("%s camera shake remains configured"), Expected.Name),
+			Weapon->FireCameraShake.Get());
 		TestTrue(FString::Printf(TEXT("%s owns its fire montage"), Expected.Name),
 			Weapon->FireMontage && Weapon->FireMontage->GetPathName().Contains(Expected.Name));
 		TestTrue(FString::Printf(TEXT("%s owns its equip montage"), Expected.Name),

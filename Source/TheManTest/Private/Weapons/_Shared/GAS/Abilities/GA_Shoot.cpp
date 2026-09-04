@@ -156,8 +156,11 @@ void UGA_Shoot::ActivateAbility(
 	}
 
 	// 施加后坐力
-	const float RandomYaw = FMath::RandRange(Firearm->RecoilYawMin, Firearm->RecoilYawMax);
-	Character->AddRecoil(Firearm->RecoilPitch, RandomYaw, Firearm->RecoilDamping);
+	if (Firearm->bEnableViewRecoil)
+	{
+		const float RandomYaw = FMath::RandRange(Firearm->RecoilYawMin, Firearm->RecoilYawMax);
+		Character->AddRecoil(Firearm->RecoilPitch, RandomYaw, Firearm->RecoilDamping);
+	}
 
 	EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 }

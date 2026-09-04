@@ -128,6 +128,10 @@ public:
 	/* ===== 后坐力 ===== */
 
 	// 开火时给予的仰角初始角速度（度/秒），总偏移量 ≈ Pitch / Damping
+	// Temporary gameplay-test switch: camera shake remains active while view kick is disabled.
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Recoil")
+	bool bEnableViewRecoil = false;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Recoil", meta = (ClampMin = "0.0"))
 	float RecoilPitch = 20.f;
 

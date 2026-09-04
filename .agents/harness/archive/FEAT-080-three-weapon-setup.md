@@ -64,3 +64,10 @@
 - Blueprint 在 UE 编辑器内编译保存成功；行为树结构回读为 1 个 Sequence + 1 个 Wait，运行时 `BehaviorTreeComponent` 为 active/running。编辑器重启后的命令行冷加载再次确认测试树、Controller 引用及全部 0 速度配置已持久化。
 - NullRHI PIE 中生成 `Codex_PhantomIdleProbe`，确认使用 `BP_Phantom_TestIdleAIController_C`；连续 5 秒位置保持 `(0, 0, 90.15)`、速度保持 `(0, 0, 0)`。测试 Actor 仅存在于 PIE，停止 PIE 后未保存进 TestMap。
 - 这是 FEAT-080 的临时命中测试支架；恢复正式 Phantom AI 时需把 `BP_Phantom.AIControllerClass` 改回 `/Game/Enemy/Humanoid/_Shared/AI/BP_HumanoidAIController_C`，并恢复速度 `150/300/50/600` 与 CharacterMovement `MaxWalkSpeed=600`。
+
+## 2026-09-04 EnemyBase 简易血条与临时视角后坐开关
+
+- `AEnemyBase` 新增屏幕空间 `UWidgetComponent`，默认位于角色根节点上方 120cm、尺寸 180×18；原生 `UEnemyHealthBarWidgetBase` 绘制黑色边框、暗红底和亮红填充。所有 EnemyBase 子类（包括 Phantom）自动继承。
+- BeginPlay 在初始 GE 后绑定敌人自身 ASC 的 Health/MaxHealth 委托；首次显示与后续受伤均即时刷新，死亡销毁前隐藏。
+- `AFirearm` 新增 `bEnableViewRecoil`，公共默认暂时为 false；`UGA_Shoot` 保留 `FireCameraShake` 播放，只跳过改变 Controller Rotation 的 `AddRecoil`。Pitch/Yaw/Damping 原配置完整保留，恢复时把开关改回 true。
+- Development Editor / Win64 构建成功。`TheManTest.Enemy.Shared.EnemyBaseHealthBar` 在 NullRHI PIE 中直接生成 `BP_Phantom`，确认继承的屏幕空间组件和原生 Widget 已初始化，并验证 Health 从 100 改为 75 后界面立即同步；`TheManTest.Player.Weapons.ThreeWeaponBaseline` 确认三把枪视角后坐关闭且 CameraShake 资产仍配置，两项测试均为 Success。

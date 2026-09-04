@@ -24,6 +24,7 @@ RepairGun 的成功射击 SoundWave 为 `/Game/Weapons/RepairGun/Audio/S_RepairG
 
 `AFirearm::FireCameraShake/FireCameraShakeScale` 是每把枪独立的纯视觉冲击配置，不得与改变 Controller Rotation 的真实 `AddRecoil` 合并。RepairGun 使用 `/Game/Weapons/RepairGun/Effects/Camera/CS_RepairGun_Fire`，当前为 0.14 秒高频短冲击、Scale=1.0。
 RepairGun 当前为单独验收震屏而在武器蓝图覆盖 `RecoilPitch/RecoilYawMin/RecoilYawMax=0/0/0`；这是武器数据配置，不代表公共后坐力系统已删除。
+2026-09-04 爆炸弹调试期间，`AFirearm::bEnableViewRecoil` 默认临时设为 `false`，`UGA_Shoot` 仅在该开关开启时调用 `AddRecoil`；原有 Pitch/Yaw/Damping 数据均保留。`FireCameraShake` 调用链未关闭，恢复实际视角后坐时只需把该开关改回 `true`。
 
 FEAT-074 起，玩家枪口统一由 `AFirearm::GetMuzzleWorldTransform()` 解析：优先 SkeletalMesh 的命名 Socket，其次 StaticMesh 的命名 Socket，最后使用 `MuzzleLocalTransform * ActorTransform`。因此纯静态枪模也必须在武器 BP 配置正确的 `MuzzleLocalTransform`，不得退回相机位置伪造枪口。
 

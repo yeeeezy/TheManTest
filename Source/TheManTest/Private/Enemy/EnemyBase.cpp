@@ -7,6 +7,8 @@
 #include "Abilities/GameplayAbility.h"
 #include "Engine/Engine.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/WidgetComponent.h"
+#include "Enemy/UI/EnemyHealthBarWidgetBase.h"
 
 AEnemyBase::AEnemyBase()
 {
@@ -14,6 +16,14 @@ AEnemyBase::AEnemyBase()
 
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AttributeSet = CreateDefaultSubobject<UEnemyAttributeSetBase>(TEXT("AttributeSet"));
+	EnemyHealthBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyHealthBar"));
+	EnemyHealthBarComponent->SetupAttachment(GetRootComponent());
+	EnemyHealthBarComponent->SetRelativeLocation(FVector(0.f, 0.f, 120.f));
+	EnemyHealthBarComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	EnemyHealthBarComponent->SetDrawSize(FVector2D(180.f, 18.f));
+	EnemyHealthBarComponent->SetPivot(FVector2D(0.5f, 1.f));
+	EnemyHealthBarComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	EnemyHealthBarComponent->SetWidgetClass(UEnemyHealthBarWidgetBase::StaticClass());
 	HitReactionCueTag = TAG_GameplayCue_Character_Enemy_Hit;
 }
 
@@ -71,6 +81,15 @@ void AEnemyBase::BeginPlay()
 		}
 	}
 
+	EnemyHealthBarComponent->InitWidget();
+	HealthChangedDelegateHandle = AbilitySystemComponent
+		->GetGameplayAttributeValueChangeDelegate(UEnemyAttributeSetBase::GetHealthAttribute())
+		.AddUObject(this, &AEnemyBase::HandleHealthAttributeChanged);
+	MaxHealthChangedDelegateHandle = AbilitySystemComponent
+		->GetGameplayAttributeValueChangeDelegate(UEnemyAttributeSetBase::GetMaxHealthAttribute())
+		.AddUObject(this, &AEnemyBase::HandleHealthAttributeChanged);
+	RefreshEnemyHealthBar();
+
 	// 授予通用技能 + 所有阶段技能集（近/中/远全部）。敌人自身即 ASC Owner。
 	// 全部授予后，UseRandomSkill 按当前阶段+距离档随机激活其中之一。
 	GrantAbilities(DefaultAbilities);
@@ -103,6 +122,22 @@ void AEnemyBase::BeginPlay()
 	{
 		CurrentStrength = BaseStrength;
 	}
+}
+
+void AEnemyBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent
+			->GetGameplayAttributeValueChangeDelegate(UEnemyAttributeSetBase::GetHealthAttribute())
+			.Remove(HealthChangedDelegateHandle);
+		AbilitySystemComponent
+			->GetGameplayAttributeValueChangeDelegate(UEnemyAttributeSetBase::GetMaxHealthAttribute())
+			.Remove(MaxHealthChangedDelegateHandle);
+	}
+	HealthChangedDelegateHandle.Reset();
+	MaxHealthChangedDelegateHandle.Reset();
+	Super::EndPlay(EndPlayReason);
 }
 
 void AEnemyBase::ReactToProjectileHit(AActor* HitInstigator)
@@ -199,9 +234,31 @@ void AEnemyBase::OnDeath()
 {
 	if (bIsDead) return;
 	bIsDead = true;
+	EnemyHealthBarComponent->SetVisibility(false);
 
 	// 敌人死亡：销毁 Actor（具体表现蓝图覆写）
 	Destroy();
+}
+
+void AEnemyBase::RefreshEnemyHealthBar()
+{
+	if (!AbilitySystemComponent || !EnemyHealthBarComponent)
+	{
+		return;
+	}
+
+	if (UEnemyHealthBarWidgetBase* HealthBar =
+		Cast<UEnemyHealthBarWidgetBase>(EnemyHealthBarComponent->GetUserWidgetObject()))
+	{
+		HealthBar->SetHealthState(
+			AbilitySystemComponent->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),
+			AbilitySystemComponent->GetNumericAttribute(UEnemyAttributeSetBase::GetMaxHealthAttribute()));
+	}
+}
+
+void AEnemyBase::HandleHealthAttributeChanged(const FOnAttributeChangeData&)
+{
+	RefreshEnemyHealthBar();
 }
 
 void AEnemyBase::HandleMidRoundStrengthIncrease()

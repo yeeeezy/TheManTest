@@ -11,6 +11,8 @@ class UAbilitySystemComponent;
 class UEnemyAttributeSetBase;
 class UGameplayEffect;
 class UGameplayAbility;
+class UWidgetComponent;
+struct FOnAttributeChangeData;
 
 // 交战距离档：技能集内部按近/中/远分组，BT 节点选其一随机放招
 UENUM(BlueprintType)
@@ -46,6 +48,7 @@ public:
 	AEnemyBase();
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
@@ -82,6 +85,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Enemy")
 	FORCEINLINE bool IsDead() const { return bIsDead; }
 
+	UFUNCTION(BlueprintPure, Category = "Enemy|UI")
+	UWidgetComponent* GetEnemyHealthBarComponent() const { return EnemyHealthBarComponent; }
+
 	// 玩家弹体有效命中后的统一警觉入口。基类立即水平转向攻击者；具体敌人可扩展战斗状态/Focus。
 	UFUNCTION(BlueprintCallable, Category = "Enemy|Combat")
 	virtual void ReactToProjectileHit(AActor* HitInstigator);
@@ -103,6 +109,10 @@ protected:
 
 	UPROPERTY()
 	UEnemyAttributeSetBase* AttributeSet;
+
+	// Every enemy receives the same lightweight, screen-facing GAS health bar.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy|UI")
+	TObjectPtr<UWidgetComponent> EnemyHealthBarComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Feedback", meta = (Categories = "GameplayCue.Character"))
 	FGameplayTag HitReactionCueTag;
@@ -165,8 +175,12 @@ private:
 	float DesiredMaxWalkSpeed = 0.f;
 	float ActiveMovementSpeedMultiplier = 1.f;
 	FTimerHandle MovementSlowTimerHandle;
+	FDelegateHandle HealthChangedDelegateHandle;
+	FDelegateHandle MaxHealthChangedDelegateHandle;
 
 	void ClearMovementSlow();
+	void RefreshEnemyHealthBar();
+	void HandleHealthAttributeChanged(const FOnAttributeChangeData& ChangeData);
 
 	UFUNCTION()
 	void HandleMidRoundStrengthIncrease();
