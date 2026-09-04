@@ -20,17 +20,19 @@
 
 - 外部模型/VFX 及依赖已通过 Unreal AssetTools 整理到 `/Game/Weapons/ElectricGun` 和 `/Game/Weapons/ExplosionGun`；供应商目录已清空并删除。
 - 创建并配置两把新枪及各自的动画、AnimBP、音频、CameraShake、Bullet、GameplayCue 和表现依赖副本；RepairGun 同时接通并归档开火动画。
-- 通用命中 Cue 已支持贴花；电击枪和爆炸枪按截图分别配置紫色 1.1、黄色 2.0 贴花及对应 VFX。
+- 通过 BlenderMCP 制作并导入电击弹与爆破弹，分别配置三槽独立材质；枪体材质同步完成电击青蓝和爆破黑金橙配色调校，生成纹理均归属各自武器目录。
+- 两个新 Bullet Blueprint 已改为直接继承 `ABulletBase`，不再携带 RepairGun 专属泡泡/减速行为；旧复制弹体 Mesh/Material 已删除。
+- 通用命中 Cue 已支持区分环境与角色命中：电击枪使用 Energy Impact 3、HitBox Flash 和紫色 1.1 贴花；爆炸枪使用 Physical Impact 3、HitBox Flash 和黄色 2.0 贴花。
 - `BP_MaintenanceWorker` 初始装备列表包含 RepairGun、电击枪和爆炸枪。
-- Development Editor 构建成功；三武器配置测试、PIE 切枪/实时开火蒙太奇测试和既有 AmmoLifecycle 测试全部 Success；Cue Registry、定向依赖、旧目录和 Redirector 检查通过。
+- Development Editor 构建成功；最新冷启动资产验证、ThreeWeaponBaseline 和定向依赖检查通过；先前 PIE 切枪/实时开火蒙太奇测试及 AmmoLifecycle 仍为 Success。
 
 ## 当前待办
 
-- 用户在带渲染窗口的 PIE 中确认模型握持位置、枪口 VFX、命中 VFX 和贴花最终观感。
+- 用户在带渲染窗口的 PIE 中确认枪体和弹体材质、弹体尺寸/朝向、模型握持位置、枪口 VFX、环境/角色命中 VFX 和贴花最终观感。
 - 用户确认后将 FEAT-080 归档为 done；当前不自动提交，等待用户明确说“更新 Git”。
 
 ## 会话交接
 
 - FEAT-079 核心实现与 5/5 自动化保持有效，已封存在 WIP checkpoint `5a39440`；用户因暂无实际业务 Actor 暂缓其前台验收。
-- FEAT-080 实现及无渲染自动化已完成。两把新枪与 RepairGun 可在 PIE 顺序切换并启动各自开火蒙太奇；剩余只需用户前台确认实际 VFX/贴花观感。
+- FEAT-080 实现及无渲染自动化已完成。两把新枪与 RepairGun 可在 PIE 顺序切换并启动各自开火蒙太奇；两把新枪已有 BlenderMCP 制作的独立弹体、材质和环境/角色命中表现，剩余只需用户前台确认实际渲染观感。
 - 当前改动未提交；不要重复迁移或重新生成资产。继续时先读 `archive/FEAT-080-three-weapon-setup.md` 的验证记录。

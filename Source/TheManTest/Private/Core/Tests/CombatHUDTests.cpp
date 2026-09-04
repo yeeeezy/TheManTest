@@ -43,9 +43,11 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 		const TCHAR* MeshPath;
 		const TCHAR* MuzzlePath;
 		const TCHAR* ImpactPath;
+		const TCHAR* CharacterImpactPath;
 		const TCHAR* DecalPath;
 		const TCHAR* CueClassPath;
 		const TCHAR* BulletClassPath;
+		const TCHAR* ProjectileMeshPath;
 		FGameplayTag ImpactTag;
 		float DecalScale;
 	};
@@ -56,10 +58,12 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 			TEXT("/Game/Weapons/ElectricGun/Blueprint/BP_ElectricGun.BP_ElectricGun_C"),
 			TEXT("/Game/Weapons/ElectricGun/Meshes/SM_ElectricGun.SM_ElectricGun"),
 			TEXT("/Game/Weapons/ElectricGun/Effects/Muzzle/Systems/NS_ElectricGun_Muzzle.NS_ElectricGun_Muzzle"),
-			nullptr,
+			TEXT("/Game/Weapons/ElectricGun/Effects/Impact/Systems/NS_ElectricGun_Impact.NS_ElectricGun_Impact"),
+			TEXT("/Game/Weapons/ElectricGun/Effects/Impact/Systems/NS_ElectricGun_EnemyImpact.NS_ElectricGun_EnemyImpact"),
 			TEXT("/Game/Weapons/ElectricGun/Effects/Impact/Materials/MI_ElectricGun_ImpactDecal.MI_ElectricGun_ImpactDecal"),
 			TEXT("/Game/Weapons/ElectricGun/GAS/GameplayCues/GC_Weapon_ElectricGun_Impact.GC_Weapon_ElectricGun_Impact_C"),
 			TEXT("/Game/Weapons/ElectricGun/Blueprint/BP_ElectricGunBullet.BP_ElectricGunBullet_C"),
+			TEXT("/Game/Weapons/ElectricGun/Meshes/SM_ElectricGun_Projectile.SM_ElectricGun_Projectile"),
 			TAG_GameplayCue_Weapon_ElectricGun_Impact,
 			1.1f,
 		},
@@ -69,9 +73,11 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 			TEXT("/Game/Weapons/ExplosionGun/Meshes/SM_ExplosionGun.SM_ExplosionGun"),
 			TEXT("/Game/Weapons/ExplosionGun/Effects/Muzzle/Systems/NS_ExplosionGun_Muzzle.NS_ExplosionGun_Muzzle"),
 			TEXT("/Game/Weapons/ExplosionGun/Effects/Impact/Systems/NS_ExplosionGun_Impact.NS_ExplosionGun_Impact"),
+			TEXT("/Game/Weapons/ExplosionGun/Effects/Impact/Systems/NS_ExplosionGun_EnemyImpact.NS_ExplosionGun_EnemyImpact"),
 			TEXT("/Game/Weapons/ExplosionGun/Effects/Impact/Materials/MI_ExplosionGun_ImpactDecal.MI_ExplosionGun_ImpactDecal"),
 			TEXT("/Game/Weapons/ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Impact.GC_Weapon_ExplosionGun_Impact_C"),
 			TEXT("/Game/Weapons/ExplosionGun/Blueprint/BP_ExplosionGunBullet.BP_ExplosionGunBullet_C"),
+			TEXT("/Game/Weapons/ExplosionGun/Meshes/SM_ExplosionGun_Projectile.SM_ExplosionGun_Projectile"),
 			TAG_GameplayCue_Weapon_ExplosionGun_Impact,
 			2.0f,
 		},
@@ -114,6 +120,9 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 		TestNotNull(FString::Printf(TEXT("%s bullet loads"), Expected.Name), Bullet);
 		TestTrue(FString::Printf(TEXT("%s bullet uses unique impact tag"), Expected.Name),
 			Bullet && Bullet->ImpactCueTag.MatchesTagExact(Expected.ImpactTag));
+		TestEqual(FString::Printf(TEXT("%s uses generated projectile mesh"), Expected.Name),
+			Bullet && Bullet->BulletMesh ? Bullet->BulletMesh->GetStaticMesh().Get() : nullptr,
+			LoadObject<UStaticMesh>(nullptr, Expected.ProjectileMeshPath));
 
 		UClass* CueClass = LoadClass<UGCN_ImpactFeedbackBase>(nullptr, Expected.CueClassPath);
 		const UGCN_ImpactFeedbackBase* Cue = CueClass
@@ -126,6 +135,8 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 			TestEqual(FString::Printf(TEXT("%s uses requested impact VFX"), Expected.Name),
 				Cue->ImpactEffect.Get(), Expected.ImpactPath
 					? LoadObject<UNiagaraSystem>(nullptr, Expected.ImpactPath) : nullptr);
+			TestEqual(FString::Printf(TEXT("%s uses requested character impact VFX"), Expected.Name),
+				Cue->CharacterImpactEffect.Get(), LoadObject<UNiagaraSystem>(nullptr, Expected.CharacterImpactPath));
 			TestEqual(FString::Printf(TEXT("%s uses requested decal"), Expected.Name),
 				Cue->ImpactDecalMaterial.Get(), LoadObject<UMaterialInterface>(nullptr, Expected.DecalPath));
 			TestEqual(FString::Printf(TEXT("%s uses requested decal scale"), Expected.Name),

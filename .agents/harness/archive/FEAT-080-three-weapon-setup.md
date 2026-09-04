@@ -44,3 +44,14 @@
 ## 剩余验收
 
 - 自动化使用 NullRHI，尚未验证最终渲染观感。由用户在带渲染窗口的 PIE 中确认三把枪模型握持位置、枪口 VFX、爆炸枪命中粒子以及两种贴花尺寸；确认后可将 FEAT-080 归档为 done。
+
+## 2026-09-03 子弹、材质与命中特效完善
+
+- 用户最新要求覆盖了早先的“子弹无 Mesh”方案：电击枪和爆炸枪均改为拥有独立可见弹体。
+- 通过 BlenderMCP 在外部专用工程 `D:\Blender Projects\TheManTestWeaponProjectiles\TheManTestWeaponProjectiles.blend` 制作两个低模弹体，并导出 `SM_ElectricGun_Projectile.fbx`（约 842 面，26.65×8.55×8.55 cm）与 `SM_ExplosionGun_Projectile.fbx`（约 1156 面，21.8×10.33×10.33 cm）。TheManTest 只接收最终 FBX，不包含 Blender 工作文件。
+- 为两类弹体生成独立无缝表面纹理，并在各武器目录创建参数化主材质与三组材质实例。电击弹使用深蓝金属、青色导体和紫青发光核心；爆破弹使用黑化金属、黄铜结构和橙色发光核心。枪体材质同步使用相同色彩语言调校，仍沿用原枪体主材质和溶解能力。
+- `BP_ElectricGunBullet`、`BP_ExplosionGunBullet` 从 `ARepairGunBullet` 改为直接继承 `ABulletBase`，保留通用伤害、命中 Cue 与销毁流程，但不再误继承 RepairGun 专属泡泡膨胀、减速和危险区抑制行为。旧复制弹体 Mesh/Material 已经通过 Unreal Editor 删除。
+- 重新核对 VFXPack 实现后，确认电击枪环境命中应为 Energy Impact 3，而不是空效果；敌人命中两把枪都使用 HitBox Flash。最终 Niagara 依赖均迁入各武器所有者目录并语义重命名，不依赖供应商目录。
+- 保持现有架构：`UGA_Shoot → AFirearm.MuzzleEffect` 负责枪口 Niagara；`ABulletBase → GameplayCue → UGCN_ImpactFeedbackBase` 负责命中表现。通用 Cue 新增可配置 `CharacterImpactEffect`，根据 HitResult 区分角色与环境；角色默认不生成墙面贴花。
+- 验证结果：Development Editor / Win64 构建成功；冷启动资产验证输出 `CODEX_FEAT080_VALIDATE|DONE`；`TheManTest.Player.Weapons.ThreeWeaponBaseline` 为 Success；定向依赖扫描输出 `CODEX_FEAT080_DEP|DONE`，未发现 RepairGun 或供应商目录依赖。
+- 当前仅剩带渲染窗口的 PIE 观感验收：弹体尺寸/朝向、飞行可读性、枪体材质、枪口 Niagara、环境/角色命中 Niagara 与贴花尺寸。
