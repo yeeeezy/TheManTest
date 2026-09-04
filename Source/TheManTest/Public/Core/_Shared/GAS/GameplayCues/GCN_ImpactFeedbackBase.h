@@ -6,6 +6,7 @@
 
 class UNiagaraSystem;
 class USoundBase;
+class UMaterialInterface;
 
 UCLASS(Abstract, Blueprintable)
 class THEMANTEST_API UGCN_ImpactFeedbackBase : public UGameplayCueNotify_Static
@@ -27,6 +28,15 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Impact", meta = (ClampMin = "0.0"))
 	float EffectScale = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Impact|Decal")
+	TObjectPtr<UMaterialInterface> ImpactDecalMaterial;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Impact|Decal", meta = (ClampMin = "0.0"))
+	float DecalSizeMultiplier = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Impact|Decal", meta = (ClampMin = "0.0"))
+	float DecalLifeSpan = 10.f;
 
 	virtual bool OnExecute_Implementation(AActor* Target, const FGameplayCueParameters& Parameters) const override;
 };

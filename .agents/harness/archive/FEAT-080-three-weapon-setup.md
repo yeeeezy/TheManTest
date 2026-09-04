@@ -1,0 +1,46 @@
+# FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
+
+## 目标
+
+- 为 RepairGun 接通现有第一人称开火蒙太奇。
+- 以 RepairGun 为完整配置基线创建电击枪和爆炸枪。
+- 两把新枪只替换模型、枪口 VFX、命中 VFX 与贴花；玩法、动画、音频、弹药、GAS、后坐力和子弹行为保持与 RepairGun 一致。
+- 外部来源仅迁移最终模型和 VFX 依赖，不迁移源项目角色、武器蓝图或动画。
+
+## 源资产调研
+
+- 外部项目：`D:\Unreal Projects\UE389_MuzzleSource\VFX Pack - Stylized FPS Muzzle and Impacts Effects 5.1\VFXPack`
+- 电击枪来源：`BP_Weapon_SMG_02_child`，模型 `SM_Weapon_SubmachineGun_02`，枪口 `NE_VFX_Muzzle_Energy_Burst_3`，环境命中粒子为空，紫色贴花，尺寸倍率 1.1。
+- 爆炸枪来源：`BP_Weapon_Rifle_Physical_02_Child`，模型 `SM_Weapon_Ballistics_Rifle_02`，枪口 `NE_VFX_Muzzle_Physical_Burst_3`，命中 `NE_VFX_Projectile_Impact_Physical_3`，黄色贴花，尺寸倍率 2.0。
+- 源项目 15 个武器 Blueprint 均不直接引用 FPS 动画；角色统一使用 `FirstPerson_AnimBP`，投射物武器父类统一使用 `FirstPerson_Recoil_Large_Montage`。
+- TheManTest 已有 `AS_MaintenanceWorker_FP_Fire` 与引用它的 `AM_MaintenanceWorker_FP_RecoilLarge`；RepairGun 当前未配置 `FireMontage`。
+
+## 资产所有权
+
+- `/Game/Weapons/ElectricGun/...`
+- `/Game/Weapons/ExplosionGun/...`
+- 即使依赖内容相同，也为每把武器复制并语义化重命名专属版本，避免后续调参互相影响。
+- 不保留供应商目录；移动和重命名通过 Unreal AssetTools 完成。
+
+## 实施记录
+
+- 2026-09-03：用户确认开始实施。FEAT-079 的实际应用验收暂缓并转 `needs_improvement`；已通过自动化的实现以 WIP checkpoint `5a39440` 封存。
+- 2026-09-03：通过 Unreal AssetTools 迁移两把枪所需模型、轮廓模型、Niagara、材质、纹理及依赖，并按所有权重命名到 `/Game/Weapons/ElectricGun`（45 个资产）和 `/Game/Weapons/ExplosionGun`（60 个资产）；未迁移源项目角色、武器蓝图或动画。
+- 2026-09-03：RepairGun 原第一人称开火序列/蒙太奇和装备蒙太奇归档并重命名为 `AS_RepairGun_FP_Fire`、`AM_RepairGun_FP_Fire`、`AM_RepairGun_FP_Equip`；`BP_RepairGun` 已接通开火蒙太奇。
+- 2026-09-03：创建 `BP_ElectricGun`、`BP_ExplosionGun` 及各自的 Bullet、GameplayCue、AnimBP、开火/装备动画、音频、CameraShake 和子弹表现副本。两把枪的开火蒙太奇内部已改为引用各自的开火序列，不再依赖 RepairGun 开火序列。
+- 2026-09-03：通用命中 Cue 增加可配置贴花材质、尺寸倍率和生命周期。电击枪使用 Energy Burst 3 枪口、无粒子命中、紫色贴花 1.1；爆炸枪使用 Physical Burst 3 枪口、Physical Impact 3 命中和黄色贴花 2.0。
+- 2026-09-03：新增两个原生 GameplayCue Tag 和扫描路径；`BP_MaintenanceWorker.InitialEquipmentClasses` 按 RepairGun、电击枪、爆炸枪顺序配置三把枪。
+- 2026-09-03：定向依赖检查发现复制后的两个弹体 StaticMesh 仍引用 RepairGun 弹体材质；已通过 StaticMesh 正式材质接口改为各自 `M_<WeaponName>_Bullet` 并冷回读确认，对 RepairGun 的依赖降为 0。迁移脚本曾强制重存 RepairGun 整个目录，收尾时已精确还原无语义变化的材质、纹理和 Niagara 文件，只保留动画重命名所需引用及 `BP_RepairGun` 配置改动。
+
+## 验证结果
+
+- Development Editor / Win64 构建成功，无新增编译警告。
+- RepairGun 与两把新枪的 Weapon/Bullet/Cue/AnimBP/CameraShake Blueprint 均在 Unreal 冷启动命令会话内编译保存并重新加载通过。
+- `TheManTest.Player.Weapons.ThreeWeaponBaseline`：Success；核对玩法基线、模型、枪口/命中 VFX、Cue Tag、贴花与独立资产引用。
+- `TheManTest.Player.Weapons.ThreeWeaponPIESwitch`：Success；PIE 中按 RepairGun → ElectricGun → ExplosionGun 切换，每把枪均可见，且独立开火蒙太奇可在实时 Arms AnimInstance 启动。
+- `TheManTest.Player.CombatHUD.AmmoLifecycle`：Success；既有 RepairGun、GAS 与 HUD 行为未回归。
+- 冷启动 Asset Registry 的两个 `GameplayCueName` 与正式 Tag 精确匹配；两把新枪对 RepairGun/供应商目录的定向依赖为 0；范围内 Redirector 为 0；供应商路径和旧角色 Actions 路径在 Asset Registry 及磁盘均不存在。
+
+## 剩余验收
+
+- 自动化使用 NullRHI，尚未验证最终渲染观感。由用户在带渲染窗口的 PIE 中确认三把枪模型握持位置、枪口 VFX、爆炸枪命中粒子以及两种贴花尺寸；确认后可将 FEAT-080 归档为 done。

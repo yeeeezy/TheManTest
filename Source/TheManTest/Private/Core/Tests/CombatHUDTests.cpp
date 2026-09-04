@@ -20,7 +20,199 @@
 #include "Misc/Paths.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
+#include "Animation/AnimMontage.h"
+#include "Animation/AnimInstance.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Core/_Shared/GAS/GameplayCues/GCN_ImpactFeedbackBase.h"
+#include "Materials/MaterialInterface.h"
+#include "NiagaraSystem.h"
 #include "Sound/SoundBase.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FThreeWeaponBaselineTest,
+	"TheManTest.Player.Weapons.ThreeWeaponBaseline",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
+{
+	struct FWeaponExpectation
+	{
+		const TCHAR* Name;
+		const TCHAR* WeaponClassPath;
+		const TCHAR* MeshPath;
+		const TCHAR* MuzzlePath;
+		const TCHAR* ImpactPath;
+		const TCHAR* DecalPath;
+		const TCHAR* CueClassPath;
+		const TCHAR* BulletClassPath;
+		FGameplayTag ImpactTag;
+		float DecalScale;
+	};
+
+	const FWeaponExpectation Expectations[] = {
+		{
+			TEXT("ElectricGun"),
+			TEXT("/Game/Weapons/ElectricGun/Blueprint/BP_ElectricGun.BP_ElectricGun_C"),
+			TEXT("/Game/Weapons/ElectricGun/Meshes/SM_ElectricGun.SM_ElectricGun"),
+			TEXT("/Game/Weapons/ElectricGun/Effects/Muzzle/Systems/NS_ElectricGun_Muzzle.NS_ElectricGun_Muzzle"),
+			nullptr,
+			TEXT("/Game/Weapons/ElectricGun/Effects/Impact/Materials/MI_ElectricGun_ImpactDecal.MI_ElectricGun_ImpactDecal"),
+			TEXT("/Game/Weapons/ElectricGun/GAS/GameplayCues/GC_Weapon_ElectricGun_Impact.GC_Weapon_ElectricGun_Impact_C"),
+			TEXT("/Game/Weapons/ElectricGun/Blueprint/BP_ElectricGunBullet.BP_ElectricGunBullet_C"),
+			TAG_GameplayCue_Weapon_ElectricGun_Impact,
+			1.1f,
+		},
+		{
+			TEXT("ExplosionGun"),
+			TEXT("/Game/Weapons/ExplosionGun/Blueprint/BP_ExplosionGun.BP_ExplosionGun_C"),
+			TEXT("/Game/Weapons/ExplosionGun/Meshes/SM_ExplosionGun.SM_ExplosionGun"),
+			TEXT("/Game/Weapons/ExplosionGun/Effects/Muzzle/Systems/NS_ExplosionGun_Muzzle.NS_ExplosionGun_Muzzle"),
+			TEXT("/Game/Weapons/ExplosionGun/Effects/Impact/Systems/NS_ExplosionGun_Impact.NS_ExplosionGun_Impact"),
+			TEXT("/Game/Weapons/ExplosionGun/Effects/Impact/Materials/MI_ExplosionGun_ImpactDecal.MI_ExplosionGun_ImpactDecal"),
+			TEXT("/Game/Weapons/ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Impact.GC_Weapon_ExplosionGun_Impact_C"),
+			TEXT("/Game/Weapons/ExplosionGun/Blueprint/BP_ExplosionGunBullet.BP_ExplosionGunBullet_C"),
+			TAG_GameplayCue_Weapon_ExplosionGun_Impact,
+			2.0f,
+		},
+	};
+
+	const UClass* RepairClass = LoadClass<AFirearm>(nullptr,
+		TEXT("/Game/Weapons/RepairGun/Blueprint/BP_RepairGun.BP_RepairGun_C"));
+	const AFirearm* RepairGun = RepairClass ? RepairClass->GetDefaultObject<AFirearm>() : nullptr;
+	TestNotNull(TEXT("RepairGun baseline loads"), RepairGun);
+	TestNotNull(TEXT("RepairGun fire montage is configured"), RepairGun ? RepairGun->FireMontage : nullptr);
+
+	for (const FWeaponExpectation& Expected : Expectations)
+	{
+		UClass* WeaponClass = LoadClass<AFirearm>(nullptr, Expected.WeaponClassPath);
+		const AFirearm* Weapon = WeaponClass ? WeaponClass->GetDefaultObject<AFirearm>() : nullptr;
+		TestNotNull(FString::Printf(TEXT("%s class loads"), Expected.Name), Weapon);
+		if (!Weapon || !RepairGun)
+		{
+			continue;
+		}
+
+		TestEqual(FString::Printf(TEXT("%s keeps RepairGun fire rate"), Expected.Name), Weapon->FireRate, RepairGun->FireRate);
+		TestEqual(FString::Printf(TEXT("%s keeps RepairGun magazine"), Expected.Name), Weapon->MagazineCapacity, RepairGun->MagazineCapacity);
+		TestEqual(FString::Printf(TEXT("%s keeps RepairGun recoil"), Expected.Name), Weapon->RecoilDamping, RepairGun->RecoilDamping);
+		TestTrue(FString::Printf(TEXT("%s owns its fire montage"), Expected.Name),
+			Weapon->FireMontage && Weapon->FireMontage->GetPathName().Contains(Expected.Name));
+		TestTrue(FString::Printf(TEXT("%s owns its equip montage"), Expected.Name),
+			Weapon->GetEquipMontage() && Weapon->GetEquipMontage()->GetPathName().Contains(Expected.Name));
+		TestEqual(FString::Printf(TEXT("%s uses requested mesh"), Expected.Name),
+			Weapon->GetStaticMesh()->GetStaticMesh().Get(), LoadObject<UStaticMesh>(nullptr, Expected.MeshPath));
+		TestNull(FString::Printf(TEXT("%s disables inherited skeletal mesh"), Expected.Name),
+			Weapon->GetSkeletalMesh()->GetSkeletalMeshAsset());
+		TestEqual(FString::Printf(TEXT("%s uses requested muzzle VFX"), Expected.Name),
+			Weapon->MuzzleEffect.Get(), LoadObject<UNiagaraSystem>(nullptr, Expected.MuzzlePath));
+		TestTrue(FString::Printf(TEXT("%s owns its bullet class"), Expected.Name),
+			Weapon->BulletClass && Weapon->BulletClass->GetPathName().Contains(Expected.Name));
+
+		UClass* BulletClass = LoadClass<ABulletBase>(nullptr, Expected.BulletClassPath);
+		const ABulletBase* Bullet = BulletClass ? BulletClass->GetDefaultObject<ABulletBase>() : nullptr;
+		TestNotNull(FString::Printf(TEXT("%s bullet loads"), Expected.Name), Bullet);
+		TestTrue(FString::Printf(TEXT("%s bullet uses unique impact tag"), Expected.Name),
+			Bullet && Bullet->ImpactCueTag.MatchesTagExact(Expected.ImpactTag));
+
+		UClass* CueClass = LoadClass<UGCN_ImpactFeedbackBase>(nullptr, Expected.CueClassPath);
+		const UGCN_ImpactFeedbackBase* Cue = CueClass
+			? CueClass->GetDefaultObject<UGCN_ImpactFeedbackBase>() : nullptr;
+		TestNotNull(FString::Printf(TEXT("%s impact cue loads"), Expected.Name), Cue);
+		if (Cue)
+		{
+			TestTrue(FString::Printf(TEXT("%s cue uses unique tag"), Expected.Name),
+				Cue->GameplayCueTag.MatchesTagExact(Expected.ImpactTag));
+			TestEqual(FString::Printf(TEXT("%s uses requested impact VFX"), Expected.Name),
+				Cue->ImpactEffect.Get(), Expected.ImpactPath
+					? LoadObject<UNiagaraSystem>(nullptr, Expected.ImpactPath) : nullptr);
+			TestEqual(FString::Printf(TEXT("%s uses requested decal"), Expected.Name),
+				Cue->ImpactDecalMaterial.Get(), LoadObject<UMaterialInterface>(nullptr, Expected.DecalPath));
+			TestEqual(FString::Printf(TEXT("%s uses requested decal scale"), Expected.Name),
+				Cue->DecalSizeMultiplier, Expected.DecalScale);
+		}
+	}
+
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(
+	FValidateEquippedWeaponAnimationCommand,
+	FAutomationTestBase*, Test,
+	FString, ExpectedWeaponName);
+
+bool FValidateEquippedWeaponAnimationCommand::Update()
+{
+	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+	APlayerController* Controller = World ? World->GetFirstPlayerController() : nullptr;
+	AFPSCharacterBase* Player = Controller ? Cast<AFPSCharacterBase>(Controller->GetPawn()) : nullptr;
+	AFirearm* Weapon = Player && Player->GetEquipmentManager()
+		? Cast<AFirearm>(Player->GetEquipmentManager()->GetCurrentEquipment()) : nullptr;
+	Test->TestNotNull(FString::Printf(TEXT("%s is equipped in PIE"), *ExpectedWeaponName), Weapon);
+	if (!Weapon || !Player)
+	{
+		return true;
+	}
+
+	Test->TestTrue(FString::Printf(TEXT("%s class is current"), *ExpectedWeaponName),
+		Weapon->GetClass()->GetPathName().Contains(ExpectedWeaponName));
+	Test->TestFalse(FString::Printf(TEXT("%s is visible after switch"), *ExpectedWeaponName),
+		Weapon->IsHidden());
+	Test->TestNotNull(FString::Printf(TEXT("%s has its weapon mesh"), *ExpectedWeaponName),
+		Weapon->GetStaticMesh()->GetStaticMesh().Get());
+	Test->TestNotNull(FString::Printf(TEXT("%s has its fire montage"), *ExpectedWeaponName),
+		Weapon->FireMontage);
+
+	UAnimInstance* ArmsAnimInstance = Player->GetArmsMesh()
+		? Player->GetArmsMesh()->GetAnimInstance() : nullptr;
+	Test->TestNotNull(FString::Printf(TEXT("%s arms animation instance exists"), *ExpectedWeaponName),
+		ArmsAnimInstance);
+	if (ArmsAnimInstance && Weapon->FireMontage)
+	{
+		const float MontageLength = ArmsAnimInstance->Montage_Play(Weapon->FireMontage);
+		Test->TestTrue(FString::Printf(TEXT("%s fire montage starts on the live arms"), *ExpectedWeaponName),
+			MontageLength > 0.f && ArmsAnimInstance->Montage_IsPlaying(Weapon->FireMontage));
+		ArmsAnimInstance->Montage_Stop(0.f, Weapon->FireMontage);
+	}
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSwitchToNextWeaponCommand, FAutomationTestBase*, Test);
+
+bool FSwitchToNextWeaponCommand::Update()
+{
+	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+	APlayerController* Controller = World ? World->GetFirstPlayerController() : nullptr;
+	AFPSCharacterBase* Player = Controller ? Cast<AFPSCharacterBase>(Controller->GetPawn()) : nullptr;
+	UEquipmentManagerComponent* Manager = Player ? Player->GetEquipmentManager() : nullptr;
+	Test->TestNotNull(TEXT("Equipment manager exists before switching"), Manager);
+	if (Manager)
+	{
+		Manager->SwitchEquipment(1);
+	}
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FThreeWeaponPIESwitchTest,
+	"TheManTest.Player.Weapons.ThreeWeaponPIESwitch",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FThreeWeaponPIESwitchTest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.8f));
+	ADD_LATENT_AUTOMATION_COMMAND(FValidateEquippedWeaponAnimationCommand(this, TEXT("RepairGun")));
+	ADD_LATENT_AUTOMATION_COMMAND(FSwitchToNextWeaponCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.7f));
+	ADD_LATENT_AUTOMATION_COMMAND(FValidateEquippedWeaponAnimationCommand(this, TEXT("ElectricGun")));
+	ADD_LATENT_AUTOMATION_COMMAND(FSwitchToNextWeaponCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.7f));
+	ADD_LATENT_AUTOMATION_COMMAND(FValidateEquippedWeaponAnimationCommand(this, TEXT("ExplosionGun")));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
 
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FValidateCombatHUDCommand, FAutomationTestBase*, Test);
 bool FValidateCombatHUDCommand::Update()

@@ -1,4 +1,5 @@
 #include "Core/_Shared/GAS/GameplayCues/GCN_ImpactFeedbackBase.h"
+#include "Components/DecalComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
 
@@ -25,5 +26,21 @@ bool UGCN_ImpactFeedbackBase::OnExecute_Implementation(
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
 			World, ImpactEffect, Parameters.Location, Rotation, FVector(EffectScale));
 	}
-	return ImpactSound != nullptr || ImpactEffect != nullptr;
+	if (ImpactDecalMaterial)
+	{
+		const FVector Normal = Parameters.Normal.GetSafeNormal(UE_SMALL_NUMBER, FVector::UpVector);
+		const FRotator Rotation = FRotationMatrix::MakeFromX(-Normal).Rotator();
+		const float SurfaceSize = 12.f * DecalSizeMultiplier;
+		if (UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(
+			World,
+			ImpactDecalMaterial,
+			FVector(4.f, SurfaceSize, SurfaceSize),
+			Parameters.Location + Normal,
+			Rotation,
+			DecalLifeSpan))
+		{
+			Decal->SetFadeOut(FMath::Max(0.f, DecalLifeSpan - 1.f), 1.f, false);
+		}
+	}
+	return ImpactSound != nullptr || ImpactEffect != nullptr || ImpactDecalMaterial != nullptr;
 }

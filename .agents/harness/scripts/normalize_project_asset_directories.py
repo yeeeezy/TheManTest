@@ -10,8 +10,8 @@ MOVES = [
     # MaintenanceWorker animation ownership.
     ("/Game/Characters/CharacterBase/Animations/BlendSpaces/Body/BS_RunWalk_MaintenanceWorker", "/Game/Characters/MaintenanceWorker/Animations/Body/Locomotion/BS_RunWalk_MaintenanceWorker"),
     ("/Game/Characters/CharacterBase/Animations/BlendSpaces/FirstPerson/BS_MW_FP_WalkRun", "/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Locomotion/BS_MW_FP_WalkRun"),
-    ("/Game/Characters/CharacterBase/Animations/FirstPerson/Actions/AM_VFXPack_FP_RecoilLarge", "/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Actions/AM_MaintenanceWorker_FP_RecoilLarge"),
-    ("/Game/Characters/CharacterBase/Animations/FirstPerson/Actions/AS_VFXPack_FP_Fire", "/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Actions/AS_MaintenanceWorker_FP_Fire"),
+    ("/Game/Characters/CharacterBase/Animations/FirstPerson/Actions/AM_VFXPack_FP_RecoilLarge", "/Game/Weapons/RepairGun/Animations/FirstPerson/Actions/AM_RepairGun_FP_Fire"),
+    ("/Game/Characters/CharacterBase/Animations/FirstPerson/Actions/AS_VFXPack_FP_Fire", "/Game/Weapons/RepairGun/Animations/FirstPerson/Actions/AS_RepairGun_FP_Fire"),
     ("/Game/Characters/CharacterBase/Animations/FirstPerson/Locomotion/AS_VFXPack_FP_Idle", "/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Locomotion/AS_MaintenanceWorker_FP_Idle"),
     ("/Game/Characters/CharacterBase/Animations/FirstPerson/Locomotion/AS_VFXPack_FP_JumpEnd", "/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Locomotion/AS_MaintenanceWorker_FP_JumpEnd"),
     ("/Game/Characters/CharacterBase/Animations/FirstPerson/Locomotion/AS_VFXPack_FP_JumpLoop", "/Game/Characters/MaintenanceWorker/Animations/FirstPerson/Locomotion/AS_MaintenanceWorker_FP_JumpLoop"),

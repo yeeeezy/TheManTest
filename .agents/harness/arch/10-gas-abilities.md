@@ -15,6 +15,7 @@
 
 FEAT-080 起，玩家 `UGA_Shoot` 取得当前 `AFirearm` 后首先调用 `ConsumeRound()`。空弹仅播放当前枪械独立的 `DryFireSound` 后结束 Ability，不生成弹体，也不播放实弹蒙太奇/音效、Niagara、震屏或后坐力；成功扣弹会同步广播 `OnAmmoChanged` 更新 Combat HUD。
 命中反馈采用独立所有权的两层 Cue：`ABulletBase::ImpactCueTag` 由具体武器/弹体选择武器命中表现；敌人 Health 确认扣减后，由目标 ASC 按 `AEnemyBase::HitReactionCueTag` 选择敌人受击表现。共享 `GE_BulletDamage` 只负责伤害，不绑定表现 Cue，也不要为 Cue 单独创建空壳 Gameplay Effect。
+FEAT-080 新增原生 Tag `GameplayCue.Weapon.ElectricGun.Impact` 与 `GameplayCue.Weapon.ExplosionGun.Impact`；对应 Cue 扫描路径在 `DefaultGame.ini` 的 `AbilitySystemGlobals.GameplayCueNotifyPaths` 中逐武器注册。Tag 必须继续由 `TheManGameplayTags.h/.cpp` 声明/定义，具体 Bullet 与 Cue Blueprint 只选择正式 Tag。
 成功射击的震屏由 `UGA_Shoot` 读取当前枪械 `FireCameraShake/Scale` 并通过本地 `PlayerCameraManager` 播放，只负责短促打击感；随后 `AddRecoil` 才负责实际控制视角上抬。两者不得互相替代。
 session251 起，玩家 `UGA_Reload` 由 `IA_Reload(R)` 经 Character 发送 `Input.Weapon.Reload` Gameplay Event 激活。Ability 属于当前枪械，使用独立 `ReloadAbilityClass/Handle` 随 Equip/Unequip 授予回收；当前为即时换弹，满弹或无备用弹夹时拒绝激活。
 Phantom 的四个具体射击 Ability（Shoot1/Shoot2/Burst/Suppressive，FEAT-071）统一覆盖为 BaseSpread=3°、PerShot=0.8°、Max=9°、Recovery=2°/s、MovingPenalty=2°；其两种子弹 Damage=6。公共 C++ 默认值保持不变，避免无依据影响未来其他 Enemy。

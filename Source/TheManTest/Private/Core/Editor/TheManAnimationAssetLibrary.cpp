@@ -13,6 +13,7 @@
 #include "Engine/InheritableComponentHandler.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
+#include "Animation/AnimMontage.h"
 #include "Animation/BlendSpace.h"
 #include "Animation/AnimNode_SequencePlayer.h"
 #include "AnimGraphNode_ControlRig.h"
@@ -54,6 +55,37 @@
 #include "EditorViewportClient.h"
 #include "EngineUtils.h"
 #endif
+
+bool UTheManAnimationAssetLibrary::ReplaceMontageAnimation(
+	UAnimMontage* Montage,
+	UAnimSequence* Animation)
+{
+#if WITH_EDITOR
+	if (!Montage || !Animation || Montage->GetSkeleton() != Animation->GetSkeleton())
+	{
+		return false;
+	}
+
+	int32 ReplacedSegmentCount = 0;
+	Montage->Modify();
+	for (FSlotAnimationTrack& SlotTrack : Montage->SlotAnimTracks)
+	{
+		for (FAnimSegment& Segment : SlotTrack.AnimTrack.AnimSegments)
+		{
+			Segment.SetAnimReference(Animation);
+			++ReplacedSegmentCount;
+		}
+	}
+	if (ReplacedSegmentCount == 0)
+	{
+		return false;
+	}
+	Montage->MarkPackageDirty();
+	return true;
+#else
+	return false;
+#endif
+}
 
 bool UTheManAnimationAssetLibrary::ConfigureFirstPersonFirearmLinkedLayer(
 	UAnimBlueprint* HostAnimBlueprint,

@@ -1,7 +1,7 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-03-feat079-restore-before-beginplay",
-    "active_feature":  "FEAT-079",
+    "last_updated":  "2026-09-03-feat080-three-weapon-setup",
+    "active_feature":  "FEAT-080",
     "archive_file":  "feature_archive.json",
     "features":  [
                      {
@@ -447,7 +447,7 @@
                      {
                          "id":  "FEAT-079",
                          "name":  "跨回合世界状态持久化",
-                         "status":  "in_progress",
+                         "status":  "needs_improvement",
                          "description":  "利用现有死亡/倒计时归零→大厅→重新 OpenLevel 测试地图的流程，在单次游戏进程内保存世界状态。只有挂载 UPersistentStateComponent 的 Actor 接入系统，实例策略默认 AcrossRounds、可显式设为 None；门、道具、Enemy 与运行时生成对象统一按实例处理，不区分随机刷新来源。UWorldPersistenceSubsystem（UGameInstanceSubsystem）按稳定地图 Package 与 PersistentId 保存 FPersistentActorState；所有持久实例固定保存 Transform、存在状态和接口提供的 FInstancedStruct 自定义数据。组件 BeginPlay 主动注册、EndPlay 只注销，Subsystem 在回合结束时遍历弱引用注册表而不扫描整个 World；Gameplay 永久销毁必须在 Destroy 前写入 bExists=false 墓碑。第一阶段不写 USaveGame，但数据保持可序列化和版本化以便后续扩展。当前仅记录方案，未修改代码或资产。",
                          "archive_file":  "archive/FEAT-079-round-world-persistence.md",
                          "created":  "2026-09-03",
@@ -462,7 +462,26 @@
                                                "GUID 无效或重复时有明确编辑器/运行时校验；不得依赖 Actor 名称、GetUniqueID 或编辑器内部 ActorGuid 作为存档契约",
                                                "Development Editor 构建通过；自动化或 PIE 验证策略默认值、注册注销、GUID、Transform、自定义数据、墓碑以及预放置/运行时实例跨回合行为"
                                            ],
-                         "verification_evidence":  "2026-09-03-stage1：核心 Subsystem/Component/Interface/版本化状态结构与 GameInstance 采集接合完成；TestMap 已放置单个 C++ PersistenceAcceptanceDoor。2026-09-03-restore-before-beginplay：恢复从 PostLoadMap 下一 Tick 改为 OnWorldInitializedActors 挂接 OnWorldPreBeginPlay，并由 PersistentStateComponent.InitializeComponent 兼容稍后注册的 World Partition External Actor；运行时 Actor 在 World BeginPlay 前完成 FinishSpawning、GUID 写回与状态应用。Development Editor / Win64 冷构建成功；TheManTest.Core.Persistence 5/5 Success，真实 TestMap→LobbyMap→TestMap 验证预放置/运行时 Door 在 BeginPlay 中已看到恢复状态，墓碑 Door 不进入 BeginPlay。下一步创建可在前台修改整个 Actor Transform 的 BP Door，并用 AcrossRounds/None 两个不同 GUID 实例验证隔离与跨回合行为。"
+                         "verification_evidence":  "2026-09-03-stage1：核心 Subsystem/Component/Interface/版本化状态结构与 GameInstance 采集接合完成；TestMap 已放置单个 C++ PersistenceAcceptanceDoor。2026-09-03-restore-before-beginplay：恢复从 PostLoadMap 下一 Tick 改为 OnWorldInitializedActors 挂接 OnWorldPreBeginPlay，并由 PersistentStateComponent.InitializeComponent 兼容稍后注册的 World Partition External Actor；运行时 Actor 在 World BeginPlay 前完成 FinishSpawning、GUID 写回与状态应用。Development Editor / Win64 冷构建成功；TheManTest.Core.Persistence 5/5 Success，真实 TestMap→LobbyMap→TestMap 验证预放置/运行时 Door 在 BeginPlay 中已看到恢复状态，墓碑 Door 不进入 BeginPlay。2026-09-03：用户决定实际应用验收暂缓，状态转 needs_improvement；后续恢复时继续 Blueprint 双实例前台验收。"
+                     },
+                     {
+                         "id":  "FEAT-080",
+                         "name":  "RepairGun、电击枪与爆炸枪统一动画和独立 VFX",
+                         "status":  "in_progress",
+                         "description":  "为 RepairGun 正式接通现有第一人称开火蒙太奇；以 RepairGun 为完整配置基线创建电击枪和爆炸枪，两把新枪仅替换各自模型、枪口与命中特效。源模型和 VFX 来自外部 VFXPack 项目；不迁移源角色、武器蓝图或动画。即使表现依赖内容相同，也按武器所有权复制到各自语义目录并重命名，使三把枪后续可以独立调整。",
+                         "archive_file":  "archive/FEAT-080-three-weapon-setup.md",
+                         "created":  "2026-09-03",
+                         "updated":  "2026-09-03-implementation",
+                         "done_criteria":  [
+                                               "RepairGun、电击枪和爆炸枪都使用现有 MaintenanceWorker 第一人称持枪动画体系，并分别引用所属武器目录内的独立开火序列、开火蒙太奇、装备蒙太奇和 AnimBP 副本",
+                                               "电击枪使用截图指定的 SM_Weapon_SubmachineGun_02 与 NE_VFX_Muzzle_Energy_Burst_3；命中配置保持源截图的无环境粒子、紫色贴花和 1.1 尺寸倍率",
+                                               "爆炸枪使用截图指定的 SM_Weapon_Ballistics_Rifle_02、NE_VFX_Muzzle_Physical_Burst_3、NE_VFX_Projectile_Impact_Physical_3、黄色贴花和 2.0 尺寸倍率",
+                                               "两把新枪除模型与 VFX 外完整复制 RepairGun 的射击、弹药、音频、GAS、后坐力、装备和子弹行为",
+                                               "武器专属资产分别位于 /Game/Weapons/ElectricGun 与 /Game/Weapons/ExplosionGun 并使用语义化重命名；不保留供应商正式目录或源项目蓝图/动画",
+                                               "BP_MaintenanceWorker 初始装备列表包含三把枪，可稳定切换且技能不重复授予",
+                                               "Development Editor 构建、相关 Blueprint/AnimBP 编译保存、资产引用/Redirector 检查及 PIE 切枪开火验证通过"
+                                           ],
+                         "verification_evidence":  "2026-09-03-start：已确认源截图资产与 VFX 配置；源项目 15 个武器蓝图共用 FirstPerson_AnimBP 和公共后坐蒙太奇。2026-09-03-implementation：模型/VFX 依赖已通过 Unreal AssetTools 迁入并重命名到 /Game/Weapons/ElectricGun（45 资产）与 /Game/Weapons/ExplosionGun（60 资产）；供应商路径和旧角色 Actions 路径的 Asset Registry 与磁盘目录均为空。RepairGun 开火序列/蒙太奇和装备蒙太奇归档到 RepairGun；两把新枪各自拥有动画、AnimBP、音频、相机抖动、子弹、Cue 和对应依赖副本，蒙太奇已回读确认只引用本武器开火序列。GameplayCueName 冷启动回读分别精确匹配 GameplayCue.Weapon.ElectricGun.Impact 与 GameplayCue.Weapon.ExplosionGun.Impact；跨 RepairGun/供应商依赖检查为 0，范围内 Redirector 为 0。Blueprint/AnimBP 批量编译保存成功；Development Editor Win64 构建成功；ThreeWeaponBaseline、ThreeWeaponPIESwitch 与既有 AmmoLifecycle 自动化均 Success。PIE 已验证三把枪依次切换、可见并能在实时 Arms AnimInstance 启动各自开火蒙太奇；尚待有渲染窗口的人工前台确认枪口、命中粒子和贴花的最终观感。"
                      }
                  ],
     "_说明":  "主索引仅保留未完成、受阻及待改进功能；已完成项移至 feature_archive.json。功能详细历史仍以 archive/FEAT-*.md 为准。"

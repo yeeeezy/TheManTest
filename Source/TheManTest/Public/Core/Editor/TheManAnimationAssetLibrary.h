@@ -7,6 +7,7 @@
 class UAnimationAsset;
 class UAnimInstance;
 class UAnimBlueprint;
+class UAnimMontage;
 class UBlendSpace;
 class UAnimSequence;
 class UControlRigBlueprint;
@@ -21,6 +22,10 @@ class THEMANTEST_API UTheManAnimationAssetLibrary : public UBlueprintFunctionLib
 	GENERATED_BODY()
 
 public:
+	/** Replace every animation segment in a montage with an ownership-local copy. */
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Animation")
+	static bool ReplaceMontageAnimation(UAnimMontage* Montage, UAnimSequence* Animation);
+
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Animation")
 	static bool AssignAnimationSkeleton(UAnimationAsset* AnimationAsset, USkeleton* Skeleton);
 

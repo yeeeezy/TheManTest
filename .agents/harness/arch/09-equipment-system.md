@@ -17,6 +17,8 @@ Equip Montage 兼容代码仍保留，但 FEAT-074 session178 起不再由开局
 `AFirearm` 还提供可按具体武器覆盖的 `MuzzleEffect / MuzzleEffectRotation / MuzzleEffectScale`；`UGA_Shoot` 每发在实际 Muzzle Socket 附着一次性 Niagara。RepairGun 当前使用 `/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_SniperScout_Muzzle`（FEAT-072，从外部 Sniper Scout 精确迁入，包含枪口闪光与烟雾）；专属前向烟雾材质/纹理位于同一 RepairGun Muzzle 目录，其余复用依赖位于 `/Game/Core/_Shared/Effects/Muzzle/`。
 该 RepairGun 专属 System 的火焰、Glow、Lens Flare、Y 形火焰和火花颜色曲线已灰度化为中性灰；共享依赖仍保持原色，不得为了 RepairGun 外观修改 `/Game/Core/_Shared`。
 
+FEAT-080 起，MaintenanceWorker 的三把初始枪均为 `AFirearm` Blueprint 配置：`BP_RepairGun`、`BP_ElectricGun`、`BP_ExplosionGun`。电击枪使用 `SM_ElectricGun + NS_ElectricGun_Muzzle`；爆炸枪使用 `SM_ExplosionGun + NS_ExplosionGun_Muzzle + NS_ExplosionGun_Impact`。两把新枪的玩法数据复制 RepairGun，但动画、AnimBP、音频、CameraShake、Bullet、GameplayCue、弹体 Mesh/材质以及迁入的模型/VFX 依赖均位于各自 `/Game/Weapons/<WeaponName>/`，不得重新指回 RepairGun 专属资产。
+
 RepairGun 的成功射击 SoundWave 为 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Fire`，由 `BP_RepairGun.FireSound` 配置；`UGA_Shoot` 在真实枪口世界位置播放。空弹音效应使用独立字段/反馈链，不得复用实弹 `FireSound`。
 `AFirearm` 的空弹配置为 `DryFireSound` 及独立 Volume/Pitch Multiplier。RepairGun 使用 `/Game/Weapons/RepairGun/Audio/S_RepairGun_DryFire`；仅在当前弹匣为 0、`ConsumeRound()` 失败时播放。
 
@@ -34,6 +36,8 @@ FEAT-080 session251 起，玩家枪械可独立配置 `ReloadAbilityClass`；`Gr
 | `Source/TheManTest/Public/Weapons/RepairGun/Bullets/RepairGunBullet.h` | 环境命中保持指数膨胀（e^(Rate×t)）与危险区压制；敌人命中施加 `SlowPercent`/`SlowDuration`（默认40%/2.5秒）后立即销毁。连续命中刷新时长、不叠加强度。 |
 
 `ABulletBase` 提供可配置 `ImpactCueTag`，有效碰撞时由攻击者 ASC 执行，但基类不绑定任何具体枪械表现。RepairGun 子弹默认使用 `GameplayCue.Weapon.RepairGun.Impact`，对应 `/Game/Weapons/RepairGun/GAS/GameplayCues/GC_Weapon_RepairGun_Impact` 与 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact`；Gameplay Cue 资产名中的 `Weapon_RepairGun_Impact` 必须完整匹配 Tag 层级，确保 Asset Registry 的 `GameplayCueName` 可被运行时管理器发现。环境与 Enemy 都播放同一 RepairGun 反馈，Phantom 穿透不触发。命中 WAV 已离线压缩/软限幅，平均响度较原文件提高约 6.9dB、峰值为 -1dBFS，Cue `VolumeMultiplier` 保持 1.0，避免把近满幅瞬态用超大倍率直接推入总线限幅。Projectile 和当前 Hitscan 均汇入 `ProcessHit`。由于射击 Ability 为 `LocalOnly` 且 Projectile 可在 Ability 结束后才命中，命中反馈必须用 `InvokeGameplayCueEvent(Executed)` 立即本地执行；不得使用依赖 Authority/Prediction Key 的延迟 `ExecuteGameplayCue` 队列。
+
+`UGCN_ImpactFeedbackBase` 还支持 `ImpactDecalMaterial / DecalSizeMultiplier / DecalLifeSpan`。电击枪 Cue 使用 `GameplayCue.Weapon.ElectricGun.Impact`，不生成 Niagara 命中粒子，只生成紫色贴花（1.1）；爆炸枪 Cue 使用 `GameplayCue.Weapon.ExplosionGun.Impact`，生成 Physical Impact Niagara 与黄色贴花（2.0）。两个 Cue 的资产名与 Asset Registry `GameplayCueName` 必须完整匹配对应 Tag。
 
 抛射体的根 `CollisionSphere` 必须保持 `Movable`；`ProjectileMovementComponent` 移动的是根碰撞组件，仅把子级 `BulletMesh` 设为 Movable 不足以让 Actor 飞行。若根球体为 Static，PIE 会报告 `CollisionSphere has to be 'Movable'`，子弹将停在生成点，直到其他物体碰到它才触发命中逻辑。
 

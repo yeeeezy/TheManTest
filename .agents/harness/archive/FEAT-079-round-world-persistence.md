@@ -104,3 +104,4 @@
 - `USaveGame` 暂不属于第一阶段；后续可将 Subsystem 的状态表写入磁盘并在加载时装回，复用现有采集、GUID、墓碑与恢复流程。
 - 当前项目尚无正式 Enemy/道具生成器；生成器与运行时持久实例的唯一生成权协议按用户要求暂不实现，待真正引入动态刷怪/随机道具时单独设计。
 - Blueprint 双 Door（AcrossRounds/None）、多实例 GUID 隔离和前台操作整个 Actor Transform 仍是当前下一步。
+- 2026-09-03 用户决定在正式业务 Actor 尚未接入前暂缓前台验收；自动化通过的实现保留，功能状态转为 `needs_improvement`，后续从 Blueprint 双实例验收继续。
