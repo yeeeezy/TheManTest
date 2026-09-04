@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-04-feat080-unified-weapon-impact",
+    "last_updated":  "2026-09-04-feat080-vfx-test-map",
     "active_feature":  "FEAT-080",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -471,7 +471,8 @@
                          "description":  "为 RepairGun 正式接通现有第一人称开火蒙太奇；以 RepairGun 为完整配置基线创建电击枪和爆炸枪，两把新枪仅替换各自模型、枪口与命中特效。源模型和 VFX 来自外部 VFXPack 项目；不迁移源角色、武器蓝图或动画。即使表现依赖内容相同，也按武器所有权复制到各自语义目录并重命名，使三把枪后续可以独立调整。",
                          "archive_file":  "archive/FEAT-080-three-weapon-setup.md",
                          "created":  "2026-09-03",
-                         "updated":  "2026-09-04-unified-weapon-impact",
+                         "updated":  "2026-09-04-vfx-test-map",
+                         "latest_verification_evidence":  "2026-09-04-vfx-test-map：新建 /Game/Maps/VFXTestMap 与地图专属深灰哑光材质；封闭房间使用固定 Manual Exposure、冷蓝主光、暖橙侧光及两块环境命中靶面，PlayerStart 正对静止 BP_Phantom。冷启动确认 13 个预期 Actor、Phantom MaxWalkSpeed=0、继承血条组件、GameMode 与曝光配置；MapCheck 0 Error/0 Warning。实际 -game 启动完成并生成默认玩家 Pawn/RepairGun，渲染截帧确认暗场和目标可见。",
                          "done_criteria":  [
                                                "RepairGun、电击枪和爆炸枪都使用现有 MaintenanceWorker 第一人称持枪动画体系，并分别引用所属武器目录内的独立开火序列、开火蒙太奇、装备蒙太奇和 AnimBP 副本",
                                                "电击枪使用截图指定的 SM_Weapon_SubmachineGun_02 与 NE_VFX_Muzzle_Energy_Burst_3；所有目标统一使用 Energy Impact 3，并保留仅环境生成的紫色贴花和 1.1 尺寸倍率",

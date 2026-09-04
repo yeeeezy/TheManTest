@@ -73,3 +73,12 @@
 - Development Editor / Win64 构建成功。`TheManTest.Enemy.Shared.EnemyBaseHealthBar` 在 NullRHI PIE 中直接生成 `BP_Phantom`，确认继承的屏幕空间组件和原生 Widget 已初始化，并验证 Health 从 100 改为 75 后界面立即同步；`TheManTest.Player.Weapons.ThreeWeaponBaseline` 确认三把枪视角后坐关闭且 CameraShake 资产仍配置，两项测试均为 Success。
 - `ABulletBase` 构造函数通过共享资产路径默认加载 `GE_BulletDamage` 作为 HitEffectClass；之后新建普通伤害子弹只需填写 Damage，仍允许特殊子弹覆盖或清空。Development Editor 构建及冷启动 `ThreeWeaponBaseline` 默认类断言为 Success。
 - 按用户确认移除 `UGCN_ImpactFeedbackBase.CharacterImpactEffect` 与 Character Niagara 选择分支；电击枪/爆炸枪现在对所有目标分别统一使用 Energy Impact 3/Physical Impact 3，敌人额外反馈交给自身 Character Hit Cue。两个 `NS_*_EnemyImpact` 和 12 个确认无引用的专属材质/纹理已通过 Unreal 资产接口删除；被枪口或环境命中引用的依赖保留。两项 Cue 编译保存、冷启动 `ThreeWeaponBaseline` 与删除资产断言均为 Success。
+
+## 2026-09-04 暗场 VFX 测试地图
+
+- 新建独立地图 `/Game/Maps/VFXTestMap`，不修改既有 `TestMap`。地图使用 22m×14m 的封闭测试房，包含地面、四面墙、天花板和两块不同尺寸的环境命中靶面。
+- 新建地图专属哑光材质 `/Game/Maps/VFXTest/Materials/M_VFXTest_Dark`，基础色为深蓝灰、粗糙度 0.92；场景使用 850 强度冷蓝主光与 260 强度暖橙侧光。
+- Unbound PostProcess 固定使用 Manual Exposure，Exposure Bias=-1.6、Bloom=1.15、Motion Blur=0，避免自动曝光把暗场提亮，同时让枪口和命中发光更清晰。
+- `VFXTest_PlayerStart` 朝向正前方的 `VFXTest_Phantom`；Phantom 沿用专属静止 AI、0 移速和 EnemyBase 通用血条。地图 GameMode 为 `BP_TheManGamemodeBase_C`。
+- 冷启动校验确认 13 个预期 Actor、Phantom 位置 `(250,0,96)`、MaxWalkSpeed=0、1 个继承血条组件、正确 GameMode 与 Manual Exposure；MapCheck 为 0 Error / 0 Warning。
+- 实际 `-game` 启动确认地图进入 Play、默认玩家 Pawn 与 RepairGun 成功生成；渲染截帧确认深灰房间、冷暖分区、Phantom 和环境靶面均清晰可见。截图保存在 `Saved/Screenshots/WindowsEditor/ScreenShot00002.png`。

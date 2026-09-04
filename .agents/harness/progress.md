@@ -4,7 +4,7 @@
 
 - `FEAT-080`：RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 - 状态：`in_progress`
-- 当前阶段：Phantom 静止命中目标、EnemyBase 通用血条和无视角后坐测试配置已就绪，可继续开发爆炸弹逻辑。
+- 当前阶段：独立暗场 `VFXTestMap`、Phantom 静止命中目标、EnemyBase 通用血条和无视角后坐测试配置已就绪，可继续开发爆炸弹逻辑。
 - 详细历史：`archive/FEAT-080-three-weapon-setup.md`
 
 ## 已确认方案
@@ -29,10 +29,11 @@
 - `AEnemyBase` 新增通用头顶简易血条，所有敌人子类自动继承并随 GAS Health/MaxHealth 即时刷新；Phantom PIE 测试确认 100→75 同步成功。
 - `AFirearm::bEnableViewRecoil` 默认临时关闭，三把枪开火不再推动玩家视角；Camera Shake 配置与播放链保持启用。Development Editor 构建与定向自动化均通过。
 - `ABulletBase` 现在默认使用共享 `GE_BulletDamage`；新建普通子弹 Blueprint 无需再手动填写 Hit Effect Class，只需配置 Damage，特殊子弹仍可覆盖。
+- 新建 `/Game/Maps/VFXTestMap`：封闭深灰哑光测试房、固定手动曝光、冷蓝主光与暖橙侧光、两块环境命中靶面；PlayerStart 正对静止 `BP_Phantom`。冷加载结构检查与实际游戏启动截帧均通过。
 
 ## 当前待办
 
-- 继续实现并验证爆炸弹玩法逻辑；当前 Phantom 可作为不会移动的命中目标。
+- 继续实现并验证爆炸弹玩法逻辑；优先使用 `/Game/Maps/VFXTestMap`，其中 Phantom 可作为不会移动的命中目标。
 - 用户在带渲染窗口的 PIE 中确认枪体和弹体材质、弹体尺寸/朝向、模型握持位置、枪口 VFX、统一武器命中 VFX 和环境贴花最终观感。
 - 用户确认后将 FEAT-080 归档为 done；当前不自动提交，等待用户明确说“更新 Git”。
 
@@ -43,4 +44,4 @@
 - 2026-09-04 删除武器 Cue 的 CharacterImpactEffect 分支与两套 HitBox Flash 资产；默认 `GameplayCue.Character.Enemy.Hit` 保留，具体敌人需要差异时再新增专属 Character Hit Tag。
 - 2026-09-04 创建 `BT_Phantom_TestIdle` 与 `BP_Phantom_TestIdleAIController` 并挂到 `BP_Phantom`；PIE 验证 Phantom 静止。正式 AI 的恢复值已记录在 archive 与 `arch/11-enemy-ai.md`。
 - 2026-09-04 `AEnemyBase` 通用血条与三枪临时无视角后坐配置已实现；恢复视角后坐只需把 `bEnableViewRecoil` 默认值或武器 Blueprint 覆盖改为 true，Camera Shake 无需恢复。
-- 默认 Bullet GE 改动及此前现场已封存于本地 WIP checkpoint `3419214`；本次统一武器命中 Cue、删除 CharacterImpact 资产和文档尚未提交。不要重复迁移或重新生成武器资产。
+- 默认 Bullet GE 改动及此前现场已封存于本地 WIP checkpoint `3419214`；统一武器命中 Cue、CharacterImpact 资产清理以及用户调整的 `BP_ExplosionGun` 已封存于本地 WIP checkpoint `5ecbdec`。本次暗场地图与材质尚未提交，不要重复迁移或重新生成武器资产。
