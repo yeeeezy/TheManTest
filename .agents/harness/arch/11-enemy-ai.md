@@ -50,6 +50,13 @@ AEnemyBase（Public/Enemy/）  ← 所有敌人基类，ASC+属性挂自身（�
 | `Public/Enemy/BTTask_UseCombatSkill.h` | **通用战斗放招节点**：`Range`(近/中/远) + `TargetActorKey`(默认 TargetActor)；读黑板目标→`AEnemyBase::UseRandomSkill`；不绑定具体技能 |
 | `Public/Enemy/Humanoid/BTTask_ResumeNearestPatrol.h` | 丢失目标回巡逻：调 `AHumanoidEnemy::ResumeNearestPatrol`（找最近路点续巡逻） |
 
+### FEAT-080 临时 Phantom 静止测试配置
+
+- `/Game/Enemy/Humanoid/Phantom/AI/BT_Phantom_TestIdle`：`Root -> Sequence -> Wait(86400s)`，无移动和攻击节点。
+- `/Game/Enemy/Humanoid/Phantom/AI/BP_Phantom_TestIdleAIController`：公共 `BP_HumanoidAIController` 的 Phantom 专用测试副本，运行静止树。
+- `BP_Phantom` 当前临时指向该测试 Controller，四项状态速度与 CharacterMovement `MaxWalkSpeed` 均为 0，用作爆炸弹命中/范围逻辑的静止目标。
+- 恢复正式 AI 时改回共享 `BP_HumanoidAIController_C`，并恢复 `Patrol/Combat/Turn/SearchRush = 150/300/50/600`、`MaxWalkSpeed=600`。
+
 ### 动画（详见 06-animation.md）
 
 | 文件 | 关键内容 |

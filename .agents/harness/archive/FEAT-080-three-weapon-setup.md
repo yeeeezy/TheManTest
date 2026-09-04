@@ -55,3 +55,12 @@
 - 保持现有架构：`UGA_Shoot → AFirearm.MuzzleEffect` 负责枪口 Niagara；`ABulletBase → GameplayCue → UGCN_ImpactFeedbackBase` 负责命中表现。通用 Cue 新增可配置 `CharacterImpactEffect`，根据 HitResult 区分角色与环境；角色默认不生成墙面贴花。
 - 验证结果：Development Editor / Win64 构建成功；冷启动资产验证输出 `CODEX_FEAT080_VALIDATE|DONE`；`TheManTest.Player.Weapons.ThreeWeaponBaseline` 为 Success；定向依赖扫描输出 `CODEX_FEAT080_DEP|DONE`，未发现 RepairGun 或供应商目录依赖。
 - 当前仅剩带渲染窗口的 PIE 观感验收：弹体尺寸/朝向、飞行可读性、枪体材质、枪口 Niagara、环境/角色命中 Niagara 与贴花尺寸。
+
+## 2026-09-04 Phantom 静止测试 AI
+
+- 为爆炸弹命中与范围逻辑调试创建 Phantom 专属测试行为树 `/Game/Enemy/Humanoid/Phantom/AI/BT_Phantom_TestIdle`，结构为 `Root -> Sequence -> Wait`，Wait 固定为 86400 秒；行为树不包含 MoveTo、攻击或搜索节点。
+- 从公共人形 AI Controller 派生资产 `/Game/Enemy/Humanoid/Phantom/AI/BP_Phantom_TestIdleAIController`，其 `BehaviorTree` 指向上述静止树；`BP_Phantom.AIControllerClass` 已切换到该专用测试 Controller，不影响其他人形敌人。
+- 为保证 Phantom 即使感知玩家、受击进入 Aim 或收到巡逻配置也不发生位移，`BP_Phantom` 的 `PatrolWalkSpeed`、`CombatWalkSpeed`、`TurnWalkSpeed`、`SearchRushSpeed` 与 CharacterMovement `MaxWalkSpeed` 均临时设为 0。
+- Blueprint 在 UE 编辑器内编译保存成功；行为树结构回读为 1 个 Sequence + 1 个 Wait，运行时 `BehaviorTreeComponent` 为 active/running。编辑器重启后的命令行冷加载再次确认测试树、Controller 引用及全部 0 速度配置已持久化。
+- NullRHI PIE 中生成 `Codex_PhantomIdleProbe`，确认使用 `BP_Phantom_TestIdleAIController_C`；连续 5 秒位置保持 `(0, 0, 90.15)`、速度保持 `(0, 0, 0)`。测试 Actor 仅存在于 PIE，停止 PIE 后未保存进 TestMap。
+- 这是 FEAT-080 的临时命中测试支架；恢复正式 Phantom AI 时需把 `BP_Phantom.AIControllerClass` 改回 `/Game/Enemy/Humanoid/_Shared/AI/BP_HumanoidAIController_C`，并恢复速度 `150/300/50/600` 与 CharacterMovement `MaxWalkSpeed=600`。

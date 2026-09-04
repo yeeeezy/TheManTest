@@ -4,7 +4,7 @@
 
 - `FEAT-080`：RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 - 状态：`in_progress`
-- 当前阶段：实现和自动化验证完成，等待带渲染窗口的前台观感验收。
+- 当前阶段：三枪基础实现和自动化验证完成；Phantom 静止测试目标已就绪，可继续开发爆炸弹逻辑。
 - 详细历史：`archive/FEAT-080-three-weapon-setup.md`
 
 ## 已确认方案
@@ -25,14 +25,17 @@
 - 通用命中 Cue 已支持区分环境与角色命中：电击枪使用 Energy Impact 3、HitBox Flash 和紫色 1.1 贴花；爆炸枪使用 Physical Impact 3、HitBox Flash 和黄色 2.0 贴花。
 - `BP_MaintenanceWorker` 初始装备列表包含 RepairGun、电击枪和爆炸枪。
 - Development Editor 构建成功；最新冷启动资产验证、ThreeWeaponBaseline 和定向依赖检查通过；先前 PIE 切枪/实时开火蒙太奇测试及 AmmoLifecycle 仍为 Success。
+- 新建 Phantom 专属静止行为树与测试 AI Controller，并挂到 `BP_Phantom`；所有移动速度临时锁为 0。NullRHI PIE 连续 5 秒位置不变、速度为 0，行为树组件保持运行；编辑器重启冷加载确认配置已持久化。
 
 ## 当前待办
 
+- 继续实现并验证爆炸弹玩法逻辑；当前 Phantom 可作为不会移动的命中目标。
 - 用户在带渲染窗口的 PIE 中确认枪体和弹体材质、弹体尺寸/朝向、模型握持位置、枪口 VFX、环境/角色命中 VFX 和贴花最终观感。
 - 用户确认后将 FEAT-080 归档为 done；当前不自动提交，等待用户明确说“更新 Git”。
 
 ## 会话交接
 
 - FEAT-079 核心实现与 5/5 自动化保持有效，已封存在 WIP checkpoint `5a39440`；用户因暂无实际业务 Actor 暂缓其前台验收。
-- FEAT-080 实现及无渲染自动化已完成。两把新枪与 RepairGun 可在 PIE 顺序切换并启动各自开火蒙太奇；两把新枪已有 BlenderMCP 制作的独立弹体、材质和环境/角色命中表现，剩余只需用户前台确认实际渲染观感。
-- 当前改动未提交；不要重复迁移或重新生成资产。继续时先读 `archive/FEAT-080-three-weapon-setup.md` 的验证记录。
+- FEAT-080 三枪基础实现及无渲染自动化已完成。两把新枪与 RepairGun 可在 PIE 顺序切换并启动各自开火蒙太奇；两把新枪已有独立弹体、材质和环境/角色命中表现。
+- 2026-09-04 创建 `BT_Phantom_TestIdle` 与 `BP_Phantom_TestIdleAIController` 并挂到 `BP_Phantom`；PIE 验证 Phantom 静止。正式 AI 的恢复值已记录在 archive 与 `arch/11-enemy-ai.md`。
+- 旧 FEAT-080 改动已封存于本地 WIP checkpoint `8a259b1`；本次新增静止测试资产和 BP_Phantom 改动尚未提交。不要重复迁移或重新生成武器资产。
