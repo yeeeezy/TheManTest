@@ -1,8 +1,24 @@
 # 进度日志
 
+## 2026-09-03 交接：暂停于 Blueprint 多实例 Door 验收前
+
+- 当前核心实现、TestMap 单个 C++ `PersistenceAcceptanceDoor`、Development Editor 构建和 Persistence 3/3 自动化均已完成；用户准备下机，本轮不再继续修改资产。
+- 用户要求下次创建 `BP_WorldPersistenceTestDoor`，为前台提供可操作的整个 Actor 运行时位移/旋转，而不只改变 DoorMesh 相对旋转。
+- TestMap 下次放两个 BP 实例：默认 `AcrossRounds` 的 Door A 应跨回合保留 Transform/开启状态；显式 `None` 的 Door B 应恢复默认。两个实例必须具有不同 GUID。
+- 自动化需扩展验证多实例隔离、GUID 唯一、`None` 不入状态表与 `AcrossRounds` 恢复；完成 Blueprint 编译保存、冷构建和专项测试后再交给用户验收。
+
+## 2026-09-03 交接：FEAT-079 核心持久化与验收 Door
+
+- 用户确认 Combat HUD 完成；因历史已有资产规范化 `FEAT-078`，Combat HUD 重新编号为 `FEAT-080` 并归档。`FEAT-079` 已切为唯一 active feature。
+- 新增 GameInstance 生命周期的 `UWorldPersistenceSubsystem`、实例级 `UPersistentStateComponent`、`IPersistentActorInterface` 和版本化状态结构；`AcrossRounds` 默认开启并固定保存 Transform、存在状态与自定义数据。
+- Component `BeginPlay` 注册、`EndPlay` 只注销；Subsystem 遍历弱引用注册表，不扫描 World。支持显式墓碑、稳定地图 Package/GUID 定位和运行时 Actor 按 Class/GUID 重建。
+- `HandlePlayerDeath/HandleGameOver` 在 OpenLevel 前采集，`PostLoadMapWithWorld` 后延迟一帧恢复。状态只在本次游戏进程内保存，结构为未来 `USaveGame` 保留序列化与版本字段。
+- TestMap 已通过 Unreal Editor 保存 `PersistenceAcceptanceDoor`（PlayerStart 前方约 500cm），Pawn 进入 Trigger 后自动开启。Development Editor 构建成功；`TheManTest.Core.Persistence` 3/3 Success。
+- 待用户前台验收：进入 TestMap 触发门开启，用死亡或倒计时结束返回大厅，再进入下一回合，确认门保持开启和原 Transform。
+
 ## 2026-09-03 交接：记录跨回合世界状态持久化方案
 
-- 新增 planned 功能 `FEAT-079`，仅记录设计，未修改任何游戏代码或资产；当前 active feature 仍为 `FEAT-078`。
+- 新增 planned 功能 `FEAT-079`，仅记录设计，未修改任何游戏代码或资产；Combat HUD 后因历史 ID 冲突重新编号为 `FEAT-080` 并已归档。
 - 暂定架构：`UWorldPersistenceSubsystem` 在单次游戏进程内跨关卡保存；`UPersistentStateComponent` 提供实例级 `None/AcrossRounds` 与自定义稳定 GUID，默认 `AcrossRounds`；`IPersistentActorInterface` 使用 `FInstancedStruct` 采集/应用业务数据。暂不写 `USaveGame`，但数据保持可序列化和版本化以便后续扩展。
 - 只要实例为 `AcrossRounds`，就固定保存 Transform、存在状态与自定义数据，不再设置 `bSaveTransform`。门、道具、Enemy 和运行时生成对象统一按实例处理，不对随机刷新来源设特殊规则。
 - Component 在 `BeginPlay` 主动注册到 Subsystem，`EndPlay` 只注销；Subsystem 保存时遍历 `TSet<TWeakObjectPtr<UPersistentStateComponent>>`，不扫描整个 World。只有明确的 Gameplay 永久销毁才在 `Destroy()` 前写 `bExists=false` 墓碑，地图卸载不得误记。
@@ -49,7 +65,7 @@
 
 ## 2026-09-01 session244 交接：Combat HUD 与玩家弹药第一阶段
 
-- 当前 active feature 切换为 FEAT-078；FEAT-077 保持 `needs_improvement` 等待前台动画主观复核。
+- 当前 active feature 切换为 FEAT-080（当时编号 FEAT-078）；FEAT-077 保持 `needs_improvement` 等待前台动画主观复核。
 - `ATheManPlayerController` 本地创建原生 Combat HUD：屏幕中心8px空心圆；右下角两行显示 `当前弹药 / 容量` 与 `弹夹 数量`，Hit Test Invisible、无 Tick。
 - `AFirearm` 默认30发容量、当前30发、备用弹夹3；开火前真实扣弹，空弹不产生任何开火反馈；提供换弹接口。EquipmentManager/Firearm 委托驱动 HUD，切枪和切角色会解绑重绑。
 - Development Editor 构建成功；`TheManTest.Player.CombatHUD.AmmoLifecycle` 1/1 Success；截图 `Saved/Screenshots/WindowsEditor/TMT_CombatHUD.png`。待用户前台确认布局观感；换弹输入/动画尚未接。
@@ -249,7 +265,7 @@
 
 ## 2026-08-22 session212 交接：全项目资产目录规范化启动
 
-- 当前活动功能切换为 FEAT-078；FEAT-077 已保存至检查点 `d923f88`，自动化通过但仍待用户前台主观验收，因此状态改为 `needs_improvement`。
+- 当前活动功能切换为 FEAT-080（当时编号 FEAT-078）；FEAT-077 已保存至检查点 `d923f88`，自动化通过但仍待用户前台主观验收，因此状态改为 `needs_improvement`。
 - 新增 `arch/00-asset-directory-standard.md`：统一采用所有者优先、资源类型次之的结构，并规定 `_Shared` 必须有真实复用证据。
 - 用户确认 MaintenanceWorker 专属表现资产全部迁回具体角色；Infiltrator 与 TheExecutive 尚无具体 Mesh，不创建空目录或复制占位美术资产。
 - AssetTools 最终采用单次批量事务迁移248个资产，并补迁 InteractableBase 内部4个资产；顺序迁移实验发现依赖保存风险后已从检查点完整恢复，没有保留失败结果。

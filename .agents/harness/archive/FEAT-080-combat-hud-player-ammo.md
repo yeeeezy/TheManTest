@@ -1,7 +1,7 @@
-# FEAT-078 — Combat HUD 与玩家枪械弹药
+# FEAT-080 — Combat HUD 与玩家枪械弹药
 
 **创建日期：** 2026-09-01
-**状态：** in_progress
+**状态：** done（2026-09-03 用户确认完成）
 
 ## 2026-09-01 session251 — R键 Gameplay Tag 换弹
 

@@ -85,6 +85,13 @@ ATheManGameStateBase（Public/Core/）— 回合驱动
   - BeginPlay 从 GameInstance 读 CarriedRoundNumber 衔接；DebugSkipTime() 调试快进
   - StartNewRound / OnRoundStarted / OnCountdownExpired(→玩家死亡)
 
+跨回合世界状态（FEAT-079，详见 arch/14-world-persistence.md）：
+  UWorldPersistenceSubsystem（GameInstanceSubsystem）
+  ├── 按稳定地图 Package + PersistentId 保存 Actor 快照
+  ├── 回合结束前遍历 UPersistentStateComponent 弱引用注册表采集
+  ├── 地图加载后恢复预放置实例并重建运行时实例
+  └── AcrossRounds 固定保存 Transform、存在状态与接口自定义数据
+
 死亡 → 大厅 → 选角色 → 重开（FEAT-037）：
   死亡(被打死 OnDeath / 时间到 OnCountdownExpired) → UTheManGameInstance::HandlePlayerDeath
     → 记 CarriedRoundNumber + OpenLevel(LobbyMap)

@@ -1,7 +1,26 @@
 # FEAT-079 — 跨回合世界状态持久化
 
 **创建日期：** 2026-09-03  
-**状态：** planned（仅设计归档，未实施）
+**状态：** in_progress（核心框架与验收 Door 已实现，待用户前台验收）
+
+## 2026-09-03 实施阶段一：核心框架与验收 Door
+
+- FEAT-080 经用户确认完成并归档，FEAT-079 切换为唯一 active feature。
+- 新增 `UWorldPersistenceSubsystem`、`UPersistentStateComponent`、`IPersistentActorInterface` 与版本化 `FPersistentActorState/FPersistentMapState`；状态仅保存在本次 GameInstance 生命周期内。
+- Component `BeginPlay` 注册、`EndPlay` 只注销；Subsystem 遍历弱引用注册表采集，并拒绝无效/重复 GUID。
+- `AcrossRounds` 固定保存 Transform、存在状态与 `FInstancedStruct` 业务数据；支持显式墓碑和运行时 Actor 按 Class/GUID 重建。
+- `UTheManGameInstance::HandlePlayerDeath/HandleGameOver` 已在 OpenLevel 前采集；`PostLoadMapWithWorld` 后延迟一帧恢复。
+- 新增 `AWorldPersistenceTestDoor`，并通过 Unreal Editor 放置 `PersistenceAcceptanceDoor` 到 TestMap PlayerStart 前方约 500cm；Pawn 进入 Trigger 后开启。
+- Development Editor 构建成功；`TheManTest.Core.Persistence` 三项测试全部 Success：DoorLifecycle、PlacedDoorAsset、SubsystemPIE。
+- 待用户前台验收真实流程：触发 Door 开启 → 结束回合/返回大厅 → 再进入 TestMap → Door 保持开启。
+
+## 2026-09-03 下次待办：Blueprint 多实例与运行时 Transform 验收
+
+- 用户指出当前 TestMap 只放置一个 C++ Door，且 Trigger 只修改 `DoorMesh` 相对旋转，虽然自动化直接修改并验证了 Actor Transform，但前台没有可操作的 Actor Transform 测试入口。
+- 下次先创建 `BP_WorldPersistenceTestDoor`，继承现有 C++ Door；提供实例可配置的运行时位移/旋转测试参数，玩家进入 Trigger 后同时开启门并修改整个 Actor Transform。
+- 在 TestMap 放置至少两个 Blueprint 实例并确保 GUID 不同：Door A 使用默认 `AcrossRounds`，下一回合应保留运行时 Transform 和开启状态；Door B 显式设为 `None`，下一回合应恢复关卡默认状态。
+- 扩展自动化覆盖多实例 GUID 唯一、两个实例状态隔离、`None` 不进入状态表，以及 `AcrossRounds` Transform/业务状态恢复。
+- Blueprint 必须通过 Unreal Editor 创建、编译和保存；更新 TestMap 后冷构建并复跑 `TheManTest.Core.Persistence`，再交给用户前台验收。
 
 ## 需求
 

@@ -1,4 +1,5 @@
 #include "Core/TheManGameInstance.h"
+#include "Core/Persistence/WorldPersistenceSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 
 void UTheManGameInstance::SelectCharacterAndStart(FName CharacterID)
@@ -14,6 +15,7 @@ void UTheManGameInstance::HandlePlayerDeath(int32 CurrentRoundNumber)
 	bPendingTransition = true;
 
 	CarriedRoundNumber = CurrentRoundNumber;
+	GetSubsystem<UWorldPersistenceSubsystem>()->CaptureWorldState(GetWorld());
 	UGameplayStatics::OpenLevel(this, LobbyMapName);
 }
 
@@ -23,5 +25,6 @@ void UTheManGameInstance::HandleGameOver()
 	bPendingTransition = true;
 
 	bGameOver = true;
+	GetSubsystem<UWorldPersistenceSubsystem>()->CaptureWorldState(GetWorld());
 	UGameplayStatics::OpenLevel(this, LobbyMapName);
 }

@@ -50,6 +50,7 @@
 UTheManGameInstance::HandlePlayerDeath(当前RoundNumber)
   - bPendingTransition 守卫（防同帧两源重复切换）
   - CarriedRoundNumber = 当前回合
+  - UWorldPersistenceSubsystem.CaptureWorldState（FEAT-079）
   - OpenLevel(LobbyMapName="LobbyMap")
         ↓
 LobbyMap（GameMode=BP_LobbyGameMode : ATheManLobbyGameMode）
@@ -72,6 +73,7 @@ TestMap（GameMode=BP_TheManGameMode : ATheManGameModeBase）
 ### 跨关卡数据（GameInstance 是唯一能存活过 OpenLevel 的对象）
 - `SelectedCharacterID`：选了谁 → 测试地图 GameMode 据此生成角色。
 - `CarriedRoundNumber`：死亡写入当前回合 → 测试地图 GameState 读取后 +1。**回合内的波次增强/伤害倍率不携带，每回合重置**（对应"前面增强消失、只留逐回合 +1 的初始增强"）。
+- FEAT-079 起，Actor 世界状态由 `UWorldPersistenceSubsystem` 在同一次游戏进程内保存；详见 `14-world-persistence.md`。普通返回大厅不清空，关闭游戏后内存状态自然消失。
 
 ### 关键约束 / 坑
 - **测试地图 GameMode 必须填 `CharacterRosterTable=DT_CharacterRoster`**，且 World Settings GameMode Override 指向它，否则 `GetDefaultPawnClassForController` 查不到 → 回退默认 Pawn（角色错）。

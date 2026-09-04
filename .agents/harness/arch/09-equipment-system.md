@@ -25,9 +25,9 @@ RepairGun 当前为单独验收震屏而在武器蓝图覆盖 `RecoilPitch/Recoi
 
 FEAT-074 起，玩家枪口统一由 `AFirearm::GetMuzzleWorldTransform()` 解析：优先 SkeletalMesh 的命名 Socket，其次 StaticMesh 的命名 Socket，最后使用 `MuzzleLocalTransform * ActorTransform`。因此纯静态枪模也必须在武器 BP 配置正确的 `MuzzleLocalTransform`，不得退回相机位置伪造枪口。
 
-FEAT-078 起，`UEquipmentManagerComponent::OnCurrentEquipmentChanged` 在首次装备和切枪后广播；Combat HUD 依靠它切换 Firearm 数据源。切角色销毁旧 Pawn 前必须解绑 Equipment/Ammo 委托，禁止 UI 每帧轮询。
+FEAT-080 起，`UEquipmentManagerComponent::OnCurrentEquipmentChanged` 在首次装备和切枪后广播；Combat HUD 依靠它切换 Firearm 数据源。切角色销毁旧 Pawn 前必须解绑 Equipment/Ammo 委托，禁止 UI 每帧轮询。
 
-FEAT-078 session251 起，玩家枪械可独立配置 `ReloadAbilityClass`；`GrantAbilities/RevokeAbilities` 与主/副射击一样按 Handle 授予回收。RepairGun 配置共享 `BGA_Reload`，由 `Input.Weapon.Reload` Gameplay Event 触发；当前换弹即时完成并沿用 `OnAmmoChanged` 更新 HUD。
+FEAT-080 session251 起，玩家枪械可独立配置 `ReloadAbilityClass`；`GrantAbilities/RevokeAbilities` 与主/副射击一样按 Handle 授予回收。RepairGun 配置共享 `BGA_Reload`，由 `Input.Weapon.Reload` Gameplay Event 触发；当前换弹即时完成并沿用 `OnAmmoChanged` 更新 HUD。
 
 `AFirearm` 提供可选 `StaticMeshOverlay`，附着主 StaticMesh、无碰撞且不投影，用于 VFXPack Rifle 的反法线 Outline 壳。`BP_RepairGun` 的实体枪仍为 `SM_RepairGun_Rifle`，描边壳为 `SM_RepairGun_Rifle_Outline`；不得单独拿 Outline 壳替代实体枪。
 | `Source/TheManTest/Public/Weapons/_Shared/Firearms/Bullets/BulletBase.h` | CollisionSphere(QueryOnly) + BulletMesh + ProjectileMovement；`Damage`(SetByCaller 传入 HitEffectClass) / `HitEffectClass` / `bDestroyOnHit`；`InitBullet(发射者, SourceASC)`(忽略发射者防自撞) / `ProcessHit()` BlueprintNativeEvent。FEAT-073 起，玩家/非敌方弹体有效命中 `AEnemyBase` 时统一调用 `ReactToProjectileHit`，穿透判定优先。 |

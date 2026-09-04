@@ -1,9 +1,16 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-08-22-session212",
+    "last_updated":  "2026-09-03-feat080-complete",
     "source_file":  "feature_list.json",
     "status_scope":  "done",
     "features":  [
+                     {
+                         "id": "FEAT-080", "name": "Combat HUD 与玩家枪械弹药", "status": "done",
+                         "description": "由 PlayerController 管理本地 Combat HUD 生命周期；显示准星、血量和弹药；玩家枪械支持事件驱动弹药状态，以及 R/IA_Reload 经 Input.Weapon.Reload Gameplay Event 激活的换弹 Ability。",
+                         "archive_file": "archive/FEAT-080-combat-hud-player-ammo.md", "created": "2026-09-01", "updated": "2026-09-03-user-accepted",
+                         "done_criteria": ["本地 PlayerController 创建并持有 Combat HUD，大厅和非本地 Controller 不创建 ✓", "空心准星严格位于游戏视口中心；底部按参考图显示当前血量、大号当前子弹数和小号备用弹夹数，不显示弹夹容量 ✓", "玩家 Firearm 默认30发容量、3个备用弹夹，真实开火扣弹且空弹阻止全部开火反馈 ✓", "装备和弹药变化通过委托即时更新 HUD，不使用 UI Tick，切枪/切角色正确解绑重绑 ✓", "R 键通过 IA_Reload 和 Input.Weapon.Reload Gameplay Event 激活当前枪械授予的 Reload Ability；满弹拒绝，空弹换弹扣除一个备用弹夹 ✓", "Development Editor 构建、弹药生命周期自动化和用户前台验收通过 ✓"],
+                         "verification_evidence": "session244-282：Combat HUD、事件驱动血量/弹药、Gameplay Event/Ability 换弹、RepairGun 实弹/空弹/命中反馈及 Gameplay Cue Registry 修复完成；Development Editor 构建与 TheManTest.Player.CombatHUD.AmmoLifecycle 通过。2026-09-03 用户明确确认完成。"
+                     },
                      {
                          "id": "FEAT-078",
                          "name": "全项目资产目录规范化",

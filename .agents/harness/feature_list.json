@@ -1,27 +1,9 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-01-session282",
-    "active_feature":  "FEAT-078",
+    "last_updated":  "2026-09-03-feat079-stage1",
+    "active_feature":  "FEAT-079",
     "archive_file":  "feature_archive.json",
     "features":  [
-                     {
-                         "id":  "FEAT-078",
-                         "name":  "Combat HUD 与玩家枪械弹药",
-                         "status":  "in_progress",
-                         "description":  "由 PlayerController 管理本地 Combat HUD 生命周期；显示准星、血量和弹药；玩家枪械支持事件驱动弹药状态，以及 R/IA_Reload 经 Input.Weapon.Reload Gameplay Event 激活的换弹 Ability。",
-                         "archive_file":  "archive/FEAT-078-combat-hud-player-ammo.md",
-                         "created":  "2026-09-01",
-                         "updated":  "2026-09-01-session282",
-                         "done_criteria":  [
-                                               "本地 PlayerController 创建并持有 Combat HUD，大厅和非本地 Controller 不创建",
-                                               "空心准星严格位于游戏视口中心；底部按参考图显示当前血量、大号当前子弹数和小号备用弹夹数，不显示弹夹容量",
-                                               "玩家 Firearm 默认30发容量、3个备用弹夹，真实开火扣弹且空弹阻止全部开火反馈",
-                                               "装备和弹药变化通过委托即时更新 HUD，不使用 UI Tick，切枪/切角色正确解绑重绑",
-                                               "R 键通过 IA_Reload 和 Input.Weapon.Reload Gameplay Event 激活当前枪械授予的 Reload Ability；满弹拒绝，空弹换弹扣除一个备用弹夹",
-                                               "Development Editor 构建、弹药生命周期自动化和前台 PIE 视觉验收通过"
-                                           ],
-                         "verification_evidence":  "session244-250：Combat HUD、事件驱动血量/弹药与最终准星布局完成。session251：新增 IA_Reload→R、Input.Weapon.Reload、UGA/BGA_Reload；BP_RepairGun 独立配置 ReloadAbilityClass，装备时授予/卸下时回收。Development Editor 构建与 TheManTest.Player.CombatHUD.AmmoLifecycle 1/1 Success，验证满弹拒绝换弹、空弹经实际 Gameplay Event/Ability 补至30、备用弹夹3→2且 HUD 同步。"
-                     },
                      {
                          "id":  "FEAT-077",
                          "name":  "第一人称手臂与完整身体双 AnimBP 合成",
@@ -465,11 +447,11 @@
                      {
                          "id":  "FEAT-079",
                          "name":  "跨回合世界状态持久化",
-                         "status":  "planned",
+                         "status":  "in_progress",
                          "description":  "利用现有死亡/倒计时归零→大厅→重新 OpenLevel 测试地图的流程，在单次游戏进程内保存世界状态。只有挂载 UPersistentStateComponent 的 Actor 接入系统，实例策略默认 AcrossRounds、可显式设为 None；门、道具、Enemy 与运行时生成对象统一按实例处理，不区分随机刷新来源。UWorldPersistenceSubsystem（UGameInstanceSubsystem）按稳定地图 Package 与 PersistentId 保存 FPersistentActorState；所有持久实例固定保存 Transform、存在状态和接口提供的 FInstancedStruct 自定义数据。组件 BeginPlay 主动注册、EndPlay 只注销，Subsystem 在回合结束时遍历弱引用注册表而不扫描整个 World；Gameplay 永久销毁必须在 Destroy 前写入 bExists=false 墓碑。第一阶段不写 USaveGame，但数据保持可序列化和版本化以便后续扩展。当前仅记录方案，未修改代码或资产。",
                          "archive_file":  "archive/FEAT-079-round-world-persistence.md",
                          "created":  "2026-09-03",
-                         "updated":  "2026-09-03-design",
+                         "updated":  "2026-09-03-blueprint-door-pending",
                          "done_criteria":  [
                                                "只有挂载 UPersistentStateComponent 的 Actor 接入系统；同一 Actor 类可按实例选择 None 或 AcrossRounds，默认 AcrossRounds，且 AcrossRounds 实例必须具有稳定唯一的 PersistentId",
                                                "UWorldPersistenceSubsystem 跨关卡保存按地图名与 GUID 索引的 FPersistentActorState，地图重载前采集、目标地图加载完成后恢复",
@@ -480,7 +462,7 @@
                                                "GUID 无效或重复时有明确编辑器/运行时校验；不得依赖 Actor 名称、GetUniqueID 或编辑器内部 ActorGuid 作为存档契约",
                                                "Development Editor 构建通过；自动化或 PIE 验证策略默认值、注册注销、GUID、Transform、自定义数据、墓碑以及预放置/运行时实例跨回合行为"
                                            ],
-                         "verification_evidence":  "仅完成设计讨论与 harness 记录，尚未实施或验证。"
+                         "verification_evidence":  "2026-09-03-stage1：核心 Subsystem/Component/Interface/版本化状态结构与 GameInstance 采集接合完成；TestMap 已放置单个 C++ PersistenceAcceptanceDoor。Development Editor 构建成功；TheManTest.Core.Persistence 的 DoorLifecycle、PlacedDoorAsset、SubsystemPIE 三项均 Success，覆盖默认策略、GUID、接口数据、注册表采集、Transform 恢复、运行时重建与墓碑。下一步按用户要求创建可在前台修改整个 Actor Transform 的 BP Door，并用 AcrossRounds/None 两个不同 GUID 实例验证隔离与跨回合行为。"
                      }
                  ],
     "_说明":  "主索引仅保留未完成、受阻及待改进功能；已完成项移至 feature_archive.json。功能详细历史仍以 archive/FEAT-*.md 为准。"
