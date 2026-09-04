@@ -89,7 +89,8 @@ ATheManGameStateBase（Public/Core/）— 回合驱动
   UWorldPersistenceSubsystem（GameInstanceSubsystem）
   ├── 按稳定地图 Package + PersistentId 保存 Actor 快照
   ├── 回合结束前遍历 UPersistentStateComponent 弱引用注册表采集
-  ├── 地图加载后恢复预放置实例并重建运行时实例
+  ├── OnWorldPreBeginPlay 重建运行时实例；Component.InitializeComponent 恢复 World Partition 预放置实例
+  ├── Transform、自定义状态和墓碑均在对应 Actor BeginPlay 前生效
   └── AcrossRounds 固定保存 Transform、存在状态与接口自定义数据
 
 死亡 → 大厅 → 选角色 → 重开（FEAT-037）：

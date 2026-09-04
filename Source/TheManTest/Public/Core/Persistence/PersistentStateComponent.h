@@ -27,9 +27,9 @@ public:
 	void SetPersistentIdForRestore(const FGuid& InPersistentId);
 
 protected:
-	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void OnRegister() override;
+	virtual void OnUnregister() override;
+	virtual void InitializeComponent() override;
 
 #if WITH_EDITOR
 	virtual void PostDuplicate(bool bDuplicateForPIE) override;

@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-03-feat079-stage1",
+    "last_updated":  "2026-09-03-feat079-restore-before-beginplay",
     "active_feature":  "FEAT-079",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -451,7 +451,7 @@
                          "description":  "利用现有死亡/倒计时归零→大厅→重新 OpenLevel 测试地图的流程，在单次游戏进程内保存世界状态。只有挂载 UPersistentStateComponent 的 Actor 接入系统，实例策略默认 AcrossRounds、可显式设为 None；门、道具、Enemy 与运行时生成对象统一按实例处理，不区分随机刷新来源。UWorldPersistenceSubsystem（UGameInstanceSubsystem）按稳定地图 Package 与 PersistentId 保存 FPersistentActorState；所有持久实例固定保存 Transform、存在状态和接口提供的 FInstancedStruct 自定义数据。组件 BeginPlay 主动注册、EndPlay 只注销，Subsystem 在回合结束时遍历弱引用注册表而不扫描整个 World；Gameplay 永久销毁必须在 Destroy 前写入 bExists=false 墓碑。第一阶段不写 USaveGame，但数据保持可序列化和版本化以便后续扩展。当前仅记录方案，未修改代码或资产。",
                          "archive_file":  "archive/FEAT-079-round-world-persistence.md",
                          "created":  "2026-09-03",
-                         "updated":  "2026-09-03-blueprint-door-pending",
+                         "updated":  "2026-09-03-restore-before-beginplay",
                          "done_criteria":  [
                                                "只有挂载 UPersistentStateComponent 的 Actor 接入系统；同一 Actor 类可按实例选择 None 或 AcrossRounds，默认 AcrossRounds，且 AcrossRounds 实例必须具有稳定唯一的 PersistentId",
                                                "UWorldPersistenceSubsystem 跨关卡保存按地图名与 GUID 索引的 FPersistentActorState，地图重载前采集、目标地图加载完成后恢复",
@@ -462,7 +462,7 @@
                                                "GUID 无效或重复时有明确编辑器/运行时校验；不得依赖 Actor 名称、GetUniqueID 或编辑器内部 ActorGuid 作为存档契约",
                                                "Development Editor 构建通过；自动化或 PIE 验证策略默认值、注册注销、GUID、Transform、自定义数据、墓碑以及预放置/运行时实例跨回合行为"
                                            ],
-                         "verification_evidence":  "2026-09-03-stage1：核心 Subsystem/Component/Interface/版本化状态结构与 GameInstance 采集接合完成；TestMap 已放置单个 C++ PersistenceAcceptanceDoor。Development Editor 构建成功；TheManTest.Core.Persistence 的 DoorLifecycle、PlacedDoorAsset、SubsystemPIE 三项均 Success，覆盖默认策略、GUID、接口数据、注册表采集、Transform 恢复、运行时重建与墓碑。下一步按用户要求创建可在前台修改整个 Actor Transform 的 BP Door，并用 AcrossRounds/None 两个不同 GUID 实例验证隔离与跨回合行为。"
+                         "verification_evidence":  "2026-09-03-stage1：核心 Subsystem/Component/Interface/版本化状态结构与 GameInstance 采集接合完成；TestMap 已放置单个 C++ PersistenceAcceptanceDoor。2026-09-03-restore-before-beginplay：恢复从 PostLoadMap 下一 Tick 改为 OnWorldInitializedActors 挂接 OnWorldPreBeginPlay，并由 PersistentStateComponent.InitializeComponent 兼容稍后注册的 World Partition External Actor；运行时 Actor 在 World BeginPlay 前完成 FinishSpawning、GUID 写回与状态应用。Development Editor / Win64 冷构建成功；TheManTest.Core.Persistence 5/5 Success，真实 TestMap→LobbyMap→TestMap 验证预放置/运行时 Door 在 BeginPlay 中已看到恢复状态，墓碑 Door 不进入 BeginPlay。下一步创建可在前台修改整个 Actor Transform 的 BP Door，并用 AcrossRounds/None 两个不同 GUID 实例验证隔离与跨回合行为。"
                      }
                  ],
     "_说明":  "主索引仅保留未完成、受阻及待改进功能；已完成项移至 feature_archive.json。功能详细历史仍以 archive/FEAT-*.md 为准。"

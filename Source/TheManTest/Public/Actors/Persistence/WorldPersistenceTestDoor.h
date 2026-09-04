@@ -27,6 +27,7 @@ class THEMANTEST_API AWorldPersistenceTestDoor : public AActor, public IPersiste
 public:
 	AWorldPersistenceTestDoor();
 	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void BeginPlay() override;
 
 	UFUNCTION(BlueprintCallable, Category="Persistence Test Door")
 	void ToggleDoor();
@@ -36,6 +37,14 @@ public:
 
 	UFUNCTION(BlueprintPure, Category="Persistence Test Door")
 	bool IsDoorOpen() const { return bIsOpen; }
+
+	bool WasOpenAtBeginPlay() const { return bWasOpenAtBeginPlay; }
+	const FTransform& GetTransformAtBeginPlay() const { return TransformAtBeginPlay; }
+
+#if WITH_DEV_AUTOMATION_TESTS
+	static void ResetBeginPlayHistoryForTests();
+	static bool DidPersistentIdBeginPlayForTests(const FGuid& PersistentId);
+#endif
 
 	virtual void CapturePersistentState_Implementation(FInstancedStruct& OutPersistentState) const override;
 	virtual void ApplyPersistentState_Implementation(const FInstancedStruct& PersistentState) override;
@@ -57,6 +66,13 @@ protected:
 	float OpenYaw = 90.f;
 
 private:
+	bool bWasOpenAtBeginPlay = false;
+	FTransform TransformAtBeginPlay = FTransform::Identity;
+
+#if WITH_DEV_AUTOMATION_TESTS
+	static TSet<FGuid> BeginPlayIdsForTests;
+#endif
+
 	UFUNCTION()
 	void HandleTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 		UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep,

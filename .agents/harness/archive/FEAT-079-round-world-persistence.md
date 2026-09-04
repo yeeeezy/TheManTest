@@ -1,15 +1,25 @@
 # FEAT-079 — 跨回合世界状态持久化
 
 **创建日期：** 2026-09-03  
-**状态：** in_progress（核心框架与验收 Door 已实现，待用户前台验收）
+**状态：** in_progress（核心框架与预 BeginPlay 跨关卡恢复已验证，待 Blueprint 双实例验收）
+
+## 2026-09-03 恢复时序修正：状态在 Actor BeginPlay 前生效
+
+- 代码审查确认旧 `PostLoadMapWithWorld → 下一 Tick` 恢复发生在 Actor BeginPlay 之后，会让默认状态、AI 或墓碑对象短暂运行；用户确认先修该问题，暂不扩展生成器协议。
+- `UPersistentStateComponent` 改为 `OnRegister/OnUnregister` 维护弱引用注册表，并在 `InitializeComponent` 按 GUID 恢复预放置实例。
+- `UWorldPersistenceSubsystem` 改用 `OnWorldInitializedActors` 挂接目标 World 的 `OnWorldPreBeginPlay`。该全局阶段负责重建运行时实例；World Partition External Actor 若稍后到达，则由自身组件的 `InitializeComponent` 在所属 Actor BeginPlay 前恢复。
+- 运行时 Actor 改为先 `FinishSpawning`，确保 Blueprint/SCS Components 已建立，再查找持久化组件、写回原 GUID 并应用 Transform/业务状态。
+- 所有回调均校验 `World->GetGameInstance() == GetGameInstance()`，避免其他 PIE/GameInstance 的 World 误恢复。
+- 新增真实 `TestMap → LobbyMap → TestMap` 自动化：预放置 Door 与运行时 Door 均在各自 BeginPlay 中看到已恢复的开启状态和 Transform；墓碑预放置 Door 在第二次加载时不进入 BeginPlay。
+- Development Editor / Win64 冷构建成功；`TheManTest.Core.Persistence` 5/5 Success：DoorLifecycle、PlacedDoorAsset、SubsystemPIE、TombstoneBeforeBeginPlay、WorldTravelBeforeBeginPlay。最终日志：`Saved/Logs/FEAT079RestoreTimingComplete.log`。
 
 ## 2026-09-03 实施阶段一：核心框架与验收 Door
 
 - FEAT-080 经用户确认完成并归档，FEAT-079 切换为唯一 active feature。
 - 新增 `UWorldPersistenceSubsystem`、`UPersistentStateComponent`、`IPersistentActorInterface` 与版本化 `FPersistentActorState/FPersistentMapState`；状态仅保存在本次 GameInstance 生命周期内。
-- Component `BeginPlay` 注册、`EndPlay` 只注销；Subsystem 遍历弱引用注册表采集，并拒绝无效/重复 GUID。
+- Component `OnRegister` 注册、`OnUnregister` 注销，`InitializeComponent` 执行实例级预 BeginPlay 恢复；Subsystem 遍历弱引用注册表采集，并拒绝无效/重复 GUID。
 - `AcrossRounds` 固定保存 Transform、存在状态与 `FInstancedStruct` 业务数据；支持显式墓碑和运行时 Actor 按 Class/GUID 重建。
-- `UTheManGameInstance::HandlePlayerDeath/HandleGameOver` 已在 OpenLevel 前采集；`PostLoadMapWithWorld` 后延迟一帧恢复。
+- `UTheManGameInstance::HandlePlayerDeath/HandleGameOver` 已在 OpenLevel 前采集；下一张地图通过 World `OnWorldPreBeginPlay` 与组件 `InitializeComponent` 两层机制恢复。
 - 新增 `AWorldPersistenceTestDoor`，并通过 Unreal Editor 放置 `PersistenceAcceptanceDoor` 到 TestMap PlayerStart 前方约 500cm；Pawn 进入 Trigger 后开启。
 - Development Editor 构建成功；`TheManTest.Core.Persistence` 三项测试全部 Success：DoorLifecycle、PlacedDoorAsset、SubsystemPIE。
 - 待用户前台验收真实流程：触发 Door 开启 → 结束回合/返回大厅 → 再进入 TestMap → Door 保持开启。
@@ -45,7 +55,7 @@
 - 不提供 `bSaveTransform`：只要策略为 `AcrossRounds`，就固定保存并恢复 Actor Transform、存在状态和自定义业务数据。
 - GUID 属于具体 Actor 实例而非类默认身份；同类的多扇门必须各有不同 GUID。
 - 预放置 Actor 的 GUID 由本系统生成和维护，作为组件实例属性随关卡序列化；运行时生成 Actor 的 GUID、Class、Transform 和状态保存在 Subsystem 内存记录中，下一回合由 Subsystem 重建并写回同一 GUID。
-- `BeginPlay` 时主动注册到 Subsystem，`EndPlay` 时只注销；地图卸载产生的正常 `EndPlay` 不得写入墓碑。
+- `OnRegister` 时主动注册到 Subsystem、`OnUnregister` 时只注销；`InitializeComponent` 在所属 Actor BeginPlay 前应用已有状态。地图卸载不得写入墓碑。
 
 ### IPersistentActorInterface
 
@@ -66,18 +76,18 @@
 
 ## 保存与恢复流程
 
-1. `UPersistentStateComponent::BeginPlay` 向 Subsystem 注册；Subsystem 以 `TSet<TWeakObjectPtr<UPersistentStateComponent>>` 维护当前有效组件，不在保存时扫描整个 World。
+1. `UPersistentStateComponent::OnRegister` 向 Subsystem 注册；Subsystem 以 `TSet<TWeakObjectPtr<UPersistentStateComponent>>` 维护当前有效组件，不在保存时扫描整个 World。
 2. 玩家死亡或倒计时归零进入统一的回合结束路径。
 3. `OpenLevel` 前，Subsystem 只遍历注册表中策略为 `AcrossRounds` 的存活组件；组件提供 GUID，Subsystem 固定采集 Transform，接口提供自定义数据。
 4. `UTheManGameInstance` 继续保存 `CarriedRoundNumber` 并切换到大厅。
 5. 玩家选角后重新加载测试地图；预放置 Actor 先恢复为关卡默认状态。
-6. 地图 Actor 初始化完成后，Subsystem 建立 `GUID → Actor` 索引，再恢复 Transform、存在状态与接口自定义数据；缺失的运行时实例按保存的 Class 重建。
+6. `OnWorldPreBeginPlay` 重建缺失的运行时实例；预放置实例在各自 `InitializeComponent` 阶段按 GUID 恢复 Transform、存在状态与接口自定义数据，均早于所属 Actor BeginPlay。
 7. 没有持久记录的 Actor 保持关卡默认状态。
 
 ## 销毁与刷新规则
 
 - 持久 Actor 若在回合中被拾取或销毁，不能等回合结束再扫描；必须在 `Destroy` 前立即写入 `bExists=false` 墓碑记录。
-- `EndPlay` 只负责从 Subsystem 注册表注销，不能把地图切换造成的统一销毁误记为墓碑；只有明确的 Gameplay 永久销毁入口先写墓碑再调用 `Destroy()`。
+- `OnUnregister` 只负责从 Subsystem 注册表注销，不能把地图切换造成的统一销毁误记为墓碑；只有明确的 Gameplay 永久销毁入口先写墓碑再调用 `Destroy()`。
 - 编辑器预放置对象和运行时生成对象均按实例策略处理，默认 `AcrossRounds`；系统不因道具或 Enemy 来自随机刷新而改变持久化规则。
 - 运行时生成且选择持久化的对象额外保存 Actor Class、Transform 与运行时分配的 GUID，下一回合由 Subsystem 重建；原生成逻辑必须避免与恢复实例重复生成，具体接合方式后续单独确认。
 
@@ -89,9 +99,8 @@
 - GUID 的值和生命周期由本系统维护；虚幻只负责把已写入组件实例属性的 GUID 随 `.umap` 序列化/反序列化。生成后需标记关卡 Package Dirty，用户保存关卡后才正式写入资产。
 - PIE/正式运行发现无效或重复 GUID 时应明确报错，不静默改写身份。
 
-## 尚未决定/实施
+## 暂缓范围
 
-- 尚未创建任何 C++ 类型、模块依赖、测试或资产配置。
-- 恢复挂接到具体哪个 World/Level 初始化回调，实施前再结合当前 UE 5.7.4 生命周期确定。
 - `USaveGame` 暂不属于第一阶段；后续可将 Subsystem 的状态表写入磁盘并在加载时装回，复用现有采集、GUID、墓碑与恢复流程。
-- 方案允许后续讨论继续调整，实施前仍需按 harness 规则重新列出落地计划并等待用户确认。
+- 当前项目尚无正式 Enemy/道具生成器；生成器与运行时持久实例的唯一生成权协议按用户要求暂不实现，待真正引入动态刷怪/随机道具时单独设计。
+- Blueprint 双 Door（AcrossRounds/None）、多实例 GUID 隔离和前台操作整个 Actor Transform 仍是当前下一步。

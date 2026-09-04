@@ -1,35 +1,56 @@
 #include "Core/Persistence/PersistentStateComponent.h"
 #include "Core/Persistence/WorldPersistenceSubsystem.h"
 #include "Engine/GameInstance.h"
+#include "Engine/World.h"
 
 UPersistentStateComponent::UPersistentStateComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+	bWantsInitializeComponent = true;
 }
 
 void UPersistentStateComponent::OnRegister()
 {
 	Super::OnRegister();
 	EnsurePersistentId();
-}
-
-void UPersistentStateComponent::BeginPlay()
-{
-	Super::BeginPlay();
-	EnsurePersistentId();
-	if (UGameInstance* GameInstance = GetWorld() ? GetWorld()->GetGameInstance() : nullptr)
+	UWorld* World = GetWorld();
+	if (World && World->IsGameWorld())
 	{
-		GameInstance->GetSubsystem<UWorldPersistenceSubsystem>()->RegisterComponent(this);
+		if (UGameInstance* GameInstance = World->GetGameInstance())
+		{
+			if (UWorldPersistenceSubsystem* Subsystem =
+				GameInstance->GetSubsystem<UWorldPersistenceSubsystem>())
+			{
+				Subsystem->RegisterComponent(this);
+			}
+		}
 	}
 }
 
-void UPersistentStateComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void UPersistentStateComponent::OnUnregister()
 {
 	if (UGameInstance* GameInstance = GetWorld() ? GetWorld()->GetGameInstance() : nullptr)
 	{
-		GameInstance->GetSubsystem<UWorldPersistenceSubsystem>()->UnregisterComponent(this);
+		if (UWorldPersistenceSubsystem* Subsystem =
+			GameInstance->GetSubsystem<UWorldPersistenceSubsystem>())
+		{
+			Subsystem->UnregisterComponent(this);
+		}
 	}
-	Super::EndPlay(EndPlayReason);
+	Super::OnUnregister();
+}
+
+void UPersistentStateComponent::InitializeComponent()
+{
+	Super::InitializeComponent();
+	if (UGameInstance* GameInstance = GetWorld() ? GetWorld()->GetGameInstance() : nullptr)
+	{
+		if (UWorldPersistenceSubsystem* Subsystem =
+			GameInstance->GetSubsystem<UWorldPersistenceSubsystem>())
+		{
+			Subsystem->RestoreRegisteredComponent(this);
+		}
+	}
 }
 
 void UPersistentStateComponent::MarkPersistentlyDestroyed()

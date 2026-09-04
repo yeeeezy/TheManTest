@@ -6,6 +6,7 @@
 #include "WorldPersistenceSubsystem.generated.h"
 
 class UPersistentStateComponent;
+struct FActorsInitializedParams;
 
 UCLASS()
 class THEMANTEST_API UWorldPersistenceSubsystem : public UGameInstanceSubsystem
@@ -18,6 +19,7 @@ public:
 
 	void RegisterComponent(UPersistentStateComponent* Component);
 	void UnregisterComponent(UPersistentStateComponent* Component);
+	void RestoreRegisteredComponent(UPersistentStateComponent* Component);
 
 	UFUNCTION(BlueprintCallable, Category="Persistence")
 	void CaptureWorldState(UWorld* World);
@@ -36,13 +38,16 @@ public:
 
 private:
 	FName GetStableMapId(const UWorld* World) const;
-	void HandlePostLoadMap(UWorld* LoadedWorld);
+	void HandleWorldInitializedActors(const FActorsInitializedParams& Params);
+	void HandleWorldPreBeginPlay(TWeakObjectPtr<UWorld> World);
 	void RestoreComponent(UPersistentStateComponent* Component, const FPersistentActorState& State);
 
 	TSet<TWeakObjectPtr<UPersistentStateComponent>> RegisteredComponents;
+	TSet<TWeakObjectPtr<UPersistentStateComponent>> RestoredComponents;
+	TSet<TWeakObjectPtr<UWorld>> WorldsPendingPreBeginPlay;
 
 	UPROPERTY()
 	TMap<FName, FPersistentMapState> StatesByMap;
 
-	FDelegateHandle PostLoadMapHandle;
+	FDelegateHandle WorldInitializedActorsHandle;
 };

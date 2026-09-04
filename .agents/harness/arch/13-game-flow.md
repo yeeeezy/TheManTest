@@ -50,7 +50,7 @@
 UTheManGameInstance::HandlePlayerDeath(当前RoundNumber)
   - bPendingTransition 守卫（防同帧两源重复切换）
   - CarriedRoundNumber = 当前回合
-  - UWorldPersistenceSubsystem.CaptureWorldState（FEAT-079）
+  - UWorldPersistenceSubsystem.CaptureWorldState（FEAT-079；下一次 TestMap 在 Actor BeginPlay 前恢复）
   - OpenLevel(LobbyMapName="LobbyMap")
         ↓
 LobbyMap（GameMode=BP_LobbyGameMode : ATheManLobbyGameMode）

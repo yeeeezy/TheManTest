@@ -4,27 +4,28 @@
 #include "Engine/World.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
-#include "TimerManager.h"
-#include "UObject/UObjectGlobals.h"
 
 void UWorldPersistenceSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
-		this, &UWorldPersistenceSubsystem::HandlePostLoadMap);
+	WorldInitializedActorsHandle = FWorldDelegates::OnWorldInitializedActors.AddUObject(
+		this, &UWorldPersistenceSubsystem::HandleWorldInitializedActors);
 }
 
 void UWorldPersistenceSubsystem::Deinitialize()
 {
-	FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
+	FWorldDelegates::OnWorldInitializedActors.Remove(WorldInitializedActorsHandle);
 	RegisteredComponents.Reset();
+	RestoredComponents.Reset();
+	WorldsPendingPreBeginPlay.Reset();
 	StatesByMap.Reset();
 	Super::Deinitialize();
 }
 
 void UWorldPersistenceSubsystem::RegisterComponent(UPersistentStateComponent* Component)
 {
-	if (IsValid(Component))
+	if (IsValid(Component) && Component->GetWorld()
+		&& Component->GetWorld()->GetGameInstance() == GetGameInstance())
 	{
 		RegisteredComponents.Add(Component);
 	}
@@ -33,6 +34,41 @@ void UWorldPersistenceSubsystem::RegisterComponent(UPersistentStateComponent* Co
 void UWorldPersistenceSubsystem::UnregisterComponent(UPersistentStateComponent* Component)
 {
 	RegisteredComponents.Remove(Component);
+	RestoredComponents.Remove(Component);
+}
+
+void UWorldPersistenceSubsystem::RestoreRegisteredComponent(UPersistentStateComponent* Component)
+{
+	if (!IsValid(Component) || !Component->IsPersistentAcrossRounds()
+		|| !Component->PersistentId.IsValid() || RestoredComponents.Contains(Component))
+	{
+		return;
+	}
+
+	UWorld* World = Component->GetWorld();
+	AActor* Owner = Component->GetOwner();
+	if (!World || World->GetGameInstance() != GetGameInstance() || !IsValid(Owner))
+	{
+		return;
+	}
+
+	const FPersistentMapState* MapState = StatesByMap.Find(GetStableMapId(World));
+	const FPersistentActorState* State = MapState
+		? MapState->ActorStates.Find(Component->PersistentId)
+		: nullptr;
+	if (!State)
+	{
+		return;
+	}
+
+	if (!State->bExists)
+	{
+		RestoredComponents.Add(Component);
+		Owner->Destroy();
+		return;
+	}
+
+	RestoreComponent(Component, *State);
 }
 
 FName UWorldPersistenceSubsystem::GetStableMapId(const UWorld* World) const
@@ -46,6 +82,11 @@ FName UWorldPersistenceSubsystem::GetStableMapId(const UWorld* World) const
 
 void UWorldPersistenceSubsystem::CaptureWorldState(UWorld* World)
 {
+	if (!World || World->GetGameInstance() != GetGameInstance())
+	{
+		return;
+	}
+
 	const FName MapId = GetStableMapId(World);
 	if (MapId.IsNone())
 	{
@@ -135,11 +176,12 @@ void UWorldPersistenceSubsystem::RestoreComponent(
 	UPersistentStateComponent* Component, const FPersistentActorState& State)
 {
 	AActor* Owner = Component ? Component->GetOwner() : nullptr;
-	if (!IsValid(Owner))
+	if (!IsValid(Owner) || RestoredComponents.Contains(Component))
 	{
 		return;
 	}
 
+	RestoredComponents.Add(Component);
 	Owner->SetActorTransform(State.Transform, false, nullptr, ETeleportType::TeleportPhysics);
 	if (Owner->GetClass()->ImplementsInterface(UPersistentActorInterface::StaticClass()))
 	{
@@ -156,8 +198,13 @@ void UWorldPersistenceSubsystem::RestoreComponent(
 
 void UWorldPersistenceSubsystem::RestoreWorldState(UWorld* World)
 {
+	if (!World || !World->IsGameWorld() || World->GetGameInstance() != GetGameInstance())
+	{
+		return;
+	}
+
 	const FPersistentMapState* MapState = StatesByMap.Find(GetStableMapId(World));
-	if (!World || !MapState)
+	if (!MapState)
 	{
 		return;
 	}
@@ -218,24 +265,46 @@ void UWorldPersistenceSubsystem::RestoreWorldState(UWorld* World)
 		{
 			continue;
 		}
+		SpawnedActor->FinishSpawning(State.Transform);
+
 		UPersistentStateComponent* SpawnedComponent = SpawnedActor->FindComponentByClass<UPersistentStateComponent>();
 		if (!SpawnedComponent)
 		{
+			UE_LOG(LogTemp, Error,
+				TEXT("[WorldPersistence] Restored runtime actor %s has no PersistentStateComponent."),
+				*SpawnedActor->GetPathName());
 			SpawnedActor->Destroy();
 			continue;
 		}
 		SpawnedComponent->SetPersistentIdForRestore(State.PersistentId);
-		SpawnedActor->FinishSpawning(State.Transform);
 		RestoreComponent(SpawnedComponent, State);
 	}
 }
 
-void UWorldPersistenceSubsystem::HandlePostLoadMap(UWorld* LoadedWorld)
+void UWorldPersistenceSubsystem::HandleWorldInitializedActors(const FActorsInitializedParams& Params)
 {
-	if (LoadedWorld && LoadedWorld->IsGameWorld())
+	UWorld* World = Params.World;
+	const TWeakObjectPtr<UWorld> WeakWorld(World);
+	if (!World || !World->IsGameWorld() || World->GetGameInstance() != GetGameInstance()
+		|| World->HasBegunPlay() || WorldsPendingPreBeginPlay.Contains(WeakWorld))
 	{
-		LoadedWorld->GetTimerManager().SetTimerForNextTick(
-			FTimerDelegate::CreateUObject(this, &UWorldPersistenceSubsystem::RestoreWorldState, LoadedWorld));
+		return;
+	}
+
+	WorldsPendingPreBeginPlay.Add(WeakWorld);
+	World->OnWorldPreBeginPlay.AddWeakLambda(this, [this, WeakWorld]()
+	{
+		HandleWorldPreBeginPlay(WeakWorld);
+	});
+}
+
+void UWorldPersistenceSubsystem::HandleWorldPreBeginPlay(TWeakObjectPtr<UWorld> WeakWorld)
+{
+	WorldsPendingPreBeginPlay.Remove(WeakWorld);
+	UWorld* World = WeakWorld.Get();
+	if (World && World->IsGameWorld() && World->GetGameInstance() == GetGameInstance())
+	{
+		RestoreWorldState(World);
 	}
 }
 

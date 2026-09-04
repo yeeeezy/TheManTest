@@ -6,6 +6,10 @@
 #include "GameFramework/Pawn.h"
 #include "UObject/ConstructorHelpers.h"
 
+#if WITH_DEV_AUTOMATION_TESTS
+TSet<FGuid> AWorldPersistenceTestDoor::BeginPlayIdsForTests;
+#endif
+
 AWorldPersistenceTestDoor::AWorldPersistenceTestDoor()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -39,6 +43,28 @@ void AWorldPersistenceTestDoor::OnConstruction(const FTransform& Transform)
 	Super::OnConstruction(Transform);
 	ApplyDoorVisual();
 }
+
+void AWorldPersistenceTestDoor::BeginPlay()
+{
+#if WITH_DEV_AUTOMATION_TESTS
+	BeginPlayIdsForTests.Add(PersistentState->PersistentId);
+#endif
+	Super::BeginPlay();
+	bWasOpenAtBeginPlay = bIsOpen;
+	TransformAtBeginPlay = GetActorTransform();
+}
+
+#if WITH_DEV_AUTOMATION_TESTS
+void AWorldPersistenceTestDoor::ResetBeginPlayHistoryForTests()
+{
+	BeginPlayIdsForTests.Reset();
+}
+
+bool AWorldPersistenceTestDoor::DidPersistentIdBeginPlayForTests(const FGuid& PersistentId)
+{
+	return BeginPlayIdsForTests.Contains(PersistentId);
+}
+#endif
 
 void AWorldPersistenceTestDoor::ToggleDoor()
 {
