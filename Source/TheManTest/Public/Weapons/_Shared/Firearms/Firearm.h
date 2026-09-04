@@ -123,13 +123,20 @@ public:
 	bool bEnableMuzzleFlashLight = false;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|VFX|Muzzle Light")
-	FLinearColor MuzzleFlashLightColor = FLinearColor(0.305882f, 1.f, 0.827451f, 1.f);
+	FLinearColor MuzzleFlashLightColor = FLinearColor(0.075319f, 1.f, 0.652928f, 1.f);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|VFX|Muzzle Light", meta = (ClampMin = "0.0"))
 	float MuzzleFlashLightIntensity = 600.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|VFX|Muzzle Light", meta = (ClampMin = "0.0"))
 	float MuzzleFlashLightAttenuationRadius = 200.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|VFX|Muzzle Light", meta = (ClampMin = "0.0"))
+	float MuzzleFlashLightSourceRadius = 0.f;
+
+	// Offset in muzzle-local space; useful for moving the light out of a shadow-casting barrel.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|VFX|Muzzle Light")
+	FVector MuzzleFlashLightLocalOffset = FVector::ZeroVector;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|VFX|Muzzle Light", meta = (ClampMin = "0.01"))
 	float MuzzleFlashLightDuration = 0.1f;

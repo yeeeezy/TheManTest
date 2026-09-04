@@ -27,6 +27,10 @@ AFirearm::AFirearm()
 	MuzzleFlashLight->SetupAttachment(RootComponent);
 	MuzzleFlashLight->SetMobility(EComponentMobility::Movable);
 	MuzzleFlashLight->SetCastShadows(true);
+	MuzzleFlashLight->SetAffectTranslucentLighting(true);
+	MuzzleFlashLight->SetIntensityUnits(ELightUnits::Unitless);
+	MuzzleFlashLight->SetUseInverseSquaredFalloff(true);
+	MuzzleFlashLight->SetLightFalloffExponent(8.f);
 	MuzzleFlashLight->SetIntensity(0.f);
 	MuzzleFlashLight->SetVisibility(false);
 
@@ -60,9 +64,10 @@ void AFirearm::PlayMuzzleFlashLight()
 
 	const FTransform MuzzleTransform = GetMuzzleWorldTransform();
 	MuzzleFlashLight->SetWorldLocationAndRotation(
-		MuzzleTransform.GetLocation(), MuzzleTransform.Rotator());
+		MuzzleTransform.TransformPosition(MuzzleFlashLightLocalOffset), MuzzleTransform.Rotator());
 	MuzzleFlashLight->SetLightColor(MuzzleFlashLightColor);
 	MuzzleFlashLight->SetAttenuationRadius(MuzzleFlashLightAttenuationRadius);
+	MuzzleFlashLight->SetSourceRadius(MuzzleFlashLightSourceRadius);
 	MuzzleFlashLight->SetIntensity(MuzzleFlashLightIntensity);
 	MuzzleFlashLight->SetVisibility(true);
 
@@ -88,7 +93,7 @@ void AFirearm::UpdateMuzzleFlashLight()
 	const float Duration = FMath::Max(MuzzleFlashLightDuration, 0.01f);
 	const float Elapsed = World->GetTimeSeconds() - MuzzleFlashLightStartTime;
 	const float FadeAlpha = 1.f - FMath::Clamp(Elapsed / Duration, 0.f, 1.f);
-	MuzzleFlashLight->SetIntensity(MuzzleFlashLightIntensity * FadeAlpha * FadeAlpha);
+	MuzzleFlashLight->SetIntensity(MuzzleFlashLightIntensity * FadeAlpha);
 
 	if (FadeAlpha <= 0.f)
 	{

@@ -17,6 +17,8 @@
 #include "Core/_Shared/GAS/TheManGameplayTags.h"
 #include "Editor.h"
 #include "HighResScreenshot.h"
+#include "ImageUtils.h"
+#include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
@@ -121,20 +123,35 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 			Weapon->FireCameraShake.Get());
 		TestNotNull(FString::Printf(TEXT("%s owns a muzzle flash light component"), Expected.Name),
 			Weapon->GetMuzzleFlashLight());
+		TestEqual(FString::Printf(TEXT("%s muzzle light uses source unitless intensity"), Expected.Name),
+			Weapon->GetMuzzleFlashLight()->IntensityUnits, ELightUnits::Unitless);
+		TestTrue(FString::Printf(TEXT("%s muzzle light uses inverse-square falloff"), Expected.Name),
+			Weapon->GetMuzzleFlashLight()->bUseInverseSquaredFalloff);
+		TestTrue(FString::Printf(TEXT("%s muzzle light affects translucent materials"), Expected.Name),
+			Weapon->GetMuzzleFlashLight()->bAffectTranslucentLighting);
 		const bool bExpectedMuzzleLight = FCString::Strcmp(Expected.Name, TEXT("ElectricGun")) == 0;
 		TestEqual(FString::Printf(TEXT("%s muzzle flash light enablement is correct"), Expected.Name),
 			Weapon->bEnableMuzzleFlashLight, bExpectedMuzzleLight);
 		if (bExpectedMuzzleLight)
 		{
+			TestTrue(TEXT("ElectricGun muzzle location matches the source weapon"),
+				Weapon->MuzzleLocalTransform.GetTranslation().Equals(
+					FVector(0.000751f, 67.696307f, 6.434297f), KINDA_SMALL_NUMBER));
+			TestTrue(TEXT("ElectricGun directional muzzle VFX stays aligned to camera forward"),
+				Weapon->MuzzleEffectRotation.Equals(FRotator::ZeroRotator));
 			TestTrue(TEXT("ElectricGun muzzle VFX uses source scale"),
 				Weapon->MuzzleEffectScale.Equals(FVector::OneVector));
 			TestTrue(TEXT("ElectricGun muzzle light uses source cyan-green color"),
 				Weapon->MuzzleFlashLightColor.Equals(
-					FLinearColor(0.305882f, 1.f, 0.827451f, 1.f), KINDA_SMALL_NUMBER));
-			TestEqual(TEXT("ElectricGun muzzle light intensity matches source"),
-				Weapon->MuzzleFlashLightIntensity, 600.f);
+					FLinearColor(0.075319f, 1.f, 0.652928f, 1.f), KINDA_SMALL_NUMBER));
+			TestEqual(TEXT("ElectricGun muzzle light intensity compensates for the UE 5.7 render path"),
+				Weapon->MuzzleFlashLightIntensity, 1800.f);
 			TestEqual(TEXT("ElectricGun muzzle light radius matches source"),
 				Weapon->MuzzleFlashLightAttenuationRadius, 200.f);
+			TestEqual(TEXT("ElectricGun muzzle light source radius matches source"),
+				Weapon->MuzzleFlashLightSourceRadius, 60.f);
+			TestTrue(TEXT("ElectricGun muzzle light is offset out of the barrel"),
+				Weapon->MuzzleFlashLightLocalOffset.Equals(FVector(1.480382f, -6.734961f, -15.577805f)));
 			TestEqual(TEXT("ElectricGun muzzle light fade is short"),
 				Weapon->MuzzleFlashLightDuration, 0.1f);
 		}
@@ -233,6 +250,9 @@ bool FValidateEquippedWeaponAnimationCommand::Update()
 		Test->TestEqual(TEXT("ElectricGun muzzle flash light starts at configured intensity"),
 			Weapon->GetMuzzleFlashLight() ? Weapon->GetMuzzleFlashLight()->Intensity : 0.f,
 			Weapon->MuzzleFlashLightIntensity);
+		Test->TestTrue(TEXT("ElectricGun muzzle flash light uses the configured muzzle-local offset"),
+			Weapon->GetMuzzleFlashLight() && Weapon->GetMuzzleFlashLight()->GetComponentLocation().Equals(
+				Weapon->GetMuzzleWorldTransform().TransformPosition(Weapon->MuzzleFlashLightLocalOffset), 0.1f));
 	}
 	return true;
 }
@@ -278,6 +298,91 @@ bool FSwitchToNextWeaponCommand::Update()
 	return true;
 }
 
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(
+	FTriggerElectricMuzzleFlashCommand,
+	FAutomationTestBase*, Test);
+
+bool FTriggerElectricMuzzleFlashCommand::Update()
+{
+	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+	APlayerController* Controller = World ? World->GetFirstPlayerController() : nullptr;
+	AFPSCharacterBase* Player = Controller ? Cast<AFPSCharacterBase>(Controller->GetPawn()) : nullptr;
+	AFirearm* Weapon = Player && Player->GetEquipmentManager()
+		? Cast<AFirearm>(Player->GetEquipmentManager()->GetCurrentEquipment()) : nullptr;
+	Test->TestNotNull(TEXT("ElectricGun is available for reference-video capture"), Weapon);
+	if (!Player || !Weapon)
+	{
+		return true;
+	}
+
+	Test->TestTrue(TEXT("ElectricGun is equipped for reference-video capture"),
+		Weapon->GetClass()->GetPathName().Contains(TEXT("ElectricGun")));
+	Player->PrimaryFire();
+	Test->TestTrue(TEXT("ElectricGun muzzle light is active on the captured firing frame"),
+		Weapon->GetMuzzleFlashLight() && Weapon->GetMuzzleFlashLight()->IsVisible());
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(
+	FCaptureElectricMuzzleFlashCommand,
+	FAutomationTestBase*, Test);
+
+bool FCaptureElectricMuzzleFlashCommand::Update()
+{
+	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+	APlayerController* Controller = World ? World->GetFirstPlayerController() : nullptr;
+	AFPSCharacterBase* Player = Controller ? Cast<AFPSCharacterBase>(Controller->GetPawn()) : nullptr;
+	AFirearm* Weapon = Player && Player->GetEquipmentManager()
+		? Cast<AFirearm>(Player->GetEquipmentManager()->GetCurrentEquipment()) : nullptr;
+	Test->TestTrue(TEXT("ElectricGun muzzle light is still active when pixels are captured"),
+		Weapon && Weapon->GetMuzzleFlashLight() && Weapon->GetMuzzleFlashLight()->IsVisible());
+	if (Weapon && Weapon->GetMuzzleFlashLight())
+	{
+		Test->AddInfo(FString::Printf(TEXT("Captured ElectricGun muzzle light intensity: %.2f"),
+			Weapon->GetMuzzleFlashLight()->Intensity));
+	}
+
+	UGameViewportClient* GameViewportClient = World ? World->GetGameViewport() : nullptr;
+	FViewport* GameViewport = GameViewportClient ? GameViewportClient->Viewport : nullptr;
+	Test->TestNotNull(TEXT("PIE game viewport is available for reference-video capture"), GameViewport);
+	if (!GameViewport)
+	{
+		return true;
+	}
+
+	TArray<FColor> Pixels;
+	const FIntPoint ViewportSize = GameViewport->GetSizeXY();
+	const bool bReadPixels = GameViewport->ReadPixels(Pixels);
+	Test->TestTrue(TEXT("PIE game viewport pixels were read"), bReadPixels);
+	if (!bReadPixels || Pixels.Num() != ViewportSize.X * ViewportSize.Y)
+	{
+		return true;
+	}
+
+	const FString Filename = FPaths::Combine(
+		FPaths::ProjectSavedDir(),
+		TEXT("Screenshots/WindowsEditor/TMT_ElectricMuzzle_VideoStandard.png"));
+	TArray64<uint8> CompressedPng;
+	FImageUtils::PNGCompressImageArray(ViewportSize.X, ViewportSize.Y, Pixels, CompressedPng);
+	Test->TestTrue(TEXT("ElectricGun reference-video screenshot was written"),
+		FFileHelper::SaveArrayToFile(CompressedPng, *Filename));
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(
+	FValidateElectricMuzzleCaptureCommand,
+	FAutomationTestBase*, Test);
+
+bool FValidateElectricMuzzleCaptureCommand::Update()
+{
+	const FString Filename = FPaths::Combine(
+		FPaths::ProjectSavedDir(),
+		TEXT("Screenshots/WindowsEditor/TMT_ElectricMuzzle_VideoStandard.png"));
+	Test->TestTrue(TEXT("ElectricGun reference-video screenshot was written"),
+		FPaths::FileExists(Filename));
+	return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FThreeWeaponPIESwitchTest,
 	"TheManTest.Player.Weapons.ThreeWeaponPIESwitch",
@@ -297,6 +402,30 @@ bool FThreeWeaponPIESwitchTest::RunTest(const FString& Parameters)
 	ADD_LATENT_AUTOMATION_COMMAND(FSwitchToNextWeaponCommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.7f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidateEquippedWeaponAnimationCommand(this, TEXT("ExplosionGun")));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FElectricMuzzleVisualCaptureTest,
+	"TheManTest.Player.Weapons.ElectricMuzzleVisualCapture",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FElectricMuzzleVisualCaptureTest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/VFXTest/VFXTestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.8f));
+	ADD_LATENT_AUTOMATION_COMMAND(FSwitchToNextWeaponCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.7f));
+	// Warm the migrated Niagara systems before capturing the measured shot.
+	ADD_LATENT_AUTOMATION_COMMAND(FTriggerElectricMuzzleFlashCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.0f));
+	ADD_LATENT_AUTOMATION_COMMAND(FTriggerElectricMuzzleFlashCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.016f));
+	ADD_LATENT_AUTOMATION_COMMAND(FCaptureElectricMuzzleFlashCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.3f));
+	ADD_LATENT_AUTOMATION_COMMAND(FValidateElectricMuzzleCaptureCommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }

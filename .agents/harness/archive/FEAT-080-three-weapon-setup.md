@@ -102,7 +102,9 @@
 
 ## 2026-09-04 电击枪开火点光增强
 
-- 对比源项目持枪开火状态后确认双方使用同一 Laser Burst 2 枪口 Niagara；源武器更强的局部青绿色反光主要来自开火时的 `MuzzleLight`，而 `Weapon_Idle_Particle` 只属于拾取/展示状态。本轮不提高测试地图全局 Bloom。
-- `AFirearm` 新增默认关闭的可配置 `MuzzleFlashLight` PointLight，配置包含颜色、强度、衰减半径和持续时间。`UGA_Shoot` 在实弹开火反馈链触发点光；快速连射会重置计时，`Unequip` 会立即清灯，定时器以平方曲线淡出至 0 后隐藏组件。
-- `BP_ElectricGun` 单独设置 `MuzzleEffectScale=(1,1,1)`、点光颜色 `(78,255,211)`、Intensity=600、AttenuationRadius=200、Duration=0.1s。RepairGun 与 ExplosionGun 继续继承默认关闭，不改变现有表现。
-- Development Editor / Win64 构建成功。`ThreeWeaponBaseline` 增加三枪启用状态与电击枪参数断言；`ThreeWeaponPIESwitch` 增加运行时立即点亮、0.2 秒后隐藏且强度归零断言。两项测试在 NullRHI 与真实 D3D12/SM6 路径均为 Success。D3D 日志仍会报告项目既有 `M_UE4Man_Body` 缺失输入纹理警告，与本轮武器改动无关。
+- 以 `D:\ROG\Videos\EV录屏\20260904_133033.mp4` 为视觉验收基准逐帧检查：原版青绿色枪体反光从约 6.083s 开始，最强位于 6.100–6.117s，约 3–5 帧后衰减；表现核心是枪身瞬时变为高亮青绿色，而不是整间环境持续变绿。源武器使用同一 Laser Burst 2；`Weapon_Idle_Particle` 不是本次开火反光来源。
+- `AFirearm` 的默认关闭 PointLight 增加 `SourceRadius` 与枪口局部 `LocalOffset`，组件对齐源设置：Unitless、Inverse Square、FalloffExponent=8、Cast Shadows、Affect Translucent Lighting。颜色修正为源资产真实线性值 `(0.075319,1,0.652928)`；定时器改为 0.1 秒线性淡出，快速连射重置计时，`Unequip` 立即清灯。
+- 两枪模型互换后，电击枪当前 `MuzzleLocalTransform` 坐标轴与源展示蓝图不同，不能直接复用源偏移。最终把枪口位置前移到源枪管位置 `(0.000751,67.696307,6.434297)`，并用当前坐标系反算灯位偏移 `(1.480382,-6.734961,-15.577805)`；Niagara 保持 CameraForward 的 0°附加旋转，90°会把方向性光束错误横扫屏幕。
+- `BP_ElectricGun` 最终设置 `MuzzleEffectScale=(1,1,1)`、点光 Intensity=1800、AttenuationRadius=200、SourceRadius=60、Duration=0.1s。源 UE 5.1 的 600 在当前 UE 5.7/枪体材质/曝光链下实际画面只有参考视频约三分之一亮度，因此实例强度按视觉标准补偿；RepairGun 与 ExplosionGun 继续继承默认关闭。
+- `/Game/Maps/VFXTest/VFXTestMap` 的 Bloom 临时从 1.15 调为 4.0、Threshold=0.5，以对齐源 MainScene 的审核环境；不影响其他地图。新增 `ElectricMuzzleVisualCapture`，预热 Niagara 后走真实 `PrimaryFire` 并直接读取 PIE 游戏视口，证据截图为 `Saved/Screenshots/WindowsEditor/TMT_ElectricMuzzle_VideoStandard.png`，截帧时点光强度 1500。
+- Development Editor / Win64 构建成功。NullRHI `ThreeWeaponBaseline` 与 `ThreeWeaponPIESwitch` 2/2 Success；D3D12/SM6 `ElectricMuzzleVisualCapture` Success。D3D 日志仍仅报告项目既有 `M_UE4Man_Body` 缺失输入纹理与 AimIK 警告，与本轮武器改动无关。

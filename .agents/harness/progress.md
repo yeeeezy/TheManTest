@@ -4,7 +4,7 @@
 
 - `FEAT-080`：RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 - 状态：`in_progress`
-- 当前阶段：暗场地图已整理到 `/Game/Maps/VFXTest/VFXTestMap`；两枪模型互换与 Laser 材质修复完成；电击枪已按源武器补上开火瞬间青绿色点光并恢复 1.0 枪口特效倍率；Phantom 静止命中目标、EnemyBase 通用血条和无视角后坐测试配置已就绪，可继续开发爆炸弹逻辑。
+- 当前阶段：暗场地图已整理到 `/Game/Maps/VFXTest/VFXTestMap`；两枪模型互换与 Laser 材质修复完成；电击枪已按用户原版录像完成枪口位置、短时青绿色点光和 D3D 实际画面验收；Phantom 静止命中目标、EnemyBase 通用血条和无视角后坐测试配置已就绪，可继续开发爆炸弹逻辑。
 - 详细历史：`archive/FEAT-080-three-weapon-setup.md`
 
 ## 已确认方案
@@ -15,7 +15,7 @@
 - 两把新枪除模型和 VFX 外直接复制 RepairGun 配置。
 - 即使素材相同，也复制并重命名到各武器所有者目录，确保后续独立修改。
 - 不迁移外部项目的角色、武器蓝图或动画，不进行动画重定向。
-- 不提高测试地图全局 Bloom；电击枪单独使用 `MuzzleEffectScale=1.0` 和青绿色短时枪口点光（600 强度、200 半径、0.1 秒淡出），其他枪默认关闭该点光。
+- `VFXTestMap` 审核环境临时使用 Bloom=4、Threshold=0.5 对齐源 MainScene；电击枪单独使用 `MuzzleEffectScale=1.0` 和青绿色短时枪口点光（UE 5.7 视觉补偿强度 1800、半径 200、SourceRadius 60、0.1 秒线性淡出），其他枪默认关闭。
 
 ## 最近完成
 
@@ -34,12 +34,13 @@
 - 从外部 VFXPack 迁入 Laser Burst 2 与 Laser Impact 2 共 51 项依赖，全部重命名/合并到 `/Game/Weapons/ElectricGun`。新枪口与命中 Niagara 的依赖闭包全部为武器本地路径；旧 `NS_ElectricGun_Muzzle`、`NS_ElectricGun_Impact`、无引用旧依赖、供应商目录和 Redirector 已删除。
 - 电击枪与爆炸枪的主枪体、Outline、模型握持偏移和 `MuzzleLocalTransform` 已成套互换；最终语义路径仍分别为各自 owner-local `SM_ElectricGun` / `SM_ExplosionGun`，枪体材质继续保持电击青蓝与爆破橙色主题。
 - 查明 Laser 方形边缘来自迁移后 11 个材质实例 `Main_Texture` 为空，而非 Niagara 或混合模式加载失败；已按源工程恢复 LensFlare、Lightning、MuzzleFlash、Smoke、Fire 与 Rocks 的本地贴图引用。冷启动精确回读 11/11 通过，ThreeWeaponBaseline 与 ThreeWeaponPIESwitch 在 NullRHI 和真实 D3D 渲染设备下均为 Success。
-- `AFirearm` 新增默认关闭的可配置枪口 `PointLight` 和定时淡出；`BP_ElectricGun` 单独启用源武器青绿色 `(78,255,211)`、强度 600、半径 200、0.1 秒平方淡出，并把 Laser 枪口倍率由 0.85 恢复为 1.0。Development Editor 构建、NullRHI 与 D3D12/SM6 两项三枪自动化均通过。
+- 逐帧读取用户原版录像 `D:\ROG\Videos\EV录屏\20260904_133033.mp4`，以 6.083–6.150s 的 3–5 帧青绿色枪体反光为验收标准。修正源线性颜色、Unitless 灯光单位、SourceRadius=60、当前枪口坐标下的持枪侧偏移和 0.1 秒线性淡出；枪口位置前移到源枪管位置，避免 Niagara 埋入模型。
+- `BP_ElectricGun` 在 UE 5.7 中用 Intensity=1800 做视觉补偿；`VFXTestMap` 临时 Bloom=4/Threshold=0.5。Development Editor 构建成功；NullRHI 三武器回归 2/2 Success，D3D12/SM6 `ElectricMuzzleVisualCapture` Success，截帧强度 1500。审核图：`Saved/Screenshots/WindowsEditor/TMT_ElectricMuzzle_VideoStandard.png`。
 
 ## 当前待办
 
 - 继续实现并验证爆炸弹玩法逻辑；优先使用 `/Game/Maps/VFXTest/VFXTestMap`，其中 Phantom 可作为不会移动的命中目标。
-- 用户在带渲染窗口的 PIE 中确认枪体和弹体材质、弹体尺寸/朝向、模型握持位置、枪口 VFX、统一武器命中 VFX 和环境贴花最终观感。
+- 用户在 `/Game/Maps/VFXTest/VFXTestMap` 带渲染窗口的 PIE 中审核电击枪是否达到原版录像观感，并继续确认枪体/弹体材质、弹体尺寸/朝向、统一武器命中 VFX 和环境贴花。
 - 用户确认后将 FEAT-080 归档为 done；当前不自动提交，等待用户明确说“更新 Git”。
 
 ## 会话交接
@@ -49,4 +50,4 @@
 - 2026-09-04 删除武器 Cue 的 CharacterImpactEffect 分支与两套 HitBox Flash 资产；默认 `GameplayCue.Character.Enemy.Hit` 保留，具体敌人需要差异时再新增专属 Character Hit Tag。
 - 2026-09-04 创建 `BT_Phantom_TestIdle` 与 `BP_Phantom_TestIdleAIController` 并挂到 `BP_Phantom`；PIE 验证 Phantom 静止。正式 AI 的恢复值已记录在 archive 与 `arch/11-enemy-ai.md`。
 - 2026-09-04 `AEnemyBase` 通用血条与三枪临时无视角后坐配置已实现；恢复视角后坐只需把 `bEnableViewRecoil` 默认值或武器 Blueprint 覆盖改为 true，Camera Shake 无需恢复。
-- 默认 Bullet GE 改动及此前现场已封存于本地 WIP checkpoint `3419214`；统一武器命中 Cue、CharacterImpact 资产清理以及用户调整的 `BP_ExplosionGun` 已封存于 `5ecbdec`；暗场地图初版为 `ddf7085`；地图归档和电击枪 Laser VFX 初次迁移为 `6549004`；模型交换与 Laser 材质修复已封存于 `a2bd562`。当前枪口点光改动尚未提交，等待用户明确说“更新 Git”。
+- 默认 Bullet GE 改动及此前现场已封存于本地 WIP checkpoint `3419214`；统一武器命中 Cue、CharacterImpact 资产清理以及用户调整的 `BP_ExplosionGun` 已封存于 `5ecbdec`；暗场地图初版为 `ddf7085`；地图归档和电击枪 Laser VFX 初次迁移为 `6549004`；模型交换与 Laser 材质修复已封存于 `a2bd562`；初版枪口点光为 `48ecffe`。录像标准下的颜色/灯位/单位/强度/枪口位置和截图测试仍未提交，等待用户明确说“更新 Git”。
