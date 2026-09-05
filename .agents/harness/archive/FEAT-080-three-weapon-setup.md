@@ -7,6 +7,13 @@
 - 两把新枪只替换模型、枪口 VFX、命中 VFX 与贴花；玩法、动画、音频、弹药、GAS、后坐力和子弹行为保持与 RepairGun 一致。
 - 外部来源仅迁移最终模型和 VFX 依赖，不迁移源项目角色、武器蓝图或动画。
 
+## 2026-09-04 爆炸枪高能核心材质
+
+- 用户认可电击枪并要求只换爆炸枪材质，确认“深色金属、橙红能量舱、亮黄脉冲核心、槽线流动”方向。检查点 f3c38f0 保存上一轮两枪材质及灰壳/描边/缩放修复。
+- 仅修改 ExplosionGun/Materials/M_ExplosionGun_Surface 与 MI_ExplosionGun_Rifle：侧面双能量舱以局部坐标定位，橙红外层、亮黄中心与环状热能纹理；核心0.65Hz平缓脉冲，槽线亮点以独立0.45速度流动。深色金属替换原黄铜配色，提高粗糙度，限制发光在能量舱/槽线，保留共享显现函数。
+- 参数：CorePulseRate、EnergyFlowSpeed、PlasmaShellColor、PlasmaCoreColor、PlasmaIntensity。不修改模型、开火Niagara、灯光、默认尺寸或玩法代码；ElectricGun资产无变动。
+- ExplosionEnergySurface.log 材质编辑/参数验证成功0错误0警告；ExplosionEnergyD3D.log 的 SharedEquipReveal、ExplosionVisualCapture、ThreeWeaponBaseline 全部3/3 Success/exit0。已查看 TMT_WeaponSurface_2.png 实机截图并另存 TMT_ExplosionEnergyCore.png，橙红舱体和亮黄核心可辨，原表面显现保持正常。无C++改动，无新增资产/删除。
+
 ## 2026-09-04 枪体材质、灰壳与爆炸枪尺寸修复
 
 - 用户确认实施：修复切换时灰模、参考 RepairGun 做两枪科幻材质、删除三枪描边及无引用资产、按 ElectricGun 接通 ExplosionGun 的真实枪口尺寸倍率。写入前检查点 `3be752e` 保存前轮共享装备 VFX 工作。
