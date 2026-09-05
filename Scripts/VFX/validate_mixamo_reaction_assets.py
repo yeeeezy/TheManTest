@@ -1,9 +1,11 @@
 import unreal,json,pathlib,math
 OUT=pathlib.Path('D:/Blender Projects/HumanoidHitReactions')
-rows=json.loads((OUT/'limb_motion.json').read_text())
+rows=json.loads((OUT/'mixamo_rifle_motion.json').read_text())
 for row in rows:
     a=unreal.load_asset('/Game/Enemy/Humanoid/Phantom/Animations/Reactions/'+row['name'])
     assert a and a.get_editor_property('skeleton').get_path_name().startswith('/Game/Enemy/Humanoid/Phantom/OriginalRifle/')
+    assert a.get_editor_property('enable_root_motion')
+    assert a.get_editor_property('force_root_lock')
     assert len(unreal.AnimationLibrary.get_animation_track_names(a))==70
     maxpos=0.;mindot=1.
     for i,frame in enumerate(row['frames']):
@@ -24,8 +26,7 @@ for phase in range(2):
     for r in sets:
         for field in ['front','back','left','right']:
             a=r.get_editor_property(field);assert a;names.add(a.get_name())
-    assert len(names)==24
-    assert c.get_editor_property('reaction_mode')==unreal.EnemyHitReactionMode.ANIMATION
+    assert len(names)==4
     if phase==0:unreal.BlueprintEditorLibrary.compile_blueprint(bp)
 reg=unreal.AssetRegistryHelpers.get_asset_registry()
 assets=reg.get_assets_by_path('/Game/Enemy/Humanoid/Phantom/Animations/Reactions',True)
@@ -33,8 +34,10 @@ for a in assets:
     assert str(a.asset_class_path.asset_name)=='AnimSequence'
     deps=reg.get_dependencies(a.package_name,unreal.AssetRegistryDependencyOptions())
     assert all(str(d).startswith(('/Game/Enemy/Humanoid/Phantom/','/Script/','/Engine/','/ACLPlugin/')) for d in deps),deps
-shared=E.load_asset('/Game/Enemy/Humanoid/_Shared/Animations/ControlRig/ABP_Humanoid_HitReaction')
+shared=E.load_asset('/Game/Enemy/Humanoid/_Shared/Animations/Logic/ABP_Humanoid_HitReaction')
 unreal.BlueprintEditorLibrary.compile_blueprint(shared)
-for d in reg.get_dependencies('/Game/Enemy/Humanoid/_Shared/Animations/ControlRig/ABP_Humanoid_HitReaction',unreal.AssetRegistryDependencyOptions()):
+for d in reg.get_dependencies('/Game/Enemy/Humanoid/_Shared/Animations/Logic/ABP_Humanoid_HitReaction',unreal.AssetRegistryDependencyOptions()):
     assert not str(d).startswith('/Game/Enemy/Humanoid/Phantom/')
-print('LIMB_COLD_OK',len(names))
+assert not reg.get_assets_by_path('/Game/Enemy/Humanoid/_Shared/Animations/ControlRig',True)
+assert not (pathlib.Path(unreal.Paths.project_content_dir())/'Enemy/Humanoid/_Shared/Animations/ControlRig').exists()
+print('MIXAMO_COLD_OK',len(names))

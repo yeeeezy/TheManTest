@@ -1,30 +1,12 @@
 # 动画蓝图架构（ABP 层 / Slot / 节点图）
 
-## 当前更正
+## 当前受击链（2026-09-05）
 
-- 最新部位动作扩展：图结构不改；数据源新增ActiveRegion，通过UseFullBodyReaction使左右腿受击在地面移动中也走全身。六部位×四方向动画由BodyAnimations选择，BP_Phantom已配置24条强动作；旧五条及Rig为回退/手动模式。仅爆炸弹AttachedHitActor收到反应请求，命中骨骼和命中瞬间局部方向决定动作。下文站立全身/移动上半身现在对腿部有上述例外。
-
-- ABP_Humanoid_HitReaction默认走新动画分支。LinkedInputPose保存为ReactionInputPose；SequenceEvaluator由ReactionAnimation/ReactionTime输入并缓存为AuthoredReactionPose。站立时TwoWayBlend按ReactionAlpha混全身；移动/下落时LayeredBoneBlend仅spine_01以上混合。UseFullBodyReaction选上述两者；UseAnimationReaction最终在动画分支与原ControlRig节点之间选择。旧Rig参数和源Pose连线保留，默认Animation模式不会求值旧Rig；该共享图仍无具体Skeleton/Phantom动画依赖。
-- 模式及五条Sequence在Enemy的ExplosionHitReaction组件配置；新图使用显式游戏时间求值，不触发Sequence Notify或RootMotion，不使用Montage Slot，也不更换主AnimBP。InstallEnemyReactionAnimationBranch为独立且幂等的编辑器安装入口，保留旧InstallEnemyHitReactionRig用于维护原分支。
-
-- Phantom OriginalRifle武器挂hand_r_wepSocket/单位缩放，父骨骼hand_r_wep带源动画轨道；Relax/Aim不切Socket。ABP_HumanoidEnemy/ABP_Phantom_OriginalRifle图保持原样。
-- 当前受击后处理是Humanoid/_Shared/Animations/ControlRig下的ABP_Humanoid_HitReaction/CR_Humanoid_HitReaction，由人形基类自动接入，旧Phantom专属资产已移走；详情见arch06。死亡后关闭该后处理，转PhysicsAsset布娃娃。下节2026-09-05早期方案仅为历史。
-
-## 2026-09-05 Phantom爆炸方向受击（当前）
-
-- 原ABP_Phantom_OriginalRifle及共享ABP_HumanoidEnemy图不改。Phantom/OriginalRifle/Meshes/SK_Mannequin的PostProcessAnimBlueprint指向Phantom/Animations/ControlRig/ABP_Phantom_ExplosionReaction，C++父类UEnemyHitReactionAnimInstance；图为LinkedInputPose → ControlRig → Output。
-- 同目录CR_Phantom_ExplosionReaction以现役Mesh骨架构建运行时Rig，没有IK Retargeter/动画重定向。Forwards Solve → 原生FRigUnit_EnemyHitReaction；ReactionRotation/ReactionBone公开输入由后处理AnimBP连接。spine_01/02/03分配.2/.35/.45组件空间旋转，手臂命中向相应upperarm额外.45，头/颈命中向neck_01额外.3；缺骨骼跳过，根/腿不改，输入姿势逐帧提供基准，不累计姿势漂移。
-- 受击由爆炸子弹伤害筛选后请求，组件保存游戏时钟包络（随Bullet Time放慢），快速渐入、衰减回弹、回零。脚与胶囊不移动，未实现击退/死亡动画。头部四方向位移、脚不动、还原原Pose及左臂局部反应由EnemyExplosionControlRig PIE测试验证。
-- 编辑器创建/接线助手在TheManAnimationAssetLibrary::CreateEnemyHitReactionPostProcess/InstallEnemyHitReactionRig；Scripts/Audio/configure_enemy_explosion.py接入和冷回读。未来其他Skeleton须制作对应Rig/PostProcess配置，不能直接迁用Phantom引用。
-
-**何时读取：** 搭建或修改 ABP 层结构、Linked Anim Layer、Slot 蒙太奇插槽、AimIK 节点链、武器动画扩展时。
-
-> 本文是 `06-animation.md` 的详细版：06 速查 C++ AnimInstance 类与变量，本文讲 ABP 资产的层/Slot/节点图与扩展策略。
-> **当前玩家 ABP = 玩家统一 Skeleton。** `GetMesh()`、`ArmsViewMesh` 与武器 Linked Anim Layer 共用玩家 Skeleton；Enemy 可使用各自动画原始 Skeleton，通过无骨架 Template AnimBP 派生对应子 AnimBP。旧双骨骼系统的 C++ 已于 FEAT-041 删除（文末旧系统节仅作历史参考）。
-
-> 当前方向（session63）：不再使用 Motion Matching，也不再做专门停步动画。玩家全身主 ABP 走 UE 模板式普通 locomotion：Idle 与 Walk/Run BlendSpace 直接按 `Speed` / `Direction` 混合；跳跃用 `bIsFalling` / `Velocity_Z`。`HeadCamera -> ViewmodelRoot -> ArmsViewMesh` 独立 FP 手臂结构保留，装备/开火蒙太奇仍通过 `GetArmsMesh()` 走 FP 手臂。
-
----
+- `/Game/Enemy/Humanoid/_Shared/Animations/Logic/ABP_Humanoid_HitReaction`是无骨架后处理模板，父类EnemyHitReactionAnimInstance，由Humanoid基类默认软类和具体Enemy配置接入。旧ControlRig目录、CR_Humanoid_HitReaction、Rig节点/模式开关/原生RigUnit已删除。
+- 图：LinkedInputPose→ReactionInputPose缓存；SequenceEvaluator读取ReactionAnimation/ReactionTime→AuthoredReactionPose缓存；TwoWayBlend全身或LayeredBoneBlend(spine_01)上半身按ReactionAlpha混合，再由UseFullBodyReaction选出直接接Output。无UseAnimationReaction字段。InstallEnemyReactionAnimationBranch现在重建纯动画图，旧Rig安装API已删除。
+- 六部位分类保留，BP_Phantom当前共用4条Mixamo持枪成品方向动画。只有附着的存活目标触发，主AnimBP不换。动画评估不触发Notify；根位移由EnemyHitReactionComponent显式消费并碰撞扫掠，Sequence force_root_lock，避免重复位移。
+- 非下落根位移反应临时暂停CharacterMovement，因速度归零使用全身；结束/关闭恢复移动模式。下落保留上半身与原空中运动。关闭根位移时仍保留原站立全身/移动上半身、腿受击全身的规则。
+- 具体资产/骨架、武器挂点均归Phantom；共享图无Phantom动画依赖。正式安装/冷读/PIE脚本使用Scripts/VFX/*mixamo*，旧Rig和旧动画安装验证脚本已删除。
 
 ## 总体原则
 

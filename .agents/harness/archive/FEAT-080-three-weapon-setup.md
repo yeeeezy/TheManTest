@@ -1,5 +1,16 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 Mixamo持枪动作正式接入，删除旧受击Rig
+
+- 最终相关7项回归全部通过：MixamoRegression首轮5项成功，另2项声音断言因测试误加-nosound失败；移除该启动参数，MixamoAudioRegression的ExplosionRadialDamage、StickyExplosionAndBlood均Success，未改声音代码/参数来规避测试。最终持枪GIF已按规范方向重渲染、检查并打开。测试编辑器退出、地图未保存，架构文档同步；结果未最终提交/push。用户当前接受4方向作为首批，不宣称已补齐24种独立部位动作。
+- 用户接受官方原动作样片，授权将四方向Large改为持枪、适配并替换游戏；随后明确要求旧Rig链直接删除，覆盖此前保留要求。检查点8762d18保存前置文档，不纳入用户地图/ExternalActor/声音/VFX/电击弹改动。
+- 外部adapt_mixamo_rifle.py按源逐帧组件空间变化适配现役70骨，保留42/51/48/50帧、30fps、原始速度。右手固定现役枪握姿，左手按源手臂偏移短暂释放并回握；腿长差异仅在过伸时下沉骨盆补偿。四条AS_Humanoid_BlastRifle_Front/Back/Left/Right，源轨迹方向规范化到Actor前后左右；目标脚位误差<.00005cm、右握点误差<.00003cm。不是新生成踉跄节奏。
+- 原动作有水平位移：拆为Root轨道并force_root_lock，EnemyHitReactionComponent在非下落反应期间临时暂停CharacterMovement模式，逐游戏时间采样根位移，经Mesh方向/缩放变换，用SafeMoveUpdatedComponent扫掠移动胶囊；结束/关闭恢复此前移动模式，死亡不恢复。ApplyAnimationRootMotion可关闭，下落不消费根位移。碰墙可能限制原步长，不承诺脚步自适应重规划。
+- TMIIR/ReactionPrep/MixamoFinal生成/冷验证/导出成品，TheManTest仅导入4条最终动画至Phantom/Animations/Reactions。BP_Phantom六部位槽目前共用这4条方向动作，分类/命中瞬间方向/附着目标限定保留；不是24种新的独立动作。四向fallback及HeavyFront也指向新成品，旧29条动作无本组件引用，未擅自批量删除。
+- 删除EEnemyHitReactionMode、Rig旋转/包络/跟随/压腿参数、Sample/SampleFrame、FRigUnit_EnemyHitReaction及Frame结构；BoneMapping只保留部位分类字段。共享后处理图重建为Input缓存→SequenceEvaluator→全身/上半身混合→Output，无模式开关/Rig节点。ABP迁至Humanoid/_Shared/Animations/Logic，CR_Humanoid_HitReaction删除，旧ControlRig目录Registry和磁盘均空/不存在。删除旧Rig安装/校验脚本与Rig专用测试，保留项目其他用途的ControlRig能力。
+- 初次迁移因旧Rig资产依赖已移除结构而加载失败，临时恢复序列化类型完成资产清理后再次删除；最终MixamoNoRigFinalBuild编译成功，MixamoTargetCold逐帧70轨位置误差0、旋转点积>.999999，BP重编译配置保留，无旧Rig目录或Phantom依赖进入共享ABP。
+- MixamoRuntime实测24个部位方向选择×静止/移动通过，头部实际位移、Alpha、主AnimClass不变、武器挂点误差<.1cm、重复不重启和结束恢复通过；另外根运动无墙144.61cm、阻挡33.49cm、关闭0cm，结束/Enabled关闭恢复Flying通过。移动测试仍为Flying隔离地板；既有真实Walking附着由回归覆盖。启动命令路径引号第一次错误，改用MCP项目相对路径运行成功；最终运行成功标记MIXAMO_RUNTIME_OK。相关7项回归进行中，不能提前宣称全部完成。
+
 ## 2026-09-05 用户停止自制并指定Mixamo资产
 
 - 后续用户登录并将Mixamo标签页置前，成功用Windows UIAutomation读到官网控件并下载，无需访问登录凭据。检查点a8a524c。下载5条官方X Bot源FBX：Hit Reaction（描述While Holding A Rifle）、Standing React Large From Front/Back/Left/Right；下载设置FBX Binary、With Skin、30fps、none。保存Downloads并复制至D:/Blender Projects/HumanoidHitReactions/Source/Mixamo。Back下载延迟导致重复一份(1)，未删除用户Downloads。

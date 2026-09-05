@@ -48,7 +48,7 @@ public:
   UAnimSequence* A=nullptr;float Time=0,Alpha=0;
   Target->ExplosionHitReaction->SampleAnimation(A,Time,Alpha);
   if(Case==0){
-   Test->TestTrue(TEXT("Attached leg gets full strength original back direction after turning"),A&&A->GetName()==TEXT("AS_Humanoid_Blast_LeftLeg_Back")&&Alpha>.95f);
+   Test->TestTrue(TEXT("Attached leg gets full strength original back direction after turning"),A&&A->GetName()==TEXT("AS_Humanoid_BlastRifle_Back")&&Alpha>.95f);
    Test->TestEqual(TEXT("Attached target takes blast damage"),Target->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),80.f);
   }else Test->TestTrue(TEXT("Lethal explosion uses ragdoll instead of living animation"),Target->IsDead()&&!A&&Target->GetMesh()->IsSimulatingPhysics(TEXT("pelvis")));
   Neighbor->ExplosionHitReaction->SampleAnimation(A,Time,Alpha);

@@ -4,14 +4,44 @@
 #include "Engine/World.h"
 #include "Animation/AnimSequence.h"
 #include "Engine/SkeletalMesh.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
-float UEnemyHitReactionComponent::EvaluateEnvelope(float Age,float Attack,float Recovery)
+UEnemyHitReactionComponent::UEnemyHitReactionComponent()
 {
- if(Age<0)return 0;
- if(Age<Attack){const float T=Age/FMath::Max(.01f,Attack);return T*T*(3-2*T);}
- const float T=FMath::Clamp((Age-Attack)/FMath::Max(.05f,Recovery),0.f,1.f);
- return FMath::Square(1-T)*FMath::Cos(T*PI*1.5f);
+ PrimaryComponentTick.bCanEverTick=true;
 }
+void UEnemyHitReactionComponent::ReleaseMovement()
+{
+ if(!bOwnsMovement)return;
+ bOwnsMovement=false;
+ if(auto* Enemy=Cast<AEnemyBase>(GetOwner()))
+  if(!Enemy->IsDead())
+   if(auto* Move=Enemy->GetCharacterMovement())
+    if(Move->MovementMode==MOVE_None)Move->SetMovementMode(EMovementMode(PreviousMovementMode),PreviousCustomMode);
+}
+void UEnemyHitReactionComponent::EndPlay(const EEndPlayReason::Type Reason)
+{
+ ReleaseMovement();Super::EndPlay(Reason);
+}
+void UEnemyHitReactionComponent::TickComponent(float DeltaTime,ELevelTick TickType,FActorComponentTickFunction* ThisTickFunction)
+{
+ Super::TickComponent(DeltaTime,TickType,ThisTickFunction);
+ if(!bOwnsMovement)return;
+ auto* Enemy=Cast<AEnemyBase>(GetOwner());
+ if(!bEnabled||!bApplyAnimationRootMotion||!Enemy||Enemy->IsDead()||!ActiveAnimation||!GetWorld()){ReleaseMovement();return;}
+ const float Time=FMath::Clamp(float(GetWorld()->GetTimeSeconds()-AnimationStartTime)*ActivePlayRate,0.f,ActiveAnimation->GetPlayLength());
+ if(Time>LastRootTime)
+ {
+  const FAnimExtractContext Context(double(LastRootTime),true);
+  const FVector Delta=ActiveAnimation->ExtractRootMotionFromRange(double(LastRootTime),double(Time),Context).GetTranslation();
+  FVector WorldDelta=RootMotionOrientation.RotateVector(Delta*RootMotionScale);WorldDelta.Z=0;
+  FHitResult Hit;
+  Enemy->GetCharacterMovement()->SafeMoveUpdatedComponent(WorldDelta,Enemy->GetActorQuat(),true,Hit);
+  LastRootTime=Time;
+ }
+ if(Time>=ActiveAnimation->GetPlayLength())ReleaseMovement();
+}
+
 EEnemyHitRegion UEnemyHitReactionComponent::ClassifyHitBone(FName Bone) const
 {
  const auto* Enemy=Cast<AEnemyBase>(GetOwner());
@@ -35,12 +65,8 @@ void UEnemyHitReactionComponent::ReactToExplosion(FVector Origin,FVector Fallbac
  const FVector Point=Mesh->GetBoneIndex(HitBone)!=INDEX_NONE?Mesh->GetSocketLocation(HitBone):Enemy->GetActorLocation();
  FVector Away=Point-Origin;
  if(Away.SizeSquared()<25)Away=FallbackDirection;
- const FVector FullDirection=Away.GetSafeNormal();
- VerticalStrength=FullDirection.Z;
  Away.Z=0;
  if(!Away.Normalize())Away=Enemy->GetActorForwardVector();
- if(ReactionMode==EEnemyHitReactionMode::Animation)
- {
   // Let the current reaction finish, rather than repeatedly snapping back to its first frame.
   if(ActiveAnimation && GetWorld()->GetTimeSeconds()-AnimationStartTime<ActiveAnimation->GetPlayLength()/ActivePlayRate)return;
   if(HitLocalDirection.ContainsNaN())return;
@@ -64,41 +90,21 @@ void UEnemyHitReactionComponent::ReactToExplosion(FVector Origin,FVector Fallbac
   if(!Selected||!Mesh->GetSkeletalMeshAsset()||Selected->GetSkeleton()!=Mesh->GetSkeletalMeshAsset()->GetSkeleton()||Selected->IsValidAdditive())return;
   ActiveRegion=Region;ActiveAnimation=Selected;AnimationStartTime=GetWorld()->GetTimeSeconds();
   ActivePlayRate=FMath::Clamp(AnimationPlayRate,.1f,3.f);AnimationStrength=FMath::Clamp(Strength,0.f,1.f);
-  return;
- }
- ActiveAnimation=nullptr;
- AxisWS=FVector::CrossProduct(FVector::UpVector,Away).GetSafeNormal();
- Amplitude=FMath::DegreesToRadians(FMath::Clamp(MaxAngleDegrees,0.f,55.f))*FMath::Clamp(Strength,0.f,1.f)*(1.f-.25f*FMath::Abs(VerticalStrength));
- StartTime=GetWorld()->GetTimeSeconds();
-}
-
-FHumanoidReactionFrame UEnemyHitReactionComponent::SampleFrame() const
-{
- FHumanoidReactionFrame Frame;Frame.Bones=BoneMapping;
- FName Bone;Sample(Frame.Torso,Bone);
- const auto* Enemy=Cast<AEnemyBase>(GetOwner());
- if(!bEnabled||ReactionMode!=EEnemyHitReactionMode::ControlRig||!Enemy||Enemy->IsDead()||!GetWorld()||!Enemy->GetMesh())return Frame;
- const float Age=float(GetWorld()->GetTimeSeconds()-StartTime);
- Frame.Follow=Enemy->GetMesh()->GetComponentTransform().InverseTransformVectorNoScale(AxisWS)*Amplitude
-  *EvaluateEnvelope(Age-FollowDelay,AttackDuration*1.25f,RecoveryDuration);
- Frame.Compression=LegCompression*FMath::Clamp(Amplitude/FMath::DegreesToRadians(38.f),0.f,1.5f)
-  *FMath::Max(0.f,EvaluateEnvelope(Age-.015f,AttackDuration*1.6f,RecoveryDuration))*(1.f-.4f*VerticalStrength);
- return Frame;
-}
-void UEnemyHitReactionComponent::Sample(FVector& Out,FName& OutBone) const
-{
- Out=FVector::ZeroVector;OutBone=HitBone;
- const auto* Enemy=Cast<AEnemyBase>(GetOwner());
- if(!bEnabled||ReactionMode!=EEnemyHitReactionMode::ControlRig||!Enemy||Enemy->IsDead()||!GetWorld()||!Enemy->GetMesh())return;
- const float Alpha=EvaluateEnvelope(float(GetWorld()->GetTimeSeconds()-StartTime),AttackDuration,RecoveryDuration);
- Out=Enemy->GetMesh()->GetComponentTransform().InverseTransformVectorNoScale(AxisWS)*Amplitude*Alpha;
+  ReleaseMovement();LastRootTime=0;
+  if(auto* Move=Enemy->GetCharacterMovement())
+   if(bApplyAnimationRootMotion&&Selected->HasRootMotion()&&!Move->IsFalling())
+   {
+    PreviousMovementMode=uint8(Move->MovementMode);PreviousCustomMode=Move->CustomMovementMode;
+    RootMotionOrientation=Mesh->GetComponentQuat();RootMotionScale=Mesh->GetComponentScale();
+    bOwnsMovement=true;Move->StopMovementImmediately();Move->SetMovementMode(MOVE_None);
+   }
 }
 
 void UEnemyHitReactionComponent::SampleAnimation(UAnimSequence*& OutAnimation,float& OutTime,float& OutAlpha) const
 {
  OutAnimation=nullptr;OutTime=0;OutAlpha=0;
  const auto* Enemy=Cast<AEnemyBase>(GetOwner());
- if(!bEnabled||ReactionMode!=EEnemyHitReactionMode::Animation||!ActiveAnimation||!Enemy||Enemy->IsDead()||!GetWorld())return;
+ if(!bEnabled||!ActiveAnimation||!Enemy||Enemy->IsDead()||!GetWorld())return;
  const float Age=float(GetWorld()->GetTimeSeconds()-AnimationStartTime);
  const float Duration=ActiveAnimation->GetPlayLength()/ActivePlayRate;
  if(Age<0||Age>=Duration)return;

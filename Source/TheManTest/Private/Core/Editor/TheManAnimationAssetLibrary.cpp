@@ -87,18 +87,19 @@ bool UTheManAnimationAssetLibrary::InstallEnemyReactionAnimationBranch(UAnimBlue
  UEdGraph* Graph=nullptr;
  for(UEdGraph* G:BP->FunctionGraphs)if(G&&G->GetFName()==TEXT("AnimGraph"))Graph=G;
  if(!Graph)return false;
- UAnimGraphNode_ControlRig* Rig=nullptr;UAnimGraphNode_Root* Root=nullptr;
+ UAnimGraphNode_Root* Root=nullptr;UAnimGraphNode_LinkedInputPose* InputNode=nullptr;
  for(UEdGraphNode* N:Graph->Nodes)
  {
-  if(N->NodeComment==TEXT("ReactionModeSwitch"))return BP->Status!=BS_Error;
-  if(N->NodeComment==TEXT("EnemyExplosionReaction"))Rig=Cast<UAnimGraphNode_ControlRig>(N);
   if(auto* R=Cast<UAnimGraphNode_Root>(N))Root=R;
+  if(auto* I=Cast<UAnimGraphNode_LinkedInputPose>(N))InputNode=I;
  }
- if(!Rig||!Root)return false;
- auto* Source=Rig->FindPin(TEXT("Source"));auto* Result=Root->FindPin(TEXT("Result"));
- if(!Source||Source->LinkedTo.Num()!=1||!Result)return false;
- auto* Input=Source->LinkedTo[0];
+ if(!Root||!InputNode)return false;
  BP->Modify();Graph->Modify();
+ TArray<UEdGraphNode*> OldNodes=Graph->Nodes;
+ for(auto* N:OldNodes)if(N!=Root&&N!=InputNode)FBlueprintEditorUtils::RemoveNode(BP,N,true);
+ auto* Input=InputNode->FindPin(TEXT("Pose"));auto* Result=Root->FindPin(TEXT("Result"));
+ if(!Input||!Result)return false;
+ Input->BreakAllPinLinks();Result->BreakAllPinLinks();
  const auto* Schema=Graph->GetSchema();
  auto Link=[&](UEdGraphPin* A,UEdGraphPin* B){return A&&B&&Schema->TryCreateConnection(A,B);};
  auto Add=[&]<typename T>(int X,int Y)
@@ -107,7 +108,6 @@ bool UTheManAnimationAssetLibrary::InstallEnemyReactionAnimationBranch(UAnimBlue
  };
  auto* BaseCache=Add.operator()<UAnimGraphNode_SaveCachedPose>(-900,-300);
  BaseCache->CacheName=TEXT("ReactionInputPose");BaseCache->ReconstructNode();
- Source->BreakAllPinLinks();
  if(!Link(Input,BaseCache->FindPin(TEXT("Pose"))))return false;
  auto Use=[&](UAnimGraphNode_SaveCachedPose* Cache,int X,int Y)
  {
@@ -119,8 +119,6 @@ bool UTheManAnimationAssetLibrary::InstallEnemyReactionAnimationBranch(UAnimBlue
   FGraphNodeCreator<UK2Node_VariableGet> C(*Graph);auto* V=C.CreateNode();V->VariableReference.SetSelfMember(Name);
   V->NodePosX=N->NodePosX-200;V->NodePosY=N->NodePosY+150;C.Finalize();return Link(V->GetValuePin(),N->FindPin(Pin));
  };
- if(!Link(Use(BaseCache,-450,600),Source))return false;
- Rig->NodePosX=0;Rig->NodePosY=600;
  auto* Eval=Add.operator()<UAnimGraphNode_SequenceEvaluator>(-900,0);
  Eval->Node.SetShouldLoop(false);Eval->Node.SetTeleportToExplicitTime(true);
  for(auto& P:Eval->ShowPinForProperties)if(P.PropertyName==TEXT("Sequence")||P.PropertyName==TEXT("ExplicitTime"))P.bShowPin=true;
@@ -146,98 +144,12 @@ bool UTheManAnimationAssetLibrary::InstallEnemyReactionAnimationBranch(UAnimBlue
  auto* BodySwitch=MakeSwitch(500,0);
  // True is pose 0. Locomotion continues in the main AnimBP and supplies the moving legs.
  if(!Link(Full->FindPin(TEXT("Pose")),BodySwitch->FindPin(TEXT("BlendPose_0")))||!Link(Upper->FindPin(TEXT("Pose")),BodySwitch->FindPin(TEXT("BlendPose_1")))||!Bind(TEXT("bUseFullBodyReaction"),BodySwitch,TEXT("bActiveValue")))return false;
- auto* Mode=MakeSwitch(900,200);Mode->NodeComment=TEXT("ReactionModeSwitch");
- for(FName Pin:{FName(TEXT("BlendTime_0")),FName(TEXT("BlendTime_1"))})
-  if(auto* P=Mode->FindPin(Pin))P->DefaultValue=TEXT("0.0");
- Result->BreakAllPinLinks();Root->NodePosX=1250;Root->NodePosY=200;
- if(!Link(BodySwitch->FindPin(TEXT("Pose")),Mode->FindPin(TEXT("BlendPose_0")))||!Link(Rig->FindPin(TEXT("Pose")),Mode->FindPin(TEXT("BlendPose_1")))||!Bind(TEXT("bUseAnimationReaction"),Mode,TEXT("bActiveValue"))||!Link(Mode->FindPin(TEXT("Pose")),Result))return false;
+ Root->NodePosX=900;Root->NodePosY=0;
+ if(!Link(BodySwitch->FindPin(TEXT("Pose")),Result))return false;
  FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(BP);FKismetEditorUtilities::CompileBlueprint(BP);BP->MarkPackageDirty();
  return BP->Status!=BS_Error;
 #else
  return false;
-#endif
-}
-
-bool UTheManAnimationAssetLibrary::InstallEnemyHitReactionRig(UAnimBlueprint* BP,UControlRigBlueprint* Rig)
-{
-#if WITH_EDITOR
- if(!BP||!Rig||!Rig->GeneratedClass)return false;
- BP->bIsTemplate=true;
- BP->TargetSkeleton=nullptr;
- UEdGraph* Graph=nullptr;
- for(UEdGraph* G:BP->FunctionGraphs)if(G&&G->GetFName()==TEXT("AnimGraph"))Graph=G;
- if(!Graph)return false;
- UAnimGraphNode_ControlRig* Existing=nullptr;
- for(UEdGraphNode* N:Graph->Nodes)if(N->NodeComment==TEXT("EnemyExplosionReaction"))Existing=Cast<UAnimGraphNode_ControlRig>(N);
- UAnimGraphNode_Root* Root=nullptr;
- for(UEdGraphNode* N:Graph->Nodes)if(auto* R=Cast<UAnimGraphNode_Root>(N))Root=R;
- if(!Root)return false;
- auto* Result=Root->FindPin(TEXT("Result"));
- if(!Result||Result->LinkedTo.Num()!=1)return false;
- auto* Upstream=Result->LinkedTo[0];
- BP->Modify();Graph->Modify();
- auto* Node=Existing;
- if(!Node)
- {
-  FGraphNodeCreator<UAnimGraphNode_ControlRig> Creator(*Graph);
-  Node=Creator.CreateNode();
-  Node->Node.SetControlRigClass(TSubclassOf<UControlRig>(Rig->GeneratedClass.Get()));
-  Node->NodeComment=TEXT("EnemyExplosionReaction");Node->NodePosX=Root->NodePosX-240;
-  Creator.Finalize();
- }
- else Node->Node.SetControlRigClass(TSubclassOf<UControlRig>(Rig->GeneratedClass.Get()));
- auto* Property=FindFProperty<FArrayProperty>(Node->GetClass(),TEXT("CustomPinProperties"));
- if(!Property)return false;
- auto* Pins=Property->ContainerPtrToValuePtr<TArray<FOptionalPinFromProperty>>(Node);
- for(auto& Pin:*Pins)if(Pin.PropertyName==TEXT("ReactionRotation")||Pin.PropertyName==TEXT("ReactionBone")||Pin.PropertyName==TEXT("ReactionFrame"))Pin.bShowPin=true;
- Node->ReconstructNode();
- const auto* Schema=Graph->GetSchema();
- for(FName Name:{FName(TEXT("ReactionRotation")),FName(TEXT("ReactionBone")),FName(TEXT("ReactionFrame"))})
- {
-  auto* Target=Node->FindPin(Name);
-  if(!Target)return false;
-  if(!Target->LinkedTo.IsEmpty())continue;
-  FGraphNodeCreator<UK2Node_VariableGet> GetterCreator(*Graph);
-  auto* Getter=GetterCreator.CreateNode();Getter->VariableReference.SetSelfMember(Name);
-  Getter->NodePosX=Node->NodePosX-230;GetterCreator.Finalize();
-  if(!Schema->TryCreateConnection(Getter->GetValuePin(),Target))return false;
- }
- if(!Existing)
- {
-  Result->BreakAllPinLinks();
-  if(!Schema->TryCreateConnection(Upstream,Node->FindPin(TEXT("Source")))||!Schema->TryCreateConnection(Node->FindPin(TEXT("Pose")),Result))return false;
- }
- FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(BP);
- FKismetEditorUtilities::CompileBlueprint(BP);
- BP->MarkPackageDirty();
- return BP->Status!=BS_Error;
-#else
- return false;
-#endif
-}
-
-UAnimBlueprint* UTheManAnimationAssetLibrary::CreateEnemyHitReactionPostProcess(USkeletalMesh* Mesh,UControlRigBlueprint* Rig,const FString& PackagePath)
-{
-#if WITH_EDITOR
- if(!Mesh||!Rig)return nullptr;
- auto* Factory=NewObject<UAnimBlueprintFactory>();
- Factory->ParentClass=UEnemyHitReactionAnimInstance::StaticClass();Factory->TargetSkeleton=Mesh->GetSkeleton();
- const FString Name=FPackageName::GetLongPackageAssetName(PackagePath);
- auto* BP=Cast<UAnimBlueprint>(FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools")).Get().CreateAsset(Name,FPackageName::GetLongPackagePath(PackagePath),UAnimBlueprint::StaticClass(),Factory));
- if(!BP)return nullptr;
- for(UEdGraph* Graph:BP->FunctionGraphs)
- {
-  if(Graph->GetFName()!=TEXT("AnimGraph"))continue;
-  UAnimGraphNode_Root* Root=nullptr;
-  for(UEdGraphNode* N:Graph->Nodes)if(auto* R=Cast<UAnimGraphNode_Root>(N))Root=R;
-  if(!Root)return nullptr;
-  FGraphNodeCreator<UAnimGraphNode_LinkedInputPose> Creator(*Graph);
-  auto* Input=Creator.CreateNode();Creator.Finalize();
-  if(!Graph->GetSchema()->TryCreateConnection(Input->FindPin(TEXT("Pose")),Root->FindPin(TEXT("Result"))))return nullptr;
- }
- return InstallEnemyHitReactionRig(BP,Rig)?BP:nullptr;
-#else
- return nullptr;
 #endif
 }
 
