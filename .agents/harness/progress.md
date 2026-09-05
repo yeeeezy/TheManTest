@@ -2,10 +2,14 @@
 
 ## Active Feature
 
-- FEAT-080：三枪独立表现，in_progress；本轮仅爆炸枪高能核心材质调整完成，电击枪获用户认可并保持不动。
+- FEAT-080：三枪独立表现，in_progress；本轮爆炸弹附着/可调倒计时/独立爆炸Cue与默认敌人血迹已接入，通过D3D PIE功能回归。电击枪材质保持不动。
 - 历史与验证详情：archive/FEAT-080-three-weapon-setup.md。
 
 ## 当前配置
+
+- 爆炸弹 `BP_ExplosionGunBullet` 继承 `AExplosionGunBullet`，`Bullet|Explosion / ExplosionDelay=2s`，可调。原首次5点伤害及PhysicalImpact不变；附着后停止碰撞/移动，倒计时结束仅播放爆炸，不追加伤害。
+- 爆炸表现与音效配置于 `ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion`；系统 `Effects/Explosion/Systems/NS_ExplosionGun_Detonation` 来自TMIIR N_ExplosionGround_006；独立Audio/S_ExplosionGun_Detonation。EffectLifeSpan默认8秒兜底清理长尾焰（源效果在14秒仍active，已加weak Timer避免积累）。
+- 敌人默认 `GC_Character_Enemy_Hit` 配置 BloodSprayMaterial / BloodStainMaterial / BloodScale / BloodStainLifeSpan；血迹默认12秒并淡出，飙血0.55秒后销毁。资产在Enemy/_Shared/Effects/Hit，不改变各枪原命中Cue。
 
 - ElectricGun：Ballistics Rifle 02，LaserMuzzle/LaserImpact；专属 M_ElectricGun_Surface + MI_ElectricGun，深色金属、青蓝能量嵌条。
 - ExplosionGun：Ballistics Rifle 01，PhysicalMuzzle/PhysicalImpact；专属 M_ExplosionGun_Surface + MI_ExplosionGun_Rifle，深色金属、橙红能量舱、亮黄核心、0.65Hz脉冲及槽线流动。参数 CorePulseRate / EnergyFlowSpeed / PlasmaShellColor / PlasmaCoreColor / PlasmaIntensity。
@@ -19,6 +23,11 @@
 
 ## 最新验证
 
+- 最终 `StickyBloodFinal.log`：StickyExplosionAndBlood + ThreeWeaponBaseline 2/2 Success，含爆炸/血迹14秒后均清理断言；`ValidateStickyBloodFinal2.log` Cue编译保存与116包引用复验成功。已查看截图 `TMT_StickyExplosion.png` 和 `TMT_EnemyBloodHit_Isolated.png`。测试编辑器正常退出，未写入关卡。
+
+- 最新Development Editor Win64构建成功；`StickyBloodD3D.log` 的StickyExplosionAndBlood、ThreeWeaponBaseline 2/2 Success：附着跟随、停止移动/碰撞、5点初次伤害、重复Hit、无二次伤害、0秒/缺失SourceASC、Phantom穿透、默认敌人血迹/喷溅及销毁均通过。
+- `ValidateStickyBlood.log` 冷加载：两项GameplayCueName匹配正式Tag，116包Explosion依赖owner-local，所有材质纹理参数有效，Registry/磁盘均无NiagaraExplosion01、无Redirector。仅一个Python旧接口弃用警告。
+
 - 最新 ExplosionEnergySurface.log 材质编辑验证成功0错误0警告；ExplosionEnergyD3D.log：SharedEquipReveal、ExplosionVisualCapture、ThreeWeaponBaseline 3/3 Success/exit0。实机截图 TMT_ExplosionEnergyCore.png。本轮无C++改动，仅两项爆炸枪材质资产改变。
 
 - Development Editor / Win64 构建成功；ValidateWeaponSurfacesFinal.log 冷回读、BP编译、材质/引用检查成功0警告。
@@ -29,8 +38,8 @@
 
 ## 当前待办 / 会话交接
 
-- 用户可在测试地图审核爆炸枪新能量核心材质；电击枪已认可，不再改动。后续继续爆炸弹玩法逻辑。FEAT-080未整体归档。
+- 用户可在VFXTestMap审核附着弹、2秒延时爆炸和敌人血迹的最终观感。当前明确只保留第一次伤害，后续范围伤害另行确认，FEAT-080未整体归档。
 - 本轮结果不自动提交，等待用户明确要求“更新 Git”；未push。
-- 最新检查点 f3c38f0 封存前轮两枪材质/灰壳/描边/缩放改动；本轮两项爆炸枪材质未最终提交。一次性Niagara迁移代码及NiagaraEditor临时依赖已清除，最终源码不含迁移入口。
+- 最新检查点5f029d4封存前轮爆炸枪高能材质；本轮附着弹/爆炸Cue/敌人血迹未最终提交。迁移脚本install_sticky_blood.py和validate_sticky_blood.py在Saved/Codex；源码不含迁移入口。首次无界面导入退出后已冷验证资产成功保存，第二次安装0错误0警告，D3D无相关导入错误。
 - 切枪回归测试已改为等待实际显现结束（最多15秒），避免加载卡顿期间固定wall-clock等待过早发送切枪输入；运行时切换锁没有改动。
 - 既有 M_UE4Man_Body 缺失纹理和AimIK警告仍存在，不属本轮枪体材质。

@@ -1,5 +1,12 @@
 # GAS 技能系统
 
+## 爆炸延时 Cue 与 Enemy 血迹（2026-09-04）
+
+- `GameplayCue.Weapon.ExplosionGun.Explosion` → `/Game/Weapons/ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion` → `UGCN_ExplosionGunExplosion`。由附着弹Timer触发，不合并原ImpactCue；ExplosionEffect/ExplosionSound/EffectScale/VolumeMultiplier独立配置，Niagara按+Z对齐法线。EffectLifeSpan默认8秒，通过弱绑定Timer兜底清理源效果的长尾焰，防止连续射击累积。无伤害GE。
+- 默认 `GameplayCue.Character.Enemy.Hit` → `UGCN_EnemyHit` 现在配置 `BloodSprayMaterial/BloodStainMaterial/BloodScale/BloodStainLifeSpan`，默认12秒血迹，0.55秒喷溅。仍由真实Health扣减后的敌人ASC调用，不在某把枪内添加敌人分支。
+- `Enemy/_Shared/Effects/EnemyBloodSpray.h/.cpp` 是默认EnemyHit的瞬态表现Actor（9个无碰撞/无阴影卡片、短弹道、朝向相机、MID Fade、自动销毁）。共享默认Cue由Phantom与其他Enemy继承；差异化敌人可改自身HitReactionCueTag。
+- 源PNG、Texture与喷溅/贴花材质归 `/Game/Enemy/_Shared/Effects/Hit`；附着到敌人Mesh/bone的血迹与近处墙/地面血迹由敌人Cue负责，武器ImpactFeedbackBase的环境贴花规则保持原样。
+
 **何时读取：** 新增或修改 GAS Gameplay Ability、调试开火流程、新增 Gameplay Tag 时。
 
 | 文件 | 关键内容 |

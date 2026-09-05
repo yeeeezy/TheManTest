@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-04-explosion-energy-core",
+    "last_updated":  "2026-09-04-sticky-explosion-blood",
     "active_feature":  "FEAT-080",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -471,15 +471,16 @@
                          "description":  "为 RepairGun 正式接通现有第一人称开火蒙太奇；以 RepairGun 为完整配置基线创建电击枪和爆炸枪，两把新枪仅替换各自模型、枪口与命中特效。源模型和 VFX 来自外部 VFXPack 项目；不迁移源角色、武器蓝图或动画。即使表现依赖内容相同，也按武器所有权复制到各自语义目录并重命名，使三把枪后续可以独立调整。",
                          "archive_file":  "archive/FEAT-080-three-weapon-setup.md",
                          "created":  "2026-09-03",
-                         "updated":  "2026-09-04-explosion-energy-core",
-                         "latest_verification_evidence":  "2026-09-04：用户认可电击枪，保持不变；仅修改爆炸枪M_ExplosionGun_Surface与MI_ExplosionGun_Rifle为深色金属、橙红能量舱、亮黄核心和缓慢脉冲/槽线流动，保留共享显现。ExplosionEnergySurface材质验证0错误0警告；ExplosionEnergyD3D三项SharedEquipReveal、ExplosionVisualCapture、ThreeWeaponBaseline 3/3 Success。实机截图TMT_ExplosionEnergyCore.png；无C++改动，结果未最终提交。",
+                         "updated":  "2026-09-04-sticky-explosion-blood",
+                         "latest_verification_evidence":  "2026-09-04：爆炸弹改为AExplosionGunBullet，首次5点伤害与原ImpactCue不变，命中附着后默认2秒可调倒计时，结束调用独立Explosion Cue，仅表现无二次伤害。TMIIR N_ExplosionGround_006及116包依赖迁入本枪Effects/Explosion，新增独立爆破声音。默认Enemy Hit Cue已接生成血迹纹理、附着/环境贴花和0.55秒喷溅。Development Editor Win64构建成功；StickyBloodD3D中StickyExplosionAndBlood与ThreeWeaponBaseline 2/2 Success。冷回读两项GameplayCueName、116包依赖、纹理参数与无供应商路径/Redirector均通过。结果未最终提交。",
                          "done_criteria":  [
+                                               "爆炸弹保留首次伤害与原命中表现，命中后附着并启动可调倒计时，由独立Cue播放迁入的N_ExplosionGround_006和声音；默认EnemyHit提供短促飙血及自动淡出的血迹",
                                                "所有 EquipmentBase 继承共享显现组件；自定义材质接共享函数后全程保留自身外观，不使用灰色备用材质；首装/切装入口统一，各装备独立选择动画",
                                          "三枪不保留描边组件/模型/材质；两把新枪具有独立科幻PBR表面，爆炸枪与电击枪的枪口粒子均实际响应MuzzleEffectScale",
                                                "RepairGun、电击枪和爆炸枪都使用现有 MaintenanceWorker 第一人称持枪动画体系，并分别引用所属武器目录内的独立开火序列、开火蒙太奇、装备蒙太奇和 AnimBP 副本",
                                                "电击枪使用原爆炸枪的 SM_Weapon_Ballistics_Rifle_02 几何体；枪口使用 NE_VFX_Muzzle_Laser_Burst_2，所有目标统一使用 NE_VFX_Projectile_Impact_Laser_2，并保留仅环境生成的紫色贴花和 1.1 尺寸倍率",
                                                "爆炸枪使用 SM_Weapon_Ballistics_Rifle_01 几何体、NE_VFX_Muzzle_Physical_Burst_1、NE_VFX_Projectile_Impact_Physical_1 和对应橙黄色短时点光；所有目标统一使用 Physical Impact 1，并保留仅环境生成的黄色贴花和 2.0 尺寸倍率",
-                                               "两把新枪除模型与 VFX 外完整复制 RepairGun 的射击、弹药、音频、GAS、后坐力和装备配置；子弹使用 ABulletBase 通用行为及各自的 BlenderMCP 独立弹体、材质和纹理，不继承 RepairGun 专属泡泡行为",
+                                               "两把新枪保留既有射击、弹药、GAS、后坐力和装备配置；电击弹使用ABulletBase，爆炸弹使用AExplosionGunBullet附着倒计时扩展，均不继承RepairGun专属泡泡行为；首次伤害和原命中Cue不变",
                                                "武器专属资产分别位于 /Game/Weapons/ElectricGun 与 /Game/Weapons/ExplosionGun 并使用语义化重命名；不保留供应商正式目录或源项目蓝图/动画",
                                                "BP_MaintenanceWorker 初始装备列表包含三把枪，可稳定切换且技能不重复授予",
                                                "Development Editor 构建、相关 Blueprint/AnimBP 编译保存、资产引用/Redirector 检查及 PIE 切枪开火验证通过"

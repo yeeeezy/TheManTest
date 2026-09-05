@@ -10,4 +10,14 @@ class THEMANTEST_API UGCN_EnemyHit : public UGCN_ImpactFeedbackBase
 
 public:
 	UGCN_EnemyHit();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Blood")
+	TObjectPtr<UMaterialInterface> BloodSprayMaterial;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Blood")
+	TObjectPtr<UMaterialInterface> BloodStainMaterial;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Blood", meta=(ClampMin="0.01"))
+	float BloodScale=1.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Blood", meta=(ClampMin="0.1", Units="s"))
+	float BloodStainLifeSpan=12.f;
+	virtual bool OnExecute_Implementation(AActor* Target,const FGameplayCueParameters& Parameters) const override;
 };

@@ -1,5 +1,12 @@
 # 装备系统
 
+## 爆炸枪附着弹（2026-09-04）
+
+- `Weapons/ExplosionGun/Bullets/ExplosionGunBullet.h/.cpp`：`AExplosionGunBullet : ABulletBase`，`BP_ExplosionGunBullet` 的原生父类。基类先处理首次伤害、原 Impact Cue 与 Phantom 穿透；有效命中后停止碰撞/移动，附着组件或骨骼并计时。基类仅增加protected只读 `HasProcessedHit()`，其他枪行为不变。
+- 蓝图 `Bullet|Explosion / ExplosionDelay` 默认2秒，可调；`AttachmentOffset` 默认4cm。零秒延后到下一Tick执行，重复碰撞不重复触发，EndPlay取消计时。
+- 倒计时结束调用独立 `GameplayCue.Weapon.ExplosionGun.Explosion`，再销毁弹体。本阶段无第二次/范围伤害。
+- ExplosionGun/Effects/Explosion/Systems/NS_ExplosionGun_Detonation 来源TMIIR的N_ExplosionGround_006；全部116包依赖owner-local。Cue包与音频分别在本枪GAS/GameplayCues和Audio。原PhysicalImpact与首次5点伤害不变。
+
 **何时读取：** 新增装备类型、修改装备生命周期（Equip / Unequip 行为）、新增插槽或动画层时。
 
 | 文件 | 关键内容 |

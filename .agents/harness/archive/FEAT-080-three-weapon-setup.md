@@ -7,6 +7,19 @@
 - 两把新枪只替换模型、枪口 VFX、命中 VFX 与贴花；玩法、动画、音频、弹药、GAS、后坐力和子弹行为保持与 RepairGun 一致。
 - 外部来源仅迁移最终模型和 VFX 依赖，不迁移源项目角色、武器蓝图或动画。
 
+## 2026-09-04 附着倒计时爆炸与默认敌人血迹
+
+- 用户确认增加附着弹与可调倒计时；明确保留首次伤害和全部已有武器命中表现，本轮爆炸仅表现，不追加范围伤害。追加要求默认 Enemy Hit Cue 提供血迹、短促飙血。写入前检查点 `5f029d4`，结果未最终提交。
+- `AExplosionGunBullet : ABulletBase` 位于 `Weapons/ExplosionGun/Bullets`；先执行基类有效命中路径，再停止移动/碰撞并附着命中组件（角色优先细化到骨骼 Mesh）。`BP_ExplosionGunBullet` 改父类并设置 `bDestroyOnHit=false`，`ExplosionDelay=2s`。重复 Hit 不重置倒计时；零秒走下一 Tick；EndPlay 清理 Timer。隐身 Phantom 仍穿透。
+- 新 `UGCN_ExplosionGunExplosion` 位于本枪 `GAS/GameplayCues`，由弹体倒计时结束调用 `GameplayCue.Weapon.ExplosionGun.Explosion`；Niagara 按表面法线的 +Z 方向生成，声音/EffectScale/VolumeMultiplier 都在 `GC_Weapon_ExplosionGun_Explosion` 配置。Source ASC 失效时通过 CueManager 直接播放。
+- TMIIR `/Game/NiagaraExplosion01/Niagaras/Ground/N_ExplosionGround_006` 和递归依赖共116包经 AssetTools 迁入，整理到 `/Game/Weapons/ExplosionGun/Effects/Explosion`；系统名 `NS_ExplosionGun_Detonation`。迁移前保留并恢复56个材质纹理参数。独立合成低频爆破 WAV `Weapons/ExplosionGun/Audio/S_ExplosionGun_Detonation.wav`，1.4秒/48kHz/mono，与原命中/开火声独立。
+- 原默认 `GC_Character_Enemy_Hit` 的 ImpactEffect/ImpactSound/ImpactDecalMaterial 均空。现在 `UGCN_EnemyHit` 自身生成敌人附着血迹及近处环境血迹，并生成0.55秒自动销毁的 `AEnemyBloodSpray`（9张无碰撞、无阴影、面向相机的短促飞溅卡片）。默认血迹12秒，最后2秒淡出；不修改通用武器 ImpactFeedbackBase，不制作金属弹孔。
+- 血迹源纹理由 imagegen skill 的内置 image_gen 生成，保留真实 Alpha（采样范围0–255）；源 PNG 与 Unreal Texture 位于 `Enemy/_Shared/Effects/Hit/Textures/T_Enemy_BloodSplatter`，独立 `M_Enemy_BloodSpray`/`M_Enemy_BloodStain`。生成提示词见同目录 `BloodSplatter-generation.md`。
+- Development Editor Win64 构建成功；`StickyBloodD3D.log`：`StickyExplosionAndBlood` 和 `ThreeWeaponBaseline` 2/2 Success。PIE 验证初次5点伤害、重复Hit不叠伤、附着跟随、停止碰撞/速度、可调倒计时、0秒/缺少SourceASC路径、延时后子弹销毁及Niagara保留、不追加伤害、真实伤害触发血迹/喷溅与喷溅销毁。
+- `ValidateStickyBlood.log` 冷加载验证两项 GameplayCueName 精确匹配正式Tag，递归116包均owner-local、材质纹理参数非空、无Redirector；供应商目录在Registry与磁盘均清空。首次无界面导入发生音频解码ensure/Interchange Slate退出，但资产已保存；独立二次安装0错误0警告，D3D真实音频设备测试无相关错误。定向Fixup提示无包，因为AssetTools已移除旧包，随后仅清理确认空的目录。
+- 延长PIE至14秒的清理测试发现源Niagara尾焰仍active，因此Explosion Cue新增可调 `EffectLifeSpan=8s`，通过绑定Niagara组件的weak timer兜底销毁，独立于弹体与发射者。血迹12秒到期销毁断言通过。视觉测试保存 `TMT_StickyExplosion.png`、`TMT_EnemyBloodHit_Isolated.png`，最终清理回归见 `StickyBloodFinal.log`。
+- 最终 `StickyBloodFinal.log`：StickyExplosionAndBlood + ThreeWeaponBaseline 2/2 Success，包含14秒时爆炸组件active为0、血迹组件已过期为0的新断言。已查看隔离截图确认腿部深红受击飞溅/血迹及地面红色斑点可见、无方形透明底；爆炸截图保留源橙黄大范围能量闪光。`ValidateStickyBloodFinal2.log` 再次编译保存两项Cue、冷回读Tag与116包依赖成功。没有关卡写入、没有最终Git提交，测试编辑器均正常退出。
+
 ## 2026-09-04 爆炸枪高能核心材质
 
 - 用户认可电击枪并要求只换爆炸枪材质，确认“深色金属、橙红能量舱、亮黄脉冲核心、槽线流动”方向。检查点 f3c38f0 保存上一轮两枪材质及灰壳/描边/缩放修复。

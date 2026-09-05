@@ -50,6 +50,9 @@ public:
 	void ProcessHit(const FHitResult& HitResult, AActor* HitInstigator, UAbilitySystemComponent* SourceASC);
 	virtual void ProcessHit_Implementation(const FHitResult& HitResult, AActor* HitInstigator, UAbilitySystemComponent* SourceASC);
 
+protected:
+	bool HasProcessedHit() const { return bHasProcessedHit; }
+
 private:
 	TWeakObjectPtr<UAbilitySystemComponent> CachedSourceASC;
 	TWeakObjectPtr<AActor>                  CachedInstigator;
