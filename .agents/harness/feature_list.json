@@ -1,6 +1,7 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-05-rhythm-stagger-previews",
+    "last_updated":  "2026-09-05-mixamo-source-selection",
+    "active_animation_task": "User rejected generated previews; use existing Mixamo source animations and modify. Candidate search only; no official preview or FBX obtained. Unauthenticated products request returned403. Await official source FBX; retarget only in TMIIR/FPSShooter1. Game unchanged. Previous reference_stagger_preview_status is superseded.",
     "active_feature":  "FEAT-080",
     "archive_file":  "feature_archive.json",
     "features":  [

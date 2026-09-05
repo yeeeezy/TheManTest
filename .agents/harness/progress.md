@@ -6,6 +6,7 @@
 
 ## 最新样片（未接入游戏）
 
+- 用户已否定全部自制样片，明确改用Mixamo现成动作再修改。停止Rhythm/Blast生成路线。当前只完成在线候选检索：Hit Reaction（持枪描述）、Big Hit To Head、Stumble Backwards；尚未在官方3D预览或下载验证。官方网页为JS应用，当前未认证products请求返回403；本会话无浏览器控制工具、下载目录未找到对应FBX。需要用户从已登录Mixamo下载源FBX后才能继续修改。源动作适配/重定向在TMIIR或FPSShooter1，TheManTest仅接收成品。
 - 最新为 Humanoid_Rhythm_Staggers.blend / Humanoid_Rhythm_Staggers_Normal.gif（外部同目录）。用户指出上一版即使加速仍节奏均匀，本版保持1.3秒，首个运动帧达到约87.5%躯干幅度，峰值后短暂保留失衡姿态，两次追步各约.133秒，第二次落地后承重停顿约.133秒，最后缓慢恢复。四方向支撑脚目标误差<.00005cm。已查看阶段图并生成正常速度预览；待用户评价节奏，未接入游戏。
 - 参考MorStudios HitReact Pro官方展示 https://www.youtube.com/watch?v=Qoq9pzQ_tA4 的84–89秒Stumble_B，已实际查看分帧：上身先失衡，双腿交替迈步承重，站稳后抬身恢复。四方向是视觉重建及持枪适配，不是视频精确动捕提取。
 - 外部D:/Blender Projects/HumanoidHitReactions/Humanoid_Referenced_Staggers.blend有4条AS_Humanoid_StaggerRef_*，2.2秒/30fps，两步主要接重心+一步小调整，步高约10cm，支撑脚锁点，固定膝盖弯曲平面；前后根位移76cm、左右62cm，最终留在新位置恢复。
