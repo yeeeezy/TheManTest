@@ -2,6 +2,8 @@
 
 ## 爆炸延时 Cue 与 Enemy 血迹（2026-09-04）
 
+- 最新用户覆盖：正式Explosion Cue的VolumeMultiplier=3（Alien Cannon素材），CameraShakeScale实际回读8且保留。EnemyHit.VolumeMultiplier=1。下文原生默认/初次接入配置不覆盖用户当前蓝图值。
+
 - 零伤害弹命中：ABulletBase仅在Damage==0的有效非穿透首次Hit显式调用Enemy.ExecuteHitReactionCue(Context,0,true)。新可选bAllowZeroDamageHit默认false，原Health回调仍只接受正伤害；显式零伤害使用即时Invoke，不修改Damage，不重复播放。电击弹Damage保持0也可播放默认血花。
 
 - 爆炸Cue使用用户提供的Alien Cannon音频 `Weapons/ExplosionGun/Audio/S_ExplosionGun_AlienDetonation`，近满幅素材保持VolumeMultiplier=1。`UExplosionCameraShake` / `UExplosionCameraShakePattern`（Weapons/ExplosionGun/Effects）提供0.45秒方位冲击，CameraShakeScale=3。Cue按爆炸点→本地相机方向传入UserDefined播放空间，200cm内全强、1800cm外不震、中间平方衰减；与开火震屏和ControllerRotation独立。默认Enemy Hit的ImpactSound为 `Enemy/_Shared/Audio/S_Enemy_FleshHit`，VolumeMultiplier=1；旧合成爆炸音频已无引用删除。

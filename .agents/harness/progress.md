@@ -7,7 +7,7 @@
 
 ## 当前配置
 
-- 爆炸现用用户指定Alien Cannon音频（S_ExplosionGun_AlienDetonation），源峰值-0.5dBFS，Cue音量倍率1；CameraShakeScale提高到3，保留0.45秒方位震屏、200cm内全强/1800cm外不震。敌人Hit音效S_Enemy_FleshHit，倍率1。
+- 爆炸现用用户指定Alien Cannon音频（S_ExplosionGun_AlienDetonation），按最新确认Cue音量倍率从1改3；CameraShakeScale回读为8并保留，0.45秒/200~1800cm不变。敌人Hit音效S_Enemy_FleshHit，倍率1。近满幅素材3倍增益存在削波/限制风险，未改音频样本。
 
 - 爆炸弹 `BP_ExplosionGunBullet` 继承 `AExplosionGunBullet`，`Bullet|Explosion / ExplosionDelay=2s`，可调。原首次5点伤害及PhysicalImpact不变；附着后停止碰撞/移动，倒计时结束仅播放爆炸，不追加伤害。
 - 爆炸表现与音效配置于 `ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion`；系统 `Effects/Explosion/Systems/NS_ExplosionGun_Detonation` 来自TMIIR N_ExplosionGround_006；独立Audio/S_ExplosionGun_AlienDetonation。EffectLifeSpan默认8秒兜底清理长尾焰。旧合成S_ExplosionGun_Detonation和WAV无引用后删除，可从4a40cd8恢复。
@@ -24,6 +24,8 @@
 - VFXTestMap 路径 /Game/Maps/VFXTest/VFXTestMap；静止Phantom、敌人血条及临时关闭视角后坐配置保留。
 
 ## 最新验证
+
+- 最新AlienVolume3Final.log：ExplosionDirectionalShake Success；爆炸倍率3与指定音频、配置化震屏衰减验证通过。BoostAlienExplosionFinal.log确认爆炸3、震屏8保留、敌人音量1。当前改动未最终提交，检查点b0fb3ec。
 
 - 最新UserAudioShakeFinal.log：ExplosionDirectionalShake、StickyExplosionAndBlood、ThreeWeaponBaseline 3/3 Success/exit0；指定爆炸/肉体音频引用与震屏强度3断言通过，零伤害/附着弹回归保持。ValidateUserAudio.log冷验证0错误0警告，Development Editor Win64编译成功。
 

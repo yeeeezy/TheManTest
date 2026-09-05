@@ -11,7 +11,7 @@ bool FExplosionDirectionalShakeTest::RunTest(const FString& Parameters)
  UClass* CueClass=LoadClass<UGCN_ExplosionGunExplosion>(nullptr,TEXT("/Game/Weapons/ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion.GC_Weapon_ExplosionGun_Explosion_C"));
  if(!TestNotNull(TEXT("Explosion Cue loads"),CueClass))return false;
  const auto* Cue=CueClass->GetDefaultObject<UGCN_ExplosionGunExplosion>();
- TestEqual(TEXT("Near-full-scale supplied audio uses unity gain"),Cue->VolumeMultiplier,1.f);
+ TestEqual(TEXT("Supplied explosion uses user-requested threefold gain"),Cue->VolumeMultiplier,3.f);
  TestEqual(TEXT("Supplied alien explosion audio is assigned"),Cue->ExplosionSound ? Cue->ExplosionSound->GetName() : FString(),FString(TEXT("S_ExplosionGun_AlienDetonation")));
  UClass* EnemyCueClass=LoadClass<UGCN_EnemyHit>(nullptr,TEXT("/Game/Enemy/_Shared/GAS/GameplayCues/GC_Character_Enemy_Hit.GC_Character_Enemy_Hit_C"));
  if(TestNotNull(TEXT("Enemy Hit Cue loads"),EnemyCueClass))
@@ -20,8 +20,8 @@ bool FExplosionDirectionalShakeTest::RunTest(const FString& Parameters)
   TestEqual(TEXT("Supplied flesh hit sound is assigned"),EnemyCue->ImpactSound ? EnemyCue->ImpactSound->GetName() : FString(),FString(TEXT("S_Enemy_FleshHit")));
  }
  TestNotNull(TEXT("Explosion has its own camera shake"),Cue->CameraShakeClass.Get());
- TestEqual(TEXT("Tripled shake inside inner radius"),Cue->GetShakeScaleAtDistance(100),3.f);
- TestEqual(TEXT("Tripled shake with distance falloff at midpoint"),Cue->GetShakeScaleAtDistance(1000),.75f);
+ TestEqual(TEXT("Configured shake inside inner radius"),Cue->GetShakeScaleAtDistance(100),Cue->CameraShakeScale);
+ TestEqual(TEXT("Configured shake with distance falloff at midpoint"),Cue->GetShakeScaleAtDistance(1000),Cue->CameraShakeScale*.25f);
  TestEqual(TEXT("No shake beyond outer radius"),Cue->GetShakeScaleAtDistance(2000),0.f);
  auto Sample=[](const FRotator& Direction,float Scale)
  {

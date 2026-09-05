@@ -7,6 +7,14 @@
 - 两把新枪只替换模型、枪口 VFX、命中 VFX 与贴花；玩法、动画、音频、弹药、GAS、后坐力和子弹行为保持与 RepairGun 一致。
 - 外部来源仅迁移最终模型和 VFX 依赖，不迁移源项目角色、武器蓝图或动画。
 
+## 2026-09-04 指定爆炸音量再增强
+
+- 用户确认将当前Alien Cannon爆炸声从VolumeMultiplier=1改为3；只改正式Explosion Cue的该值，不修改音频样本、敌人音量或震屏。检查点b0fb3ec保存前轮音频替换。
+- 冷回读发现当前CameraShakeScale实际为8，保持不变（与旧文档3不同）；EnemyHit.VolumeMultiplier保持1。BoostAlienExplosionFinal.log的saved=3/实际shake=8为准，末尾旧固定打印shake=3不作为证据。首次验证错误仅为脚本硬编码shake=3的错误假设，未修改震屏。
+- Blueprint在UE编译保存成功，独立回读确认爆炸3/敌人1。回归测试不再把可调震屏值钉死为3，改为检查配置值与距离衰减的关系；Development Editor Win64构建成功。测试见AlienVolume3Final.log。
+- 单声源理论峰值会超过0dBFS，可能触发混音限制或失真；这次按用户明确确认保留3倍增益，没有宣称无削波或主观响度正好三倍。
+- AlienVolume3Final.log独立D3D启动ExplosionDirectionalShake测试Success；当前只改正式Cue音量及对应测试/文档，无最终Git提交。
+
 ## 2026-09-04 指定爆炸/肉体命中音频与震屏增强
 
 - 用户指定Downloads/512565-Alien-Game-Explosion-Robot-Cannon-4-Big-Hard-Impact-Glitchy.wav用于爆炸、166553-Bullet-Hit-Body-Flesh_05.wav用于敌人Hit，并确认增强震屏及删除无用资产。检查点 `4a40cd8` 保存前轮零伤害Cue修复。
