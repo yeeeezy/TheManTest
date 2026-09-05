@@ -1,5 +1,11 @@
 # 当前进度
 
+## Latest continuity repair (2026-09-05)
+
+- Authorized arm+leg twitch repair installed. Stable anatomical bend frames, with two symmetric three-frame leg smoothing passes. Back arm peak99.2 to11.62deg/frame; leg45.1 to21.44. Root/torso/head and timing unchanged.
+- External/target cold checks, actual PIE runtime and both attachment regressions passed (MixamoContinuity logs). Final knee flex<78deg; numerical continuity checks do not constitute visual acceptance.
+- Preview opened: D:/Blender Projects/HumanoidHitReactions/Humanoid_Mixamo_Rifle_Continuity_Normal.gif. Checkpointbd91655; four final assets and harness uncommitted. Do not stage user maps/audio/VFX. Earlier leg-fix notes below describe the previous version; current knee planes follow pelvis-relative base anatomy.
+
 ## Active Feature
 
 - FEAT-080，in_progress。用户接受Mixamo官方动作并授权持枪适配/接入，明确删除旧受击Rig。本轮实现、冷读与PIE/回归验证已完成，待用户实战观感反馈。

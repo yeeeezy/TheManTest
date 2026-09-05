@@ -1,5 +1,13 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 Mixamo limb continuity repair
+
+- User reported both arm and leg twitching and authorized repair. Back frame19 had hand_l99.2/lowerarm_l56/upperarm_l51.6 degrees of local rotation per frame; previous leg peak45.1. Checkpointbd91655 preserves the preceding four assets and harness only.
+- External adapt_mixamo_rifle.py now maps complete reference frames for two-bone limbs, using chest-relative elbow planes and pelvis-relative anatomical knee planes. Source knee projection still produced a33-degree ankle step in an intermediate attempt and was rejected. Two symmetric three-frame quaternion smoothing passes remove leg reach-boundary corners; endpoints remain fixed. Root, pelvis, spine, neck, head and frame counts are exactly unchanged.
+- Final arm peaks Front/Back/Left/Right15.61/11.62/10.82/12.81 degrees per frame; legs18.62/21.44/15.90/19.76. Generator asserts limb adjacent rotation<25deg. Right grip error<.00004cm. JSON max_foot_error_cm is PRE-filter IK error, not final foot contact accuracy. Separate audit_continuity.py confirms final knee flex61.49/77.56/72.72/76.26deg. These numerical gates do not guarantee visual acceptance; no contact-lock or collision-aware gait replanning.
+- MixamoContinuityCreate/Cold in TMIIR and target Import/TargetCold passed. MixamoContinuityRuntime passed actual PIE24 regions/directions standing and moving, grip, repeat suppression, root collision and movement restore/disable; root free144.61/blocked33.48/disabled0cm. MixamoContinuityAttachment: AttachedLimbReaction and StickyBodySurfaces both Success, queue empty2. No C++/BP changes or new build required.
+- Humanoid_Mixamo_Rifle_Continuity_Normal.gif generated/opened; inspected original twitch phase. External prep only; destination received four finalized clips. Source/data backups have before_continuity suffix. User maps/audio/VFX untouched. No final commit/push; visual feedback pending.
+
 ## 2026-09-05 修正Mixamo适配腿软
 
 - 用户反馈腿软，逐帧审计确认Back源动作最大屈膝93.5°/骨盆下降13.7cm，前版适配125.9°/32.3cm。根因是为了追到过远脚目标而额外下沉骨盆。用户授权保留源骨盆起伏/膝盖方向，通过调整步幅适配。检查点5c73314保存上轮全部已知Mixamo接入/Rig删除结果，不含用户地图、声音或VFX。
