@@ -1,5 +1,10 @@
 # 装备系统
 
+## 2026-09-05 当前触发条件与致命枪击击飞（覆盖下文旧Chaos结果监听）
+
+- ExplosionGunBullet在有效ProcessHit时缓存真实命中组件是否GeometryCollection。Fuse结束时，本次范围伤害杀敌或该直接Chaos命中标志满足即请求子弹时间一次。不要求Chaos实际破碎；周边物体被波及破碎/击飞不算。范围Chaos物理场保持原行为，但不再调用ExplosionOutcomeSubsystem.Watch；旧监听类暂留无调用。
+- ABulletBase直接致命一枪添加Enemy.ProjectileKillKnockbackSpeed沿弹道和ProjectileKillUpwardSpeed沿世界上方的全身速度，默认250/120cm/s，随后施加原命中点冲量。所有弹体子类共用；非致命/旧尸体不加全身速度，范围爆炸不走这条直接枪击逻辑。两参数可分别设0。
+
 ## 当前死亡布娃娃与子弹物理
 
 - ABulletBase统一在伤害/警觉转向前定位敌人Mesh PhysicsAsset上的命中骨骼与骨骼局部点，伤害后对模拟身体施加AddImpulseAtLocation。致命一枪与后续尸体命中共用路径；零伤害同样可推物理身体，存活非模拟身体不受此冲量。冲量强度统一取Enemy|Death.ProjectileHitImpulse。尸体不再扣血或刷新寿命，但仍通过显式Hit Cue播放肉体声/血迹，不新触发痛呼。

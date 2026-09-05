@@ -2,6 +2,8 @@
 
 ## Active Feature
 
+- 最新：直接Chaos命中条件和致命枪击击飞已完成。C++构建和相关6项PIE回归通过；本轮不改资产，待用户试力度。此前动画接入继续保留。
+
 - FEAT-080，in_progress。爆炸受击已默认切到5条新动画，原共享Rig分支保留但默认绕过；模式可切回。编译、配置冷读/再编译、运行时方向/混合和7项回归均通过。待用户实战观感反馈。死亡布娃娃用户认可，Relax握枪修复已完成。
 - 前序准星仰射、身体附着、Enemy Air007/缩放、条件子弹时间均已完成，细节见archive/FEAT-080-three-weapon-setup.md。
 
@@ -21,7 +23,8 @@
 - 所有ABulletBase子类在伤害前确定骨骼局部命中点，伤害后对模拟身体施加点冲量，致命一枪/尸体再中枪（含0伤害）共用入口。尸体不再扣血，也不刷新寿命；肉体声/血痕保留，不新触发痛呼。
 - BP_ExplosionGunBullet → Bullet|Explosion|Physics：PhysicsImpulseRadius400cm、PhysicsImpulseStrength800，线性衰减速度冲量，检查墙体遮挡。移除Enemy类型排除，非模拟身体由IsSimulatingPhysics过滤，Chaos仍独立处理。先伤害后物理，刚被炸死的敌人及已有尸体均可击飞；推动尸体/普通物体本身不触发子弹时间。
 - 爆炸弹仍5点首次伤害、2秒Fuse、20点/400cm延迟伤害。身体附着物随布娃娃骨骼移动，Fuse继续可在尸体上爆炸；CorpseLifetime到期真正EndPlay时销毁待爆弹与身体血痕。地面血迹保留独立寿命。
-- 子弹时间只因本次爆炸击杀或真实Chaos Break触发。Chaos采用组件/位置/0.2游戏秒窗口匹配，不能严格区分同窗口其他力量造成的破碎。用户时间.05/.01/1/.01保留。
+- 子弹时间只因本次爆炸击杀，或爆炸弹直接命中GeometryCollection而在Fuse结束触发。直接命中无需实际破碎，范围波及破碎不触发；旧Chaos结果监听类保留但无调用。用户时间参数保留。
+- Enemy|Death新增ProjectileKillKnockbackSpeed=250cm/s、ProjectileKillUpwardSpeed=120cm/s；直接致命枪击添加沿弹道/世界上方全身速度，原点冲量保留。两值设0关闭；旧尸体再次中枪不重复击飞，范围爆炸继续原径向冲量。
 - Phantom → Phantom|Testing → Stationary Hit Test仍默认开启。取消后重新PIE可恢复原逻辑；正式AI移动还需恢复先前测试树/零速度设置。移动验收只在测试实例中开启行走。
 - 用户Explosion Cue里的Enemy VFX开关、EnemyScale/声音/震屏设置未覆盖。前序准星修正保留；AttachmentOffset4cm和PhysicsAsset近似、极近大仰角身体遮挡仍是精度边界。
 
@@ -40,14 +43,8 @@
 
 ## 会话交接
 
-- 最新检查点4d0e0a1保存动画样片前置状态；本轮运行时切换结果未提交/push。新增安装/冷验/运行时脚本见Scripts/VFX/*animation*reaction*.py。最初CDO组件动画引用没有持久化的问题已通过原生UPROPERTY持有解决，Install4/Defaults4/Cold为成功记录；Runtime3和Regression为最终通过记录。编辑器均已退出、未写地图或用户Explosion Cue设置。无需继续实现切换，等待用户试手感。
-
-- 最新选择性检查点195a15c保存此前BP_Phantom握枪修复。本轮新增5条Sequence、import_humanoid_reaction_previews.py（仅导入成品，不做重定向）、validate_humanoid_reaction_assets.py与validate_humanoid_reaction_pie.py。ReactionImportFinal/ReactionImportCold/ReactionAssetsFinal/ReactionPreviewPIEFinal均成功；实际五条动作头部位移32.07/26.84/32.85/7.90/38.44cm，挂枪误差0。首尾70骨与现役Relax匹配，只有现有Skeleton依赖。测试编辑器退出、未写地图；无C++/BP变更。没有修改爆炸Cue/声音/死亡或运行时受击触发，动画接入须待用户看样片后决定。结果未提交/push。外部制作细节和失败迭代已归档。
-
-- 最新选择性检查点a1d338f保存已完成布娃娃工作；本轮BP_Phantom握枪修复未提交。Scripts/VFX/fix_phantom_weapon_mount.py安装/-MountValidateOnly冷验证；PhantomMountInstall/Cold均成功。最终PhantomMountVisualFinal.log为MOUNT_PIE_OK，实际Relax/Aim/ReturnRelax挂点误差0、相对缩放1；已查看截图，Relax左手回到护木。角色Mesh自身.9体型保留，枪世界缩放随之.9。临时场景清理、退出，地图未保存，无剩余修复步骤。
-
-- 写前选择性检查点b2bf304保存上轮共享Rig/物理爆炸状态；本轮最终结果未提交/push。
-- 新入口Scripts/VFX/install_shared_humanoid_reaction.py与validate_shared_humanoid_reaction.py；旧Audio配置脚本已移除Phantom Rig创建逻辑，避免还原旧路径。
-- 原生测试最初遇TObjectPtr推导编译错误已修；移动测试最初MOVE_None已修为真实Walking；冷验发现Rig骨架导入源引用已清，所有最终验证通过。
-- 地图、TestMap ExternalActor、用户Explosion Cue参数及其他未归属配置变化不纳入本轮；不得全量提交或撤销。无重定向、无关机操作，测试编辑器已退出。
-- 本轮修复布娃娃初期被手持WeaponMesh碰撞反推的问题。初次C4458局部名已修。最终六项通过，归档与索引已更新，无剩余实现步骤；测试编辑器已退出，结果未最终提交/push。
+- 最新选择性检查点cdf510c保存此前动画接入源码/脚本/harness；二进制资产和用户地图/ExternalActor/音效/血纹理/电击弹配置不纳入。本轮仅代码/测试/文档修改，结果未最终提交/push。源工程/动画/Rig配置未改。
+- 直接Chaos命中规则已替代范围Break监听；旧ExplosionOutcomeSubsystem保留无消费者。Enemy全身击飞可在Enemy|Death调两个速度，设0关闭。默认值已由实际BP_Phantom实例验证。
+- DirectChaosLethalLaunch中5项Success；布娃娃直接击杀骨盆前向速度约303~454cm/s、向上81~118cm/s。旧尸体中枪向上约-16~2cm/s，没有重复120cm/s上抛。零参数回原点冲量。12项子弹时间条件验证通过，旁边Chaos真实破碎也不触发。
+- 用户电击弹当前Damage=30，旧Sticky测试零伤害假设失效；只改测试实例为0，不改蓝图。重新构建成功，DirectChaosStickyFinal单项Success，相关6项均已通过。测试编辑器已退出、未保存地图。
+- 前轮动画切换运行时与7项回归、Relax挂枪及样片制作已完成，详细记录见archive。动画默认Animation，旧Rig可切回；独立源动画/Blender工作仍在外部目录。地图、音效、VFX设置保持用户版本。

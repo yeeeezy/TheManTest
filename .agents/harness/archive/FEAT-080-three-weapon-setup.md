@@ -1,5 +1,13 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 直接Chaos命中子弹时间与致命枪击击飞（实现与自验完成）
+
+- 用户确认动手：子弹时间条件改为本次爆炸击杀Enemy，或爆炸弹直接命中GeometryCollection；统一在Fuse结束时请求。命中时记录真实Hit组件分类，不再监听范围内Chaos Break。直接命中无需实际破碎，波及破碎仍正常但不触发慢动作。旧ExplosionOutcomeSubsystem保留但爆炸弹不再调用。
+- Enemy|Death新增ProjectileKillKnockbackSpeed=250cm/s、ProjectileKillUpwardSpeed=120cm/s。ABulletBase仅在伤害前存活、伤害后死亡时给模拟身体添加全身速度，保留原部位点冲量；所有弹体直接致命一击统一，已有尸体中枪不重复全身击飞，范围爆炸仍走原径向冲量。两个速度均可设0关闭。
+- 写前检查点cdf510c仅保存已知前轮源码/脚本/harness；用户地图、ExternalActor、音效/血纹理/电击弹参数与二进制资产未纳入。本轮不写资产。扩大ExplosionOutcomeBulletTime至12场景，EnemyDeathRagdoll增加击飞/关闭/尸体不重复上抛检查，正在编译与PIE验证。
+- 首次Development Editor Win64成功；DirectChaosLethalLaunch.log中EnemyDeathRagdoll、ExplosionChaosGround、ExplosionOutcomeBulletTime（12场景）、ExplosionSimulatedPhysics、MovingEnemyAttachmentCleanup均Success。StickyExplosionAndBlood因用户Electric弹Damage已改30而旧测试假定0出现3条连带失败；仅将零伤害场景的测试实例显式设Damage=0，保持生产蓝图30不改，重新编译/单项验证。
+- 最终Development Editor Win64再次成功；DirectChaosStickyFinal.log的StickyExplosionAndBlood Success，相关6项最终均通过（首轮5项+修正测试后单项）。三类子弹致命击杀骨盆前向速度303~454cm/s、向上81~118cm/s；旧尸体再中枪向上-16~2cm/s，无重复全身上抛。两个参数设0回原点冲量，寿命/骨骼附着清理通过。12项条件覆盖直接命中抗破碎/碎块/关闭ChaosRadius仍慢动作、开关关闭不触发、范围真实破碎不触发和击杀/墙后/非致命。测试编辑器退出，未写资产/地图，未最终提交/push；主观力度待用户试手感。
+
 ## 2026-09-05 动画替换默认受击、保留Rig分支（实现与自验完成）
 
 - 用户直接授权启用新动作并保留旧Rig链路但默认不启用。选择性检查点4d0e0a1保存五条样片与前轮文档，不含地图/ExternalActor/用户Explosion Cue。

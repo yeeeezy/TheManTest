@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-05-animation-reaction-runtime",
+    "last_updated":  "2026-09-05-direct-chaos-lethal-launch",
     "active_feature":  "FEAT-080",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -485,6 +485,7 @@
                          "supplied_audio_verification": "已接用户512565爆炸与166553肉体命中音频，均Unity Gain；CameraShakeScale=3，旧合成爆炸uasset/WAV无引用后删除。Development Editor Win64成功，ValidateUserAudio冷回读0错误0警告，UserAudioShakeFinal三项D3D回归3/3 Success。",
                          "zero_damage_hit_verification": "Development Editor Win64编译成功；ZeroDamageEnemyHit.log中StickyExplosionAndBlood、ThreeWeaponBaseline、ExplosionDirectionalShake 3/3 Success。正式电击弹保持Damage=0，有效Hit血花一次且Health不变，重复Hit/穿透不新增血花，正伤害仍只触发一次。",
                          "latest_verification_evidence":  "2026-09-05 Phantom weapon mount fix: source TMIIR Rifle_01 Overview uses hand_r_wepSocket on animated hand_r_wep for all five example weapons. BP_Phantom restored from fixed hand_rSocket_Aim and weapon relative scale0.9 to hand_r_wepSocket and relative scale1. No animation/C++ changes or retargeting. PhantomMountInstall.log compiled/saved Blueprint; PhantomMountCold.log independently verified socket/bone/scale. PhantomMountVisualFinal.log MOUNT_PIE_OK: real BP_Phantom Patrol/Aim/Patrol and AnimInstance states agree, weapon socket position error0 in all states, relative scale1; character mesh scale0.9 retained. Relax/Aim screenshots reviewed, left support hand now meets rifle fore-end. Temporary scene actors cleaned, no map saved, editor exited. Checkpoint a1d338f; fix uncommitted/unpushed. Prior ragdoll and 6/6 regression evidence retained in archive. Reaction animation sourcing paused by user.",
+                         "direct_chaos_lethal_launch_verification": "Direct Chaos component impact snapshot or delayed explosion enemy kill triggers bullet time at detonation. Collateral Chaos break no longer watched. Enemy projectile lethal launch defaults 250 cm/s along shot plus 120 cm/s upward, editable, zero disables; corpse hits keep local impulse only. Development Editor Win64 succeeded. DirectChaosLethalLaunch: five tests Success including 12 outcome cases; Sticky initially failed because user Electric Damage is now 30, fixed test instance to zero only. DirectChaosStickyFinal: Sticky Success. Six related tests passed overall. No asset/map/audio edits. Checkpoint cdf510c; changes uncommitted/unpushed.",
                          "done_criteria":  [
                                                "爆炸弹保留首次伤害与原命中表现，命中后附着并启动可调倒计时，由独立Cue播放迁入的N_ExplosionGround_006和声音；默认EnemyHit提供短促飙血及自动淡出的血迹",
                                                "所有 EquipmentBase 继承共享显现组件；自定义材质接共享函数后全程保留自身外观，不使用灰色备用材质；首装/切装入口统一，各装备独立选择动画",

@@ -62,6 +62,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy|Death", meta = (ClampMin = "0.0"))
 	float ProjectileHitImpulse = 5000.f;
 
+	// Added to all simulated bodies only on a living -> dead projectile hit.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy|Death", meta = (ClampMin = "0.0", Units = "cm/s"))
+	float ProjectileKillKnockbackSpeed = 250.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy|Death", meta = (ClampMin = "0.0", Units = "cm/s"))
+	float ProjectileKillUpwardSpeed = 120.f;
+
 	// Positive damage comes from Health; a confirmed zero-damage projectile hit can explicitly opt in.
 	void ExecuteHitReactionCue(const FGameplayEffectContextHandle& EffectContext, float DamageTaken, bool bAllowZeroDamageHit = false);
 

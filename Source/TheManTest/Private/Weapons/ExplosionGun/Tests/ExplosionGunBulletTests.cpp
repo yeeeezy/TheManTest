@@ -114,7 +114,8 @@ public:
    {
     auto CountSprays=[World](){int32 Count=0;for(TActorIterator<AEnemyBloodSpray> It(World);It;++It)++Count;return Count;};
     auto* Electric=World->SpawnActor<ABulletBase>(ElectricClass,FVector(460,480,100),FRotator::ZeroRotator,Spawn);
-    Test->TestEqual(TEXT("Electric damage remains zero"),Electric->Damage,0.f);
+    // Exercise zero-damage feedback independently of the designer's production damage setting.
+    Electric->Damage=0.f;
     Electric->bDestroyOnHit=false;
     Enemy->SetCloaked(true);Electric->ProcessHit(Hit,Player,Player->GetAbilitySystemComponent());
     Test->TestEqual(TEXT("Zero-damage pass-through does not produce blood"),CountSprays(),Sprays);

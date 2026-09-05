@@ -185,6 +185,15 @@ void ABulletBase::ProcessHit_Implementation(
 	}
 
 	// Damage can enable ragdoll synchronously: the lethal shot and later corpse hits use this same path.
+	if (AEnemyBase* Enemy = Cast<AEnemyBase>(HitResult.GetActor()); IsValid(Enemy) && !bHitCorpse && Enemy->IsDead())
+	{
+		if (USkeletalMeshComponent* Mesh = Enemy->GetMesh(); Mesh && Mesh->IsSimulatingPhysics())
+		{
+			const FVector LaunchVelocity = ShotDirection * FMath::Max(0.f, Enemy->ProjectileKillKnockbackSpeed)
+				+ FVector::UpVector * FMath::Max(0.f, Enemy->ProjectileKillUpwardSpeed);
+			Mesh->SetAllPhysicsLinearVelocity(LaunchVelocity, true);
+		}
+	}
 	if (AEnemyBase* Enemy = ImpulseTarget.Get(); Enemy && Enemy->ProjectileHitImpulse > 0.f)
 	{
 		USkeletalMeshComponent* Mesh = Enemy->GetMesh();

@@ -12,6 +12,8 @@
 
 **敌人：**
 
+- 致命枪击新增Enemy|Death.ProjectileKillKnockbackSpeed=250cm/s、ProjectileKillUpwardSpeed=120cm/s，沿弹道与世界上方向给整个布娃娃叠加速度；两个值设0关闭。ABulletBase只在活体变死体的直接伤害之后施加一次，随后仍保留ProjectileHitImpulse的命中点冲量。打旧尸体不重复全身击飞，爆炸范围伤害保持独立径向冲量。
+
 - AHumanoidEnemy显式持有VisibleAnywhere/BlueprintReadOnly的ExplosionHitReaction组件UPROPERTY，同名原生子对象身份不变；它使具体蓝图的动画配置能够保存和重新编译后恢复。之前只CreateDefaultSubobject而无成员引用导致新增Sequence配置不能持久化。组件ReactionMode默认Animation，BP_Phantom填五条当前Skeleton兼容Sequence；ControlRig选项保留。死亡流程及HitReactionPostProcess软类不变。
 
 - Phantom原始Rifle_01持枪配置：WeaponAttachSocket=hand_r_wepSocket（父骨骼hand_r_wep），WeaponMesh单位缩放。这是TMIIR Overview的原始配置，动画驱动武器骨骼完成Aim/Relax变化；禁止根据状态切换hand_rSocket_Aim/Relaxed，也不要恢复旧固定Aim挂点和.9缩放。

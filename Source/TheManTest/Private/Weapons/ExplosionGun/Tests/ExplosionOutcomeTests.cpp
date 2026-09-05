@@ -29,7 +29,7 @@ class FExplosionOutcomeCommand : public IAutomationLatentCommand
  TWeakObjectPtr<AExplosionGunBullet> Bullet;
  TWeakObjectPtr<AActor> Wall;
  FVector Origin=FVector(18000,18000,150);
- const TCHAR* Names[9]={TEXT("Empty explosion"),TEXT("Nonlethal enemy hit"),TEXT("Enemy killed"),TEXT("Chaos resists strain"),TEXT("Chaos actually breaks"),TEXT("Loose fragments hit again"),TEXT("Kill and break together"),TEXT("Enemy behind wall"),TEXT("Bullet time disabled")};
+ const TCHAR* Names[12]={TEXT("Empty explosion"),TEXT("Nonlethal enemy hit"),TEXT("Enemy killed"),TEXT("Chaos resists strain"),TEXT("Chaos actually breaks"),TEXT("Loose fragments hit again"),TEXT("Kill and break together"),TEXT("Enemy behind wall"),TEXT("Bullet time disabled"),TEXT("Collateral Chaos breaks"),TEXT("Direct Chaos disabled"),TEXT("Direct Chaos without strain")};
 public:
  explicit FExplosionOutcomeCommand(FAutomationTestBase* In):Test(In){}
  virtual bool Update() override
@@ -54,7 +54,7 @@ public:
     E->SetCloaked(false);E->GetCharacterMovement()->DisableMovement();
     E->GetAbilitySystemComponent()->SetNumericAttributeBase(UEnemyAttributeSetBase::GetHealthAttribute(),Case==1?100.f:20.f);
    }
-   if(Case==3||Case==4||Case==6)
+   if(Case==3||Case==4||Case==6||Case>=9)
    {
     auto* Class=LoadClass<AChaosDestructibleCube>(nullptr,TEXT("/Game/Actors/DestructibleCube/Blueprint/BP_ChaosDestructibleCube.BP_ChaosDestructibleCube_C"));
     const FTransform Transform(Origin+FVector(0,140,0));
@@ -79,8 +79,11 @@ public:
    auto* Shot=W->SpawnActor<AExplosionGunBullet>(Class,Origin,FRotator::ZeroRotator,Spawn);Bullet=Shot;
    Shot->ExplosionDelay=.1f;Shot->ExplosionCueTag=FGameplayTag();
    Shot->BulletTime=FBulletTimeSettings();Shot->BulletTime.HoldDuration=.4f;Shot->BulletTime.InnerRadius=1000.f;
-   Shot->BulletTime.bEnabled=Case!=8;Shot->ChaosImpulse=0;Shot->ChaosAngularSpeed=0;
+   Shot->BulletTime.bEnabled=Case!=8&&Case!=10;Shot->ChaosImpulse=0;Shot->ChaosAngularSpeed=0;
    FHitResult Hit;Hit.ImpactPoint=Origin;Hit.ImpactNormal=FVector::UpVector;
+   if(Case==3||Case==4||Case==5||Case==10||Case==11)
+    Hit=FHitResult(Cube.Get(),Cube->GeometryCollection,Cube->GetActorLocation()+FVector(0,-50,0),-FVector::RightVector);
+   if(Case==11)Shot->ChaosRadius=0;
    Shot->ProcessHit(Hit,nullptr,nullptr);
    Test->TestFalse(FString(Names[Case])+TEXT(" no slow motion before fuse"),Feedback->IsBulletTimeActive());
    Start=Now;Stage=2;return false;
@@ -88,7 +91,7 @@ public:
   const bool Active=Feedback->IsBulletTimeActive();
   bSawSlow|=Active;if(Active&&!bPreviousSlow)++Starts;bPreviousSlow=Active;
   if(Now-Start<1.0)return false;
-  const bool Expected=Case==2||Case==4||Case==6;
+  const bool Expected=Case==2||Case==3||Case==4||Case==5||Case==6||Case==11;
   Test->TestEqual(FString(Names[Case])+TEXT(" bullet-time outcome"),bSawSlow,Expected);
   Test->TestEqual(FString(Names[Case])+TEXT(" starts only once"),Starts,Expected?1:0);
   Test->TestFalse(FString(Names[Case])+TEXT(" bullet destroyed"),Bullet.IsValid());
@@ -98,13 +101,13 @@ public:
   if(Case==7)Test->TestEqual(TEXT("Wall really blocked lethal blast"),Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),20.f);
   if(Cube.IsValid())
   {
-   Test->TestEqual(TEXT("Observed actual Chaos state"),Cube->GeometryCollection->IsRootBroken(),Case!=3);
+   Test->TestEqual(TEXT("Observed actual Chaos state"),Cube->GeometryCollection->IsRootBroken(),Case!=3&&Case!=11);
    Test->TestFalse(TEXT("Temporary Chaos notifications restored"),Cube->GeometryCollection->bNotifyBreaks);
    if(Case!=4){Cube->Destroy();Cube.Reset();}
   }
   if(Enemy.IsValid())Enemy->Destroy();Enemy.Reset();
   if(Wall.IsValid())Wall->Destroy();Wall.Reset();
-  ++Case;Stage=0;return Case==9;
+  ++Case;Stage=0;return Case==12;
  }
 };
 }
