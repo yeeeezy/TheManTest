@@ -30,7 +30,7 @@ bool UGCN_EnemyHit::OnExecute_Implementation(AActor* Target,const FGameplayCuePa
 	{
 		auto Fade=[this](UDecalComponent* Decal)
 		{
-			if(Decal){Decal->SetFadeScreenSize(0.002f);Decal->SetFadeOut(FMath::Max(0.f,BloodStainLifeSpan-2.f),FMath::Min(2.f,BloodStainLifeSpan),false);}
+			if(Decal){RandomizeDecalMaterial(Decal);Decal->SetFadeScreenSize(0.0001f);Decal->SetFadeOut(FMath::Max(0.f,BloodStainLifeSpan-2.f),FMath::Min(2.f,BloodStainLifeSpan),false);}
 		};
 		if(ACharacter* Character=Cast<ACharacter>(Target);Character && Character->GetMesh())
 		{
@@ -38,10 +38,22 @@ bool UGCN_EnemyHit::OnExecute_Implementation(AActor* Target,const FGameplayCuePa
 			FHitResult MeshHit;
 			FCollisionQueryParams Query(SCENE_QUERY_STAT(EnemyBloodMesh),true);
 			const bool bSurface=Mesh->LineTraceComponent(MeshHit,Point+Normal*50.f,Point-Normal*100.f,Query);
-			const FVector StainPoint=bSurface?MeshHit.ImpactPoint:Point;
-			const FName Bone=bSurface?MeshHit.BoneName:Mesh->FindClosestBone(Point);
-			Fade(UGameplayStatics::SpawnDecalAttached(BloodStainMaterial,FVector(18.f,10.f,10.f)*BloodScale,Mesh,Bone,StainPoint,
-				FRotationMatrix::MakeFromX(-Normal).Rotator(),EAttachLocation::KeepWorldPosition,BloodStainLifeSpan));
+			// Never project from a capsule hit in mid-air. If the surface trace misses, retry toward the closest bone.
+			bool bBodyHit=bSurface;
+			if(!bBodyHit)
+			{
+				FVector BonePoint;Mesh->FindClosestBone(Point,&BonePoint);
+				const FVector Toward=(BonePoint-Point).GetSafeNormal(UE_SMALL_NUMBER,-Normal);
+				bBodyHit=Mesh->LineTraceComponent(MeshHit,Point-Toward*30.f,BonePoint+Toward*30.f,Query);
+			}
+			if(bBodyHit)
+			{
+				const FVector SurfaceNormal=MeshHit.ImpactNormal.GetSafeNormal(UE_SMALL_NUMBER,Normal);
+				const FName Bone=MeshHit.BoneName.IsNone()?Mesh->FindClosestBone(MeshHit.ImpactPoint):MeshHit.BoneName;
+				const float Size=BloodScale*FMath::FRandRange(1.f-BloodSizeVariation,1.f+BloodSizeVariation);
+				Fade(UGameplayStatics::SpawnDecalAttached(BloodStainMaterial,FVector(BodyStainProjectionDepth,10.f*Size,10.f*Size*FMath::FRandRange(.75f,1.25f)),Mesh,Bone,MeshHit.ImpactPoint+SurfaceNormal*.5f,
+					MakeDecalRotation(SurfaceNormal,true),EAttachLocation::KeepWorldPosition,BloodStainLifeSpan));
+			}
 		}
 		// A nearby wall behind the target or floor receives a stain; never put bullet holes on the enemy.
 		FCollisionQueryParams Query(SCENE_QUERY_STAT(EnemyBloodWorld),true,Target);
@@ -51,8 +63,12 @@ bool UGCN_EnemyHit::OnExecute_Implementation(AActor* Target,const FGameplayCuePa
 		const FVector Start=Point+Normal*4.f;
 		bool bHit=World->LineTraceSingleByObjectType(Surface,Start,Point-Normal*180.f,FCollisionObjectQueryParams(ECC_WorldStatic),Query);
 		if(!bHit)bHit=World->LineTraceSingleByObjectType(Surface,Start,Start-FVector(0,0,220.f),FCollisionObjectQueryParams(ECC_WorldStatic),Query);
-		if(bHit)Fade(UGameplayStatics::SpawnDecalAtLocation(World,BloodStainMaterial,FVector(4.f,18.f,18.f)*BloodScale,
-			Surface.ImpactPoint+Surface.ImpactNormal,FRotationMatrix::MakeFromX(-Surface.ImpactNormal).Rotator(),BloodStainLifeSpan));
+		if(bHit)
+		{
+			const float Size=BloodScale*FMath::FRandRange(1.f-BloodSizeVariation,1.f+BloodSizeVariation);
+			Fade(UGameplayStatics::SpawnDecalAtLocation(World,BloodStainMaterial,FVector(4.f,18.f*Size,18.f*Size*FMath::FRandRange(.75f,1.25f)),
+				Surface.ImpactPoint+Surface.ImpactNormal,MakeDecalRotation(Surface.ImpactNormal,true),BloodStainLifeSpan));
+		}
 	}
 	return true;
 }

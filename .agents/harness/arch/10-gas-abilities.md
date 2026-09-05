@@ -1,5 +1,13 @@
 # GAS 技能系统
 
+## 随机命中与空间音频（当前配置）
+
+- `UGCN_ImpactFeedbackBase::SpawnImpactSound`统一在命中点创建自动销毁AudioComponent，传入ImpactAttenuation/ImpactConcurrency和随机PitchVariation。四项命中Cue共用`/Game/Core/_Shared/Audio/SA_ProjectileImpact`：球形180cm内全量，外加2200cm线性衰减，Spatialize开启、StereoSpread=0。
+- 当前EnemyHit.VolumeMultiplier为用户设置的5，覆盖下文历史值1；三枪CharacterSoundMultiplier=0.3，只降低打人时叠加的武器撞击层，不降低Enemy肉体声。并发分别SC_ProjectileImpact=12与Enemy专属SC_EnemyFleshHit=8，StopQuietest。
+- FleshHit源音频不改样本，输出到Enemy/_Shared/Audio/SMX_EnemyFleshHit，经SFX_EnemyFleshLimiter限制过大峰值；并非保证所有主输出绝不削波。
+- 贴花随机旋转、尺度/长宽，并用独立MID的DecalPatternOffset改变Opacity噪声。两枪新增owner-local M_*_ImpactDecalVaried母材质，原MI参数保留；血迹原M_Enemy_BloodStain扩展同样参数。DecalSizeVariation/BloodSizeVariation可调。
+- 身体血迹先Trace Mesh表面，失败向最近骨骼补Trace；使用实际表面法线/骨骼附着，无法命中Mesh则跳过，避免贴在胶囊外悬空。BodyStainProjectionDepth默认12cm；附着随骨骼刚性移动，不等于蒙皮纹理绘制。环境血迹和喷溅卡片同样随机，寿命12秒/0.55秒不变。
+
 ## 爆炸延时 Cue 与 Enemy 血迹（2026-09-04）
 
 - Explosion Cue参数契约：Params.Location/Normal为真实附着爆点，音效与方位震屏继续使用此位置；Params.EffectContext.HitResult为弹体查询的ExplosionGround地面，仅Niagara使用ImpactPoint+Normal(1cm)。Context没有地面Hit时不生成Ground Niagara/内含decal，不回退Cube表面；Chaos物理不在Cue内。

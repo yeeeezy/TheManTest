@@ -27,6 +27,9 @@
 #include "ImageUtils.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Materials/Material.h"
+#include "Components/AudioComponent.h"
+#include "Sound/SoundBase.h"
 #include "Actors/DestructibleCube/ChaosDestructibleCube.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
 
@@ -95,7 +98,11 @@ public:
    Test->TestEqual(TEXT("Attached bullet collision disabled"),Bullet->CollisionSphere->GetCollisionEnabled(),ECollisionEnabled::NoCollision);
    Test->TestTrue(TEXT("Attached bullet stopped"),Bullet->ProjectileMovement->Velocity.IsNearlyZero());
    Test->TestTrue(TEXT("Adjustable fuse remains positive"),Bullet->GetRemainingExplosionTime()>0.5f);
+   UDecalComponent* BodyDecal=nullptr;
+   for(TObjectIterator<UDecalComponent> It;It;++It)if(It->GetWorld()==World&&It->GetAttachParent()==Enemy->GetMesh()){BodyDecal=*It;break;}
+   const FVector OldStainLocation=BodyDecal?BodyDecal->GetComponentLocation():FVector::ZeroVector;
    const FVector OldLocation=Bullet->GetActorLocation();Enemy->AddActorWorldOffset(FVector(0,80,0),false);
+   Test->TestTrue(TEXT("Body blood follows moving target"),BodyDecal&&BodyDecal->GetComponentLocation().Equals(OldStainLocation+FVector(0,80,0),.1));
    Test->TestTrue(TEXT("Attachment follows target movement"),Bullet->GetActorLocation().Equals(OldLocation+FVector(0,80,0),.1f));
    int32 Sprays=0;for(TActorIterator<AEnemyBloodSpray> It(World);It;++It)++Sprays;
    Test->TestTrue(TEXT("Actual damage invokes enemy blood Hit Cue"),Sprays>0);
@@ -119,7 +126,13 @@ public:
    }
    TArray<UDecalComponent*> Decals;Enemy->GetComponents(Decals);
    // SpawnDecalAttached components need not be owned by the attachment actor: inspect the world objects.
-   int32 Stains=0;for(TObjectIterator<UDecalComponent> It;It;++It)if(It->GetWorld()==World&&It->GetDecalMaterial()&&It->GetDecalMaterial()->GetName()==TEXT("M_Enemy_BloodStain"))++Stains;
+   int32 Stains=0,AttachedStains=0;
+   for(TObjectIterator<UDecalComponent> It;It;++It)if(It->GetWorld()==World&&It->GetDecalMaterial()&&It->GetDecalMaterial()->GetMaterial()->GetName()==TEXT("M_Enemy_BloodStain"))
+   {
+    ++Stains;
+    if(It->GetAttachParent()==Enemy->GetMesh()&&!It->GetAttachSocketName().IsNone())++AttachedStains;
+   }
+   Test->TestTrue(TEXT("Blood stain attaches to actual enemy mesh bone"),AttachedStains>0);
    Test->TestTrue(TEXT("Blood stain components are spawned"),Stains>0);
    auto* Zero=World->SpawnActor<AExplosionGunBullet>(BulletClass,FVector(900,400,100),FRotator::ZeroRotator,Spawn);
    State.ZeroBullet=Zero;Zero->ExplosionDelay=0;
@@ -134,6 +147,9 @@ public:
   if(!State.bBloodCaptured&&Elapsed>.08f)
   {
    Capture(TEXT("TMT_EnemyBloodHit.png"));State.bBloodCaptured=true;
+   bool bFleshPlaying=false;
+   for(TObjectIterator<UAudioComponent> It;It;++It)if(It->GetWorld()==World&&It->Sound&&It->Sound->GetName()==TEXT("S_Enemy_FleshHit")&&It->IsPlaying())bFleshPlaying=true;
+   Test->TestTrue(TEXT("Actual enemy Hit Cue is playing supplied flesh sound"),bFleshPlaying);
    auto* Modifier=Cast<UCameraModifier_CameraShake>(World->GetFirstPlayerController()->PlayerCameraManager->FindCameraModifierByClass(UCameraModifier_CameraShake::StaticClass()));
    TArray<FActiveCameraShakeInfo> Active;
    if(Modifier)Modifier->GetActiveCameraShakes(Active);
@@ -169,7 +185,7 @@ public:
    Test->TestEqual(TEXT("Explosion systems finish instead of accumulating"),ActiveBlasts,0);
    int32 RemainingStains=0;
    for(TObjectIterator<UDecalComponent> It;It;++It)
-    if(It->GetWorld()==World&&It->IsRegistered()&&It->GetDecalMaterial()&&It->GetDecalMaterial()->GetName()==TEXT("M_Enemy_BloodStain"))++RemainingStains;
+    if(It->GetWorld()==World&&It->IsRegistered()&&It->GetDecalMaterial()&&It->GetDecalMaterial()->GetMaterial()->GetName()==TEXT("M_Enemy_BloodStain"))++RemainingStains;
    Test->TestEqual(TEXT("Blood stains expire after configured lifetime"),RemainingStains,0);
    auto* Enemy=State.Enemy.Get();
    if(!Enemy)return true;

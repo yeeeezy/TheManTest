@@ -20,6 +20,7 @@ private:
  UPROPERTY(Transient) TArray<TObjectPtr<UStaticMeshComponent>> Droplets;
  UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> SprayMaterial;
  TArray<FVector> Velocities;
+ TArray<float> Rolls;
  float Age=0.f;
  static constexpr float Duration=0.55f;
 };

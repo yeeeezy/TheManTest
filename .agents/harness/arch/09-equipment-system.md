@@ -1,5 +1,7 @@
 # 装备系统
 
+- FEAT-080命中随机/空间声由Core/_Shared/GAS/GameplayCues/GCN_ImpactFeedbackBase统一处理；敌人身体血迹由Enemy/_Shared/GAS/GameplayCues/GCN_EnemyHit处理。枪械/弹体不重复实现音频衰减或身体贴花，伤害与爆炸Fuse保持原流程。具体配置见arch/10-gas-abilities.md。
+
 - ABulletBase零伤害有效命中Enemy时，单独以真实HitResult调用Enemy的HitReactionCue；穿透/重复Hit先返回，正伤害仍由Health路径负责，不重复表现。电击弹Damage=0保持不变。
 
 ## 爆炸枪附着弹（2026-09-04）

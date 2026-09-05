@@ -7,6 +7,18 @@
 - 两把新枪只替换模型、枪口 VFX、命中 VFX 与贴花；玩法、动画、音频、弹药、GAS、后坐力和子弹行为保持与 RepairGun 一致。
 - 外部来源仅迁移最终模型和 VFX 依赖，不迁移源项目角色、武器蓝图或动画。
 
+## 2026-09-04 随机命中与3D音效（本轮完成）
+
+- 用户确认血迹/弹痕随机尺寸、旋转、图案，修正身上附着，并把命中声改为3D远近/左右定位，提升肉体声可辨性；伤害和爆炸Fuse不变。检查点8f2f1e6保存前置不规则Chaos结果。只读AuditHitFeedback.log发现用户EnemyHit音量已改5，e1ed363单独保存该覆盖；不能继续按旧文档1处理。
+- 四Cue/声音均无Attenuation。新共用Core/_Shared/Audio/SA_ProjectileImpact启用Spatialize/Attenuate，Sphere180cm+2200cm线性衰减、无立体声spread。各枪命中Enemy时武器撞击层降为0.3，Enemy肉体声保持用户5；分别配置12/8路并发上限，轻微随机音高。
+- ImpactFeedbackBase统一SpawnImpactSound并传入衰减/并发；弹痕随机roll、尺度/长宽及独立MID噪声偏移。血迹原材质与两枪新增专属DecalVaried材质仅扩展Opacity，不动颜色/原图/寿命链。EnemyBody重新Trace到Mesh表面，使用其法线和骨骼，失败向最近骨骼补Trace，不在胶囊点悬空生成。
+- InstallHitFeedbackAssets.log与ConfigureHitFeedback.log完成资产/四Cue编译保存。Development Editor Win64构建通过；新增真实输出录音与骨骼附着/声音播放验证进行中。
+- 最终Development Editor Win64编译成功。HitFeedbackFinal.log六项回归全部Success：SpatialImpactFeedback、StickyExplosionAndBlood、ExplosionChaosGround、ExplosionDirectionalShake、IrregularCubeGeometry、ThreeWeaponBaseline。涵盖随机MID/尺寸/旋转、实际肉体AudioComponent播放、身上贴花附着骨骼并随目标移动，原伤害/Fuse/Chaos不变。
+- 新Opacity图初版存在Noise输入连接错误，已用显式连接成功断言修复；三项材质实际Shader错误数为0。已查看TMT_EnemyBloodHit_Isolated.png，绿色错误材质方块消失，身体/地面出现暗红斑迹；细节最终观感仍以用户游戏内体验为准。
+- 初次录音发现用户5倍肉体音量削波，增加独立SMX_EnemyFleshHit/SFX_EnemyFleshLimiter，不改素材或用户倍率。后台编辑器全静音曾使合并回归录音为0；测试临时设UnfocusedVolume=1，结束恢复，未修改项目全局音频配置。
+- HitSpatialFocused.log独立冷启动SpatialImpactFeedback成功，六份WAV均非零；肉体近左RMS L/R=0.14946/0.02601、近右0.02527/0.14509、远左0.07442/0.01288；电击近左0.17801/0.03082、近右0.02983/0.17231、远左0.04271/0.00739。两类左右优势均超过2倍，远处总RMS低于近处70%，实际3D空间与距离断言通过。限幅后肉体近处削波样本从约1224降至33，未宣称完全无削波。
+- 本轮结果未最终提交/未push；用户地图/External Actor改动保持原样。检查点8f2f1e6与e1ed363可追溯前置状态。
+
 ## 2026-09-04 不规则真实破碎
 
 - 用户不接受规则3x3x3分块，确认改为不规则Voronoi、大小错落、凹凸断面与随机翻滚；伤害、Fuse、Cue、Ground规则不动。选择性检查点db9a156保存前置源码/文档/Cube资产，地图及用户新增外部Actor未纳入。

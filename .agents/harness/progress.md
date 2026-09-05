@@ -2,10 +2,17 @@
 
 ## Active Feature
 
-- FEAT-080：三枪独立表现，in_progress；本轮Chaos Cube与地面爆炸范围已实现并验证，整体功能不关闭。
+- FEAT-080：三枪独立表现，in_progress；本轮随机血迹/身体附着/3D命中声已实现并验证，整体功能不关闭。
 - 历史配置、变更与验证见 archive/FEAT-080-three-weapon-setup.md。
 
-## 最新完成：Chaos Cube 与地面爆炸
+## 最新完成：随机血迹与空间命中声
+
+- 血迹与武器弹痕随机尺寸、旋转、长宽和MID图案；身体血迹修正为Mesh表面法线与骨骼附着，补Trace失败不悬空生成。血迹12秒/喷溅0.55秒不变。
+- 四项Hit Cue接SA_ProjectileImpact：180cm内全量、再衰减2200cm，左右空间定位；并发12/8。Enemy肉体音量保留用户5，武器打人撞击层降到0.3；独立肉体Submix限幅减少峰值削波。
+- Development Editor Win64成功；HitFeedbackFinal六项回归Success，HitSpatialFocused独立录音验证肉体/电击声音左右和远近均生效。测试临时取消后台静音并恢复，未改全局配置。新增三项材质Shader错误数0。
+- 具体资产/字段/录音RMS见FEAT-080 archive与arch/10。视觉已查看孤立血迹截图，最终手感待用户反馈。
+
+## 保留：Chaos Cube 与地面爆炸
 
 - 可复用蓝图：/Game/Actors/DestructibleCube/Blueprint/BP_ChaosDestructibleCube，原生AChaosDestructibleCube。现为42块不规则Voronoi，大小混合、0.8cm断面凹凸；不再是27块规则网格。FractureAsset/Toughness可逐实例配置，大小使用Actor Scale；初碰不自动碎。
 - VFXTestMap新增3个Cube，标签VFXTest_ChaosCube_1~3。其他场景直接拖入同一蓝图。
@@ -17,7 +24,7 @@
 ## 必须保留的前置配置
 
 - BP_ExplosionGunBullet：ExplosionDelay=2秒，AttachmentOffset=4cm。首次5点伤害与原PhysicalImpact不变，无延时二次伤害。
-- 正式Explosion Cue：VolumeMultiplier=3、CameraShakeScale=8；Alien Cannon指定音频不改样本，0.45秒/200~1800cm方位衰减。Enemy Hit指定FleshHit音频倍率1。
+- 正式Explosion Cue：VolumeMultiplier=3、CameraShakeScale=8；Alien Cannon指定音频不改样本，0.45秒/200~1800cm方位衰减。Enemy Hit指定FleshHit音频倍率5（用户覆盖）。
 - Ground Niagara：ExplosionGun/Effects/Explosion/Systems/NS_ExplosionGun_Detonation，来自TMIIR N_ExplosionGround_006，116包owner-local依赖，EffectLifeSpan=8秒兜底清理。
 - ElectricGun Damage=0，有效首次Hit仍触发血花/受击声；正伤害、穿透、重复命中行为不变。血迹12秒、喷溅0.55秒。
 - 三枪无描边；电击枪材质不变，爆炸枪保留橙红能量材质。MuzzleEffectScale两新枪XYZ=2，RepairGun保留0.85。
@@ -38,8 +45,8 @@
 
 ## 会话交接
 
-- 本轮范围完成，可在VFXTestMap直接试三个Cube；用户可调整弹体Ground/Chaos参数和Cube Toughness/Scale。
-- 最新安全检查点db9a156保存原规则Cube及前置源码/文档；本轮结果未最终Git提交，未push。地图/用户新增外部Actor未纳入该选择性检查点，保持原样。
+- 本轮范围完成，可在VFXTestMap试不同距离/方位命中及身体血迹。未改伤害、Fuse、爆炸声震和Chaos逻辑。
+- 最新安全检查点8f2f1e6保存不规则Cube前置状态，e1ed363保存用户EnemyHit音量5；本轮结果未最终Git提交，未push。地图/用户新增外部Actor保持原样。
 - TestMap的65个外部Actor包改动均为这次地形标记，不要误当无关编辑撤销。
 - 可复用编辑器资产创建命令CreateTestCubeAsset(bRebuild=false)不在运行时/Construction调用；仅显式true重建不规则资产。PlanarCut插件与PlanarCut/Voronoi依赖限Editor。最新生成脚本Saved/Codex/rebuild_irregular_cube.py，不重存地图；旧install_chaos_cube.py用于首次布场，不要为重建碎块重新执行。
 - 既有M_UE4Man_Body材质缺纹理及AimIK警告未在本轮处理。

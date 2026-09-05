@@ -1,5 +1,7 @@
 # 构建配置
 
+- FEAT-080命中验收：Editor-only增加AudioMixer与RHI，分别用于PIE实际输出录音及材质Shader编译错误断言；不增加Game目标依赖。
+
 - FEAT-080 Chaos Cube：Private依赖GeometryCollectionEngine、Chaos、PhysicsCore、FieldSystemEngine。UGeometryCollection组件负责真实破碎，ExplosionGunBullet向其提交径向Strain/Impulse；不新增插件或外部模块。
 - 不规则破碎扩展：PlanarCut插件显式仅Editor启用；Editor构建依赖PlanarCut与Voronoi，供显式资产创建命令使用。Game构建不依赖两者，运行时只模拟已生成GeometryCollection。
 

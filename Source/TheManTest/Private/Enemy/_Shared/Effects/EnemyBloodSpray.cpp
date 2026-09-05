@@ -30,9 +30,10 @@ void AEnemyBloodSpray::Initialize(UMaterialInterface* Material,const FVector& Di
  {
   UStaticMeshComponent* Mesh=Droplets[Index];
   Mesh->SetMaterial(0,SprayMaterial);
-  const float Size=(Index==0 ? 0.24f : FMath::FRandRange(0.035f,0.09f))*Scale;
+  const float Size=(Index==0 ? FMath::FRandRange(.18f,.3f) : FMath::FRandRange(0.035f,0.09f))*Scale;
   Mesh->SetWorldScale3D(FVector(Size));
   Velocities.Add((Normal*FMath::FRandRange(80.f,180.f)+FMath::VRand()*65.f+FVector(0,0,65.f))*Scale);
+  Rolls.Add(FMath::FRandRange(0.f,2.f*PI));
  }
  SetLifeSpan(Duration);
 }
@@ -47,6 +48,6 @@ void AEnemyBloodSpray::Tick(float DeltaSeconds)
  {
   Velocities[Index].Z-=380.f*DeltaSeconds;
   Droplets[Index]->AddWorldOffset(Velocities[Index]*DeltaSeconds);
-  if(Camera)Droplets[Index]->SetWorldRotation(FRotationMatrix::MakeFromZ(Camera->GetCameraLocation()-Droplets[Index]->GetComponentLocation()).Rotator());
+  if(Camera)Droplets[Index]->SetWorldRotation(FRotationMatrix::MakeFromZ(Camera->GetCameraLocation()-Droplets[Index]->GetComponentLocation()).ToQuat()*FQuat(FVector::UpVector,Rolls[Index]));
  }
 }

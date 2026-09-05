@@ -7,6 +7,10 @@
 class UNiagaraSystem;
 class USoundBase;
 class UMaterialInterface;
+class USoundAttenuation;
+class USoundConcurrency;
+class UAudioComponent;
+class UDecalComponent;
 
 UCLASS(Abstract, Blueprintable)
 class THEMANTEST_API UGCN_ImpactFeedbackBase : public UGameplayCueNotify_Static
@@ -14,6 +18,22 @@ class THEMANTEST_API UGCN_ImpactFeedbackBase : public UGameplayCueNotify_Static
 	GENERATED_BODY()
 
 public:
+	UGCN_ImpactFeedbackBase();
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Impact|Audio")
+	TObjectPtr<USoundAttenuation> ImpactAttenuation;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Impact|Audio")
+	TObjectPtr<USoundConcurrency> ImpactConcurrency;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Impact|Audio", meta=(ClampMin="0",ClampMax="0.5"))
+	float PitchVariation=.06f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Impact|Audio", meta=(ClampMin="0",ClampMax="1"))
+	float CharacterSoundMultiplier=1.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Impact|Decal", meta=(ClampMin="0",ClampMax="0.8"))
+	float DecalSizeVariation=.3f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Impact|Decal")
+	bool bRandomizeDecals=true;
+	UAudioComponent* SpawnImpactSound(UWorld* World,const FVector& Location,bool bCharacterImpact) const;
+	static FRotator MakeDecalRotation(const FVector& Normal,bool bRandomize);
+	static void RandomizeDecalMaterial(UDecalComponent* Decal);
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Impact")
 	TObjectPtr<USoundBase> ImpactSound;
 
