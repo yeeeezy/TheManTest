@@ -6,6 +6,7 @@
 
 ## 最新样片（未接入游戏）
 
+- 最新为 Humanoid_Rhythm_Staggers.blend / Humanoid_Rhythm_Staggers_Normal.gif（外部同目录）。用户指出上一版即使加速仍节奏均匀，本版保持1.3秒，首个运动帧达到约87.5%躯干幅度，峰值后短暂保留失衡姿态，两次追步各约.133秒，第二次落地后承重停顿约.133秒，最后缓慢恢复。四方向支撑脚目标误差<.00005cm。已查看阶段图并生成正常速度预览；待用户评价节奏，未接入游戏。
 - 参考MorStudios HitReact Pro官方展示 https://www.youtube.com/watch?v=Qoq9pzQ_tA4 的84–89秒Stumble_B，已实际查看分帧：上身先失衡，双腿交替迈步承重，站稳后抬身恢复。四方向是视觉重建及持枪适配，不是视频精确动捕提取。
 - 外部D:/Blender Projects/HumanoidHitReactions/Humanoid_Referenced_Staggers.blend有4条AS_Humanoid_StaggerRef_*，2.2秒/30fps，两步主要接重心+一步小调整，步高约10cm，支撑脚锁点，固定膝盖弯曲平面；前后根位移76cm、左右62cm，最终留在新位置恢复。
 - 预览Humanoid_Referenced_Staggers_Normal.gif和Humanoid_Referenced_Staggers_Slow.gif，参考索引References/Showcase_Index.jpg、Stumble_Timing.jpg及REFERENCE.md。新动作尚未导入TheManTest或替换运行时；后续需处理根位移/胶囊碰撞，不能直接套旧无RootMotion后处理。
@@ -36,6 +37,7 @@
 
 ## 会话交接
 
+- 当前检查点5b79c06仅保存上轮参考样片的harness文档。最新外部脚本create_rhythm_staggers.py、render_rhythm_staggers.py，数据stagger_rhythm_motion.json；此前2.2秒参考版和1.3秒Blast版均保留对比。本轮无C++/UE资产修改；下一步以Rhythm版反馈为准，暂不扩展24条或迁入。
 - 最新检查点f27cd3e保存上一轮24条动作/配置/源码/harness作为恢复点。当前仅外部四方向参考样片和harness更新，未改游戏C++/资产，不需要新编译。等用户看四方向样片后再继续扩展与接入；原24条仅是技术验证通过，视觉已被用户否定。
 
 - 最新检查点8afe766保存前轮代码/harness和已知动画BP状态；本轮源码、24资产、BP配置、脚本与文档未最终提交/push。用户地图/ExternalActor/音效/血纹理/电击弹/Explosion Cue改动不得全量提交或覆盖。
