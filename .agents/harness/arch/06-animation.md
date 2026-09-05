@@ -1,5 +1,7 @@
 # 动画实例
 
+- 2026-09-05受击动画样片：Phantom/Animations/Reactions下5条AS_Humanoid_RifleHit_{Front,Left,HeavyTwist,Right,Back}绑定当前Rifle_01的70骨Skeleton，成品在外部TMIIR/Blender中适配后仅导入FBX。非Additive/非RootMotion、首尾Relax，尚未接入游戏受击触发或替换共享Rig。它们是具体骨架的Sequence，不是跨任意人形骨架可直接复用的模板。
+
 - Rifle_01动画包含hand_r_wep武器骨骼轨道；Phantom通过该骨骼下的hand_r_wepSocket挂枪，单位缩放，在Relax/Aim间自动跟随原始动画的武器姿势。普通hand_r上的hand_rSocket_Aim/Relaxed是静态偏移，不能替代武器动画骨骼。
 
 - 死亡切布娃娃时EnemyBase禁用Mesh PostProcess并暂停动画求值，保持骨骼/物理刷新，由PhysicsAsset全身模拟接管。存活时仍使用下述共享受击Rig，不将布娃娃叠到Rig上。

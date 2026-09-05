@@ -1,5 +1,18 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 现有骨架受击动作样片
+
+- 用户恢复受击动画任务，授权使用TMIIR候选参考或调整，适配现有骨骼。选择性检查点195a15c保存前置握枪修复；用户地图、ExternalActor及Explosion Cue未纳入。
+- 审计RifleAnimsetPro四条Hit、Wraith四方向HitReact/Knockback及Belica候选。RifleAnimsetPro为68骨；现役Rifle_01为70骨，多hand_r_wep/hand_l_wep，手腕/脚参考姿势不同，不能只换Skeleton。Wraith四方向是带参考动画的Local Additive，提取原始绝对轨道后在外部处理差值。
+- 最终样片为Wraith Front/Left/Right/Back四方向和Rifle_Hit_C_1的HeavyTwist变体。外部按现役Relax基准重建受力变化；保留手指及武器骨骼局部姿势，双臂握枪约束、双腿解析IK和脚掌高度限制，首尾精确返回同一Relax姿势。四方向旋转变化倍率1.35，重击1.0。此处是动画制作，不是运行时Rig替换；大幅重击只供对比。
+- Blender工程/脚本/预览/最终FBX全部位于D:/Blender Projects/HumanoidHitReactions。外部create_external_assets.py只允许TMIIR运行，成品Sequence位于/Game/ReactionPrep/Final。未在TheManTest进行重定向、轨道生成或导入源骨架/模型/IKRig。
+- 已导入5条AS_Humanoid_RifleHit_Front/Left/HeavyTwist/Right/Back至Phantom/Animations/Reactions；这是绑定Phantom当前Rifle_01骨架的具体Sequence样片，不提升为无骨架共享资源，也没有把公共Rig重新绑定Phantom。普通人形若用不同Skeleton仍需外部适配。没有修改ABP、受击触发、声音/特效/布娃娃或用户挂点设置。
+- 时长分别1.0/.8667/1.6333/.8667/1.0秒，30fps、70轨、非Additive、非RootMotion。ReactionCreateFinal.log生成导出5条；ReactionColdFinal.log和目标ReactionImportCold.log逐帧核对全部轨道位置误差0、旋转点积最低0.99999939。ReactionImportFinal.log导入0错误0警告；现有Skeleton骨骼列表未改变。
+- 已渲染并查看5动作多个阶段，Humanoid_RifleHit_Preview.gif为40帧同步相位对比，已自动打开。预览统一相位播放便于比较，不表示5条时长相同。首张枪错误朝向来自预览遗漏hand_r_wepSocket自身90度旋转，已修预览；UE挂点未改。初版Rifle动作握距不可达已修，最终左手数值误差小于0.00003cm。静态预览Reactions_Selected.png；主工程Humanoid_RifleHit_Reactions.blend有5个命名Action。
+- 外部初次NullRHI导出Mesh崩溃改为实际编辑器只读导出；36fps不兼容默认30fps改为30；移除未暴露notify_populated后生成成功。add_bone_track只有弃用警告。独立PIE第一次NullRHI生成场景Actor触发引擎异常，改用D3D继续验证，尚未将该失败标为通过。
+- 最终ReactionPreviewPIEFinal.log输出REACTION_PREVIEW_PIE_OK 5：实际BP_Phantom播放五条动画，头部位移32.07/26.84/32.85/7.90/38.44cm，枪与hand_r_wepSocket位置误差全程0。ReactionAssetsFinal.log输出REACTION_ASSETS_OK 5，首尾70骨与现役Relax基准匹配、5资产只有现有Skeleton依赖、无Redirector或外部项目依赖。没有C++/BP修改，无需新构建；验证未保存地图，测试编辑器已退出。右侧动作弱于其他方向，保留源动作差异供用户比较，不宣称所有方向力度一致或最终观感已验收。
+- 本轮交付为5条独立可播放的成品样片与外部Blender工程/动态图；尚未把游戏中的爆炸触发改成Montage，也未替换共享Control Rig。需先由用户看动作后决定运行时组合，不能宣称游戏内受击反馈已经切到新动画。结果未最终提交/push。
+
 ## 2026-09-05 Phantom Relax持枪挂点修复（实现与自验完成）
 
 - 用户截图112822显示Relax左手偏离护木。初次仅看Aim/Relax两Socket差异误判需状态切换；用户要求核对源工程后纠正：TMIIR/Rifle_01/Overview的5把示范枪全部挂hand_r_wepSocket，单位缩放/零局部位移旋转，包括Aim_To_Relaxed。该Socket父骨骼hand_r_wep本身带动画，Aim/Relax手枪相对运动已由动画驱动，不需要自行切两个静态手部Socket。

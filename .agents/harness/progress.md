@@ -2,10 +2,13 @@
 
 ## Active Feature
 
-- FEAT-080，in_progress。死亡布娃娃用户认可；Phantom Relax持枪偏移已修复，源项目挂点/相对缩放恢复，编译保存/冷读/实际PIE三状态及截图核对通过。受击动画候选准备暂缓，等用户恢复。
+- FEAT-080，in_progress。5条当前骨架受击动作样片已完成并导入，冷读/首尾/依赖及实际PIE播放通过，动态图已打开，待用户看动作。尚未替换运行时共享Rig或接爆炸Montage。死亡布娃娃用户认可，Relax握枪修复已完成。
 - 前序准星仰射、身体附着、Enemy Air007/缩放、条件子弹时间均已完成，细节见archive/FEAT-080-three-weapon-setup.md。
 
 ## 当前行为和入口
+
+- 新成品样片：`Enemy/Humanoid/Phantom/Animations/Reactions/AS_Humanoid_RifleHit_{Front,Left,HeavyTwist,Right,Back}`。绑定现役Rifle_01的70骨Skeleton；Wraith四方向+RifleAnimsetPro重击改编，握枪/腿部修正、首尾回Relax，时长1/.8667/1.6333/.8667/1秒。是当前具体骨架的Sequence样片，不是任意人形通用动画；共享Rig仍骨架无关，未增加Phantom依赖。
+- 外部工作位于`D:/Blender Projects/HumanoidHitReactions`，主工程`Humanoid_RifleHit_Reactions.blend`、预览`Humanoid_RifleHit_Preview.gif`、静态`Reactions_Selected.png`。TMIIR成品在`/Game/ReactionPrep/Final`，TheManTest只导入已完成FBX，没有重定向工作资源。动态图是同步相位慢放比较，不表示各条时长相同。右侧较轻，HeavyTwist幅度大，主观效果待选。
 
 - BP_Phantom.WeaponAttachSocket=hand_r_wepSocket，WeaponMesh.RelativeScale3D=(1,1,1)。源TMIIR Overview的5把示范枪都采用该配置，Socket挂在带动画轨道的hand_r_wep；此前固定hand_rSocket_Aim/.9枪械缩放错误。不能按Aim/Relax切两个静态手部Socket。只改BP_Phantom，没有修改动画轨道或C++。
 
@@ -30,6 +33,8 @@
 - SharedReactionColdVerified.log：共享ABP只依赖共享Rig，Rig无/Game依赖，Phantom导入源/预览/骨架引用清除，旧路径及Redirector均无；实际调参38/.85/.045/7冷读通过。
 
 ## 会话交接
+
+- 最新选择性检查点195a15c保存此前BP_Phantom握枪修复。本轮新增5条Sequence、import_humanoid_reaction_previews.py（仅导入成品，不做重定向）、validate_humanoid_reaction_assets.py与validate_humanoid_reaction_pie.py。ReactionImportFinal/ReactionImportCold/ReactionAssetsFinal/ReactionPreviewPIEFinal均成功；实际五条动作头部位移32.07/26.84/32.85/7.90/38.44cm，挂枪误差0。首尾70骨与现役Relax匹配，只有现有Skeleton依赖。测试编辑器退出、未写地图；无C++/BP变更。没有修改爆炸Cue/声音/死亡或运行时受击触发，动画接入须待用户看样片后决定。结果未提交/push。外部制作细节和失败迭代已归档。
 
 - 最新选择性检查点a1d338f保存已完成布娃娃工作；本轮BP_Phantom握枪修复未提交。Scripts/VFX/fix_phantom_weapon_mount.py安装/-MountValidateOnly冷验证；PhantomMountInstall/Cold均成功。最终PhantomMountVisualFinal.log为MOUNT_PIE_OK，实际Relax/Aim/ReturnRelax挂点误差0、相对缩放1；已查看截图，Relax左手回到护木。角色Mesh自身.9体型保留，枪世界缩放随之.9。临时场景清理、退出，地图未保存，无剩余修复步骤。
 
