@@ -1,5 +1,7 @@
 # 装备系统
 
+- ABulletBase零伤害有效命中Enemy时，单独以真实HitResult调用Enemy的HitReactionCue；穿透/重复Hit先返回，正伤害仍由Health路径负责，不重复表现。电击弹Damage=0保持不变。
+
 ## 爆炸枪附着弹（2026-09-04）
 
 - `Weapons/ExplosionGun/Bullets/ExplosionGunBullet.h/.cpp`：`AExplosionGunBullet : ABulletBase`，`BP_ExplosionGunBullet` 的原生父类。基类先处理首次伤害、原 Impact Cue 与 Phantom 穿透；有效命中后停止碰撞/移动，附着组件或骨骼并计时。基类仅增加protected只读 `HasProcessedHit()`，其他枪行为不变。

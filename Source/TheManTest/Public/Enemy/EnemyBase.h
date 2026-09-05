@@ -54,8 +54,8 @@ public:
 
 	void OnDeath();
 
-	// Health 确认受到伤害后调用；由敌人自身配置的 Cue 决定受击声音/特效。
-	void ExecuteHitReactionCue(const FGameplayEffectContextHandle& EffectContext, float DamageTaken);
+	// Positive damage comes from Health; a confirmed zero-damage projectile hit can explicitly opt in.
+	void ExecuteHitReactionCue(const FGameplayEffectContextHandle& EffectContext, float DamageTaken, bool bAllowZeroDamageHit = false);
 
 	UFUNCTION(BlueprintPure, Category = "Enemy|Feedback")
 	FGameplayTag GetHitReactionCueTag() const { return HitReactionCueTag; }

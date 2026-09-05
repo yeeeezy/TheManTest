@@ -25,6 +25,8 @@
 
 ## 最新验证
 
+- 最新ZeroDamageEnemyHit.log：D3D PIE三项StickyExplosionAndBlood、ThreeWeaponBaseline、ExplosionDirectionalShake 3/3 Success。电击弹零伤害有效Hit出一次血花，重复/穿透不出额外血花，Health不变，正伤害血花不重复。Development Editor Win64编译通过。
+
 - 本轮最终 `ExplosionDirectionalShake.log`：ExplosionDirectionalShake、StickyExplosionAndBlood、ThreeWeaponBaseline 3/3 Success/exit0；三倍音量、左右方位、远近衰减、自动结束、真实爆炸Cue触发本地震屏均通过，原伤害/清理保持。Development Editor Win64编译成功。
 
 - 最终 `StickyBloodFinal.log`：StickyExplosionAndBlood + ThreeWeaponBaseline 2/2 Success，含爆炸/血迹14秒后均清理断言；`ValidateStickyBloodFinal2.log` Cue编译保存与116包引用复验成功。已查看截图 `TMT_StickyExplosion.png` 和 `TMT_EnemyBloodHit_Isolated.png`。测试编辑器正常退出，未写入关卡。
@@ -43,7 +45,7 @@
 ## 当前待办 / 会话交接
 
 - 本轮用户确认爆炸三倍音量+按方位震屏，已实现并编译，验证见ExplosionDirectionalShake.log。检查点84aa9cd保存前轮结果，本轮未最终提交。
-- 电击枪血花缺失已定位为BP_ElectricGunBullet.Damage=0，默认EnemyHit只在正伤害后触发。已异步询问“零伤害仍出血”或“改伤害5”，待用户选择；目前未更改电击枪或公共伤害/Hit规则。
+- 用户已确认零伤害也触发血花：ABulletBase有效零伤害首次Hit显式通知敌人Cue，Damage仍为0。正伤害走原Health回调，穿透/重复Hit不触发额外Cue。最新检查点dca1224保存前轮爆炸音量/震屏，当前代码未最终提交；验证日志ZeroDamageEnemyHit.log。
 
 - 用户可在VFXTestMap审核附着弹、2秒延时爆炸和敌人血迹的最终观感。当前明确只保留第一次伤害，后续范围伤害另行确认，FEAT-080未整体归档。
 - 本轮结果不自动提交，等待用户明确要求“更新 Git”；未push。

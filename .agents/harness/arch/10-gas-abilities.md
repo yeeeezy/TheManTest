@@ -2,6 +2,8 @@
 
 ## 爆炸延时 Cue 与 Enemy 血迹（2026-09-04）
 
+- 零伤害弹命中：ABulletBase仅在Damage==0的有效非穿透首次Hit显式调用Enemy.ExecuteHitReactionCue(Context,0,true)。新可选bAllowZeroDamageHit默认false，原Health回调仍只接受正伤害；显式零伤害使用即时Invoke，不修改Damage，不重复播放。电击弹Damage保持0也可播放默认血花。
+
 - 爆炸Cue音量倍率3.0；`UExplosionCameraShake` / `UExplosionCameraShakePattern`（Weapons/ExplosionGun/Effects）提供0.45秒方位冲击。Cue按爆炸点→本地相机方向传入UserDefined播放空间，200cm内全强、1800cm外不震、中间平方衰减；CameraShakeClass/Scale/InnerRadius/OuterRadius在Cue配置。与开火震屏和ControllerRotation独立。
 
 - `GameplayCue.Weapon.ExplosionGun.Explosion` → `/Game/Weapons/ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion` → `UGCN_ExplosionGunExplosion`。由附着弹Timer触发，不合并原ImpactCue；ExplosionEffect/ExplosionSound/EffectScale/VolumeMultiplier独立配置，Niagara按+Z对齐法线。EffectLifeSpan默认8秒，通过弱绑定Timer兜底清理源效果的长尾焰，防止连续射击累积。无伤害GE。

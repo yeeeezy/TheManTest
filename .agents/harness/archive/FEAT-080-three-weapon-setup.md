@@ -7,6 +7,14 @@
 - 两把新枪只替换模型、枪口 VFX、命中 VFX 与贴花；玩法、动画、音频、弹药、GAS、后坐力和子弹行为保持与 RepairGun 一致。
 - 外部来源仅迁移最终模型和 VFX 依赖，不迁移源项目角色、武器蓝图或动画。
 
+## 2026-09-04 零伤害有效命中触发敌人 Cue
+
+- 用户明确确认零伤害命中也出血花，不改变Damage。写入前检查点 `dca1224` 保存前轮3倍爆炸音量/方位震屏。
+- ABulletBase在原穿透/重复Hit门禁与GE逻辑之后，仅当Damage==0且有效命中Enemy时，携带真实HitResult显式调用目标ExecuteHitReactionCue(Context,0,true)。SourceASC缺失时使用目标ASC创建Context；不伪造伤害，不新增GE。
+- AEnemyBase::ExecuteHitReactionCue新增默认false的bAllowZeroDamageHit。普通Health回调对0/治疗仍不触发；显式零伤害Hit即时InvokeGameplayCueEvent，正伤害仍沿原ExecuteGameplayCue流程，避免一次命中两次血花。Phantom穿透和重复命中仍提前返回。
+- BP_ElectricGunBullet.Damage保持0，未改蓝图/伤害资产。Development Editor Win64编译成功。StickyExplosionAndBlood增加正式电击弹的零伤害血花、生命不变、重复Hit与穿透断言，并对原正伤害血花数量严格断言1；验证日志ZeroDamageEnemyHit.log。
+- 最终D3D PIE：ZeroDamageEnemyHit.log中StickyExplosionAndBlood、ThreeWeaponBaseline、ExplosionDirectionalShake全部3/3 Success/exit0。确认电击弹伤害0、血花+1、重复Hit不增加、Phantom穿透不增加、Health不变；正伤害仍仅一次血花。无资产改动，无最终Git提交。
+
 ## 2026-09-04 爆炸三倍音量与方位震屏
 
 - 用户确认爆炸音量至少原来的3倍，并按相对玩家方位加入震屏。写入前本地检查点 `84aa9cd` 保存上一轮附着弹/爆炸Cue/默认血迹；本轮不自动最终提交。

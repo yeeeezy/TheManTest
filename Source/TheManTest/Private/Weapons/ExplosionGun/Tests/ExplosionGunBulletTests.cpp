@@ -93,6 +93,24 @@ public:
    Test->TestTrue(TEXT("Attachment follows target movement"),Bullet->GetActorLocation().Equals(OldLocation+FVector(0,80,0),.1f));
    int32 Sprays=0;for(TActorIterator<AEnemyBloodSpray> It(World);It;++It)++Sprays;
    Test->TestTrue(TEXT("Actual damage invokes enemy blood Hit Cue"),Sprays>0);
+   Test->TestEqual(TEXT("Positive hit produces exactly one blood spray"),Sprays,1);
+   UClass* ElectricClass=LoadClass<ABulletBase>(nullptr,TEXT("/Game/Weapons/ElectricGun/Blueprint/BP_ElectricGunBullet.BP_ElectricGunBullet_C"));
+   Test->TestNotNull(TEXT("Electric bullet loads"),ElectricClass);
+   if(ElectricClass)
+   {
+    auto CountSprays=[World](){int32 Count=0;for(TActorIterator<AEnemyBloodSpray> It(World);It;++It)++Count;return Count;};
+    auto* Electric=World->SpawnActor<ABulletBase>(ElectricClass,FVector(460,480,100),FRotator::ZeroRotator,Spawn);
+    Test->TestEqual(TEXT("Electric damage remains zero"),Electric->Damage,0.f);
+    Electric->bDestroyOnHit=false;
+    Enemy->SetCloaked(true);Electric->ProcessHit(Hit,Player,Player->GetAbilitySystemComponent());
+    Test->TestEqual(TEXT("Zero-damage pass-through does not produce blood"),CountSprays(),Sprays);
+    Enemy->SetCloaked(false);Electric->ProcessHit(Hit,Player,Player->GetAbilitySystemComponent());
+    Test->TestEqual(TEXT("Zero-damage electric hit produces one blood spray"),CountSprays(),Sprays+1);
+    Electric->ProcessHit(Hit,Player,Player->GetAbilitySystemComponent());
+    Test->TestEqual(TEXT("Duplicate zero hit does not duplicate blood"),CountSprays(),Sprays+1);
+    Test->TestEqual(TEXT("Zero hit leaves target health unchanged"),Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),95.f);
+    Electric->Destroy();
+   }
    TArray<UDecalComponent*> Decals;Enemy->GetComponents(Decals);
    // SpawnDecalAttached components need not be owned by the attachment actor: inspect the world objects.
    int32 Stains=0;for(TObjectIterator<UDecalComponent> It;It;++It)if(It->GetWorld()==World&&It->GetDecalMaterial()&&It->GetDecalMaterial()->GetName()==TEXT("M_Enemy_BloodStain"))++Stains;

@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-04-directional-explosion-shake",
+    "last_updated":  "2026-09-04-zero-damage-hit-cue",
     "active_feature":  "FEAT-080",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -471,7 +471,8 @@
                          "description":  "为 RepairGun 正式接通现有第一人称开火蒙太奇；以 RepairGun 为完整配置基线创建电击枪和爆炸枪，两把新枪仅替换各自模型、枪口与命中特效。源模型和 VFX 来自外部 VFXPack 项目；不迁移源角色、武器蓝图或动画。即使表现依赖内容相同，也按武器所有权复制到各自语义目录并重命名，使三把枪后续可以独立调整。",
                          "archive_file":  "archive/FEAT-080-three-weapon-setup.md",
                          "created":  "2026-09-03",
-                         "updated":  "2026-09-04-directional-explosion-shake",
+                         "updated":  "2026-09-04-zero-damage-hit-cue",
+                         "zero_damage_hit_verification": "Development Editor Win64编译成功；ZeroDamageEnemyHit.log中StickyExplosionAndBlood、ThreeWeaponBaseline、ExplosionDirectionalShake 3/3 Success。正式电击弹保持Damage=0，有效Hit血花一次且Health不变，重复Hit/穿透不新增血花，正伤害仍只触发一次。",
                          "latest_verification_evidence":  "2026-09-04：爆炸弹改为AExplosionGunBullet，首次5点伤害与原ImpactCue不变，命中附着后默认2秒可调倒计时，结束调用独立Explosion Cue，仅表现无二次伤害。TMIIR N_ExplosionGround_006及116包依赖迁入本枪Effects/Explosion，新增独立爆破声音。默认Enemy Hit Cue已接生成血迹纹理、附着/环境贴花和0.55秒喷溅。Development Editor Win64构建成功；StickyBloodD3D中StickyExplosionAndBlood与ThreeWeaponBaseline 2/2 Success。冷回读两项GameplayCueName、116包依赖、纹理参数与无供应商路径/Redirector均通过。结果未最终提交。",
                          "done_criteria":  [
                                                "爆炸弹保留首次伤害与原命中表现，命中后附着并启动可调倒计时，由独立Cue播放迁入的N_ExplosionGround_006和声音；默认EnemyHit提供短促飙血及自动淡出的血迹",

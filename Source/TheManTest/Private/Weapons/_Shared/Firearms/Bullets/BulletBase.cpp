@@ -151,6 +151,22 @@ void ABulletBase::ProcessHit_Implementation(
 		}
 	}
 
+	// Zero-damage hits do not produce the positive Health callback that owns normal enemy feedback.
+	// Explicitly notify only this case, after the shared pass-through / duplicate-hit guards.
+	if (Damage == 0.f)
+	{
+		if (AEnemyBase* Enemy = Cast<AEnemyBase>(HitResult.GetActor()); IsValid(Enemy) && !Enemy->IsActorBeingDestroyed())
+		{
+			if (UAbilitySystemComponent* ContextASC = SourceASC ? SourceASC : Enemy->GetAbilitySystemComponent())
+			{
+				FGameplayEffectContextHandle Context = ContextASC->MakeEffectContext();
+				Context.AddInstigator(HitInstigator, this);
+				Context.AddHitResult(HitResult, true);
+				Enemy->ExecuteHitReactionCue(Context, 0.f, true);
+			}
+		}
+	}
+
 	// 命中即停下并销毁（普通伤害弹）。自管生命周期的子类置 bDestroyOnHit=false 以保留自身逻辑。
 	if (bDestroyOnHit)
 	{

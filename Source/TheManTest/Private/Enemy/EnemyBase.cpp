@@ -27,9 +27,10 @@ AEnemyBase::AEnemyBase()
 	HitReactionCueTag = TAG_GameplayCue_Character_Enemy_Hit;
 }
 
-void AEnemyBase::ExecuteHitReactionCue(const FGameplayEffectContextHandle& EffectContext, float DamageTaken)
+void AEnemyBase::ExecuteHitReactionCue(const FGameplayEffectContextHandle& EffectContext, float DamageTaken, bool bAllowZeroDamageHit)
 {
-	if (!AbilitySystemComponent || !HitReactionCueTag.IsValid() || DamageTaken <= 0.f)
+	if (!AbilitySystemComponent || !HitReactionCueTag.IsValid() ||
+		(DamageTaken <= 0.f && !(bAllowZeroDamageHit && DamageTaken == 0.f)))
 	{
 		return;
 	}
@@ -49,7 +50,14 @@ void AEnemyBase::ExecuteHitReactionCue(const FGameplayEffectContextHandle& Effec
 	{
 		Parameters.Location = GetActorLocation();
 	}
-	AbilitySystemComponent->ExecuteGameplayCue(HitReactionCueTag, Parameters);
+	if (bAllowZeroDamageHit && DamageTaken == 0.f)
+	{
+		AbilitySystemComponent->InvokeGameplayCueEvent(HitReactionCueTag, EGameplayCueEvent::Executed, Parameters);
+	}
+	else
+	{
+		AbilitySystemComponent->ExecuteGameplayCue(HitReactionCueTag, Parameters);
+	}
 }
 
 UAbilitySystemComponent* AEnemyBase::GetAbilitySystemComponent() const
