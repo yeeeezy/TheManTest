@@ -62,10 +62,11 @@ public:
 			FHitResult Hit;Hit.ImpactPoint=Origin;Hit.ImpactNormal=FVector::UpVector;
 			Shot->ProcessHit(Hit,nullptr,nullptr);Shot->ProcessHit(Hit,nullptr,nullptr);
 			Test->TestEqual(TEXT("Environment hit deals no immediate enemy damage"),Enemies[0]->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),100.f);
-			// The chosen Enemy ground effect must use the supplied projected ground point.
+			// Air 007 must use the body explosion origin, even if a ground hit is available.
 			auto* Cue=LoadClass<UGCN_ExplosionGunExplosion>(nullptr,TEXT("/Game/Weapons/ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion.GC_Weapon_ExplosionGun_Explosion_C"))->GetDefaultObject<UGCN_ExplosionGunExplosion>();
 			Test->TestNotNull(TEXT("Enemy effect configured"),Cue->EnemyExplosionEffect.Get());
-			Test->TestTrue(TEXT("Enemy ground decal uses ground projection"),Cue->bEnemyEffectOnGround);
+			Test->TestFalse(TEXT("Enemy air effect does not use ground projection"),Cue->bEnemyEffectOnGround);
+			Test->TestTrue(TEXT("Enemy and environment use different systems"),Cue->EnemyExplosionEffect!=Cue->ExplosionEffect);
 			FGameplayCueParameters P;P.Location=Origin;P.Normal=FVector::UpVector;P.AggregatedTargetTags.AddTag(TAG_Data_Explosion_EnemyImpact);
 			P.EffectContext=FGameplayEffectContextHandle(new FGameplayEffectContext());P.EffectContext.AddHitResult(Hit);
 			Cue->OnExecute_Implementation(Shot,P);
@@ -75,10 +76,10 @@ public:
    Test->TestEqual(TEXT("Actual Enemy explosion Sound Cue is playing once"),EnemyVoices,1);
 			int Count=0;for(TObjectIterator<UNiagaraComponent> It;It;++It)
 				if(It->GetWorld()==W&&It->GetAsset()==Cue->ExplosionEffect)++Count;
-			Test->TestEqual(TEXT("Enemy explicitly selected ground system spawns once"),Count,1);
+			Test->TestEqual(TEXT("Enemy never spawns environment system"),Count,0);
    for(TObjectIterator<UNiagaraComponent> It;It;++It)
     if(It->GetWorld()==W&&It->GetAsset()==Cue->EnemyExplosionEffect)
-     Test->TestTrue(TEXT("Enemy ground effect uses projected point not body surface"),It->GetComponentLocation().Equals(Hit.ImpactPoint+FVector::UpVector,1.f));
+     Test->TestTrue(TEXT("Enemy air effect uses body explosion origin"),It->GetComponentLocation().Equals(Origin,.01f));
 			Start=W->GetTimeSeconds();Stage=1;return false;
 		}
 		if(W->GetTimeSeconds()-Start<.4f)return false;

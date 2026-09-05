@@ -1,5 +1,11 @@
 # 装备系统
 
+## 2026-09-05 当前爆炸结果触发（覆盖下文无条件子弹时间和Enemy Ground配置）
+
+- 仅本次延时范围伤害把Enemy的Health从正数降至0，或本次爆炸施加Strain后的真实Chaos Break事件，才请求BulletTime。仅命中/受伤/空地爆炸/Strain不足/已散落碎块再次受冲量不请求。首次5点命中伤害不属于本次延时爆炸击杀判定。
+- ExplosionGun专属`Effects/ExplosionOutcomeSubsystem`在提交Strain之前短期订阅受影响GeometryCollection的OnChaosBreakEvent，检查组件和爆炸半径，窗口0.2游戏秒；所有组件共享FExplosionOutcome，单次爆炸仅请求一次。死亡已满足条件时不再订阅Chaos。组件通知原状态在结果/超时/WorldEndPlay/Deinitialize时恢复，弱引用不依赖已销毁弹体。BulletTimeSubsystem自身曲线/距离/不重入规则保持不变。
+- EnemyExplosionEffect现在是`/Game/Weapons/ExplosionGun/Effects/EnemyExplosion/Systems/NS_ExplosionGun_EnemyDetonation`，源TMIIR Overview_Map的N_ExplosionAir_007，115包本枪独立依赖；EnemyEffectOnGround=false，真实身体爆点播放，无地面也正常生成。环境仍NS_ExplosionGun_Detonation/Ground006地面投射。独立声音、震屏和用户时间参数保持原值。
+
 - 2026-09-05晚：ExplosionGunBullet对原来可见且受范围伤害的存活Humanoid调用EnemyHitReactionComponent，保留附着Surface.BoneName/目标弱引用/入射方向作近零方向兜底。伤害筛选/去重/Visibility墙体遮挡不变，墙后不触发受击Rig；不由Cue处理骨骼状态。
 - Enemy已配置迁入的N_ExplosionGround_006（NS_ExplosionGun_Detonation）和独立SCue_ExplosionGun_EnemyDetonation，不再空槽。EnemyEffectOnGround=true时仍用原GroundHit投影，缺地面跳过Niagara，声音/震屏用真实爆点。保留用户最新BP子弹时间TimeScale=.05/SlowIn=.01/Hold=1/Recovery=.01，震屏6，环境音量3；不是原生默认值。
 

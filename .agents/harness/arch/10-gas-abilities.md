@@ -1,5 +1,10 @@
 # GAS 技能系统
 
+## 2026-09-05 当前Enemy Air 007（覆盖下文Enemy Ground配置）
+
+- 同一Explosion GC的EnemyExplosionEffect改为本枪`Effects/EnemyExplosion/Systems/NS_ExplosionGun_EnemyDetonation`（TMIIR N_ExplosionAir_007）；EnemyEffectOnGround=false，Niagara使用Params.Location实际身体爆点，不依赖GroundHit。环境ExplosionEffect仍Ground006与原地面投射。
+- 子弹时间不在Cue触发；弹体仅在本次范围伤害击杀Enemy或真实Chaos新破坏时请求，具体生命周期见arch09。声音、震屏、Control Rig和原伤害不变。
+
 ## 2026-09-05晚 当前Enemy爆炸（覆盖下文空槽状态）
 
 - 同一GC_Weapon_ExplosionGun_Explosion的EnemyExplosionEffect接NS_ExplosionGun_Detonation（已迁入的TMIIR N_ExplosionGround_006），bEnemyEffectOnGround=true。Enemy与环境仍独立字段，当前按用户指定使用同个System；地面类效果必须GroundHit投影，不悬挂在身体/方块上。以后换非地面效果可关闭EnemyEffectOnGround，在实际爆点播放。

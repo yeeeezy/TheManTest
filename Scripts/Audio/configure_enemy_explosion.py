@@ -60,18 +60,18 @@ if not sound:
     assert E.save_loaded_asset(sound,False)
 bp=E.load_asset('/Game/Weapons/ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion')
 obj=unreal.get_default_object(bp.generated_class())
-effect=E.load_asset('/Game/Weapons/ExplosionGun/Effects/Explosion/Systems/NS_ExplosionGun_Detonation')
+effect=E.load_asset('/Game/Weapons/ExplosionGun/Effects/EnemyExplosion/Systems/NS_ExplosionGun_EnemyDetonation')
 if not validate:
     obj.set_editor_property('enemy_explosion_effect',effect)
-    obj.set_editor_property('enemy_effect_on_ground',True)
+    obj.set_editor_property('enemy_effect_on_ground',False)
     obj.set_editor_property('enemy_explosion_sound',sound)
     unreal.get_editor_subsystem(unreal.AssetEditorSubsystem).open_editor_for_assets([bp,rig])
     unreal.BlueprintEditorLibrary.compile_blueprint(bp)
     assert E.save_loaded_asset(bp,False)
-    unreal.get_editor_subsystem(unreal.AssetEditorSubsystem).close_all_asset_editors()
+    for edited in [bp,rig]:unreal.get_editor_subsystem(unreal.AssetEditorSubsystem).close_all_editors_for_asset(edited)
 assert obj.get_editor_property('enemy_explosion_sound')==sound
 assert obj.get_editor_property('enemy_explosion_effect')==effect
-assert obj.get_editor_property('enemy_effect_on_ground')
+assert not obj.get_editor_property('enemy_effect_on_ground')
 assert abs(wave.get_editor_property('duration')-1.3)<.001
 assert wave.get_editor_property('num_channels')==1
 assert isinstance(sound.get_editor_property('first_node'),unreal.SoundNodeModulator)

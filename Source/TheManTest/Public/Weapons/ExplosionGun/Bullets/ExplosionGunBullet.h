@@ -3,6 +3,8 @@
 #include "Core/_Shared/Feedback/BulletTimeSubsystem.h"
 #include "ExplosionGunBullet.generated.h"
 
+struct FExplosionOutcome;
+
 // First impact retains BulletBase damage/feedback. Both impact types attach and detonate.
 UCLASS()
 class THEMANTEST_API AExplosionGunBullet : public ABulletBase
@@ -46,8 +48,8 @@ protected:
  virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 private:
  void Detonate();
- void TriggerChaos(const FVector& Origin);
- void ApplyExplosionDamage(const FVector& Origin);
+ void TriggerChaos(const FVector& Origin,const TSharedRef<FExplosionOutcome>& Outcome);
+ bool ApplyExplosionDamage(const FVector& Origin);
  FTimerHandle ExplosionTimer;
  bool bAttached=false;
  bool bDetonated=false;

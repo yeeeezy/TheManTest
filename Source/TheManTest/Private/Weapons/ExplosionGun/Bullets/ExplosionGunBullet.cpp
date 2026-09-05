@@ -16,6 +16,7 @@
 #include "Enemy/EnemyAttributeSetBase.h"
 #include "GameplayEffect.h"
 #include "Components/CapsuleComponent.h"
+#include "Weapons/ExplosionGun/Effects/ExplosionOutcomeSubsystem.h"
 
 const FName AExplosionGunBullet::ExplosionGroundTag(TEXT("ExplosionGround"));
 
@@ -83,20 +84,24 @@ void AExplosionGunBullet::Detonate()
   Params.EffectContext.AddHitResult(GroundHit);
  }
  // Resolve visibility before Chaos opens holes in the blocking geometry.
- ApplyExplosionDamage(FVector(Params.Location)+FVector(Params.Normal)*2.f);
- TriggerChaos(Params.Location);
+ auto Outcome=MakeShared<FExplosionOutcome>();
+ Outcome->Origin=Params.Location;Outcome->Settings=BulletTime;
+ Outcome->bResolved=ApplyExplosionDamage(FVector(Params.Location)+FVector(Params.Normal)*2.f);
+ if(Outcome->bResolved)
+  if(auto* Feedback=GetWorld()->GetSubsystem<UBulletTimeSubsystem>())
+   Feedback->RequestBulletTimeAtLocation(Params.Location,BulletTime);
+ TriggerChaos(Params.Location,Outcome);
  if(ExplosionCueTag.IsValid())
  {
   if(UAbilitySystemComponent* ASC=ExplosionSourceASC.Get())ASC->InvokeGameplayCueEvent(ExplosionCueTag,EGameplayCueEvent::Executed,Params);
   else UAbilitySystemGlobals::Get().GetGameplayCueManager()->HandleGameplayCue(this,ExplosionCueTag,EGameplayCueEvent::Executed,Params);
  }
- if(auto* Feedback=GetWorld()->GetSubsystem<UBulletTimeSubsystem>())
-  Feedback->RequestBulletTimeAtLocation(Params.Location,BulletTime);
  Destroy();
 }
-void AExplosionGunBullet::ApplyExplosionDamage(const FVector& Origin)
+bool AExplosionGunBullet::ApplyExplosionDamage(const FVector& Origin)
 {
- if(!GetWorld()||ExplosionDamage<=0.f||ExplosionDamageRadius<=0.f||!ExplosionDamageEffectClass)return;
+ if(!GetWorld()||ExplosionDamage<=0.f||ExplosionDamageRadius<=0.f||!ExplosionDamageEffectClass)return false;
+ bool bKilledEnemy=false;
  TArray<FOverlapResult> Overlaps;
  FCollisionQueryParams Query(SCENE_QUERY_STAT(ExplosionDamage),false,this);
  GetWorld()->OverlapMultiByObjectType(Overlaps,Origin,FQuat::Identity,
@@ -134,8 +139,11 @@ void AExplosionGunBullet::ApplyExplosionDamage(const FVector& Origin)
   auto Spec=SourceASC->MakeOutgoingSpec(ExplosionDamageEffectClass,1.f,Context);
   if(Spec.IsValid())
   {
+   const float HealthBefore=TargetASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute());
    Spec.Data->SetSetByCallerMagnitude(TAG_Data_Damage,-ExplosionDamage);
    SourceASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(),TargetASC);
+   // The default death handler destroys the Actor synchronously; ASC memory remains valid here.
+   bKilledEnemy|=HealthBefore>0.f && TargetASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute())<=0.f;
    if(IsValid(Enemy)&&!Enemy->IsActorBeingDestroyed())
     if(auto* Reaction=Enemy->FindComponentByClass<UEnemyHitReactionComponent>())
      Reaction->ReactToExplosion(Origin,ImpactDirection,
@@ -143,6 +151,7 @@ void AExplosionGunBullet::ApplyExplosionDamage(const FVector& Origin)
       AttachedHitActor.Get()==Enemy?AttachedHitBone:NAME_None);
   }
  }
+ return bKilledEnemy;
 }
 bool AExplosionGunBullet::FindExplosionGround(const FVector& Origin,FHitResult& OutHit) const
 {
@@ -163,7 +172,7 @@ bool AExplosionGunBullet::FindExplosionGround(const FVector& Origin,FHitResult& 
  }
  return false;
 }
-void AExplosionGunBullet::TriggerChaos(const FVector& Origin)
+void AExplosionGunBullet::TriggerChaos(const FVector& Origin,const TSharedRef<FExplosionOutcome>& Outcome)
 {
  if(ChaosRadius<=0.f || !GetWorld())return;
  TArray<FOverlapResult> Overlaps;
@@ -176,6 +185,8 @@ void AExplosionGunBullet::TriggerChaos(const FVector& Origin)
   auto* Collection=Cast<UGeometryCollectionComponent>(Overlap.GetComponent());
   if(!IsValid(Collection)||!IsValid(Collection->GetOwner())||Collection->GetOwner()->IsA<AEnemyBase>()||Applied.Contains(Collection))continue;
   Applied.Add(Collection);
+  if(ChaosStrain>0.f)
+   if(auto* Observer=GetWorld()->GetSubsystem<UExplosionOutcomeSubsystem>())Observer->Watch(Collection,ChaosRadius,Outcome);
   auto* Strain=NewObject<URadialFalloff>(Collection);
   Strain->SetRadialFalloff(ChaosStrain,1.f,1.f,0.f,ChaosRadius,Origin,EFieldFalloffType::Field_FallOff_None);
   Collection->ApplyPhysicsField(true,EGeometryCollectionPhysicsTypeEnum::Chaos_ExternalClusterStrain,nullptr,Strain);

@@ -1,5 +1,16 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 条件子弹时间与Enemy Air 007（实现与自验完成）
+
+- 用户确认：仅当本次爆炸实际造成新的Chaos破坏或击杀Enemy时触发子弹时间；普通爆炸/仅受伤不触发。同时指定Enemy身上爆炸使用TMIIR地图的N_ExplosionAir_007，实际爆点播放，环境仍Ground006。
+- 选择性安全检查点4f15ed0保存上轮Enemy Control Rig和音效；不纳入地图/External Actor。新增ExplosionGun专属ExplosionOutcomeSubsystem，短期监听实际Chaos Break事件，所有受影响组件共享单次结果；死亡由范围伤害前后Health判定。现有BulletTime参数/恢复曲线不改。
+- Development Editor Win64首次成功；新增九种真实PIE场景验证正在进行。TMIIR Overview_Map中同名Actor确认使用Air007、旋转identity、scale1；迁移115包，正在整理到本枪Effects/EnemyExplosion并冷验引用。尚未宣称完成。
+- 最终：ExplosionOutcomeFirst.log的ExplosionOutcomeBulletTime Success，九场景覆盖空地、存活受伤、击杀、Chaos抗破坏、新破坏、散落碎块再击、击杀与破碎同时、墙后、禁用。每场验证实际血量/破碎状态、启动次数、恢复原速度及临时通知还原。原生代码构建成功；首次double时间戳收窄编译错误已改为double字段。
+- ExplosionOutcomeRegression.log六项6/6 Success（BulletTimeAndPain、ExplosionChaosGround、ExplosionDirectionalShake、ExplosionRadialDamage、StickyExplosionAndBlood、ThreeWeaponBaseline），ExplosionOutcomeRigRegression.log补充EnemyExplosionControlRig Success。受伤动作、原Damage/Fuse/Chaos/声音/震屏/血迹均回归通过。
+- Air007和115包依赖已按本枪独立所有权整理至Effects/EnemyExplosion，正式System为NS_ExplosionGun_EnemyDetonation。EnemyEffectOnGround=false，原EnemyScale1、时间.05/.01/1/.01、震屏6、环境音量3均保留。ValidateEnemyAirCold.log输出AIR_COLD_OK；115包全部可加载且在本枪新目录，无Redirector/供应商目录实体。源图N_ExplosionAir_007已确认同名System，未迁入地图或角色。
+- Blueprint在UE打开/编译/保存成功；安装脚本仅在保存后的关闭编辑器步骤遇未暴露的Python方法，已修为close_all_editors_for_asset，并通过独立冷回读与实际PIE验证持久化，不盲目重复迁移。ResavePackages发现旧目录已无资产，磁盘仅空文件夹，检查绝对路径和文件数0后清理。
+- 已查看实际PIE截图TMT_StickyExplosion.png，Enemy身体周围可见空中火花/烟雾；地面仍使用原Ground006。旧Audio配置脚本同步新的Air槽和开关，避免以后重跑还原Ground。结果未最终提交/push，地图/External Actor不纳入；用户本轮未要求关机。
+
 ## 2026-09-05 夜间自验：Enemy爆炸与Control Rig（实现/自动验收完成）
 
 - 用户确认：Enemy爆炸使用N_ExplosionGround_006，制作方向性上半身Control Rig，合成独立音效；助手自行验收并记录后正常关机，用户明日手动验收。死亡动画/击退不在本轮范围。写前当前任务范围干净，14d9138已推送远端作为恢复点；地图和外部Actor保持原样，不创建空检查点。

@@ -84,7 +84,7 @@ public:
 		if(Stage==3)
 		{
 			if(Bullet.IsValid())return false;
-			Test->TestTrue(TEXT("Detonation requests stop independently of destroyed bullet and missing GC"),Stop->IsBulletTimeActive());
+			Test->TestFalse(TEXT("Empty detonation never starts bullet time"),Stop->IsBulletTimeActive());
 			Start=Now;Stage=4;return false;
 		}
 		if(Stage==4)

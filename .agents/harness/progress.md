@@ -1,46 +1,36 @@
-# 当前进度
+﻿# 当前进度
 
 ## Active Feature
 
-- FEAT-080，in_progress。2026-09-05夜间Enemy爆炸、Control Rig受击与独立声音已完成实现和自动验收；用户明日验收手感，整体功能不关闭。
-- 详细历史见archive/FEAT-080-three-weapon-setup.md。本轮用户明确授权自验、记录、保存后正常关机。
+- FEAT-080，in_progress。2026-09-05本轮条件子弹时间与Enemy Air007已实现并通过自验；整体三枪功能保留用户手感验收，不关闭。
+- 用户确认：只有本次爆炸实际炸碎Chaos或击杀Enemy才触发子弹时间；Enemy身上爆炸使用TMIIR地图的N_ExplosionAir_007。
+- 详细历史见archive/FEAT-080-three-weapon-setup.md。
 
-## 明日验收入口
+## 最新行为与验收入口
 
-1. 打开Maps/VFXTest/VFXTestMap，使用爆炸枪向Phantom不同位置射击，等待附着倒计时结束。观察上身朝冲击方向偏转再回弹，脚和角色位置不被Rig移动。
-2. 分别试胸口、左/右臂和头部；再在敌人附近地面引爆，确认受范围伤害时也有方向反应。墙后或范围外不触发。
-3. Enemy爆炸使用指定N_ExplosionGround_006的本项目版本，投射到已标记地面，声音是新生成的能量爆破；地面爆炸保留原Alien Cannon声音。没有合格地面时跳过大地面特效，不把贴花挂在身体上。
-4. 敌人血量仍100、每次初击5/爆炸20，连续多次后会直接销毁；死亡动画/击退本轮没有实现。测试受击时用存活敌人，必要时重启PIE。
+1. 打开Maps/VFXTest/VFXTestMap，爆炸枪打Enemy：首次5点伤害与2秒倒计时保留，延迟爆炸20点/400cm。仅受伤不减速；本次爆炸击杀Enemy才减速。
+2. 打地面或Chaos Cube：没有新破坏不减速；真正炸碎触发一次。炸不碎、对已散落碎块施加冲量不算新破坏；击杀和破碎同时发生也只请求一次。
+3. Enemy爆炸使用NS_ExplosionGun_EnemyDetonation（TMIIR N_ExplosionAir_007），在身体实际爆点播放，不再投射到脚下。地面仍NS_ExplosionGun_Detonation（Ground006）。独立Enemy能量音效、环境Alien Cannon音效和原震屏不变。
+4. Phantom方向性上半身Control Rig与部位反应保留；墙后或范围外不受范围伤害。死亡仍即时销毁，没有新增死亡动画/击退。
 
 ## 调参位置
 
-- BP_Phantom的原生ExplosionHitReaction组件：Enabled、MaxAngleDegrees=22、AttackDuration=.055、RecoveryDuration=.55游戏秒（会随子弹时间变慢）。
-- Phantom/Animations/ControlRig/CR_Phantom_ExplosionReaction：原生Enemy Directional Hit Reaction节点。配套ABP_Phantom_ExplosionReaction继承UEnemyHitReactionAnimInstance，通过Mesh.PostProcessAnimBlueprint叠在原动画末端。
-- GC_Weapon_ExplosionGun_Explosion：EnemyExplosionEffect/EnemyEffectScale/EnemyEffectOnGround、EnemyExplosionSound/EnemyVolumeMultiplier独立配置；当前地面效果开关true，声音为SCue_ExplosionGun_EnemyDetonation。
-- 用户最新值已保留：BP_ExplosionGunBullet BulletTime倍率.05、SlowIn.01、Hold1、Recovery.01真实秒、200/1500cm；爆炸GC震屏6、环境音量3。原生BulletTime默认仍.2/.05/.08/.25，不覆盖用户BP。
+- BP_ExplosionGunBullet → Bullet|Explosion|Bullet Time：保留用户TimeScale=.05、SlowIn=.01、Hold=1、Recovery=.01真实秒、Inner/Outer=200/1500cm。原生默认仍.2/.05/.08/.25。
+- GC_Weapon_ExplosionGun_Explosion：EnemyExplosionEffect指向Effects/EnemyExplosion/Systems/NS_ExplosionGun_EnemyDetonation；EnemyEffectOnGround=false、EnemyEffectScale=1。CameraShakeScale=6、环境VolumeMultiplier=3保留。
+- BP_Phantom的ExplosionHitReaction组件：Enabled、MaxAngleDegrees=22、AttackDuration=.055、RecoveryDuration=.55游戏秒。专属CR/后处理ABP位于Phantom/Animations/ControlRig；原动画与根/腿/胶囊保持原行为。
 
-## 已完成
+## 实现与验证
 
-- Enemy/Humanoid/Animation下EnemyHitReactionComponent保存方向/部位/包络，EnemyHitReactionAnimInstance在游戏线程采样并传给Rig；FRigUnit_EnemyHitReaction分配spine_01/02/03旋转，手臂/头部附加响应。根/腿不改，不在RigVM线程访问Actor。
-- ExplosionGunBullet保留附着骨骼/Actor弱引用/入射方向；原范围伤害通过可见性筛选并结算后向存活敌人请求受击。近零方向用入射方向兜底，墙后不触发。
-- Phantom专属Rig和后处理AnimBP归Phantom/Animations/ControlRig；现役OriginalRifle/Meshes/SK_Mannequin已接后处理。原共享ABP_HumanoidEnemy、ABP_Phantom_OriginalRifle图和AI/locomotion不改，没有动画重定向。
-- 指定N_ExplosionGround_006已复用当前NS_ExplosionGun_Detonation，无再次迁移/复制116包。EnemyEffectOnGround=true，地面Hit只用于视觉，声震/物理仍真实爆点。
-- 独立程序合成S_ExplosionGun_EnemyDetonation：1.3秒/48kHz/mono，Sound Cue pitch .95~1.05/volume .95~1，复用本枪爆炸衰减/并发。原Alien Cannon、肉体5倍和痛呼1倍不变。脚本Scripts/Audio/synthesize_enemy_detonation.py保存生成方法。
-- 原Fuse2、首次Damage5、延迟范围20/400cm/Enemy去重/墙体遮挡、Chaos和BulletTime不变。三枪材质/枪口/血迹/切换表现不改。
+- ExplosionGunBullet根据本次范围GE前后Health判击杀；Chaos提交Strain之前由本枪ExplosionOutcomeSubsystem监听受影响组件OnChaosBreakEvent，0.2游戏秒窗口、组件/半径筛选、同次爆炸共享一次结果。弹体销毁不影响异步结果；超时/结束移除订阅并恢复组件原通知设置。
+- Development Editor Win64构建成功。ExplosionOutcomeFirst.log：ExplosionOutcomeBulletTime Success（九场景：空地、非致死、致死、抗破坏、真破坏、碎块再击、两者同时、墙后、禁用）。实际Chaos与Health状态、单次启动、速度恢复、通知恢复均通过。
+- ExplosionOutcomeRegression.log六项6/6 Success：BulletTimeAndPain、ExplosionChaosGround、ExplosionDirectionalShake、ExplosionRadialDamage、StickyExplosionAndBlood、ThreeWeaponBaseline；ExplosionOutcomeRigRegression.log的EnemyExplosionControlRig也Success。
+- ValidateEnemyAirCold.log：AIR_COLD_OK，115包闭包全部在本枪EnemyExplosion目录，依赖可加载、无Redirector、供应商磁盘目录不存在；两个VFX/声音槽、身体爆点开关和用户参数冷回读通过。Blueprint已在UE打开/编译/保存。
+- 已查看Saved/Screenshots/WindowsEditor/TMT_StickyExplosion.png，实际Enemy空中火花/烟雾可见。
+- 安装保存后的Python关闭编辑器调用发现close_all_asset_editors未暴露，已改为close_all_editors_for_asset；独立冷回读与PIE证明资产保存有效。既有M_UE4Man_Body缺纹理/AimIK警告未处理。
 
-## 验证证据
+## 会话交接
 
-- Development Editor Win64最终成功；Blueprint、Control Rig、后处理AnimBP在UE打开/编译/保存。
-- Saved/Logs/EnemyExplosionRigFinal.log：7/7 Success，exit0。EnemyExplosionControlRig、ExplosionRadialDamage、BulletTimeAndPain、StickyExplosionAndBlood、ExplosionChaosGround、ExplosionDirectionalShake、ThreeWeaponBaseline。
-- 断言覆盖四方向实际骨骼位移、脚/胶囊不动、完整回原Pose、左臂局部反应、真实爆炸触发/墙后不触发；新Enemy音效实际播放、Niagara在地面落点；原伤害/血花/痛呼/倒计时/Chaos/震屏和时间恢复。
-- Saved/Logs/ValidateEnemyExplosionCold.log：ENEMY_EXPLOSION_ASSETS_OK cold，新资产/源音频/依赖/PostProcess/Rig/随机/3D/并发、无Redirector通过。工厂临时资产磁盘不存在。
-- 已查看Saved/Screenshots/WindowsEditor/TMT_EnemyRig_Directions.png，Before图同目录，可对照不同方向。最终手感由用户明日确认。
-- 首次创建变量需用/Script/CoreUObject.Vector而非FVector，已修复；安装成功后的Control Rig编辑器Slate退出曾崩溃，独立冷回读和两轮PIE均正常完成，未把崩溃当验收。已在安装脚本退出前关闭资产编辑器。
-- 既有M_UE4Man_Body缺纹理和AimIK警告未处理。
-
-## 会话交接与关机
-
-- 本轮写前任务范围干净，14d9138已在origin/main作为恢复点；本轮新增/修改已保存磁盘，但未自动Git提交/push。
-- 地图及TestMap外部Actor不在本轮写入：65个旧地形标签包、用户新增3/YJ、6/26、B/CV、B/ED、C/ZF目录保留。禁止撤销或全量提交这些内容。
-- Scripts/Audio/configure_enemy_explosion.py支持-EnemyExplosionValidateOnly冷只读；通用音频验证不再把可调BulletTime/震屏钉死旧值。
-- 用户授权：助手完成自验和记录后正常关机，不强制关闭有未保存内容的程序。关机命令结果另见Saved/Logs/EnemyExplosionShutdown.log（若存在）；如果其他程序阻止正常关机，保留电脑运行，不强杀。
+- 写前选择性检查点4f15ed0保存上轮Control Rig/独立音效工作；本轮结果未最终Git提交/push。
+- 地图、TestMap External Actor及用户新增3/YJ、6/26、B/CV、B/ED、C/ZF目录不纳入本轮提交，禁止撤销或全量提交。源TMIIR只迁移最终Niagara与表现依赖，无地图/角色/动画迁入。
+- Scripts/VFX/migrate_enemy_air_explosion.py在TMIIR执行；install_enemy_air_explosion.py在目标整理接入；validate_enemy_air_explosion.py冷只读验证。旧Scripts/Audio/configure_enemy_explosion.py已同步Air007与关闭Ground投射，避免重跑还原旧配置。
+- 上轮自验后关机是上一轮授权，本轮未执行关机。
