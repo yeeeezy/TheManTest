@@ -56,8 +56,10 @@ void AFirearm::BeginPlay()
 void AFirearm::PlayMuzzleFlashLight()
 {
 	UWorld* World = GetWorld();
+	const float EffectSizeScale = GetMuzzleEffectSizeScale();
 	if (!bEnableMuzzleFlashLight || !MuzzleFlashLight || !World ||
-		MuzzleFlashLightIntensity <= 0.f || MuzzleFlashLightAttenuationRadius <= 0.f)
+		MuzzleFlashLightIntensity <= 0.f || MuzzleFlashLightAttenuationRadius <= 0.f ||
+		EffectSizeScale <= 0.f)
 	{
 		return;
 	}
@@ -66,8 +68,8 @@ void AFirearm::PlayMuzzleFlashLight()
 	MuzzleFlashLight->SetWorldLocationAndRotation(
 		MuzzleTransform.TransformPosition(MuzzleFlashLightLocalOffset), MuzzleTransform.Rotator());
 	MuzzleFlashLight->SetLightColor(MuzzleFlashLightColor);
-	MuzzleFlashLight->SetAttenuationRadius(MuzzleFlashLightAttenuationRadius);
-	MuzzleFlashLight->SetSourceRadius(MuzzleFlashLightSourceRadius);
+	MuzzleFlashLight->SetAttenuationRadius(MuzzleFlashLightAttenuationRadius * EffectSizeScale);
+	MuzzleFlashLight->SetSourceRadius(MuzzleFlashLightSourceRadius * EffectSizeScale);
 	MuzzleFlashLight->SetIntensity(MuzzleFlashLightIntensity);
 	MuzzleFlashLight->SetVisibility(true);
 

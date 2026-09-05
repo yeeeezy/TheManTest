@@ -141,6 +141,12 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 				Weapon->MuzzleEffectRotation.Equals(FRotator::ZeroRotator));
 			TestTrue(TEXT("ElectricGun muzzle VFX uses source scale"),
 				Weapon->MuzzleEffectScale.Equals(FVector::OneVector));
+			TestEqual(TEXT("ElectricGun muzzle effect size scalar matches its largest axis"),
+				Weapon->GetMuzzleEffectSizeScale(), 1.f);
+			const FNiagaraVariable MuzzleScaleParameter(
+				FNiagaraTypeDefinition::GetFloatDef(), TEXT("User.MuzzleScale"));
+			TestTrue(TEXT("Electric muzzle exposes its sprite-size scale parameter"),
+				Weapon->MuzzleEffect->GetExposedParameters().IndexOf(MuzzleScaleParameter) != INDEX_NONE);
 			TestTrue(TEXT("ElectricGun muzzle light uses source cyan-green color"),
 				Weapon->MuzzleFlashLightColor.Equals(
 					FLinearColor(0.075319f, 1.f, 0.652928f, 1.f), KINDA_SMALL_NUMBER));
@@ -250,6 +256,12 @@ bool FValidateEquippedWeaponAnimationCommand::Update()
 		Test->TestEqual(TEXT("ElectricGun muzzle flash light starts at configured intensity"),
 			Weapon->GetMuzzleFlashLight() ? Weapon->GetMuzzleFlashLight()->Intensity : 0.f,
 			Weapon->MuzzleFlashLightIntensity);
+		Test->TestEqual(TEXT("ElectricGun muzzle light attenuation follows MuzzleEffectScale"),
+			Weapon->GetMuzzleFlashLight() ? Weapon->GetMuzzleFlashLight()->AttenuationRadius : 0.f,
+			Weapon->MuzzleFlashLightAttenuationRadius * Weapon->GetMuzzleEffectSizeScale());
+		Test->TestEqual(TEXT("ElectricGun muzzle light source radius follows MuzzleEffectScale"),
+			Weapon->GetMuzzleFlashLight() ? Weapon->GetMuzzleFlashLight()->SourceRadius : 0.f,
+			Weapon->MuzzleFlashLightSourceRadius * Weapon->GetMuzzleEffectSizeScale());
 		Test->TestTrue(TEXT("ElectricGun muzzle flash light uses the configured muzzle-local offset"),
 			Weapon->GetMuzzleFlashLight() && Weapon->GetMuzzleFlashLight()->GetComponentLocation().Equals(
 				Weapon->GetMuzzleWorldTransform().TransformPosition(Weapon->MuzzleFlashLightLocalOffset), 0.1f));
@@ -340,6 +352,10 @@ bool FCaptureElectricMuzzleFlashCommand::Update()
 	{
 		Test->AddInfo(FString::Printf(TEXT("Captured ElectricGun muzzle light intensity: %.2f"),
 			Weapon->GetMuzzleFlashLight()->Intensity));
+		Test->AddInfo(FString::Printf(TEXT("Captured ElectricGun muzzle scale %.2f, attenuation %.2f, source radius %.2f"),
+			Weapon->GetMuzzleEffectSizeScale(),
+			Weapon->GetMuzzleFlashLight()->AttenuationRadius,
+			Weapon->GetMuzzleFlashLight()->SourceRadius));
 	}
 
 	UGameViewportClient* GameViewportClient = World ? World->GetGameViewport() : nullptr;

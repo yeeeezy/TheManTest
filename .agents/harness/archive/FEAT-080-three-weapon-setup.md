@@ -108,3 +108,10 @@
 - `BP_ElectricGun` 最终设置 `MuzzleEffectScale=(1,1,1)`、点光 Intensity=1800、AttenuationRadius=200、SourceRadius=60、Duration=0.1s。源 UE 5.1 的 600 在当前 UE 5.7/枪体材质/曝光链下实际画面只有参考视频约三分之一亮度，因此实例强度按视觉标准补偿；RepairGun 与 ExplosionGun 继续继承默认关闭。
 - `/Game/Maps/VFXTest/VFXTestMap` 的 Bloom 临时从 1.15 调为 4.0、Threshold=0.5，以对齐源 MainScene 的审核环境；不影响其他地图。新增 `ElectricMuzzleVisualCapture`，预热 Niagara 后走真实 `PrimaryFire` 并直接读取 PIE 游戏视口，证据截图为 `Saved/Screenshots/WindowsEditor/TMT_ElectricMuzzle_VideoStandard.png`，截帧时点光强度 1500。
 - Development Editor / Win64 构建成功。NullRHI `ThreeWeaponBaseline` 与 `ThreeWeaponPIESwitch` 2/2 Success；D3D12/SM6 `ElectricMuzzleVisualCapture` Success。D3D 日志仍仅报告项目既有 `M_UE4Man_Body` 缺失输入纹理与 AimIK 警告，与本轮武器改动无关。
+
+## 2026-09-04 枪口 VFX 与点光统一尺寸倍率
+
+- `MuzzleEffectScale` 现在是每把枪统一的枪口尺寸入口。`UGA_Shoot` 创建 Niagara Component 后先写入 float `User.MuzzleScale`，再激活系统，避免首帧沿用默认倍率。
+- `/Game/Weapons/ElectricGun/Effects/Muzzle/Systems/NS_ElectricGun_LaserMuzzle` 已暴露 `User.MuzzleScale`，16 个 emitter 均在 Particle Spawn 阶段通过 Uniform `ScaleSpriteSize` 模块缩放 SpriteSize；倍率 1 保持源外观，倍率 3 的实际 D3D 截图确认闪光、光晕与 Sprite 同步增大。
+- 点光尺寸使用同一个倍率：`AttenuationRadius` 与 `SourceRadius` 乘以 `MuzzleEffectScale` 最大绝对轴，Intensity、Color、Duration 与 LocalOffset 不变。蓝图建议 XYZ 填相同值；`BP_ElectricGun` 默认已恢复 `(1,1,1)`。
+- Development Editor / Win64 构建成功。NullRHI `ThreeWeaponBaseline` 与 `ThreeWeaponPIESwitch` 2/2 Success；D3D12/SM6 `ElectricMuzzleVisualCapture` 在 1x 与 3x 均为 Success。1x 实测点光半径为 200/60，3x 为 600/180；证据图为 `Saved/Codex/MuzzleSpawnModuleScale_1.png`、`Saved/Codex/MuzzleSpawnModuleScale_3.png` 与最终 `Saved/Codex/MuzzleScaleFinal_1.png`。

@@ -121,8 +121,10 @@ void UGA_Shoot::ActivateAbility(
 		if (UNiagaraComponent* Effect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
 			this, Firearm->MuzzleEffect, MuzzleLocation,
 			CameraForward.Rotation() + Firearm->MuzzleEffectRotation,
-			Firearm->MuzzleEffectScale, true, true, ENCPoolMethod::AutoRelease, true))
+			Firearm->MuzzleEffectScale, true, false, ENCPoolMethod::AutoRelease, true))
 		{
+			const float EffectSizeScale = Firearm->GetMuzzleEffectSizeScale();
+			Effect->SetVariableFloat(TEXT("MuzzleScale"), EffectSizeScale);
 			Effect->Activate(true);
 		}
 	}

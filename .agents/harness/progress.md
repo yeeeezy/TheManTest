@@ -4,7 +4,7 @@
 
 - `FEAT-080`：RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 - 状态：`in_progress`
-- 当前阶段：暗场地图已整理到 `/Game/Maps/VFXTest/VFXTestMap`；两枪模型互换与 Laser 材质修复完成；电击枪已按用户原版录像完成枪口位置、短时青绿色点光和 D3D 实际画面验收；Phantom 静止命中目标、EnemyBase 通用血条和无视角后坐测试配置已就绪，可继续开发爆炸弹逻辑。
+- 当前阶段：暗场地图已整理到 `/Game/Maps/VFXTest/VFXTestMap`；两枪模型互换与 Laser 材质修复完成；电击枪已按用户原版录像完成枪口位置、短时青绿色点光和 D3D 实际画面验收；`MuzzleEffectScale` 现可同步缩放 Niagara 枪口效果与点光范围；Phantom 静止命中目标、EnemyBase 通用血条和无视角后坐测试配置已就绪，可继续开发爆炸弹逻辑。
 - 详细历史：`archive/FEAT-080-three-weapon-setup.md`
 
 ## 已确认方案
@@ -16,6 +16,7 @@
 - 即使素材相同，也复制并重命名到各武器所有者目录，确保后续独立修改。
 - 不迁移外部项目的角色、武器蓝图或动画，不进行动画重定向。
 - `VFXTestMap` 审核环境临时使用 Bloom=4、Threshold=0.5 对齐源 MainScene；电击枪单独使用 `MuzzleEffectScale=1.0` 和青绿色短时枪口点光（UE 5.7 视觉补偿强度 1800、半径 200、SourceRadius 60、0.1 秒线性淡出），其他枪默认关闭。
+- `MuzzleEffectScale` 是每把枪统一的枪口尺寸参数：开火时写入 Niagara 的 `User.MuzzleScale`，同时按最大绝对轴缩放点光 `AttenuationRadius` 与 `SourceRadius`；建议 XYZ 填相同值，亮度、颜色和持续时间不随尺寸倍率改变。
 
 ## 最近完成
 
@@ -36,6 +37,7 @@
 - 查明 Laser 方形边缘来自迁移后 11 个材质实例 `Main_Texture` 为空，而非 Niagara 或混合模式加载失败；已按源工程恢复 LensFlare、Lightning、MuzzleFlash、Smoke、Fire 与 Rocks 的本地贴图引用。冷启动精确回读 11/11 通过，ThreeWeaponBaseline 与 ThreeWeaponPIESwitch 在 NullRHI 和真实 D3D 渲染设备下均为 Success。
 - 逐帧读取用户原版录像 `D:\ROG\Videos\EV录屏\20260904_133033.mp4`，以 6.083–6.150s 的 3–5 帧青绿色枪体反光为验收标准。修正源线性颜色、Unitless 灯光单位、SourceRadius=60、当前枪口坐标下的持枪侧偏移和 0.1 秒线性淡出；枪口位置前移到源枪管位置，避免 Niagara 埋入模型。
 - `BP_ElectricGun` 在 UE 5.7 中用 Intensity=1800 做视觉补偿；`VFXTestMap` 临时 Bloom=4/Threshold=0.5。Development Editor 构建成功；NullRHI 三武器回归 2/2 Success，D3D12/SM6 `ElectricMuzzleVisualCapture` Success，截帧强度 1500。审核图：`Saved/Screenshots/WindowsEditor/TMT_ElectricMuzzle_VideoStandard.png`。
+- 电击枪 Laser System 已暴露 `User.MuzzleScale`，16 个 emitter 的 SpriteSize 在 Particle Spawn 阶段统一缩放；`GA_Shoot` 先写参数再激活 Niagara。1x 保持原外观，3x 截图确认粒子同步放大，点光 AttenuationRadius/SourceRadius 从 200/60 同步变为 600/180；蓝图默认已恢复 `(1,1,1)`。Development Editor 构建、NullRHI 两项回归和 D3D 实拍均通过。
 
 ## 当前待办
 

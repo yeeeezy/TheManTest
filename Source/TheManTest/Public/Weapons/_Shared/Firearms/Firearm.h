@@ -198,6 +198,8 @@ public:
 	FORCEINLINE int32 GetCurrentAmmo() const { return CurrentAmmo; }
 	FORCEINLINE int32 GetMagazineCapacity() const { return MagazineCapacity; }
 	FORCEINLINE int32 GetSpareMagazineCount() const { return SpareMagazineCount; }
+	// A point light is spherical, so non-uniform Niagara scale uses its largest absolute axis.
+	FORCEINLINE float GetMuzzleEffectSizeScale() const { return MuzzleEffectScale.GetAbsMax(); }
 	FORCEINLINE UPointLightComponent* GetMuzzleFlashLight() const { return MuzzleFlashLight; }
 
 private:
