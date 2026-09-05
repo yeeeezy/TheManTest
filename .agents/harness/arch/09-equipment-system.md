@@ -6,7 +6,8 @@
 
 - 延时爆炸新增非Enemy的Chaos破碎，不新增伤害。Bullet|Explosion|Chaos可调ChaosRadius(400cm)/ChaosStrain(500000)/ChaosImpulse(1200，速度变化)；碰撞时缓存Enemy分类，只有非Enemy分支处理半径内GeometryCollection（去重并排除Enemy）。Strain后0.05秒施加径向冲量，弱引用不依赖已销毁弹体。
 - Bullet|Explosion|Ground：GroundSearchDistance=2000cm、GroundMaxSlope=45度。仅Actor Tags里的ExplosionGround为地面，不是Component Tag或Gameplay Tag；Object Multi Trace跳过阻挡Cube，法线Z判坡度，拒绝Enemy/弹体/GeometryCollection。
-- 可摆放类Actors/DestructibleCube/ChaosDestructibleCube拥有GeometryCollection根组件；蓝图/Game/Actors/DestructibleCube/Blueprint/BP_ChaosDestructibleCube。FractureAsset与Toughness可逐实例配置，大小使用Actor Scale。关闭碰撞伤害，使用Destructible通道。显式CreateTestCubeAsset仅编辑器创建预切分27块GC资产，不在运行时切网格。
+- 可摆放类Actors/DestructibleCube/ChaosDestructibleCube拥有GeometryCollection根组件；蓝图/Game/Actors/DestructibleCube/Blueprint/BP_ChaosDestructibleCube。FractureAsset与Toughness可逐实例配置，大小使用Actor Scale。关闭碰撞伤害，使用Destructible通道。显式CreateTestCubeAsset(bRebuild=false)仅编辑器创建预切分GC；true显式重建同路径资产，不在运行时切网格。现为42块大小混合的Voronoi，24分散随机点+18密集点、seed92417、断面0.8cm噪声；在临时集合切割成功后替换资产，保留实例引用。
+- ChaosAngularSpeed默认5rad/s，与原ChaosImpulse独立；释放碎块的延迟回调中向同一范围提交RandomVector角速度场，径向Mask限制半径（Culling_Outside保留Mask非零值）。只在原非Enemy分支，不修改伤害/Fuse/Cue。
 
 - `Weapons/ExplosionGun/Bullets/ExplosionGunBullet.h/.cpp`：`AExplosionGunBullet : ABulletBase`，`BP_ExplosionGunBullet` 的原生父类。基类先处理首次伤害、原 Impact Cue 与 Phantom 穿透；有效命中后停止碰撞/移动，附着组件或骨骼并计时。基类仅增加protected只读 `HasProcessedHit()`，其他枪行为不变。
 - 蓝图 `Bullet|Explosion / ExplosionDelay` 默认2秒，可调；`AttachmentOffset` 默认4cm。零秒延后到下一Tick执行，重复碰撞不重复触发，EndPlay取消计时。

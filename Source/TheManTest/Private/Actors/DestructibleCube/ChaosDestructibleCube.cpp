@@ -7,6 +7,9 @@
 #include "GeometryCollection/GeometryCollection.h"
 #include "Engine/StaticMesh.h"
 #include "UObject/Package.h"
+#include "Misc/PackageName.h"
+#include "PlanarCut.h"
+#include "Voronoi/Voronoi.h"
 #endif
 
 AChaosDestructibleCube::AChaosDestructibleCube()
@@ -27,29 +30,39 @@ void AChaosDestructibleCube::OnConstruction(const FTransform& Transform)
  GeometryCollection->bUseSizeSpecificDamageThreshold=false;
  GeometryCollection->SetEnableDamageFromCollision(false);
 }
-UGeometryCollection* AChaosDestructibleCube::CreateTestCubeAsset()
+UGeometryCollection* AChaosDestructibleCube::CreateTestCubeAsset(bool bRebuild)
 {
 #if WITH_EDITOR
  const TCHAR* Path=TEXT("/Game/Actors/DestructibleCube/Meshes/GC_DestructibleCube");
- if(auto* Existing=LoadObject<UGeometryCollection>(nullptr,TEXT("/Game/Actors/DestructibleCube/Meshes/GC_DestructibleCube.GC_DestructibleCube")))
- {
-  Existing->UpdateGeometryDependentProperties();
-  Existing->InvalidateCollection();
-  Existing->CreateSimulationData();
-  Existing->MarkPackageDirty();
-  return Existing;
- }
+ auto* Existing=FPackageName::DoesPackageExist(Path)?LoadObject<UGeometryCollection>(nullptr,TEXT("/Game/Actors/DestructibleCube/Meshes/GC_DestructibleCube.GC_DestructibleCube")):nullptr;
+ if(Existing&&!bRebuild)return Existing;
  auto* Mesh=LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Cube.Cube"));
  if(!Mesh)return nullptr;
- auto* Collection=NewObject<UGeometryCollection>(CreatePackage(Path),TEXT("GC_DestructibleCube"),RF_Public|RF_Standalone|RF_Transactional);
- // 27 closed chunks, assembled into a single 100cm clustered cube (no runtime mesh generation).
- for(int X=0;X<3;++X)for(int Y=0;Y<3;++Y)for(int Z=0;Z<3;++Z)
+ // Build off to the side: a failed cut must not replace the placed asset.
+ auto* Working=NewObject<UGeometryCollection>();
+ FGeometryCollectionEngineConversion::AppendStaticMesh(Mesh,nullptr,FTransform::Identity,Working,true,true);
+ FRandomStream Random(92417);
+ TArray<FVector> Sites;
+ // Broadly spaced sites make larger fragments; a local concentration supplies small chips.
+ for(int I=0;I<24;++I)
  {
-  const FTransform Chunk(FQuat::Identity,FVector(X-1,Y-1,Z-1)*(100.f/3.f),FVector(1.f/3.f));
-  FGeometryCollectionEngineConversion::AppendStaticMesh(Mesh,nullptr,Chunk,Collection,true,false);
+  Sites.Emplace(Random.FRandRange(-47.f,47.f),Random.FRandRange(-47.f,47.f),Random.FRandRange(-47.f,47.f));
  }
- auto Data=Collection->GetGeometryCollection();
- FGeometryCollectionClusteringUtility::ClusterAllBonesUnderNewRoot(Data.Get());
+ for(int I=0;I<18;++I)
+  Sites.Add(FVector(-20,12,8)+Random.VRand()*Random.FRandRange(4.f,23.f));
+ FVoronoiDiagram Diagram(Sites,FBox(FVector(-51),FVector(51)),.1);
+ FPlanarCells Cells(Sites,Diagram);
+ FNoiseSettings Noise;
+ Noise.Amplitude=.8f;Noise.Frequency=.12f;Noise.Octaves=3;Noise.PointSpacing=5.f;
+ Cells.SetNoise(Noise);
+ auto Data=Working->GetGeometryCollection();
+ if(CutWithPlanarCells(Cells,*Data,0,0.0,5.0,92417)==INDEX_NONE)return nullptr;
+ // Cutting converts the source bone into the common cluster; do not introduce a second root.
+ Working->UpdateGeometryDependentProperties();
+ auto* Collection=Existing?Existing:NewObject<UGeometryCollection>(CreatePackage(Path),TEXT("GC_DestructibleCube"),RF_Public|RF_Standalone|RF_Transactional);
+ Collection->Modify();
+ Collection->SetGeometryCollection(Data);
+ Collection->Materials=Working->Materials;
  Collection->EnableClustering=true;
  Collection->DamageThreshold={100000.f};
  Collection->bUseSizeSpecificDamageThreshold=false;

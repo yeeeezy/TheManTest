@@ -1,6 +1,7 @@
 # 构建配置
 
 - FEAT-080 Chaos Cube：Private依赖GeometryCollectionEngine、Chaos、PhysicsCore、FieldSystemEngine。UGeometryCollection组件负责真实破碎，ExplosionGunBullet向其提交径向Strain/Impulse；不新增插件或外部模块。
+- 不规则破碎扩展：PlanarCut插件显式仅Editor启用；Editor构建依赖PlanarCut与Voronoi，供显式资产创建命令使用。Game构建不依赖两者，运行时只模拟已生成GeometryCollection。
 
 **何时读取：** 新增模块依赖、修改插件列表、调整构建目标时。
 

@@ -7,9 +7,9 @@
 
 ## 最新完成：Chaos Cube 与地面爆炸
 
-- 可复用蓝图：/Game/Actors/DestructibleCube/Blueprint/BP_ChaosDestructibleCube，原生AChaosDestructibleCube。真实27块聚类GeometryCollection；FractureAsset/Toughness可逐实例配置，大小使用Actor Scale；初碰不自动碎。
+- 可复用蓝图：/Game/Actors/DestructibleCube/Blueprint/BP_ChaosDestructibleCube，原生AChaosDestructibleCube。现为42块不规则Voronoi，大小混合、0.8cm断面凹凸；不再是27块规则网格。FractureAsset/Toughness可逐实例配置，大小使用Actor Scale；初碰不自动碎。
 - VFXTestMap新增3个Cube，标签VFXTest_ChaosCube_1~3。其他场景直接拖入同一蓝图。
-- ExplosionGunBullet内触发非Enemy的Chaos：ChaosRadius=400cm、ChaosStrain=500000、ChaosImpulse=1200速度变化；Strain后0.05秒弱引用径向冲量。Enemy命中仅保留原附着/倒计时/Cue，不触发Chaos，不新增伤害。
+- ExplosionGunBullet内触发非Enemy的Chaos：ChaosRadius=400cm、ChaosStrain=500000、ChaosImpulse=1200速度变化、ChaosAngularSpeed=5rad/s随机翻滚；Strain后0.05秒弱引用径向冲量/范围内逐粒子角速度。Enemy命中仅保留原附着/倒计时/Cue，不触发Chaos，不新增伤害。
 - GroundSearchDistance=2000cm、GroundMaxSlope=45度。Actor Tag ExplosionGround不是Gameplay Tag/Component Tag；Object Multi Trace穿过Cube，拒绝Enemy/子弹/GeometryCollection。无合格地面时跳过Ground Niagara/内含decal。
 - 地面标记：GASPTest的Plane；VFXTestMap的VFXTest_Floor；TestMap的Landscape与64个StreamingProxy（共65外部Actor包）。未标记墙、天花板、Cube或LobbyMap。
 - Cue参数：Location为真实爆点，用于声音/震屏；EffectContext.HitResult携带地面落点，Niagara在地面+1cm播放。物理以真实爆点为中心，不在Cue里执行。
@@ -26,6 +26,9 @@
 
 ## 最新验证
 
+- 本轮IrregularCubeFinal.log：IrregularCubeGeometry、ExplosionChaosGround、StickyExplosionAndBlood、ExplosionDirectionalShake、ThreeWeaponBaseline 5/5 Success；Development Editor Win64编译成功。冷读取42块、体积284.6~72946.6cm³、总量1000000.1cm³，非轴对齐断面成立。
+- RebuildIrregularCube.log生成/保存同路径正式GC，Cube Blueprint打开/编译/保存；没有加载保存或重新布置地图。已查看最新有照明的TMT_ChaosCube_Detonated.png，可见大小错落与斜面碎片。
+
 - Development Editor Win64编译成功（包含全部本轮C++和测试）。
 - ExplosionChaosFinal.log：ExplosionChaosGround、StickyExplosionAndBlood、ExplosionDirectionalShake、ThreeWeaponBaseline 4/4 Success。
 - 覆盖真实Projectile Sweep附着、倒计时前不碎/结束RootBroken、半径外不碎、碎块扩散、穿过Cube找地面、坡度/标签/距离筛选、缺地面不生成Niagara、Enemy不引爆附近Cube、原伤害/血花/清理及声震配置。
@@ -36,7 +39,7 @@
 ## 会话交接
 
 - 本轮范围完成，可在VFXTestMap直接试三个Cube；用户可调整弹体Ground/Chaos参数和Cube Toughness/Scale。
-- 最新安全检查点f199564；结果未最终Git提交，未push。等待用户明确要求更新Git。
+- 最新安全检查点db9a156保存原规则Cube及前置源码/文档；本轮结果未最终Git提交，未push。地图/用户新增外部Actor未纳入该选择性检查点，保持原样。
 - TestMap的65个外部Actor包改动均为这次地形标记，不要误当无关编辑撤销。
-- 可复用编辑器资产创建命令CreateTestCubeAsset不在运行时/Construction调用；工作脚本在Saved/Codex：install_chaos_cube.py、tag_explosion_landscape.py、validate_chaos_assets.py。
+- 可复用编辑器资产创建命令CreateTestCubeAsset(bRebuild=false)不在运行时/Construction调用；仅显式true重建不规则资产。PlanarCut插件与PlanarCut/Voronoi依赖限Editor。最新生成脚本Saved/Codex/rebuild_irregular_cube.py，不重存地图；旧install_chaos_cube.py用于首次布场，不要为重建碎块重新执行。
 - 既有M_UE4Man_Body材质缺纹理及AimIK警告未在本轮处理。

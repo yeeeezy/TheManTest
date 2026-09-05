@@ -18,6 +18,10 @@
 #include "ImageUtils.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "GeometryCollection/GeometryCollectionObject.h"
+#include "GeometryCollection/GeometryCollection.h"
+#include "Engine/PointLight.h"
+#include "Components/PointLightComponent.h"
 
 namespace
 {
@@ -64,6 +68,10 @@ public:
    Floor->Tags.Add(AExplosionGunBullet::ExplosionGroundTag);
    Block=MakeBox(Origin+FVector(0,300,100),FVector(1,1,2));
    Cube=World->SpawnActor<AChaosDestructibleCube>(CubeClass,Origin+FVector(0,0,52),FRotator::ZeroRotator);
+   auto* Light=World->SpawnActor<APointLight>(Origin+FVector(-100,-200,400),FRotator::ZeroRotator);
+   auto* Point=Cast<UPointLightComponent>(Light->GetLightComponent());
+   Point->SetMobility(EComponentMobility::Movable);
+   Point->SetIntensity(120000.f);Point->SetAttenuationRadius(3500.f);
    const FVector CameraLocation=Origin+FVector(-450,-550,280);
    auto* Camera=World->SpawnActor<ACameraActor>(CameraLocation,(Origin+FVector(0,0,65)-CameraLocation).Rotation());
    World->GetFirstPlayerController()->SetViewTarget(Camera);
@@ -148,6 +156,30 @@ bool FExplosionChaosTest::RunTest(const FString&)
  ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
  ADD_LATENT_AUTOMATION_COMMAND(FExplosionChaosCommand(this));
  ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+ return true;
+}
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FIrregularCubeTest,"TheManTest.Player.Weapons.IrregularCubeGeometry",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
+bool FIrregularCubeTest::RunTest(const FString&)
+{
+ auto* Asset=LoadObject<UGeometryCollection>(nullptr,TEXT("/Game/Actors/DestructibleCube/Meshes/GC_DestructibleCube.GC_DestructibleCube"));
+ if(!TestNotNull(TEXT("Fracture asset cold loads"),Asset))return false;
+ auto Data=Asset->GetGeometryCollection();
+ const auto* Volumes=Data->FindAttribute<float>(TEXT("Volume"),FGeometryCollection::TransformGroup);
+ if(!TestNotNull(TEXT("Cooked physical volumes exist"),Volumes))return false;
+ int32 Pieces=0;float Small=MAX_flt,Large=0.f,Total=0.f;
+ for(int32 I=0;I<Data->SimulationType.Num();++I)
+ {
+  if(Data->SimulationType[I]!=FGeometryCollection::ESimulationTypes::FST_Rigid)continue;
+  ++Pieces;Small=FMath::Min(Small,(*Volumes)[I]);Large=FMath::Max(Large,(*Volumes)[I]);Total+=(*Volumes)[I];
+ }
+ TestTrue(TEXT("Voronoi generates a bounded set of real fragments"),Pieces>=38&&Pieces<=60);
+ TestTrue(TEXT("Mixed fragment volumes, not equal grid blocks"),Small>0.f&&Large/Small>8.f);
+ TestTrue(TEXT("Fracture preserves solid cube volume"),Total>950000.f&&Total<1050000.f);
+ int32 Oblique=0;
+ for(const FVector3f& Normal:Data->Normal)
+  if(Normal.GetAbsMax()<.95f)++Oblique;
+ TestTrue(TEXT("Internal fracture surfaces are not axis-aligned"),Oblique>100);
+ AddInfo(FString::Printf(TEXT("Irregular cube pieces=%d volumes %.1f..%.1f total=%.1f oblique normals=%d"),Pieces,Small,Large,Total,Oblique));
  return true;
 }
 #endif

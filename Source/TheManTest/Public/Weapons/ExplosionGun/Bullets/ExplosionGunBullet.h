@@ -25,6 +25,8 @@ public:
  float ChaosStrain=500000.f;
  UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion|Chaos", meta=(ClampMin="0"))
  float ChaosImpulse=1200.f;
+ UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion|Chaos", meta=(ClampMin="0",Units="rad/s"))
+ float ChaosAngularSpeed=5.f;
  static const FName ExplosionGroundTag;
  bool FindExplosionGround(const FVector& Origin,FHitResult& OutHit) const;
  bool DidHitEnemy() const { return bHitEnemy; }

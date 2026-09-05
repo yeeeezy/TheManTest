@@ -7,6 +7,16 @@
 - 两把新枪只替换模型、枪口 VFX、命中 VFX 与贴花；玩法、动画、音频、弹药、GAS、后坐力和子弹行为保持与 RepairGun 一致。
 - 外部来源仅迁移最终模型和 VFX 依赖，不迁移源项目角色、武器蓝图或动画。
 
+## 2026-09-04 不规则真实破碎
+
+- 用户不接受规则3x3x3分块，确认改为不规则Voronoi、大小错落、凹凸断面与随机翻滚；伤害、Fuse、Cue、Ground规则不动。选择性检查点db9a156保存前置源码/文档/Cube资产，地图及用户新增外部Actor未纳入。
+- CreateTestCubeAsset(bRebuild)改为在临时UGeometryCollection中切割完整100cm Cube：24个分散随机点+18个局部密集点，固定seed92417；原生PlanarCut/Voronoi，断面noise幅度0.8cm、间距5cm，零grout。成功后替换同一GC资产的几何与材质槽，保留使用方路径；常规调用不重建，只有显式true重建。
+- Bullet新增ChaosAngularSpeed默认5rad/s；保留径向冲量，延迟释放碎块时对半径内逐粒子随机角速度，仅非Enemy分支。PlanarCut插件仅Editor启用，Build.cs的PlanarCut/Voronoi也仅Editor依赖，运行时不切网格。
+- RebuildIrregularCube.log已保存正式GC并打开/编译/保存Cube蓝图；未保存或重新布置地图。新增形状统计和回归验证进行中。
+- 最终Development Editor Win64构建成功；IrregularCubeFinal.log中IrregularCubeGeometry、ExplosionChaosGround、ExplosionDirectionalShake、StickyExplosionAndBlood、ThreeWeaponBaseline 5/5 Success。冷读取统计42个刚体块，体积284.6~72946.6cm³，总体积1000000.1cm³，12085个非轴对齐顶点法线；总量保持100cm实心Cube，没有规则网格碎块。
+- PIE真实Sweep附着、延迟RootBroken/飞散、范围外不碎、地面VFX、Enemy分支排除、声震/血花/原伤害回归全部通过。测试区新增临时照明（不写地图），已查看TMT_ChaosCube_Detonated.png，大小错落且斜面碎片清晰可见。
+- 仅覆盖既有GC和编译Cube BP，未删除资产；原规则版可从db9a156恢复。地图/外部Actor包保持用户前置工作区状态，结果未最终提交/push，FEAT-080保持in_progress。
+
 ## 2026-09-04 Chaos Cube 与爆炸地面投射
 
 - 用户确认：可摆放Chaos Cube类，爆炸弹非Enemy命中时倒计时触发Chaos；Enemy分支不扩展，不增加伤害。实际爆点负责物理/声音/震屏，Ground Niagara只在Actor Tag `ExplosionGround`且坡度合格的表面播放。检查点f199564保存前轮音量覆盖。

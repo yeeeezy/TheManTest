@@ -120,11 +120,24 @@ void AExplosionGunBullet::TriggerChaos(const FVector& Origin)
   Collection->ApplyPhysicsField(true,EGeometryCollectionPhysicsTypeEnum::Chaos_ExternalClusterStrain,nullptr,Strain);
   // Delay impulse one physics step so the newly released pieces receive individual outward kicks.
   const TWeakObjectPtr<UGeometryCollectionComponent> WeakCollection(Collection);
-  const float Radius=ChaosRadius,Strength=ChaosImpulse;
+  const float Radius=ChaosRadius,Strength=ChaosImpulse,Spin=ChaosAngularSpeed;
   FTimerHandle ImpulseTimer;
-  GetWorldTimerManager().SetTimer(ImpulseTimer,FTimerDelegate::CreateLambda([WeakCollection,Origin,Radius,Strength]()
+  GetWorldTimerManager().SetTimer(ImpulseTimer,FTimerDelegate::CreateLambda([WeakCollection,Origin,Radius,Strength,Spin]()
   {
-   if(auto* GC=WeakCollection.Get())GC->AddRadialImpulse(Origin,Radius,Strength,ERadialImpulseFalloff::RIF_Linear,true);
+   if(auto* GC=WeakCollection.Get())
+   {
+    GC->AddRadialImpulse(Origin,Radius,Strength,ERadialImpulseFalloff::RIF_Linear,true);
+    if(Spin>0.f)
+    {
+     auto* Mask=NewObject<URadialFalloff>(GC);
+     Mask->SetRadialFalloff(1.f,1.f,1.f,0.f,Radius,Origin,EFieldFalloffType::Field_FallOff_None);
+     auto* RandomSpin=NewObject<URandomVector>(GC);
+     RandomSpin->SetRandomVector(Spin);
+     auto* CulledSpin=NewObject<UCullingField>(GC);
+     CulledSpin->SetCullingField(Mask,RandomSpin,EFieldCullingOperationType::Field_Culling_Outside);
+     GC->ApplyPhysicsField(true,EGeometryCollectionPhysicsTypeEnum::Chaos_AngularVelocity,nullptr,CulledSpin);
+    }
+   }
   }),.05f,false);
  }
 }

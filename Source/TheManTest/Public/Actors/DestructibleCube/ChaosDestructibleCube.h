@@ -21,5 +21,5 @@ public:
  virtual void OnConstruction(const FTransform& Transform) override;
  // Explicit editor authoring command, never run during gameplay or construction.
  UFUNCTION(BlueprintCallable,Category="Destructible Cube|Editor",meta=(DevelopmentOnly))
- static UGeometryCollection* CreateTestCubeAsset();
+ static UGeometryCollection* CreateTestCubeAsset(bool bRebuild=false);
 };
