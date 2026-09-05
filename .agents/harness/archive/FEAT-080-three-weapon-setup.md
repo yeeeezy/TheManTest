@@ -1,5 +1,17 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 共享人形全身受击、死亡清理与物理爆炸（实现与自验完成）
+
+- 用户批准合并实施：共享人形Rig归属/映射，更大更自然的全身含腿受击；真实移动/转身附着验证；敌人死亡清除悬空子弹/身体血痕；普通SimulatePhysics物体受爆炸冲量且不因此触发子弹时间。检查点8406b19保存上轮仰射及用户现有ABP状态，地图/ExternalActor/其他参数不纳入。
+- 原生新增HumanoidReactionFrame和可配骨骼映射，38度/.85秒、头肩延迟跟随、7cm屈膝缓冲与双腿解析解保持输入动画脚位；保留胶囊不动。Humanoid基类自动设置共享后处理软类。Rig/ABP已通过UE移动到Humanoid/_Shared/Animations/ControlRig，清Rig预览Mesh、ABP转骨架无关模板，原Phantom Mesh后处理槽清空，改由基类接入。安装保存成功后审计None依赖返回导致脚本异常，已修仅日志遍历，不重复移动。
+- 爆炸弹监听附着Enemy.OnEndPlay，非自身正在爆炸时销毁；自身爆炸击杀不打断Detonate。身体血痕改为Character拥有的Decal组件，死亡自动清理，地面血迹保持寿命。普通物理组件排除Enemy/Chaos、去重/Visibility墙体筛选后施加线性衰减速度冲量，独立PhysicsImpulseRadius400/Strength800，不请求子弹时间。
+- Development Editor Win64当前构建通过。共享Rig实际PIE、腿部/第二人形使用方、移动附着/死亡清理与物理飞散验证尚在进行，未宣称完成。
+- 最终Development Editor Win64成功，无新增C++编译警告。SharedReactionFinal.log五项5/5 Success：EnemyExplosionControlRig、ExplosionOutcomeBulletTime（九种条件结果）、ExplosionSimulatedPhysics、MovingEnemyAttachmentCleanup、StickyExplosionAndBlood。共享Rig四方向头部位移21.27~21.64cm、髋部下降4.8cm、膝部位移10cm，脚位/胶囊保持，头肩包络与躯干错开，恢复和部位受击通过。已目视检查TMT_EnemyRig_Directions.png，四方向全身受力清晰。
+- 移动测试使用非Phantom的原生AHumanoidEnemy，复用测试模型/locomotion但靠基类自动接共享后处理；CharacterMovement实际行走约425cm并转45度、触发全身受击，子弹/血痕保持骨骼局部附着。两轮分别主动死亡与另一颗爆炸弹致死，挂载弹体与身体Decal均销毁。首次测试没有Controller时默认MOVE_None导致未移动，已在测试显式启用无Controller物理及MOVE_Walking，未用Actor位移冒充行走。
+- 普通物理近100cm/远250cm测试速度约599/300cm/s，墙后/范围外保持静止，不触发子弹时间。Chaos独立回归证明未重复破坏或改条件触发。身体Decal淡出不会销毁Owner，环境血迹按原寿命保留。
+- SharedReactionColdVerified.log输出SHARED_REACTION_COLD_OK：ABP只依赖共享Rig，Rig无/Game依赖；无Phantom预览Mesh、SourceHierarchyImport、SourceCurveImport或TargetSkeleton引用，旧路径Registry/磁盘为空，无Redirector。首次冷验发现Rig保留两个骨架导入源引用，已清除并独立冷验。Phantom实际默认回读38度/.85秒恢复/.045秒跟随/7cm腿压缩；骨骼映射可配置，不同层级仍需Rig兼容适配。原Phantom模型PostProcess槽清空，防止重复叠加。
+- Scripts/VFX/install_shared_humanoid_reaction.py及validate_shared_humanoid_reaction.py为共享入口；Audio配置脚本不再生成旧Phantom Rig。当前Phantom固定靶开关、用户Explosion Cue效果/声音/震屏设置和地图/ExternalActor均未改。结果未最终提交/push，整体FEAT-080留用户观感验收。
+
 ## 2026-09-05 仰射仍偏下：实际敌人瞄准漏检（复现与修正完成）
 
 - 用户反馈仰射明显偏下，继续同一修复；写前检查点f7f7287保存上轮骨骼附着。冷读爆炸弹半径15cm、AttachmentOffset4cm、Mesh本地零偏移，模型范围X±10.9cm/YZ±5.16cm。

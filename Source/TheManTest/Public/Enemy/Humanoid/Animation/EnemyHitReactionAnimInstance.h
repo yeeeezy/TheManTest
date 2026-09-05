@@ -1,5 +1,6 @@
 #pragma once
 #include "Animation/AnimInstance.h"
+#include "Enemy/Humanoid/Animation/HumanoidReactionFrame.h"
 #include "EnemyHitReactionAnimInstance.generated.h"
 UCLASS()
 class THEMANTEST_API UEnemyHitReactionAnimInstance : public UAnimInstance
@@ -8,5 +9,6 @@ class THEMANTEST_API UEnemyHitReactionAnimInstance : public UAnimInstance
 public:
  UPROPERTY(BlueprintReadOnly,Category="Reaction") FVector ReactionRotation=FVector::ZeroVector;
  UPROPERTY(BlueprintReadOnly,Category="Reaction") FName ReactionBone;
+ UPROPERTY(BlueprintReadOnly,Category="Reaction") FHumanoidReactionFrame ReactionFrame;
  virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 };

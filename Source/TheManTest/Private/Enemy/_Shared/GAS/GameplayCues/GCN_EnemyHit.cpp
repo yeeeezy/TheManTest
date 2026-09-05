@@ -64,8 +64,14 @@ bool UGCN_EnemyHit::OnExecute_Implementation(AActor* Target,const FGameplayCuePa
 				const FVector SurfaceNormal=MeshHit.ImpactNormal.GetSafeNormal(UE_SMALL_NUMBER,Normal);
 				const FName Bone=MeshHit.BoneName.IsNone()?Mesh->FindClosestBone(MeshHit.ImpactPoint):MeshHit.BoneName;
 				const float Size=BloodScale*FMath::FRandRange(1.f-BloodSizeVariation,1.f+BloodSizeVariation);
-				Fade(UGameplayStatics::SpawnDecalAttached(BloodStainMaterial,FVector(BodyStainProjectionDepth,10.f*Size,10.f*Size*FMath::FRandRange(.75f,1.25f)),Mesh,Bone,MeshHit.ImpactPoint+SurfaceNormal*.5f,
-					MakeDecalRotation(SurfaceNormal,true),EAttachLocation::KeepWorldPosition,BloodStainLifeSpan));
+				// Own body stains on the character so destruction cannot leave detached decals.
+				auto* Decal=NewObject<UDecalComponent>(Character);
+				Character->AddInstanceComponent(Decal);
+				Decal->SetDecalMaterial(BloodStainMaterial);
+				Decal->DecalSize=FVector(BodyStainProjectionDepth,10.f*Size,10.f*Size*FMath::FRandRange(.75f,1.25f));
+				Decal->SetupAttachment(Mesh,Bone);Decal->RegisterComponent();
+				Decal->SetWorldLocationAndRotation(MeshHit.ImpactPoint+SurfaceNormal*.5f,MakeDecalRotation(SurfaceNormal,true));
+				Decal->SetLifeSpan(BloodStainLifeSpan);Fade(Decal);
 			}
 		}
 		// A nearby wall behind the target or floor receives a stain; never put bullet holes on the enemy.

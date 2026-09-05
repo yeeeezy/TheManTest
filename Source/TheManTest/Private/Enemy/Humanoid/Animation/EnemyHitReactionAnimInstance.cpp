@@ -5,6 +5,8 @@ void UEnemyHitReactionAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
  Super::NativeUpdateAnimation(DeltaSeconds);
  ReactionRotation=FVector::ZeroVector;
+ ReactionFrame=FHumanoidReactionFrame();
  if(auto* Owner=GetOwningActor())
-  if(auto* Reaction=Owner->FindComponentByClass<UEnemyHitReactionComponent>())Reaction->Sample(ReactionRotation,ReactionBone);
+  if(auto* Reaction=Owner->FindComponentByClass<UEnemyHitReactionComponent>())
+  {Reaction->Sample(ReactionRotation,ReactionBone);ReactionFrame=Reaction->SampleFrame();}
 }

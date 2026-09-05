@@ -12,6 +12,7 @@
 
 AHumanoidEnemy::AHumanoidEnemy()
 {
+ HitReactionPostProcess=FSoftObjectPath(TEXT("/Game/Enemy/Humanoid/_Shared/Animations/ControlRig/ABP_Humanoid_HitReaction.ABP_Humanoid_HitReaction_C"));
  CreateDefaultSubobject<UEnemyHitReactionComponent>(TEXT("ExplosionHitReaction"));
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	AIControllerClass = AHumanoidAIController::StaticClass();
@@ -28,6 +29,8 @@ AHumanoidEnemy::AHumanoidEnemy()
 void AHumanoidEnemy::BeginPlay()
 {
 	Super::BeginPlay();
+	if(auto* ReactionClass=HitReactionPostProcess.LoadSynchronous())
+		GetMesh()->SetOverridePostProcessAnimBP(ReactionClass);
 	SetDesiredMaxWalkSpeed(PatrolWalkSpeed);
 
 	// 运行时重新按配置的 socket 名挂载武器，构造函数里只能 SetupAttachment 到 Mesh 根

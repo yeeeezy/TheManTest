@@ -1,5 +1,7 @@
 # 动画实例
 
+- 当前共享人形受击：EnemyHitReactionAnimInstance现为ABP_Humanoid_HitReaction的数据父类，新增ReactionFrame（Torso/Follow/Compression/BoneMapping），仍在游戏线程采样。共享无骨架模板ABP只做输入Pose→ControlRig→输出；从Humanoid基类自动接Mesh组件OverridePostProcess，不再由Phantom模型资产挂载。Rig使用可配骨骼名称/脊柱权重、延迟头肩响应以及双腿解析解保持输入动画脚位。适配其他骨架时仍须保证映射与Rig层级兼容；本轮无动画重定向。
+
 - 2026-09-05：新增Enemy/Humanoid/Animation/EnemyHitReactionAnimInstance，作为Phantom专属后处理AnimBP的数据父类，在NativeUpdateAnimation采样EnemyHitReactionComponent，输出ReactionRotation（Mesh组件空间轴角向量，弧度）/ReactionBone。原UHumanoidEnemyAnimInstance及其locomotion/AimIK不改。RigVM仅处理输入数据，不从动画工作线程读取Actor。
 
 **何时读取：** 新增动画变量、修改动画状态机所需的驱动参数时。

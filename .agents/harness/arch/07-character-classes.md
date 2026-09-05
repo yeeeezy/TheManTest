@@ -12,6 +12,8 @@
 
 **敌人：**
 
+- 2026-09-05共享人形全身反应：AHumanoidEnemy新增HitReactionPostProcess软类，默认`/Game/Enemy/Humanoid/_Shared/Animations/ControlRig/ABP_Humanoid_HitReaction_C`（完整对象路径见代码），BeginPlay设置Mesh OverridePostProcessAnimBP；非Phantom人形自动接入。同骨骼层级可复用，其他骨架须配置BoneMapping并保证Rig层级兼容。Phantom SK_Mannequin原资产级PostProcess槽已清空，避免双重叠加。
+
 - APhantom新增默认true的bStationaryHitTest（Phantom|Testing），仅本类固定靶用途；BeginPlay停AI/移动/角色Tick，受击不进入父类转向逻辑，保留Mesh和方向性受击组件。开关在生成时生效，取消后重新PIE恢复。
 
 - 2026-09-05：AHumanoidEnemy构造原生ExplosionHitReaction组件（UEnemyHitReactionComponent，Enemy/Humanoid/Animation）。负责存活敌人的爆炸方向、部位与恢复参数，不驱动AI/胶囊/死亡。默认Enabled=true、MaxAngleDegrees=22、AttackDuration=.055、RecoveryDuration=.55游戏秒。Phantom Mesh已接专属PostProcess AnimBP，其他骨架需单独配置兼容Rig，不自动替换其动画。

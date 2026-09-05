@@ -19,6 +19,8 @@ class THEMANTEST_API AHumanoidEnemy : public AEnemyBase
 
 public:
 	AHumanoidEnemy();
+	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Enemy|Hit Reaction")
+	TSoftClassPtr<UAnimInstance> HitReactionPostProcess;
 
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;

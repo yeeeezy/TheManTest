@@ -25,6 +25,7 @@ class FEnemyExplosionRigCommand : public IAutomationLatentCommand
  float Start=0;
  TArray<TWeakObjectPtr<AEnemyBase>> Enemies;
  TArray<FVector> Heads,Feet,Roots;
+ TArray<FVector> Pelvis,Knees;
  FVector ArmBeforeL,ArmBeforeR;
  TArray<FVector> Directions={FVector(1,0,0),FVector(-1,0,0),FVector(0,1,0),FVector(0,-1,0)};
  void Capture(const TCHAR* Name)
@@ -71,6 +72,7 @@ public:
     auto* E=Enemies[I].Get();auto* M=E->GetMesh();
     Test->TestNotNull(TEXT("Actual skeletal mesh executes post-process reaction AnimBP"),Cast<UEnemyHitReactionAnimInstance>(M->GetPostProcessInstance()));
     Heads.Add(M->GetSocketLocation(TEXT("head")));Feet.Add(M->GetSocketLocation(TEXT("foot_l")));Roots.Add(E->GetActorLocation());
+    Pelvis.Add(M->GetSocketLocation(TEXT("pelvis")));Knees.Add(M->GetSocketLocation(TEXT("calf_l")));
     auto* Shooter=W->SpawnActor<AActor>(E->GetActorLocation()-Directions[I]*200,FRotator::ZeroRotator);
     E->ReactToProjectileHit(Shooter);
     Test->TestTrue(TEXT("Projectile hit does not turn stationary Phantom"),E->GetActorRotation().Equals(FRotator::ZeroRotator,.01));
@@ -87,6 +89,11 @@ public:
    {
     auto* E=Enemies[I].Get();auto* M=E->GetMesh();
     const FVector Delta=M->GetSocketLocation(TEXT("head"))-Heads[I];
+    Test->AddInfo(FString::Printf(TEXT("FULL_BODY direction=%d head=%.2f pelvisDrop=%.2f kneeMove=%.2f"),I,Delta.Size(),Pelvis[I].Z-M->GetSocketLocation(TEXT("pelvis")).Z,FVector::Distance(Knees[I],M->GetSocketLocation(TEXT("calf_l")))));
+    Test->TestTrue(TEXT("Leg compression lowers pelvis"),Pelvis[I].Z-M->GetSocketLocation(TEXT("pelvis")).Z>1.f);
+    Test->TestTrue(TEXT("Knee participates in impact absorption"),FVector::Distance(Knees[I],M->GetSocketLocation(TEXT("calf_l")))>.5f);
+    const auto Frame=E->FindComponentByClass<UEnemyHitReactionComponent>()->SampleFrame();
+    Test->TestFalse(TEXT("Head/shoulder follow is delayed relative to torso"),Frame.Torso.Equals(Frame.Follow,.001));
     Test->TestTrue(FString::Printf(TEXT("Rendered skeleton bends away from blast direction %d: %s"),I,*Delta.ToString()),FVector::DotProduct(Delta,Directions[I])>2);
     Test->TestTrue(TEXT("Reaction does not move capsule"),E->GetActorLocation().Equals(Roots[I],.01));
     Test->TestTrue(TEXT("AI does not turn target after hit"),E->GetActorRotation().Equals(FRotator::ZeroRotator,.01));

@@ -8,6 +8,8 @@
 
 ## 类层级
 
+- 2026-09-05：Humanoid基类自动接共享骨架无关后处理ABP，不再依赖Phantom资产槽。ExplosionHitReaction可配置38度幅度、.055秒攻击、.85秒恢复、.045秒头肩跟随延迟、7cm腿部缓冲及骨骼映射。Rig降低pelvis并解析求解双腿，使脚保持当前输入动画位置而非固定世界位置，允许移动时受击。共享Rig不含Phantom模型/骨架导入引用。
+
 ```
 AEnemyBase（Public/Enemy/）  ← 所有敌人基类，ASC+属性挂自身（无 PlayerState）
   ├── AHumanoidEnemy（.../Enemy/Humanoid/）  ← 人形怪：巡逻/转身/战斗/武器/AI

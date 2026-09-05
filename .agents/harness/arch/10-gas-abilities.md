@@ -1,5 +1,10 @@
 # GAS 技能系统
 
+## 2026-09-05 人形共享全身爆炸受击（覆盖历史Phantom专属Rig路径）
+
+- 共享资产`Enemy/Humanoid/_Shared/Animations/ControlRig/CR_Humanoid_HitReaction`及`ABP_Humanoid_HitReaction`；ABP为无TargetSkeleton的模板，通过Humanoid基类HitReactionPostProcess自动接入。Rig清空PreviewMesh、SourceHierarchyImport、SourceCurveImport，没有Phantom资产依赖。HumanoidReactionFrame经原生AnimInstance传入Rig，含Torso/Follow/Compression/BoneMapping，原生节点按映射处理脊柱、头肩跟随、髋部下沉和双腿脚位保持。默认38度/.85秒恢复，头肩延迟.045秒，腿压缩7cm；胶囊不移动。
+- 正式触发仍为爆炸对存活Enemy的范围伤害，普通直接命中未额外接这套Rig。身体血痕由Character拥有的Decal组件实现，死亡随Owner清理；声音和环境血迹规则不变。旧Audio配置脚本不再创建Phantom Rig，新的显式安装/冷验证入口位于Scripts/VFX/*shared_humanoid_reaction.py。
+
 ## 2026-09-05 玩家实体弹准星汇聚
 
 - 仰射修正覆盖下文Visibility取点：Projectile瞄准现在使用子弹ObjectType+CollisionResponse的simple射线，命中Character后沿准星射线进一步查Mesh PhysicsAsset，避免Enemy未响应Visibility/complex导致退化到远点。枪口预遮挡遇Character时仅实际Mesh穿过镜头→枪口线段才视为即时阻挡；胶囊假阻挡被排除后继续查其他组件/墙体。真实弹体飞行仍可被枪口前其他身体部位挡住。StickyUpwardAim覆盖1/2米与0/30/60度，实际竖直误差<4cm（保留AttachmentOffset4）；极近大仰角不保证跨身体遮挡仍与准星重合。

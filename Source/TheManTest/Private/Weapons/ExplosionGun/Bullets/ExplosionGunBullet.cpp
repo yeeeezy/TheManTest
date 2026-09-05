@@ -77,6 +77,7 @@ void AExplosionGunBullet::ProcessHit_Implementation(const FHitResult& Hit,AActor
  // The base path handles pass-through, exactly-once direct damage and the existing impact Cue.
  Super::ProcessHit_Implementation(Hit,Shooter,Source);
  if(!HasProcessedHit() || IsActorBeingDestroyed())return;
+ if(bEnemyImpact && (!IsValid(Hit.GetActor()) || Hit.GetActor()->IsActorBeingDestroyed())){Destroy();return;}
  bHitEnemy=bEnemyImpact;
  bAttached=true;ExplosionSourceASC=Source;ExplosionInstigator=Shooter;
  ProjectileMovement->StopMovementImmediately();ProjectileMovement->Deactivate();ProjectileMovement->SetComponentTickEnabled(false);
@@ -95,6 +96,7 @@ void AExplosionGunBullet::ProcessHit_Implementation(const FHitResult& Hit,AActor
   AttachToComponent(Parent,FAttachmentTransformRules::KeepWorldTransform,Surface.BoneName);
  LocalImpactPoint=GetActorTransform().InverseTransformPosition(Surface.ImpactPoint);
  AttachedHitBone=Surface.BoneName;AttachedHitActor=Hit.GetActor();
+ if(bEnemyImpact && AttachedHitActor.IsValid())AttachedHitActor->OnEndPlay.AddUniqueDynamic(this,&AExplosionGunBullet::OnAttachedTargetEndPlay);
  LocalImpactNormal=GetActorQuat().UnrotateVector(Normal);
  // Even a zero delay goes through the next tick, never re-enters the collision callback.
  if(ExplosionDelay<=0.f)ExplosionTimer=GetWorldTimerManager().SetTimerForNextTick(this,&AExplosionGunBullet::Detonate);
@@ -125,6 +127,7 @@ void AExplosionGunBullet::Detonate()
  auto Outcome=MakeShared<FExplosionOutcome>();
  Outcome->Origin=Params.Location;Outcome->Settings=BulletTime;
  Outcome->bResolved=ApplyExplosionDamage(FVector(Params.Location)+FVector(Params.Normal)*2.f);
+ ApplyPhysicsImpulse(FVector(Params.Location)+FVector(Params.Normal)*2.f);
  if(Outcome->bResolved)
   if(auto* Feedback=GetWorld()->GetSubsystem<UBulletTimeSubsystem>())
    Feedback->RequestBulletTimeAtLocation(Params.Location,BulletTime);
@@ -253,6 +256,35 @@ void AExplosionGunBullet::TriggerChaos(const FVector& Origin,const TSharedRef<FE
 }
 void AExplosionGunBullet::EndPlay(const EEndPlayReason::Type Reason)
 {
+ if(AttachedHitActor.IsValid())AttachedHitActor->OnEndPlay.RemoveDynamic(this,&AExplosionGunBullet::OnAttachedTargetEndPlay);
  GetWorldTimerManager().ClearTimer(ExplosionTimer);
  Super::EndPlay(Reason);
+}
+
+void AExplosionGunBullet::OnAttachedTargetEndPlay(AActor* Actor,EEndPlayReason::Type Reason)
+{
+ if(!bDetonated)Destroy();
+}
+
+void AExplosionGunBullet::ApplyPhysicsImpulse(const FVector& Origin)
+{
+ if(!GetWorld()||PhysicsImpulseRadius<=0.f||PhysicsImpulseStrength<=0.f)return;
+ TArray<FOverlapResult> Hits;
+ FCollisionQueryParams Query(SCENE_QUERY_STAT(ExplosionPhysics),false,this);
+ GetWorld()->OverlapMultiByObjectType(Hits,Origin,FQuat::Identity,FCollisionObjectQueryParams(FCollisionObjectQueryParams::AllObjects),FCollisionShape::MakeSphere(PhysicsImpulseRadius),Query);
+ TSet<UPrimitiveComponent*> Applied;
+ for(const auto& Hit:Hits)
+ {
+  auto* Component=Hit.GetComponent();
+  if(!IsValid(Component)||!Component->IsSimulatingPhysics()||Applied.Contains(Component)
+    ||Cast<UGeometryCollectionComponent>(Component)||Component->GetOwner()->IsA<AEnemyBase>())continue;
+  Applied.Add(Component);
+  FVector Point=Component->GetCenterOfMass();
+  FCollisionQueryParams Sight(SCENE_QUERY_STAT(ExplosionPhysicsVisibility),true,this);
+  Sight.AddIgnoredActor(Component->GetOwner());
+  if(AttachedHitActor.IsValid())Sight.AddIgnoredActor(AttachedHitActor.Get());
+  FHitResult Block;
+  if(GetWorld()->LineTraceSingleByChannel(Block,Origin,Point,ECC_Visibility,Sight))continue;
+  Component->AddRadialImpulse(Origin,PhysicsImpulseRadius,PhysicsImpulseStrength,ERadialImpulseFalloff::RIF_Linear,true);
+ }
 }

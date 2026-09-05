@@ -80,10 +80,13 @@ bool UTheManAnimationAssetLibrary::InstallEnemyHitReactionRig(UAnimBlueprint* BP
 {
 #if WITH_EDITOR
  if(!BP||!Rig||!Rig->GeneratedClass)return false;
+ BP->bIsTemplate=true;
+ BP->TargetSkeleton=nullptr;
  UEdGraph* Graph=nullptr;
  for(UEdGraph* G:BP->FunctionGraphs)if(G&&G->GetFName()==TEXT("AnimGraph"))Graph=G;
  if(!Graph)return false;
- for(UEdGraphNode* N:Graph->Nodes)if(N->NodeComment==TEXT("EnemyExplosionReaction"))return true;
+ UAnimGraphNode_ControlRig* Existing=nullptr;
+ for(UEdGraphNode* N:Graph->Nodes)if(N->NodeComment==TEXT("EnemyExplosionReaction"))Existing=Cast<UAnimGraphNode_ControlRig>(N);
  UAnimGraphNode_Root* Root=nullptr;
  for(UEdGraphNode* N:Graph->Nodes)if(auto* R=Cast<UAnimGraphNode_Root>(N))Root=R;
  if(!Root)return false;
@@ -91,28 +94,37 @@ bool UTheManAnimationAssetLibrary::InstallEnemyHitReactionRig(UAnimBlueprint* BP
  if(!Result||Result->LinkedTo.Num()!=1)return false;
  auto* Upstream=Result->LinkedTo[0];
  BP->Modify();Graph->Modify();
- FGraphNodeCreator<UAnimGraphNode_ControlRig> Creator(*Graph);
- auto* Node=Creator.CreateNode();
- Node->Node.SetControlRigClass(TSubclassOf<UControlRig>(Rig->GeneratedClass.Get()));
- Node->NodeComment=TEXT("EnemyExplosionReaction");Node->NodePosX=Root->NodePosX-240;
- Creator.Finalize();
+ auto* Node=Existing;
+ if(!Node)
+ {
+  FGraphNodeCreator<UAnimGraphNode_ControlRig> Creator(*Graph);
+  Node=Creator.CreateNode();
+  Node->Node.SetControlRigClass(TSubclassOf<UControlRig>(Rig->GeneratedClass.Get()));
+  Node->NodeComment=TEXT("EnemyExplosionReaction");Node->NodePosX=Root->NodePosX-240;
+  Creator.Finalize();
+ }
+ else Node->Node.SetControlRigClass(TSubclassOf<UControlRig>(Rig->GeneratedClass.Get()));
  auto* Property=FindFProperty<FArrayProperty>(Node->GetClass(),TEXT("CustomPinProperties"));
  if(!Property)return false;
  auto* Pins=Property->ContainerPtrToValuePtr<TArray<FOptionalPinFromProperty>>(Node);
- for(auto& Pin:*Pins)if(Pin.PropertyName==TEXT("ReactionRotation")||Pin.PropertyName==TEXT("ReactionBone"))Pin.bShowPin=true;
+ for(auto& Pin:*Pins)if(Pin.PropertyName==TEXT("ReactionRotation")||Pin.PropertyName==TEXT("ReactionBone")||Pin.PropertyName==TEXT("ReactionFrame"))Pin.bShowPin=true;
  Node->ReconstructNode();
  const auto* Schema=Graph->GetSchema();
- for(FName Name:{FName(TEXT("ReactionRotation")),FName(TEXT("ReactionBone"))})
+ for(FName Name:{FName(TEXT("ReactionRotation")),FName(TEXT("ReactionBone")),FName(TEXT("ReactionFrame"))})
  {
   auto* Target=Node->FindPin(Name);
   if(!Target)return false;
+  if(!Target->LinkedTo.IsEmpty())continue;
   FGraphNodeCreator<UK2Node_VariableGet> GetterCreator(*Graph);
   auto* Getter=GetterCreator.CreateNode();Getter->VariableReference.SetSelfMember(Name);
   Getter->NodePosX=Node->NodePosX-230;GetterCreator.Finalize();
   if(!Schema->TryCreateConnection(Getter->GetValuePin(),Target))return false;
  }
- Result->BreakAllPinLinks();
- if(!Schema->TryCreateConnection(Upstream,Node->FindPin(TEXT("Source")))||!Schema->TryCreateConnection(Node->FindPin(TEXT("Pose")),Result))return false;
+ if(!Existing)
+ {
+  Result->BreakAllPinLinks();
+  if(!Schema->TryCreateConnection(Upstream,Node->FindPin(TEXT("Source")))||!Schema->TryCreateConnection(Node->FindPin(TEXT("Pose")),Result))return false;
+ }
  FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(BP);
  FKismetEditorUtilities::CompileBlueprint(BP);
  BP->MarkPackageDirty();

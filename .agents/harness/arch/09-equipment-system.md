@@ -1,5 +1,10 @@
 # 装备系统
 
+## 2026-09-05 爆炸普通物理冲量和附着生命周期
+
+- ExplosionGunBullet新增Bullet|Explosion|Physics：PhysicsImpulseRadius=400cm、PhysicsImpulseStrength=800（速度变化强度）。范围内SimulatePhysics组件去重并排除Enemy与GeometryCollection，以Visibility测试墙体遮挡后AddRadialImpulse线性衰减、bVelChange=true。Chaos仍走独立破碎/冲量路径，不重复施加；普通物体飞散不请求子弹时间。
+- 身体附着爆炸弹订阅目标OnEndPlay，目标死亡/销毁时清除尚未爆炸的弹体及Fuse；本弹正在Detonate造成击杀时允许自身爆炸调用完成。首次伤害直接杀死敌人也不留下新附着弹。GCN_EnemyHit的身体血痕现在为Character拥有的Decal组件，骨骼附着+原淡出/寿命，死亡随Owner清理；环境血迹仍独立寿命。MovingEnemyAttachmentCleanup覆盖行走/转身/受击及倒计时死亡、爆炸击杀两条清理路径。
+
 ## 2026-09-05 当前爆炸弹身体附着修正
 
 - ExplosionGunBullet在Super伤害/转身前沿真实入射方向、Sweep中心线（非球体ImpactPoint）追踪Mesh PhysicsAsset，长度按Mesh Bounds计算；只接受有效骨骼、非初始穿透、朝入射侧法线。若掠空，仅允许胶囊半径+10cm内的入射侧最近PhysicsAsset表面补点；无法可靠定位时隐藏弹体Mesh，原伤害/倒计时保留，不显示悬空胶囊附着。

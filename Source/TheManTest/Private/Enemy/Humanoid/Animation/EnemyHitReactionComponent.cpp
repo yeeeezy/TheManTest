@@ -20,11 +20,27 @@ void UEnemyHitReactionComponent::ReactToExplosion(FVector Origin,FVector Fallbac
  const FVector Point=Mesh->GetBoneIndex(HitBone)!=INDEX_NONE?Mesh->GetSocketLocation(HitBone):Enemy->GetActorLocation();
  FVector Away=Point-Origin;
  if(Away.SizeSquared()<25)Away=FallbackDirection;
+ const FVector FullDirection=Away.GetSafeNormal();
+ VerticalStrength=FullDirection.Z;
  Away.Z=0;
  if(!Away.Normalize())Away=Enemy->GetActorForwardVector();
  AxisWS=FVector::CrossProduct(FVector::UpVector,Away).GetSafeNormal();
- Amplitude=FMath::DegreesToRadians(FMath::Clamp(MaxAngleDegrees,0.f,40.f))*FMath::Clamp(Strength,0.f,1.f);
+ Amplitude=FMath::DegreesToRadians(FMath::Clamp(MaxAngleDegrees,0.f,55.f))*FMath::Clamp(Strength,0.f,1.f)*(1.f-.25f*FMath::Abs(VerticalStrength));
  StartTime=GetWorld()->GetTimeSeconds();
+}
+
+FHumanoidReactionFrame UEnemyHitReactionComponent::SampleFrame() const
+{
+ FHumanoidReactionFrame Frame;Frame.Bones=BoneMapping;
+ FName Bone;Sample(Frame.Torso,Bone);
+ const auto* Enemy=Cast<AEnemyBase>(GetOwner());
+ if(!bEnabled||!Enemy||Enemy->IsDead()||!GetWorld()||!Enemy->GetMesh())return Frame;
+ const float Age=float(GetWorld()->GetTimeSeconds()-StartTime);
+ Frame.Follow=Enemy->GetMesh()->GetComponentTransform().InverseTransformVectorNoScale(AxisWS)*Amplitude
+  *EvaluateEnvelope(Age-FollowDelay,AttackDuration*1.25f,RecoveryDuration);
+ Frame.Compression=LegCompression*FMath::Clamp(Amplitude/FMath::DegreesToRadians(38.f),0.f,1.5f)
+  *FMath::Max(0.f,EvaluateEnvelope(Age-.015f,AttackDuration*1.6f,RecoveryDuration))*(1.f-.4f*VerticalStrength);
+ return Frame;
 }
 void UEnemyHitReactionComponent::Sample(FVector& Out,FName& OutBone) const
 {

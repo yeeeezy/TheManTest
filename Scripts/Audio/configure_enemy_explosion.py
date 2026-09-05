@@ -3,42 +3,9 @@ import unreal
 E=unreal.EditorAssetLibrary
 T=unreal.AssetToolsHelpers.get_asset_tools()
 validate='-EnemyExplosionValidateOnly' in unreal.SystemLibrary.get_command_line()
-rig_path='/Game/Enemy/Humanoid/Phantom/Animations/ControlRig/CR_Phantom_ExplosionReaction'
-mesh=E.load_asset('/Game/Enemy/Humanoid/Phantom/OriginalRifle/Meshes/SK_Mannequin')
-rig=E.load_asset(rig_path) if E.does_asset_exist(rig_path) else None
-if not rig:
-    assert not validate
-    rig=unreal.ControlRigBlueprintFactory.create_control_rig_from_skeletal_mesh_or_skeleton(mesh)
-    old=rig.get_path_name().split('.')[0]
-    assert E.rename_asset(old,rig_path)
-    rig=E.load_asset(rig_path)
-    print('ENEMY_RIG_FACTORY_OLD',old)
-if not validate:
-    c=rig.get_controller()
-    nodes={n.get_node_path() for n in rig.get_default_model().get_nodes()}
-    if 'BeginExecution' not in nodes:
-        assert c.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_BeginExecution','Execute',unreal.Vector2D(0,0),'BeginExecution')
-    if 'EnemyReaction' not in nodes:
-        assert c.add_unit_node_from_struct_path('/Script/TheManTest.RigUnit_EnemyHitReaction','Execute',unreal.Vector2D(400,0),'EnemyReaction')
-    members={str(v.name) for v in rig.get_member_variables()}
-    for name,cpp,obj,default in [('ReactionRotation','FVector',unreal.load_object(None,'/Script/CoreUObject.Vector'),'(X=0,Y=0,Z=0)'),('ReactionBone','FName',None,'None')]:
-        if name not in members:rig.add_member_variable(name,obj.get_path_name() if obj else cpp,True,False,default)
-        getter='Get'+name
-        if getter not in nodes:
-            assert c.add_variable_node(name,cpp,obj,True,default,unreal.Vector2D(100,200),getter)
-        assert c.add_link(getter+'.Value','EnemyReaction.'+name)
-    assert c.add_link('BeginExecution.ExecuteContext','EnemyReaction.ExecuteContext')
-    rig.recompile_vm()
-    assert E.save_loaded_asset(rig,False)
-    post_path='/Game/Enemy/Humanoid/Phantom/Animations/ControlRig/ABP_Phantom_ExplosionReaction'
-    host=E.load_asset(post_path) if E.does_asset_exist(post_path) else unreal.TheManAnimationAssetLibrary.create_enemy_hit_reaction_post_process(mesh,rig,post_path)
-    assert host,'Rig graph installation failed'
-    for p in [host,E.load_asset('/Game/Enemy/Humanoid/Phantom/Blueprint/BP_Phantom')]:
-        unreal.get_editor_subsystem(unreal.AssetEditorSubsystem).open_editor_for_assets([p])
-        unreal.BlueprintEditorLibrary.compile_blueprint(p)
-        assert E.save_loaded_asset(p,False)
-    mesh.set_editor_property('post_process_anim_blueprint',host.generated_class())
-    assert E.save_loaded_asset(mesh,False)
+rig_path='/Game/Enemy/Humanoid/_Shared/Animations/ControlRig/CR_Humanoid_HitReaction'
+rig=E.load_asset(rig_path)
+assert rig, 'Run Scripts/VFX/install_shared_humanoid_reaction.py first'
 root='/Game/Weapons/ExplosionGun/Audio/'
 wave_path=root+'S_ExplosionGun_EnemyDetonation'
 if not E.does_asset_exist(wave_path):
@@ -78,11 +45,11 @@ assert isinstance(sound.get_editor_property('first_node'),unreal.SoundNodeModula
 assert sound.get_editor_property('attenuation_settings') is not None
 assert len(sound.get_editor_property('concurrency_set'))==1
 assert obj.get_editor_property('explosion_sound')!=sound
-post=E.load_asset('/Game/Enemy/Humanoid/Phantom/Animations/ControlRig/ABP_Phantom_ExplosionReaction')
-assert mesh.get_editor_property('post_process_anim_blueprint')==post.generated_class()
+post=E.load_asset('/Game/Enemy/Humanoid/_Shared/Animations/ControlRig/ABP_Humanoid_HitReaction')
+assert post.get_editor_property('target_skeleton') is None
 registry=unreal.AssetRegistryHelpers.get_asset_registry()
 registry.search_all_assets(True)
-for asset_root in ['/Game/Enemy/Humanoid/Phantom','/Game/Weapons/ExplosionGun']:
+for asset_root in ['/Game/Enemy/Humanoid/_Shared/Animations/ControlRig','/Game/Weapons/ExplosionGun']:
     redirects=[a.package_name for a in registry.get_assets_by_path(asset_root,True) if str(a.asset_class_path.asset_name)=='ObjectRedirector']
     assert not redirects,redirects
 options=unreal.AssetRegistryDependencyOptions(include_hard_package_references=True,include_soft_package_references=True)

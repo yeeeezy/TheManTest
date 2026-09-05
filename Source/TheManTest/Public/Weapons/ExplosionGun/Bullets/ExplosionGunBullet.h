@@ -38,6 +38,10 @@ public:
  float ChaosImpulse=1200.f;
  UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion|Chaos", meta=(ClampMin="0",Units="rad/s"))
  float ChaosAngularSpeed=5.f;
+ UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion|Physics",meta=(ClampMin="0",Units="cm"))
+ float PhysicsImpulseRadius=400.f;
+ UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion|Physics",meta=(ClampMin="0"))
+ float PhysicsImpulseStrength=800.f;
  static const FName ExplosionGroundTag;
  bool FindExplosionGround(const FVector& Origin,FHitResult& OutHit) const;
  bool DidHitEnemy() const { return bHitEnemy; }
@@ -49,6 +53,8 @@ protected:
 private:
  void Detonate();
  void TriggerChaos(const FVector& Origin,const TSharedRef<FExplosionOutcome>& Outcome);
+ void ApplyPhysicsImpulse(const FVector& Origin);
+ UFUNCTION() void OnAttachedTargetEndPlay(AActor* Actor,EEndPlayReason::Type Reason);
  bool ApplyExplosionDamage(const FVector& Origin);
  FTimerHandle ExplosionTimer;
  bool bAttached=false;
