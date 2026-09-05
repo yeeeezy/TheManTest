@@ -5,6 +5,7 @@
 #include "HumanoidEnemyTypes.h"
 #include "AITypes.h"
 #include "HumanoidEnemy.generated.h"
+class UEnemyHitReactionComponent;
 
 class APatrolPoint;
 class UStaticMeshComponent;
@@ -18,6 +19,8 @@ class THEMANTEST_API AHumanoidEnemy : public AEnemyBase
 	GENERATED_BODY()
 
 public:
+ UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Enemy|Reaction")
+ TObjectPtr<UEnemyHitReactionComponent> ExplosionHitReaction;
 	virtual void OnDeath() override;
 	AHumanoidEnemy();
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Enemy|Hit Reaction")

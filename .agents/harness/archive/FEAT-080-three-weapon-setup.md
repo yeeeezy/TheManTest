@@ -1,5 +1,16 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 动画替换默认受击、保留Rig分支（实现与自验完成）
+
+- 用户直接授权启用新动作并保留旧Rig链路但默认不启用。选择性检查点4d0e0a1保存五条样片与前轮文档，不含地图/ExternalActor/用户Explosion Cue。
+- EnemyHitReactionComponent新增ReactionMode=Animation/ControlRig（默认Animation）、五条具体Sequence配置、HeavyFrontMinStrength=.9、BlendIn=.06/BlendOut=.18/PlayRate=1。按Actor局部爆炸来源选四方向，近距离强正面可选HeavyTwist；播放期间新的反应不重启已有动作。使用游戏时间采样，不新建蒙太奇，不改变主AnimInstance/AI/伤害/音效。
+- 共享后处理ABP保留原ControlRig节点与参数连线，新增Input缓存、动态SequenceEvaluator、静止全身混合/移动上半身spine_01混合及模式选择。Animation分支绕过Rig，旧Rig仍可切回；Shared ABP/Rig不增加Phantom动画引用，具体引用只配BP_Phantom组件。死亡仍由既有禁用PostProcess及布娃娃流程接管。
+- 首轮C++编译修复TObjectPtr的auto*推导和BlendList私有数组访问后通过，ABP图编译保存成功。首次实际PIE发现组件动画引用冷读为空；排查为原ExplosionHitReaction没有显式UPROPERTY成员持有，直接编辑CDO的子对象不能可靠持久化。正在补充同名原生组件成员引用并重新验证保存，尚未宣称接入完成。
+- 最终补充AHumanoidEnemy.ExplosionHitReaction的UPROPERTY成员持有后，AnimationReactionInstall4保存成功，AnimationReactionDefaults4冷读五条引用全部存在；AnimationReactionCold再次编译BP/共享ABP后配置仍保留，共享ABP/Rig没有Phantom资产依赖且无Redirector。没有创建第二个组件，原组件名称/身份保留。最终Development Editor Win64构建成功，无新增C++警告。
+- AnimationReactionRuntime3.log输出ANIMATION_REACTION_RUNTIME_OK：前/后/左/右/重击及Actor转90度后的局部左侧选择正确，实际头位移18.41/40.52/28.38/9.19/33.42cm；Rig输出为0、主AnimInstance类不变、枪械挂点误差0。Enabled关闭、动作结束还原、重复爆炸不重启、切回ControlRig实际骨骼弯曲均通过。独立相同行走动画输入/等速Flying物理位移对照中，动画分支切上半身，骨盆/大小腿/双脚与未受击对照误差<.5cm；Flying仅用于隔离地板依赖，实际Walking附着由下一回归验证。
+- AnimationReactionRegression.log最终7/7 Success、exit0：EnemyDeathRagdoll、EnemyExplosionControlRig（测试显式切旧模式）、ExplosionOutcomeBulletTime、ExplosionRadialDamage（真实爆炸触发动画且墙后无反应，Rig保持0）、ExplosionSimulatedPhysics、MovingEnemyAttachmentCleanup（非Phantom原生Humanoid配置同骨架动画并实际Walking）、StickyExplosionAndBlood。未改死亡/伤害/子弹时间/音效/特效参数，未写地图。
+- Scripts/VFX/install_animation_hit_reaction.py安装并强制保存具体BP组件配置；validate_animation_reaction_defaults.py冷读与再编译校验；validate_animation_reaction_runtime.py独立PIE验证。所有验证编辑器已退出。结果未最终提交/push，用户可在BP_Phantom的ExplosionHitReaction组件→Reaction Mode切换Animation/ControlRig；默认Animation。完整FEAT-080仍in_progress，待主观实战反馈。
+
 ## 2026-09-05 现有骨架受击动作样片
 
 - 用户恢复受击动画任务，授权使用TMIIR候选参考或调整，适配现有骨骼。选择性检查点195a15c保存前置握枪修复；用户地图、ExternalActor及Explosion Cue未纳入。

@@ -141,6 +141,8 @@ public:
 	static bool SetBlueprintComponentViewportView(UBlueprint* Blueprint, const FString& ViewName);
  UFUNCTION(BlueprintCallable,Category="TheManTest|Editor|Animation")
  static bool InstallEnemyHitReactionRig(UAnimBlueprint* AnimBlueprint,UControlRigBlueprint* RigBlueprint);
+ UFUNCTION(BlueprintCallable,Category="Animation|Editor")
+ static bool InstallEnemyReactionAnimationBranch(UAnimBlueprint* AnimBlueprint);
  UFUNCTION(BlueprintCallable,Category="TheManTest|Editor|Animation")
  static UAnimBlueprint* CreateEnemyHitReactionPostProcess(USkeletalMesh* Mesh,UControlRigBlueprint* RigBlueprint,const FString& PackagePath);
 };

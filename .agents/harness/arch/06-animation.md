@@ -1,6 +1,9 @@
 # 动画实例
 
-- 2026-09-05受击动画样片：Phantom/Animations/Reactions下5条AS_Humanoid_RifleHit_{Front,Left,HeavyTwist,Right,Back}绑定当前Rifle_01的70骨Skeleton，成品在外部TMIIR/Blender中适配后仅导入FBX。非Additive/非RootMotion、首尾Relax，尚未接入游戏受击触发或替换共享Rig。它们是具体骨架的Sequence，不是跨任意人形骨架可直接复用的模板。
+- 当前默认受击已切Animation模式：EnemyHitReactionComponent按Actor局部爆炸来源选四方向，Strength>=.9的正面使用HeavyTwist；组件五条Sequence在BP_Phantom配置，不硬编码到人形基类。游戏时间采样、.06秒混入/.18秒混出、PlayRate=1，当前动作未结束时忽略重复反应，不影响每次爆炸伤害。
+- 共享ABP_Humanoid_HitReaction现在包含两条可选链：默认动态SequenceEvaluator的动画混合，以及保留的原ControlRig链。NativeUpdateAnimation输出ReactionAnimation/Time/Alpha、UseAnimationReaction和UseFullBodyReaction。站立全身；水平速度>=10cm/s或下落时仅混spine_01以上，腿/骨盆沿用主AnimBP。主AnimInstance始终继续运行，结束Alpha=0还原输入。ReactionMode改为ControlRig即可切回旧链；Animation时不评估旧Rig分支。
+
+- 2026-09-05受击动画：Phantom/Animations/Reactions下5条AS_Humanoid_RifleHit_{Front,Left,HeavyTwist,Right,Back}绑定当前Rifle_01的70骨Skeleton，成品在外部TMIIR/Blender中适配后仅导入FBX。非Additive/非RootMotion、首尾Relax，已配置到默认动画受击分支。它们是具体骨架的Sequence，不是跨任意人形骨架可直接复用的模板。
 
 - Rifle_01动画包含hand_r_wep武器骨骼轨道；Phantom通过该骨骼下的hand_r_wepSocket挂枪，单位缩放，在Relax/Aim间自动跟随原始动画的武器姿势。普通hand_r上的hand_rSocket_Aim/Relaxed是静态偏移，不能替代武器动画骨骼。
 

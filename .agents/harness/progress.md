@@ -2,17 +2,20 @@
 
 ## Active Feature
 
-- FEAT-080，in_progress。5条当前骨架受击动作样片已完成并导入，冷读/首尾/依赖及实际PIE播放通过，动态图已打开，待用户看动作。尚未替换运行时共享Rig或接爆炸Montage。死亡布娃娃用户认可，Relax握枪修复已完成。
+- FEAT-080，in_progress。爆炸受击已默认切到5条新动画，原共享Rig分支保留但默认绕过；模式可切回。编译、配置冷读/再编译、运行时方向/混合和7项回归均通过。待用户实战观感反馈。死亡布娃娃用户认可，Relax握枪修复已完成。
 - 前序准星仰射、身体附着、Enemy Air007/缩放、条件子弹时间均已完成，细节见archive/FEAT-080-three-weapon-setup.md。
 
 ## 当前行为和入口
+
+- 当前入口：BP_Phantom组件ExplosionHitReaction → Reaction Mode，默认Animation；改ControlRig可恢复原Rig链路。Enabled总开关仍有效。五条Front/Back/Left/Right/HeavyFrontAnimation可配，HeavyFrontMinStrength=.9、AnimationBlendIn=.06/BlendOut=.18、PlayRate=1。按Actor局部爆炸来源选动作，强正面选重击；动作期间继续结算后续伤害，但不重启动作。普通直接枪击没有新增存活动画触发。
+- 共享后处理图中InputPose缓存→新SequenceEvaluator混合/旧ControlRig两条分支由模式选择。静止全身混合；速度>=10cm/s或下落时只混spine_01以上，腿/骨盆保持主AnimBP。游戏时间采样，随子弹时间放慢；结束自动回输入动画。原主AnimBP/AI/胶囊不替换，死亡照旧禁用PostProcess并转布娃娃。AHumanoidEnemy现在显式UPROPERTY持有原同名组件，解决具体BP参数保存丢失。
 
 - 新成品样片：`Enemy/Humanoid/Phantom/Animations/Reactions/AS_Humanoid_RifleHit_{Front,Left,HeavyTwist,Right,Back}`。绑定现役Rifle_01的70骨Skeleton；Wraith四方向+RifleAnimsetPro重击改编，握枪/腿部修正、首尾回Relax，时长1/.8667/1.6333/.8667/1秒。是当前具体骨架的Sequence样片，不是任意人形通用动画；共享Rig仍骨架无关，未增加Phantom依赖。
 - 外部工作位于`D:/Blender Projects/HumanoidHitReactions`，主工程`Humanoid_RifleHit_Reactions.blend`、预览`Humanoid_RifleHit_Preview.gif`、静态`Reactions_Selected.png`。TMIIR成品在`/Game/ReactionPrep/Final`，TheManTest只导入已完成FBX，没有重定向工作资源。动态图是同步相位慢放比较，不表示各条时长相同。右侧较轻，HeavyTwist幅度大，主观效果待选。
 
 - BP_Phantom.WeaponAttachSocket=hand_r_wepSocket，WeaponMesh.RelativeScale3D=(1,1,1)。源TMIIR Overview的5把示范枪都采用该配置，Socket挂在带动画轨道的hand_r_wep；此前固定hand_rSocket_Aim/.9枪械缩放错误。不能按Aim/Relax切两个静态手部Socket。只改BP_Phantom，没有修改动画轨道或C++。
 
-- 人形基类自动接`Enemy/Humanoid/_Shared/Animations/ControlRig/ABP_Humanoid_HitReaction`与`CR_Humanoid_HitReaction`。ABP无TargetSkeleton，Rig无Phantom资产引用；Phantom模型原PostProcess槽已清空，通过基类组件Override接入。
+- 人形基类自动接`Enemy/Humanoid/_Shared/Animations/ControlRig/ABP_Humanoid_HitReaction`，内部原`CR_Humanoid_HitReaction`仅ControlRig模式启用。ABP无TargetSkeleton，Rig及共享图无Phantom资产引用；具体Enemy自行配置同Skeleton兼容动画。Phantom模型原PostProcess槽已清空，通过基类组件Override接入。
 - ExplosionHitReaction组件：MaxAngleDegrees=38、AttackDuration=.055、RecoveryDuration=.85、FollowDelay=.045、LegCompression=7cm，BoneMapping可配。胸腹受力、头肩滞后跟随、髋部/膝盖缓冲，脚保持输入动画位置，胶囊不移动。不同骨骼层级仍须映射和Rig兼容适配，不是自动重定向。正式触发仍为爆炸范围伤害，普通直接子弹未额外触发此Rig。
 - Enemy → Enemy|Death：CorpseLifetime默认5游戏秒（最小.1），ProjectileHitImpulse默认5000 kg cm/s（0关闭枪击冲量）。死亡停止AI/技能/移动/Actor Tick、关闭胶囊/后处理动画，PhysicsAsset接管全身。人形手持武器死亡后无碰撞，避免反推尸体；Phantom取消隐身。没有PhysicsAsset的模型仍延时消失但无法布娃娃。
 - 所有ABulletBase子类在伤害前确定骨骼局部命中点，伤害后对模拟身体施加点冲量，致命一枪/尸体再中枪（含0伤害）共用入口。尸体不再扣血，也不刷新寿命；肉体声/血痕保留，不新触发痛呼。
@@ -24,6 +27,9 @@
 
 ## 验证
 
+- AnimationReactionRuntime3：四方向、强正面重击、旋转Actor方向、Enabled关闭、重复命中不重启、恢复输入和切回旧Rig全部通过；实际头位移18.41/40.52/28.38/9.19/33.42cm，枪挂点误差0。等速物理移动对照骨盆/腿/双脚误差<.5cm，主AnimInstance类保留。AnimationReactionCold重新加载并编译后五条引用仍存在，Shared ABP/Rig无Phantom依赖。
+- AnimationReactionRegression.log：EnemyDeathRagdoll、EnemyExplosionControlRig、ExplosionOutcomeBulletTime、ExplosionRadialDamage、ExplosionSimulatedPhysics、MovingEnemyAttachmentCleanup、StickyExplosionAndBlood共7/7 Success/exit0。最终Development Editor Win64构建成功，无新增C++警告。
+
 - 最终Development Editor Win64构建成功，无新增C++警告。EnemyRagdollFinal.log六项6/6 Success：EnemyDeathRagdoll、EnemyExplosionControlRig、ExplosionOutcomeBulletTime、ExplosionSimulatedPhysics、MovingEnemyAttachmentCleanup、StickyExplosionAndBlood。
 - 三枪致命冲量、实际飞行0伤害弹推尸体、爆炸致死击飞通过；2秒/.8秒尸体寿命和骨骼挂弹/血痕到期清理通过。三枪总X动量约4780~4815，尸体再中枪骨盆X速度约103~116cm/s，爆炸致死约487cm/s。正式默认保留5秒，测试未改资产值。
 - SharedReactionFinal.log五项5/5 Success：EnemyExplosionControlRig、ExplosionOutcomeBulletTime、ExplosionSimulatedPhysics、MovingEnemyAttachmentCleanup、StickyExplosionAndBlood。
@@ -33,6 +39,8 @@
 - SharedReactionColdVerified.log：共享ABP只依赖共享Rig，Rig无/Game依赖，Phantom导入源/预览/骨架引用清除，旧路径及Redirector均无；实际调参38/.85/.045/7冷读通过。
 
 ## 会话交接
+
+- 最新检查点4d0e0a1保存动画样片前置状态；本轮运行时切换结果未提交/push。新增安装/冷验/运行时脚本见Scripts/VFX/*animation*reaction*.py。最初CDO组件动画引用没有持久化的问题已通过原生UPROPERTY持有解决，Install4/Defaults4/Cold为成功记录；Runtime3和Regression为最终通过记录。编辑器均已退出、未写地图或用户Explosion Cue设置。无需继续实现切换，等待用户试手感。
 
 - 最新选择性检查点195a15c保存此前BP_Phantom握枪修复。本轮新增5条Sequence、import_humanoid_reaction_previews.py（仅导入成品，不做重定向）、validate_humanoid_reaction_assets.py与validate_humanoid_reaction_pie.py。ReactionImportFinal/ReactionImportCold/ReactionAssetsFinal/ReactionPreviewPIEFinal均成功；实际五条动作头部位移32.07/26.84/32.85/7.90/38.44cm，挂枪误差0。首尾70骨与现役Relax匹配，只有现有Skeleton依赖。测试编辑器退出、未写地图；无C++/BP变更。没有修改爆炸Cue/声音/死亡或运行时受击触发，动画接入须待用户看样片后决定。结果未提交/push。外部制作细节和失败迭代已归档。
 

@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-05-humanoid-reaction-previews",
+    "last_updated":  "2026-09-05-animation-reaction-runtime",
     "active_feature":  "FEAT-080",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -466,13 +466,14 @@
                      },
                      {
                          "id":  "FEAT-080",
+                         "animation_reaction_runtime_verification": "Animation mode is now default; original shared Control Rig branch remains selectable and is bypassed by default. Five per-enemy sequences; local direction/strong front selection, game-time evaluation, stationary full body and moving upper body. Native UPROPERTY retains component configuration across reload/compile. Development Editor Win64 succeeded; AnimationReactionCold and Runtime3 passed; AnimationReactionRegression 7/7 Success exit0 including real blast trigger, legacy Rig, ragdoll, bullet time and moving attachment cleanup. No sound/VFX/map changes. Checkpoint 4d0e0a1; not committed/pushed.",
                          "humanoid_reaction_preview_verification": "Five finished 70-bone reaction sequences adapted externally in TMIIR/Blender, imported animation-only into Phantom/Animations/Reactions. Front/Left/HeavyTwist/Right/Back durations 1/.8667/1.6333/.8667/1 seconds. ReactionImportCold frame comparison passed; ReactionAssetsFinal endpoints/dependencies passed; ReactionPreviewPIEFinal actual BP_Phantom playback 5/5, weapon socket error 0. GIF preview opened. Runtime Rig and explosion trigger unchanged; user visual selection pending. Checkpoint 195a15c; results not committed or pushed.",
                          "name":  "RepairGun、电击枪与爆炸枪统一动画和独立 VFX",
                          "status":  "in_progress",
                          "description":  "为 RepairGun 正式接通现有第一人称开火蒙太奇；以 RepairGun 为完整配置基线创建电击枪和爆炸枪，两把新枪仅替换各自模型、枪口与命中特效。源模型和 VFX 来自外部 VFXPack 项目；不迁移源角色、武器蓝图或动画。即使表现依赖内容相同，也按武器所有权复制到各自语义目录并重命名，使三把枪后续可以独立调整。",
                          "archive_file":  "archive/FEAT-080-three-weapon-setup.md",
                          "created":  "2026-09-03",
-                         "updated":  "2026-09-05-humanoid-reaction-previews",
+                         "updated":  "2026-09-05-animation-reaction-runtime",
                          "conditional_bullet_time_air007_verification": "用户确认仅实际Chaos新破坏或本次爆炸击杀Enemy才触发子弹时间，并指定Enemy使用TMIIR N_ExplosionAir_007。新增ExplosionOutcomeSubsystem短期监听真实Break事件，批次去重，通知状态恢复；范围伤害前后Health判击杀。Development Editor Win64构建成功，ExplosionOutcomeBulletTime九场景Success；ExplosionOutcomeRegression六项6/6 Success exit0。Air007从源Overview_Map确认后迁入115包至Effects/EnemyExplosion，EnemyEffectOnGround=false、身体实际爆点播放；冷回读115包依赖/旧目录不存在/无Redirector/原时间参数与震屏6通过。已看TMT_StickyExplosion.png。检查点4f15ed0；结果未最终提交，地图和ExternalActor保留。",
                          "enemy_explosion_control_rig_verification": "Enemy爆炸接已迁入N_ExplosionGround_006并Ground投影；合成独立1.3秒mono音效，经随机Sound Cue/3D/并发接Enemy槽。Phantom专属PostProcess AnimBP+Control Rig叠加上半身方向/部位受击，原动画/根/腿/胶囊不变。Development Editor Win64成功；EnemyExplosionRigFinal七项7/7 Success exit0，含四方向实际骨骼、脚不动、回零、左臂局部、真实爆炸触发/墙后不触发、新声音播放和VFX投影。冷回读依赖/无Redirector通过，截图已看。保留用户TimeScale.05/SlowIn.01/Hold1/Recovery.01/Shake6。用户明日手动验收；本轮未提交，授权自验记录后正常关机。",
                          "bullet_time_feedback_verification": "HitStop删除，替换.05秒减至.2、保持.08、.25秒平滑恢复原速度；真实时钟，活动期不重启。单GC独立Enemy声/VFX且暂空无回退。零位移旋转余震.75秒/12Hz/1.5度，同类不叠加；保留用户震屏4/音量3与伤害/Fuse/Chaos。Development Editor Win64成功，两个Blueprint打开编译保存，BulletTimeFeedbackRegression六项6/6 Success exit0。检查点4f6f676，本轮未最终提交。",

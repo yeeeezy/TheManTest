@@ -24,6 +24,10 @@
 #include "AnimGraphNode_LinkedInputPose.h"
 #include "AnimGraphNode_Root.h"
 #include "AnimGraphNode_SequencePlayer.h"
+#include "AnimGraphNode_SequenceEvaluator.h"
+#include "AnimGraphNode_SaveCachedPose.h"
+#include "AnimGraphNode_UseCachedPose.h"
+#include "AnimGraphNode_TwoWayBlend.h"
 #include "AnimGraphNode_AssetPlayerBase.h"
 #include "AnimGraphNode_BlendSpacePlayer.h"
 #include "AnimGraphNode_StateMachine.h"
@@ -75,6 +79,84 @@
 #include "Engine/SkeletalMesh.h"
 #include "AnimGraphNode_LinkedInputPose.h"
 #endif
+
+bool UTheManAnimationAssetLibrary::InstallEnemyReactionAnimationBranch(UAnimBlueprint* BP)
+{
+#if WITH_EDITOR
+ if(!BP)return false;
+ UEdGraph* Graph=nullptr;
+ for(UEdGraph* G:BP->FunctionGraphs)if(G&&G->GetFName()==TEXT("AnimGraph"))Graph=G;
+ if(!Graph)return false;
+ UAnimGraphNode_ControlRig* Rig=nullptr;UAnimGraphNode_Root* Root=nullptr;
+ for(UEdGraphNode* N:Graph->Nodes)
+ {
+  if(N->NodeComment==TEXT("ReactionModeSwitch"))return BP->Status!=BS_Error;
+  if(N->NodeComment==TEXT("EnemyExplosionReaction"))Rig=Cast<UAnimGraphNode_ControlRig>(N);
+  if(auto* R=Cast<UAnimGraphNode_Root>(N))Root=R;
+ }
+ if(!Rig||!Root)return false;
+ auto* Source=Rig->FindPin(TEXT("Source"));auto* Result=Root->FindPin(TEXT("Result"));
+ if(!Source||Source->LinkedTo.Num()!=1||!Result)return false;
+ auto* Input=Source->LinkedTo[0];
+ BP->Modify();Graph->Modify();
+ const auto* Schema=Graph->GetSchema();
+ auto Link=[&](UEdGraphPin* A,UEdGraphPin* B){return A&&B&&Schema->TryCreateConnection(A,B);};
+ auto Add=[&]<typename T>(int X,int Y)
+ {
+  FGraphNodeCreator<T> C(*Graph);auto* N=C.CreateNode();N->NodePosX=X;N->NodePosY=Y;C.Finalize();return N;
+ };
+ auto* BaseCache=Add.operator()<UAnimGraphNode_SaveCachedPose>(-900,-300);
+ BaseCache->CacheName=TEXT("ReactionInputPose");BaseCache->ReconstructNode();
+ Source->BreakAllPinLinks();
+ if(!Link(Input,BaseCache->FindPin(TEXT("Pose"))))return false;
+ auto Use=[&](UAnimGraphNode_SaveCachedPose* Cache,int X,int Y)
+ {
+  FGraphNodeCreator<UAnimGraphNode_UseCachedPose> C(*Graph);auto* N=C.CreateNode();
+  N->SaveCachedPoseNode=Cache;N->NodePosX=X;N->NodePosY=Y;C.Finalize();return N->FindPin(TEXT("Pose"));
+ };
+ auto Bind=[&](FName Name,UEdGraphNode* N,FName Pin)
+ {
+  FGraphNodeCreator<UK2Node_VariableGet> C(*Graph);auto* V=C.CreateNode();V->VariableReference.SetSelfMember(Name);
+  V->NodePosX=N->NodePosX-200;V->NodePosY=N->NodePosY+150;C.Finalize();return Link(V->GetValuePin(),N->FindPin(Pin));
+ };
+ if(!Link(Use(BaseCache,-450,600),Source))return false;
+ Rig->NodePosX=0;Rig->NodePosY=600;
+ auto* Eval=Add.operator()<UAnimGraphNode_SequenceEvaluator>(-900,0);
+ Eval->Node.SetShouldLoop(false);Eval->Node.SetTeleportToExplicitTime(true);
+ for(auto& P:Eval->ShowPinForProperties)if(P.PropertyName==TEXT("Sequence")||P.PropertyName==TEXT("ExplicitTime"))P.bShowPin=true;
+ Eval->ReconstructNode();
+ if(!Bind(TEXT("ReactionAnimation"),Eval,TEXT("Sequence"))||!Bind(TEXT("ReactionTime"),Eval,TEXT("ExplicitTime")))return false;
+ auto* AnimCache=Add.operator()<UAnimGraphNode_SaveCachedPose>(-450,0);
+ AnimCache->CacheName=TEXT("AuthoredReactionPose");AnimCache->ReconstructNode();
+ if(!Link(Eval->FindPin(TEXT("Pose")),AnimCache->FindPin(TEXT("Pose"))))return false;
+ auto* Full=Add.operator()<UAnimGraphNode_TwoWayBlend>(0,-350);
+ if(!Link(Use(BaseCache,-400,-450),Full->FindPin(TEXT("A")))||!Link(Use(AnimCache,-400,-300),Full->FindPin(TEXT("B")))||!Bind(TEXT("ReactionAlpha"),Full,TEXT("Alpha")))return false;
+ auto* Upper=Add.operator()<UAnimGraphNode_LayeredBoneBlend>(0,150);
+ Upper->Node.LayerSetup.SetNum(1);
+ auto& Filter=Upper->Node.LayerSetup[0].BranchFilters.AddDefaulted_GetRef();Filter.BoneName=TEXT("spine_01");Filter.BlendDepth=0;
+ Upper->Node.bMeshSpaceRotationBlend=true;
+ if(!Link(Use(BaseCache,-400,100),Upper->FindPin(TEXT("BasePose")))||!Link(Use(AnimCache,-400,260),Upper->FindPin(TEXT("BlendPoses_0")))||!Bind(TEXT("ReactionAlpha"),Upper,TEXT("BlendWeights_0")))return false;
+ auto MakeSwitch=[&](int X,int Y)
+ {
+  auto* N=Add.operator()<UAnimGraphNode_BlendListByBool>(X,Y);
+  for(FName Pin:{FName(TEXT("BlendTime_0")),FName(TEXT("BlendTime_1"))})
+   if(auto* P=N->FindPin(Pin))P->DefaultValue=TEXT("0.1");
+  return N;
+ };
+ auto* BodySwitch=MakeSwitch(500,0);
+ // True is pose 0. Locomotion continues in the main AnimBP and supplies the moving legs.
+ if(!Link(Full->FindPin(TEXT("Pose")),BodySwitch->FindPin(TEXT("BlendPose_0")))||!Link(Upper->FindPin(TEXT("Pose")),BodySwitch->FindPin(TEXT("BlendPose_1")))||!Bind(TEXT("bUseFullBodyReaction"),BodySwitch,TEXT("bActiveValue")))return false;
+ auto* Mode=MakeSwitch(900,200);Mode->NodeComment=TEXT("ReactionModeSwitch");
+ for(FName Pin:{FName(TEXT("BlendTime_0")),FName(TEXT("BlendTime_1"))})
+  if(auto* P=Mode->FindPin(Pin))P->DefaultValue=TEXT("0.0");
+ Result->BreakAllPinLinks();Root->NodePosX=1250;Root->NodePosY=200;
+ if(!Link(BodySwitch->FindPin(TEXT("Pose")),Mode->FindPin(TEXT("BlendPose_0")))||!Link(Rig->FindPin(TEXT("Pose")),Mode->FindPin(TEXT("BlendPose_1")))||!Bind(TEXT("bUseAnimationReaction"),Mode,TEXT("bActiveValue"))||!Link(Mode->FindPin(TEXT("Pose")),Result))return false;
+ FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(BP);FKismetEditorUtilities::CompileBlueprint(BP);BP->MarkPackageDirty();
+ return BP->Status!=BS_Error;
+#else
+ return false;
+#endif
+}
 
 bool UTheManAnimationAssetLibrary::InstallEnemyHitReactionRig(UAnimBlueprint* BP,UControlRigBlueprint* Rig)
 {

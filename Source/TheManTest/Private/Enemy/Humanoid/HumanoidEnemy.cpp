@@ -13,7 +13,7 @@
 AHumanoidEnemy::AHumanoidEnemy()
 {
  HitReactionPostProcess=FSoftObjectPath(TEXT("/Game/Enemy/Humanoid/_Shared/Animations/ControlRig/ABP_Humanoid_HitReaction.ABP_Humanoid_HitReaction_C"));
- CreateDefaultSubobject<UEnemyHitReactionComponent>(TEXT("ExplosionHitReaction"));
+ ExplosionHitReaction=CreateDefaultSubobject<UEnemyHitReactionComponent>(TEXT("ExplosionHitReaction"));
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	AIControllerClass = AHumanoidAIController::StaticClass();
 

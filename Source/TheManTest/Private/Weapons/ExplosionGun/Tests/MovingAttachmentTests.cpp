@@ -41,6 +41,11 @@ public:
    E->AutoPossessAI=EAutoPossessAI::Disabled;
    E->GetMesh()->SetSkeletalMeshAsset(Fixture->GetMesh()->GetSkeletalMeshAsset());E->GetMesh()->SetRelativeTransform(Fixture->GetMesh()->GetRelativeTransform());
    E->GetMesh()->SetAnimInstanceClass(Fixture->GetMesh()->GetAnimClass());
+   auto* Reaction=E->FindComponentByClass<UEnemyHitReactionComponent>();
+   const auto* FixtureReaction=Fixture->FindComponentByClass<UEnemyHitReactionComponent>();
+   Reaction->FrontAnimation=FixtureReaction->FrontAnimation;Reaction->BackAnimation=FixtureReaction->BackAnimation;
+   Reaction->LeftAnimation=FixtureReaction->LeftAnimation;Reaction->RightAnimation=FixtureReaction->RightAnimation;
+   Reaction->HeavyFrontAnimation=FixtureReaction->HeavyFrontAnimation;
    E->GetMesh()->VisibilityBasedAnimTickOption=EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
    E->FinishSpawning(FTransform(FVector(-15000,0,100)));
    E->GetAbilitySystemComponent()->SetNumericAttributeBase(UEnemyAttributeSetBase::GetMaxHealthAttribute(),100);

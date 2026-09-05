@@ -56,6 +56,7 @@ public:
     Test->TestEqual(TEXT("Stationary Phantom movement disabled"),E->GetCharacterMovement()->MovementMode.GetValue(),MOVE_None);
     auto* C=E->FindComponentByClass<UEnemyHitReactionComponent>();
     if(!C){Test->AddError(TEXT("Missing reaction component"));return true;}
+    C->ReactionMode=EEnemyHitReactionMode::ControlRig;
     C->AttackDuration=.2f;C->RecoveryDuration=1.f;
    }
    auto* Camera=W->SpawnActor<ACameraActor>(FVector(-5500,270,240),FRotator(-10,180,0),P);

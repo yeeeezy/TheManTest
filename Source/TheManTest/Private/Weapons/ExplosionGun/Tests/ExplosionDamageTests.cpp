@@ -89,7 +89,12 @@ public:
   FVector VisibleReaction,BlockedReaction;FName ReactionBone;
   Enemies[0]->FindComponentByClass<UEnemyHitReactionComponent>()->Sample(VisibleReaction,ReactionBone);
   Enemies[1]->FindComponentByClass<UEnemyHitReactionComponent>()->Sample(BlockedReaction,ReactionBone);
-  Test->TestTrue(TEXT("Real explosion triggers reaction on visible damaged Enemy"),!VisibleReaction.IsNearlyZero());
+  UAnimSequence* VisibleAnimation=nullptr;UAnimSequence* BlockedAnimation=nullptr;float Time=0,VisibleAlpha=0,BlockedAlpha=0;
+  Enemies[0]->FindComponentByClass<UEnemyHitReactionComponent>()->SampleAnimation(VisibleAnimation,Time,VisibleAlpha);
+  Enemies[1]->FindComponentByClass<UEnemyHitReactionComponent>()->SampleAnimation(BlockedAnimation,Time,BlockedAlpha);
+  Test->TestTrue(TEXT("Real explosion triggers animation on visible damaged Enemy"),VisibleAnimation&&VisibleAlpha>0.f);
+  Test->TestTrue(TEXT("Legacy Rig is inactive in animation mode"),VisibleReaction.IsNearlyZero());
+  Test->TestTrue(TEXT("Wall-blocked Enemy receives no animation"),!BlockedAnimation&&BlockedAlpha==0);
   Test->TestTrue(TEXT("Wall-blocked Enemy receives no reaction"),BlockedReaction.IsNearlyZero());
 		Test->TestEqual(TEXT("Outside-radius enemy unaffected"),Enemies[2]->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),100.f);
 		Test->TestEqual(TEXT("Player inside radius unaffected"),PlayerASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),PlayerHealth);
