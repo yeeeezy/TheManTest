@@ -1,7 +1,7 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-05-mixamo-source-selection",
-    "active_animation_task": "User rejected generated previews; use existing Mixamo source animations and modify. Candidate search only; no official preview or FBX obtained. Unauthenticated products request returned403. Await official source FBX; retarget only in TMIIR/FPSShooter1. Game unchanged. Previous reference_stagger_preview_status is superseded.",
+    "last_updated":  "2026-09-05-mixamo-official-downloads",
+    "active_animation_task": "User rejected generated previews. Official Mixamo access now WORKS using Windows UIAutomation after user foregrounded logged-in Edge tab. Downloaded rifle Hit Reaction and Standing React Large From Front/Back/Left/Right, FBX Binary With Skin 30fps no reduction. Five files successfully imported into external Blender source preview:65bones, durations2.3/1.3667/1.6667/1.5667/1.6333s. Mixamo_Original_Reactions_Normal.gif generated and opened; original timing unchanged. Next adapt selected source in external TMIIR/FPSShooter1; no target retarget/game edits yet. Checkpoint a8a524c. Previous reference_stagger_preview_status superseded.",
     "active_feature":  "FEAT-080",
     "archive_file":  "feature_archive.json",
     "features":  [

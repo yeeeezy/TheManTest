@@ -6,6 +6,7 @@
 
 ## 最新样片（未接入游戏）
 
+- Mixamo获取阻塞已解除：用户将已登录Edge标签页置前，Windows UIAutomation可读取并Invoke官网卡片/下载按钮。已下载Hit Reaction（While Holding A Rifle）和Standing React Large From Front/Back/Left/Right五条，30fps/With Skin/FBX Binary/Keyframe Reduction none。源文件位于外部Source/Mixamo；Mixamo_Original_Reactions_Normal.gif已生成，原始节奏并排预览。四方向重受击可作为后续适配候选，尚未改动作/重定向/接入游戏。下方此前“无法获取”状态已过时。
 - 用户已否定全部自制样片，明确改用Mixamo现成动作再修改。停止Rhythm/Blast生成路线。当前只完成在线候选检索：Hit Reaction（持枪描述）、Big Hit To Head、Stumble Backwards；尚未在官方3D预览或下载验证。官方网页为JS应用，当前未认证products请求返回403；本会话无浏览器控制工具、下载目录未找到对应FBX。需要用户从已登录Mixamo下载源FBX后才能继续修改。源动作适配/重定向在TMIIR或FPSShooter1，TheManTest仅接收成品。
 - 最新为 Humanoid_Rhythm_Staggers.blend / Humanoid_Rhythm_Staggers_Normal.gif（外部同目录）。用户指出上一版即使加速仍节奏均匀，本版保持1.3秒，首个运动帧达到约87.5%躯干幅度，峰值后短暂保留失衡姿态，两次追步各约.133秒，第二次落地后承重停顿约.133秒，最后缓慢恢复。四方向支撑脚目标误差<.00005cm。已查看阶段图并生成正常速度预览；待用户评价节奏，未接入游戏。
 - 参考MorStudios HitReact Pro官方展示 https://www.youtube.com/watch?v=Qoq9pzQ_tA4 的84–89秒Stumble_B，已实际查看分帧：上身先失衡，双腿交替迈步承重，站稳后抬身恢复。四方向是视觉重建及持枪适配，不是视频精确动捕提取。
@@ -38,6 +39,7 @@
 
 ## 会话交接
 
+- 最新检查点a8a524c；Mixamo_Source_Review.blend、preview_mixamo_sources.py、mixamo_source_report.json均在外部Blender目录。五条FBX均成功由Blender导入，65骨，持枪2.3秒，重击前1.3667/后1.6667/左1.5667/右1.6333秒。mixamo_ui.ps1可通过已激活Mixamo页操作，无需浏览器Cookie或令牌。下载可能超过20秒，勿因等待短就重复点击；Downloads有Back (1)重复，未删除。后续在外部资源项目适配现役70骨架，保留原节奏；当前只完成官方源资产获取和原动作预览。
 - 当前检查点5b79c06仅保存上轮参考样片的harness文档。最新外部脚本create_rhythm_staggers.py、render_rhythm_staggers.py，数据stagger_rhythm_motion.json；此前2.2秒参考版和1.3秒Blast版均保留对比。本轮无C++/UE资产修改；下一步以Rhythm版反馈为准，暂不扩展24条或迁入。
 - 最新检查点f27cd3e保存上一轮24条动作/配置/源码/harness作为恢复点。当前仅外部四方向参考样片和harness更新，未改游戏C++/资产，不需要新编译。等用户看四方向样片后再继续扩展与接入；原24条仅是技术验证通过，视觉已被用户否定。
 

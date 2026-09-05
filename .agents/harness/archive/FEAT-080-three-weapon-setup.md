@@ -2,6 +2,8 @@
 
 ## 2026-09-05 用户停止自制并指定Mixamo资产
 
+- 后续用户登录并将Mixamo标签页置前，成功用Windows UIAutomation读到官网控件并下载，无需访问登录凭据。检查点a8a524c。下载5条官方X Bot源FBX：Hit Reaction（描述While Holding A Rifle）、Standing React Large From Front/Back/Left/Right；下载设置FBX Binary、With Skin、30fps、none。保存Downloads并复制至D:/Blender Projects/HumanoidHitReactions/Source/Mixamo。Back下载延迟导致重复一份(1)，未删除用户Downloads。
+- Blender实际导入五条成功，每条65骨；时长依次2.3/1.3667/1.6667/1.5667/1.6333秒。Mixamo_Source_Review.blend及mixamo_source_report.json保存；90帧30fps正常速度原动作预览Mixamo_Original_Reactions_Normal.gif生成，阶段图已查看。四方向Large均有全身失衡/脚步，持枪版更克制；尚未完成目标骨架适配或修改，未替换游戏。原始帧时间保留，各动作按各自时长播放完后停留。
 - 用户认为生成动作均不合适，先要求找现成资产，随后明确指定Mixamo寻找并修改。此前参考/Blast/Rhythm均未验收，停止继续制作这些样片。检查点968ca73保存此前文档。
 - 检索到Hit Reaction（持枪受击描述）、Big Hit To Head和Stumble Backwards候选；候选名称来自外部索引，未完成官方预览，不宣称适合或已获得。只读访问Mixamo官方首页/公开JS确认产品接口；未认证GET /api/v1/products返回403，未尝试绕过认证。当前工具无浏览器控制能力，Downloads无匹配FBX。Adobe官方文档确认登录后选择角色/动画并下载的工作流。
 - 后续需用户通过已登录官网提供源FBX，优先持枪Hit Reaction和重击候选；取得源文件后保留真实原动作节奏，外部适配骨架、握枪和首尾。没有下载第三方重新分发文件，没有修改游戏资产；重定向仅允许TMIIR/FPSShooter1。
