@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-04-alien-volume-three",
+    "last_updated":  "2026-09-04-chaos-ground",
     "active_feature":  "FEAT-080",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -471,7 +471,8 @@
                          "description":  "为 RepairGun 正式接通现有第一人称开火蒙太奇；以 RepairGun 为完整配置基线创建电击枪和爆炸枪，两把新枪仅替换各自模型、枪口与命中特效。源模型和 VFX 来自外部 VFXPack 项目；不迁移源角色、武器蓝图或动画。即使表现依赖内容相同，也按武器所有权复制到各自语义目录并重命名，使三把枪后续可以独立调整。",
                          "archive_file":  "archive/FEAT-080-three-weapon-setup.md",
                          "created":  "2026-09-03",
-                         "updated":  "2026-09-04-alien-volume-three",
+                         "updated":  "2026-09-04-chaos-ground",
+                         "chaos_ground_verification": "新增可摆放BP_ChaosDestructibleCube和27块真实Chaos资产；非Enemy附着爆炸按400cm半径施加Strain/Impulse，Enemy不触发，首次伤害不变。地面Actor Tag ExplosionGround+45度坡度+2000cm多命中查询；Cue声震用实际点，Ground Niagara用Context地面Hit，缺地面跳过。GASPTest/VFXTestMap地板及TestMap地形本体+64分块已标记，VFXTestMap摆3个Cube。Development Editor Win64成功，ExplosionChaosPhysics.log两项PIE Success；ValidateChaosAssets.log冷加载地板/65地形/3Cube、BP编译保存及音量3/震屏8验证通过。最终四项回归见ExplosionChaosFinal.log。",
                          "supplied_audio_verification": "已接用户512565爆炸与166553肉体命中音频，均Unity Gain；CameraShakeScale=3，旧合成爆炸uasset/WAV无引用后删除。Development Editor Win64成功，ValidateUserAudio冷回读0错误0警告，UserAudioShakeFinal三项D3D回归3/3 Success。",
                          "zero_damage_hit_verification": "Development Editor Win64编译成功；ZeroDamageEnemyHit.log中StickyExplosionAndBlood、ThreeWeaponBaseline、ExplosionDirectionalShake 3/3 Success。正式电击弹保持Damage=0，有效Hit血花一次且Health不变，重复Hit/穿透不新增血花，正伤害仍只触发一次。",
                          "latest_verification_evidence":  "2026-09-04：爆炸弹改为AExplosionGunBullet，首次5点伤害与原ImpactCue不变，命中附着后默认2秒可调倒计时，结束调用独立Explosion Cue，仅表现无二次伤害。TMIIR N_ExplosionGround_006及116包依赖迁入本枪Effects/Explosion，新增独立爆破声音。默认Enemy Hit Cue已接生成血迹纹理、附着/环境贴花和0.55秒喷溅。Development Editor Win64构建成功；StickyBloodD3D中StickyExplosionAndBlood与ThreeWeaponBaseline 2/2 Success。冷回读两项GameplayCueName、116包依赖、纹理参数与无供应商路径/Redirector均通过。结果未最终提交。",

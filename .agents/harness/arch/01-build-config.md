@@ -1,5 +1,7 @@
 # 构建配置
 
+- FEAT-080 Chaos Cube：Private依赖GeometryCollectionEngine、Chaos、PhysicsCore、FieldSystemEngine。UGeometryCollection组件负责真实破碎，ExplosionGunBullet向其提交径向Strain/Impulse；不新增插件或外部模块。
+
 **何时读取：** 新增模块依赖、修改插件列表、调整构建目标时。
 
 | 文件 | 作用 |

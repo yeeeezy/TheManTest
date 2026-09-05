@@ -23,10 +23,11 @@ bool UGCN_ExplosionGunExplosion::OnExecute_Implementation(AActor* Target,const F
 {
  if(!Target||!Target->GetWorld())return false;
  // N_ExplosionGround_006 is authored along +Z, unlike directional muzzle/impact systems.
- const FVector Normal=P.Normal.GetSafeNormal(UE_SMALL_NUMBER,FVector::UpVector);
- if(ExplosionEffect)
+ const FHitResult* Ground=P.EffectContext.GetHitResult();
+ const FVector Normal=Ground?Ground->ImpactNormal.GetSafeNormal(UE_SMALL_NUMBER,FVector::UpVector):FVector::UpVector;
+ if(ExplosionEffect && Ground)
  {
-  if(UNiagaraComponent* Effect=UNiagaraFunctionLibrary::SpawnSystemAtLocation(Target,ExplosionEffect,P.Location,FRotationMatrix::MakeFromZ(Normal).Rotator(),FVector(EffectScale)))
+  if(UNiagaraComponent* Effect=UNiagaraFunctionLibrary::SpawnSystemAtLocation(Target,ExplosionEffect,Ground->ImpactPoint+Normal,FRotationMatrix::MakeFromZ(Normal).Rotator(),FVector(EffectScale)))
   {
    // The source ground effect has a long tail. Bound its lifetime independently of the projectile.
    FTimerHandle Cleanup;

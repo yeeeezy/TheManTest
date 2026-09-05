@@ -27,6 +27,8 @@
 #include "ImageUtils.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Actors/DestructibleCube/ChaosDestructibleCube.h"
+#include "GeometryCollection/GeometryCollectionComponent.h"
 
 namespace
 {
@@ -34,6 +36,7 @@ struct FStickyTestState
 {
  TWeakObjectPtr<AExplosionGunBullet> Bullet,ZeroBullet,OrphanBullet;
  TWeakObjectPtr<APhantom> Enemy;
+ TWeakObjectPtr<AChaosDestructibleCube> EnemyNearbyCube;
  float Start=0;
  int Stage=0;
  bool bBloodCaptured=false;
@@ -72,6 +75,8 @@ public:
    auto* Enemy=World->SpawnActor<APhantom>(EnemyClass,FVector(500,400,100),FRotator::ZeroRotator,Spawn);
    if(!Enemy){Test->AddError(TEXT("Enemy failed to spawn"));return true;}
    Enemy->SetCloaked(false);State.Enemy=Enemy;
+   auto* CubeClass=LoadClass<AChaosDestructibleCube>(nullptr,TEXT("/Game/Actors/DestructibleCube/Blueprint/BP_ChaosDestructibleCube.BP_ChaosDestructibleCube_C"));
+   State.EnemyNearbyCube=World->SpawnActor<AChaosDestructibleCube>(CubeClass,FVector(250,400,52),FRotator::ZeroRotator,Spawn);
    const FVector CameraLocation(270,440,145);
    auto* Camera=World->SpawnActor<ACameraActor>(CameraLocation,(FVector(500,480,90)-CameraLocation).Rotation(),Spawn);
    World->GetFirstPlayerController()->SetViewTarget(Camera);
@@ -83,6 +88,7 @@ public:
    Test->TestFalse(TEXT("Cloaked Phantom is not sticky"),Bullet->IsAttachedAndCountingDown());
    Enemy->SetCloaked(false);Bullet->ProcessHit(Hit,Player,Player->GetAbilitySystemComponent());
    Test->TestTrue(TEXT("First hit starts countdown and keeps bullet"),IsValid(Bullet)&&Bullet->IsAttachedAndCountingDown());
+   Test->TestTrue(TEXT("Enemy classification retained for delayed detonation"),Bullet->DidHitEnemy());
    Test->TestEqual(TEXT("Original five-point impact damage"),Before-Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),5.f);
    Bullet->ProcessHit(Hit,Player,Player->GetAbilitySystemComponent());
    Test->TestEqual(TEXT("Repeated hit cannot duplicate damage"),Before-Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),5.f);
@@ -142,6 +148,11 @@ public:
   Test->TestFalse(TEXT("Sticky bullet disappears after fuse"),State.Bullet.IsValid());
   Test->TestFalse(TEXT("Zero fuse detonates"),State.ZeroBullet.IsValid());
   Test->TestFalse(TEXT("Missing source ASC still detonates"),State.OrphanBullet.IsValid());
+  if(State.EnemyNearbyCube.IsValid())
+  {
+   Test->TestFalse(TEXT("Enemy attachment explosion does not trigger nearby Chaos"),State.EnemyNearbyCube->GeometryCollection->IsRootBroken());
+   State.EnemyNearbyCube->Destroy();
+  }
   if(State.Enemy.IsValid())Test->TestEqual(TEXT("Explosion adds no second damage"),State.Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),95.f);
   int32 Sprays=0;for(TActorIterator<AEnemyBloodSpray> It(World);It;++It)++Sprays;
   Test->TestEqual(TEXT("Blood spray cleans itself up"),Sprays,0);

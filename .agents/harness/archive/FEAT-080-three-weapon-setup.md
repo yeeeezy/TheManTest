@@ -7,6 +7,18 @@
 - 两把新枪只替换模型、枪口 VFX、命中 VFX 与贴花；玩法、动画、音频、弹药、GAS、后坐力和子弹行为保持与 RepairGun 一致。
 - 外部来源仅迁移最终模型和 VFX 依赖，不迁移源项目角色、武器蓝图或动画。
 
+## 2026-09-04 Chaos Cube 与爆炸地面投射
+
+- 用户确认：可摆放Chaos Cube类，爆炸弹非Enemy命中时倒计时触发Chaos；Enemy分支不扩展，不增加伤害。实际爆点负责物理/声音/震屏，Ground Niagara只在Actor Tag `ExplosionGround`且坡度合格的表面播放。检查点f199564保存前轮音量覆盖。
+- 新增Actors/DestructibleCube/ChaosDestructibleCube，27块闭合Cube网格组成真实聚类GeometryCollection；FractureAsset/Toughness与Actor Scale可调。触发逻辑留在ExplosionGunBullet，半径400cm、Strain500000、速度变化1200；初碰不会自动碎。
+- GroundSearchDistance=2000cm，GroundMaxSlope=45度；Object Multi Trace穿过Cube，拒绝Enemy/弹体/GeometryCollection。Params.Location保持实际爆点，EffectContext.HitResult仅携带合格地面；无地面跳过Niagara，保留声/震。
+- Development Editor Win64初次构建成功。GASPTest Plane、VFXTestMap VFXTest_Floor已标记；VFXTestMap新增3个不同尺寸Cube。TestMap分区地形标记及完整PIE验证进行中。
+- 第一次NullRHI脚本在摆放Actor时触发引擎除零异常，已改用D3D编辑器完成资产/关卡保存；未将崩溃当作保存成功，已重新加载现有资产后续作业。
+- 初版GC仅组装网格，缺少凸包/体积等数据，实弹穿透；补充UpdateGeometryDependentProperties后创建SimulationData，实弹附着、RootBroken与碎块位移全部通过。测试临时地板需先Movable再SetStaticMesh；坡度案例用薄平板，避免旋转立方体另一面实际仍合格。
+- TestMap的Landscape及64个StreamingProxy通过WorldPartitionBlueprintLibrary加载并写Actor Tag，共65项外部Actor包；GASPTest/VFXTestMap各仅一个真实地板被标记。没有标记天花板、墙或Cube。ValidateChaosAssets.log独立冷回读全部65地形、两地板、3Cube及无Redirector，三项Blueprint编译保存；音量3/震屏8保持。
+- ExplosionChaosPhysics.log：ExplosionChaosGround与StickyExplosionAndBlood 2/2 Success，验证真实ProjectileSweep附着、倒计时后RootBroken、半径外不碎、碎块扩散、地面落点与Enemy不引爆附近Cube；原5点伤害/零伤害血花/清理保持。最终增加缺失地面不生成Niagara断言与两张PIE截图，四项回归见ExplosionChaosFinal.log。
+- 最终ExplosionChaosFinal.log：ExplosionChaosGround、StickyExplosionAndBlood、ExplosionDirectionalShake、ThreeWeaponBaseline全部4/4 Success。已查看Detonated截图，可见碎块与地面效果；Intact截图因测试区域远离灯光较暗，不作为外观验收。当前未最终提交，整体FEAT-080仍in_progress。
+
 ## 2026-09-04 指定爆炸音量再增强
 
 - 用户确认将当前Alien Cannon爆炸声从VolumeMultiplier=1改为3；只改正式Explosion Cue的该值，不修改音频样本、敌人音量或震屏。检查点b0fb3ec保存前轮音频替换。

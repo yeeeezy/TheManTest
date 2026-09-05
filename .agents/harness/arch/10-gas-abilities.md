@@ -2,6 +2,8 @@
 
 ## 爆炸延时 Cue 与 Enemy 血迹（2026-09-04）
 
+- Explosion Cue参数契约：Params.Location/Normal为真实附着爆点，音效与方位震屏继续使用此位置；Params.EffectContext.HitResult为弹体查询的ExplosionGround地面，仅Niagara使用ImpactPoint+Normal(1cm)。Context没有地面Hit时不生成Ground Niagara/内含decal，不回退Cube表面；Chaos物理不在Cue内。
+
 - 最新用户覆盖：正式Explosion Cue的VolumeMultiplier=3（Alien Cannon素材），CameraShakeScale实际回读8且保留。EnemyHit.VolumeMultiplier=1。下文原生默认/初次接入配置不覆盖用户当前蓝图值。
 
 - 零伤害弹命中：ABulletBase仅在Damage==0的有效非穿透首次Hit显式调用Enemy.ExecuteHitReactionCue(Context,0,true)。新可选bAllowZeroDamageHit默认false，原Health回调仍只接受正伤害；显式零伤害使用即时Invoke，不修改Damage，不重复播放。电击弹Damage保持0也可播放默认血花。
