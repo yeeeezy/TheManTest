@@ -1,5 +1,12 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 仰射仍偏下：实际敌人瞄准漏检（复现与修正完成）
+
+- 用户反馈仰射明显偏下，继续同一修复；写前检查点f7f7287保存上轮骨骼附着。冷读爆炸弹半径15cm、AttachmentOffset4cm、Mesh本地零偏移，模型范围X±10.9cm/YZ±5.16cm。
+- 新增真实PrimaryFire→Phantom的StickyUpwardAim，1/2米各0/30/60度仰角，独立相机射线求身体表面。StickyUpBefore.log复现5/6位置检查失败，画面竖直方向偏下22~27cm；弹道方向几乎CameraForward，说明旧Visibility/complex瞄准查询没有认出敌人而选了100m远点。1米场景同时出现胶囊提前挡枪立即附着。上轮六方向测试只有水平直接发射，没有覆盖准星到敌人的完整链路，不能支持此前完整修好判断。
+- GA_Shoot改以子弹ObjectType/CollisionResponse进行simple瞄准查询，命中Character后沿准星射线细化Mesh PhysicsAsset目标。枪口遮挡中的Character只在实际Mesh穿过镜头→枪口线段时立即命中，排除胶囊假阻挡并继续查询后方墙体。没有调小用户子弹球半径或改VFX/声音/伤害。构建成功，仰射与四项回归进行中。
+- 最终Development Editor Win64构建成功，无新增C++警告；StickyUpAfter.log 5/5 Success：StickyUpwardAim、StickyBodySurfaces、ProjectileCrosshairAim、StickyExplosionAndBlood、ThreeWeaponPIESwitch。六个实际PrimaryFire场景修正后竖直偏差分别-1.106/+2.850/-3.760/-1.106/+2.850/+3.542cm，对比此前-22~-27cm明显下降；1米场景均不再因胶囊立即触发附着。保留AttachmentOffset4cm；1米60度时横向差10.608cm，实际枪口→目标线仍会先碰邻近身体碰撞部位，未绕过真实身体遮挡，不宣称像素级准星重合。其他五场横向差<0.06cm。仍用PhysicsAsset表面，未改成蒙皮三角形判定。没有资产写入，结果未最终提交/push。
+
 ## 2026-09-05 爆炸弹背部附着定位（实现与自验完成）
 
 - 用户确认动手。检查点0d9b19f保存上轮准星汇聚；不纳入用户地图/ExternalActor/Explosion Cue设置。原附着从胶囊接触点沿actor forward追踪固定40/120cm，失败静默回落胶囊。

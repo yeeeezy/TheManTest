@@ -7,6 +7,7 @@
 - 当前最新：按用户要求将Phantom临时固定为不移动、不自动转向的靶子，保留方向性受击表现。BP_Phantom → Phantom|Testing → Stationary Hit Test默认开启；修改后重新PIE生效。
 - 当前最新射击修复：实体弹从枪口朝准星目标汇聚，镜头→枪口的球体遮挡检查防止贴墙穿射；敌人胶囊/骨骼判定规则未改。
 - 最新附着修复：爆炸弹身体定位改为沿实际飞行中心线查骨骼碰撞表面，检查入射侧并保持骨骼局部点；附近表面补点也失败时隐藏弹体，避免悬空胶囊附着。仍用PhysicsAsset近似表面，非逐三角形蒙皮。
+- 最新仰射复查：复现原Visibility/complex准星查询漏Enemy，造成22~27cm偏下；改成子弹碰撞规则simple查询后细化身体目标，且排除胶囊提前挡枪。六场竖直误差现<4cm，保留AttachmentOffset4；1米60度仍有先碰近侧身体导致10.6cm横差，不宣称像素级贴合。
 - 详细历史见archive/FEAT-080-three-weapon-setup.md。
 
 ## 最新行为与验收入口
@@ -24,6 +25,8 @@
 
 ## 实现与验证
 
+- 仰射：StickyUpBefore.log复现5/6位置失败；StickyUpAfter.log五项5/5 Success（StickyUpwardAim、StickyBodySurfaces、ProjectileCrosshairAim、StickyExplosionAndBlood、ThreeWeaponPIESwitch）。1/2米×0/30/60度完整PrimaryFire验证，竖直差由22~27cm降至<4cm。Development Editor Win64成功，无新增编译警告。上轮测试只覆盖水平直接飞行，遗漏瞄准漏Enemy这一链路。
+
 - 背部附着：Development Editor Win64成功，无新增C++警告；StickySurfacesFinal.log StickyBodySurfaces Success，六方向实际飞行后均附入射侧骨骼（误差<0.5cm），受击动画中确实随动。初次离屏骨骼不刷新仅影响测试，已让测试实例AlwaysTickPoseAndRefreshBones。StickySurfaces.log中ProjectileCrosshairAim、StickyExplosionAndBlood均Success。
 
 - 近距准星：Development Editor Win64成功，无新增C++警告。ProjectileAim.log 3/3 Success（ProjectileCrosshairAim、StickyExplosionAndBlood、ThreeWeaponPIESwitch）；真实PrimaryFire验证1.5/3/10m目标面误差<0.1cm及20cm近墙阻挡，实体弹实际附着、弹药和原爆炸行为通过。
@@ -40,6 +43,8 @@
 - 安装保存后的Python关闭编辑器调用发现close_all_asset_editors未暴露，已改为close_all_editors_for_asset；独立冷回读与PIE证明资产保存有效。既有M_UE4Man_Body缺纹理/AimIK警告未处理。
 
 ## 会话交接
+
+- 最近检查点f7f7287保存上轮身体附着修复。本轮GA_Shoot查询修正和StickyUpAimTests未最终提交/push；用户地图/ExternalActor/资产参数未改。测试编辑器退出。剩余边界：PhysicsAsset近似表面、4cm贴附间距、极近大仰角真实近侧身体遮挡。
 
 - 最近写前检查点0d9b19f保存准星汇聚；本轮ExplosionGunBullet身体附着修复和StickySurfaceTests未最终提交/push。编辑器测试已结束，未写任何资产/地图/用户参数。背部、斜向定位与随动已自验完成，等待用户手感验收。
 

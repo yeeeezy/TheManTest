@@ -13,6 +13,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/SphereComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 
 UGA_Shoot::UGA_Shoot()
 {
@@ -112,30 +113,56 @@ void UGA_Shoot::ActivateAbility(
 		else
 		{
 			// Converge the muzzle trajectory on the point under the center-screen crosshair.
-			FCollisionQueryParams AimQuery(SCENE_QUERY_STAT(PlayerProjectileAim), true, Character);
+			FCollisionQueryParams AimQuery(SCENE_QUERY_STAT(PlayerProjectileAim), false, Character);
 			AimQuery.AddIgnoredActor(Firearm);
 			TArray<AActor*> Equipment;
 			Character->GetAttachedActors(Equipment);
 			AimQuery.AddIgnoredActors(Equipment);
 			const FVector AimEnd = CameraLocation + CameraForward * FMath::Max(1.f, Firearm->GetHitscanRange());
+			const USphereComponent* BulletSphere = Firearm->GetBulletClass()->GetDefaultObject<ABulletBase>()->FindComponentByClass<USphereComponent>();
 			FHitResult AimHit;
-			const bool bAimHit = GetWorld()->LineTraceSingleByChannel(AimHit, CameraLocation, AimEnd, ECC_Visibility, AimQuery);
+			const bool bAimHit = BulletSphere
+				? GetWorld()->LineTraceSingleByChannel(AimHit, CameraLocation, AimEnd, BulletSphere->GetCollisionObjectType(), AimQuery,
+					FCollisionResponseParams(BulletSphere->GetCollisionResponseToChannels()))
+				: GetWorld()->LineTraceSingleByChannel(AimHit, CameraLocation, AimEnd, ECC_Visibility, AimQuery);
+			if (auto* AimCharacter = Cast<ACharacter>(AimHit.GetActor()); bAimHit && AimCharacter && AimCharacter->GetMesh())
+			{
+				FHitResult BodyHit;
+				if (AimCharacter->GetMesh()->LineTraceComponent(BodyHit, CameraLocation, AimEnd, AimQuery)) AimHit = BodyHit;
+			}
 			const FVector AimPoint = bAimHit ? AimHit.ImpactPoint : AimEnd;
 			FVector ShotDirection = (AimPoint - MuzzleLocation).GetSafeNormal(UE_SMALL_NUMBER, CameraForward);
 			if (FVector::DotProduct(ShotDirection, CameraForward) <= 0.f) ShotDirection = CameraForward;
 
 			// A protruding muzzle must not spawn the projectile on the far side of a wall.
 			// Match the projectile's collision responses and thickness, not just visibility.
-			const USphereComponent* BulletSphere = Firearm->GetBulletClass()->GetDefaultObject<ABulletBase>()->FindComponentByClass<USphereComponent>();
 			FHitResult MuzzleBlock;
 			bool bMuzzleBlocked = false;
 			float BulletRadius = 0.f;
 			if (BulletSphere)
 			{
 				BulletRadius = BulletSphere->GetScaledSphereRadius();
+				FCollisionQueryParams MuzzleQuery = AimQuery;
+				for (;;)
+				{
 				bMuzzleBlocked = GetWorld()->SweepSingleByChannel(MuzzleBlock, CameraLocation, MuzzleLocation,
 					FQuat::Identity, BulletSphere->GetCollisionObjectType(), FCollisionShape::MakeSphere(BulletRadius),
-					AimQuery, FCollisionResponseParams(BulletSphere->GetCollisionResponseToChannels()));
+					MuzzleQuery, FCollisionResponseParams(BulletSphere->GetCollisionResponseToChannels()));
+				// The broad movement capsule is not a solid gun obstruction. Only an actual
+				// body surface crossing the barrel segment should force an immediate body hit.
+				if (auto* BlockedCharacter = Cast<ACharacter>(MuzzleBlock.GetActor()); bMuzzleBlocked && BlockedCharacter && BlockedCharacter->GetMesh())
+				{
+					FHitResult BodyBlock;
+					bMuzzleBlocked = BlockedCharacter->GetMesh()->LineTraceComponent(BodyBlock, CameraLocation, MuzzleLocation, AimQuery);
+					if (bMuzzleBlocked) MuzzleBlock = BodyBlock;
+					else
+					{
+						MuzzleQuery.AddIgnoredActor(BlockedCharacter);
+						continue; // Still check walls or other bodies hidden by this capsule.
+					}
+				}
+				break;
+				}
 			}
 			const FVector SpawnLocation = bMuzzleBlocked
 				? MuzzleBlock.ImpactPoint + MuzzleBlock.ImpactNormal * (BulletRadius + .1f) : MuzzleLocation;

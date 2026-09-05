@@ -2,6 +2,8 @@
 
 ## 2026-09-05 玩家实体弹准星汇聚
 
+- 仰射修正覆盖下文Visibility取点：Projectile瞄准现在使用子弹ObjectType+CollisionResponse的simple射线，命中Character后沿准星射线进一步查Mesh PhysicsAsset，避免Enemy未响应Visibility/complex导致退化到远点。枪口预遮挡遇Character时仅实际Mesh穿过镜头→枪口线段才视为即时阻挡；胶囊假阻挡被排除后继续查其他组件/墙体。真实弹体飞行仍可被枪口前其他身体部位挡住。StickyUpwardAim覆盖1/2米与0/30/60度，实际竖直误差<4cm（保留AttachmentOffset4）；极近大仰角不保证跨身体遮挡仍与准星重合。
+
 - GA_Shoot读取PlayerController.GetPlayerViewPoint的实际视点（无Controller时HeadCamera兜底）。Projectile分支由Visibility中心射线求AimPoint，无命中时用HitscanRange；弹体从枪口朝AimPoint发射，零向量/身后目标回退CameraForward，避免近距倒射。
 - 镜头至枪口按子弹CDO球半径、ObjectType及CollisionResponse做Sweep；有阻挡时在表面近侧生成并调用既有ProcessHit，防止枪口穿墙/穿入目标后漏判。无阻挡保持枪口生成，后续伤害仍由实体弹飞行碰撞结算。忽略玩家及挂载装备；没有把胶囊判定改成逐骨骼判定。
 - ProjectileCrosshairAim真实PrimaryFire验证1.5/3/10m目标面轨迹误差<0.1cm和实际附着，以及20cm墙面、枪口在墙后时的近侧阻挡。ProjectileAim.log三项Success：此测试、StickyExplosionAndBlood、ThreeWeaponPIESwitch。
