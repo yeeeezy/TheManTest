@@ -7,6 +7,16 @@
 - 两把新枪只替换模型、枪口 VFX、命中 VFX 与贴花；玩法、动画、音频、弹药、GAS、后坐力和子弹行为保持与 RepairGun 一致。
 - 外部来源仅迁移最终模型和 VFX 依赖，不迁移源项目角色、武器蓝图或动画。
 
+## 2026-09-04 爆炸枪按截图替换为 Physical 1
+
+- 用户明确授权替换模型、特效、光源和清理旧资产。截图 `屏幕截图 2026-09-04 192212.png` 中 `BP_Weapon_Rifle_Physical_Child` 在源 VFXPack 内重定向到 `BP_Weapon_Rifle_Physical_01_Child`。
+- 新枪体来自 `SM_Weapon_Ballistics_Rifle_01` 及 Outline，正式命名 `SM_ExplosionGun_Rifle` / `SM_ExplosionGun_Rifle_Outline`。主材质保留源配置，正式命名 `MI_ExplosionGun_Rifle` / `M_ExplosionGun_Rifle`；源蓝图组件额外指定的 `MA_Example_Item_HackyOutline` 单独迁入为 `M_ExplosionGun_Outline`，写入 Outline Mesh 材质槽，消除空材质槽警告。
+- 枪口来自 `NE_VFX_Muzzle_Physical_Burst_1`，命中来自 `NE_VFX_Projectile_Impact_Physical_1`，正式路径分别为 `/Game/Weapons/ExplosionGun/Effects/Muzzle/Systems/NS_ExplosionGun_PhysicalMuzzle` 与 `/Game/Weapons/ExplosionGun/Effects/Impact/Systems/NS_ExplosionGun_PhysicalImpact`；黄色环境贴花继续 2.0，弹体和玩法配置保持原值。
+- 主模型相对位置 `(0,-16.757669,3.554176)`；枪口按源 MuzzleFlashLoc 相对握把变换为 `(0.000174,41.751608,8.507415)` / Yaw 90。点光源使用源射击强度 300（源组件静态默认 500，开火变量覆盖为 300）、线性颜色 `(1,0.551385,0.147041)`、半径 87.370407、SourceRadius 60、0.1 秒淡出；局部偏移 `(8.851011,-17.618745,2.96144)` 与源灯相对枪体位置一致。枪口倍率 1。
+- AssetTools 迁移/重命名 41 项依赖；18 项有效纹理参数在迁移时保留并冷启动验证。递归依赖闭包均位于 ExplosionGun；旧模型与两套 Physical 3 系统的依赖图按外部引用保护子树后删除 43 项，3 项仍被现有资产引用的依赖保留。供应商目录、迁移空目录和范围内 Redirector 均清空。
+- 用户 ElectricGun 当前尺寸为 `(2,2,2)`，已保留；写入前本地 WIP checkpoint 为 `f5b8fb5`。既有基线测试同步新资产路径、ExplosionGun 开灯与 ElectricGun 用户倍率；新增真实开火截帧验证消耗弹药、点光开启/淡出与渲染画面。
+- Development Editor / Win64 构建成功；冷启动 `EXP_VALIDATE|DONE|closure=41`；D3D12 首轮和补齐 Outline 材质后的最终 ThreeWeaponBaseline、ThreeWeaponPIESwitch、ExplosionVisualCapture 均 3/3 Success；爆炸枪空材质槽警告消失。现存 RepairGun Outline 空槽、M_UE4Man_Body 纹理和 AimIK 警告不属本轮范围。截图：`Saved/Screenshots/WindowsEditor/TMT_ExplosionGun_Physical1.png`。当前 FEAT-080 继续 in_progress，后续爆炸弹玩法另行推进；结果未提交。
+
 ## 源资产调研
 
 - 外部项目：`D:\Unreal Projects\UE389_MuzzleSource\VFX Pack - Stylized FPS Muzzle and Impacts Effects 5.1\VFXPack`

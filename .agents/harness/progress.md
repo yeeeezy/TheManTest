@@ -4,18 +4,18 @@
 
 - `FEAT-080`：RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 - 状态：`in_progress`
-- 当前阶段：暗场地图已整理到 `/Game/Maps/VFXTest/VFXTestMap`；两枪模型互换与 Laser 材质修复完成；电击枪已按用户原版录像完成枪口位置、短时青绿色点光和 D3D 实际画面验收；`MuzzleEffectScale` 现可同步缩放 Niagara 枪口效果与点光范围；Phantom 静止命中目标、EnemyBase 通用血条和无视角后坐测试配置已就绪，可继续开发爆炸弹逻辑。
+- 当前阶段：暗场地图已整理到 `/Game/Maps/VFXTest/VFXTestMap`；两枪模型互换与 Laser 材质修复完成；电击枪已按用户原版录像完成枪口位置、短时青绿色点光和 D3D 实际画面验收；`MuzzleEffectScale` 现可同步缩放 Niagara 枪口效果与点光范围；Phantom 静止命中目标、EnemyBase 通用血条和无视角后坐测试配置已就绪，爆炸枪也已按最新截图完成 Rifle 01、Physical 1 与对应点光替换，可继续开发爆炸弹逻辑。
 - 详细历史：`archive/FEAT-080-three-weapon-setup.md`
 
 ## 已确认方案
 
 - RepairGun、电击枪、爆炸枪使用同一套现有第一人称持枪动画内容，但开火序列、开火蒙太奇、装备蒙太奇和 AnimBP 均按武器复制并语义重命名。
 - 电击枪当前使用原爆炸枪的 Ballistics Rifle 02 几何体；枪口使用 `NE_VFX_Muzzle_Laser_Burst_2`，环境/角色统一命中使用 `NE_VFX_Projectile_Impact_Laser_2`，在项目内分别命名为 `NS_ElectricGun_LaserMuzzle` 与 `NS_ElectricGun_LaserImpact`。
-- 爆炸枪当前使用原电击枪的 SMG 02 几何体、Physical Burst 3 枪口效果和 Physical Impact 3 命中效果。
+- 爆炸枪已按 2026-09-04 19:22 截图改为 Ballistics Rifle 01 主模型/Outline、Physical Burst 1 枪口和 Physical Impact 1 命中；源枪体材质及橙黄色短时枪口点光同时接入，黄色贴花保持 2.0。
 - 两把新枪除模型和 VFX 外直接复制 RepairGun 配置。
 - 即使素材相同，也复制并重命名到各武器所有者目录，确保后续独立修改。
 - 不迁移外部项目的角色、武器蓝图或动画，不进行动画重定向。
-- `VFXTestMap` 审核环境临时使用 Bloom=4、Threshold=0.5 对齐源 MainScene；电击枪单独使用 `MuzzleEffectScale=1.0` 和青绿色短时枪口点光（UE 5.7 视觉补偿强度 1800、半径 200、SourceRadius 60、0.1 秒线性淡出），其他枪默认关闭。
+- `VFXTestMap` 审核环境临时使用 Bloom=4、Threshold=0.5 对齐源 MainScene；电击枪单独使用 `MuzzleEffectScale=1.0` 和青绿色短时枪口点光（UE 5.7 视觉补偿强度 1800、半径 200、SourceRadius 60、0.1 秒线性淡出），爆炸枪现启用独立橙黄色短时点光（强度300、半径87.370407、SourceRadius60、0.1秒）；RepairGun 默认关闭。ElectricGun 用户当前覆盖倍率为2。
 - `MuzzleEffectScale` 是每把枪统一的枪口尺寸参数：开火时写入 Niagara 的 `User.MuzzleScale`，同时按最大绝对轴缩放点光 `AttenuationRadius` 与 `SourceRadius`；建议 XYZ 填相同值，亮度、颜色和持续时间不随尺寸倍率改变。
 
 ## 最近完成
@@ -46,6 +46,8 @@
 - 用户确认后将 FEAT-080 归档为 done；当前不自动提交，等待用户明确说“更新 Git”。
 
 ## 会话交接
+
+- 2026-09-04 explosion-physical1：源截图 `BP_Weapon_Rifle_Physical_Child` 实际重定向到 `BP_Weapon_Rifle_Physical_01_Child`。最终模型为 `SM_ExplosionGun_Rifle` / `_Outline`，系统为 `NS_ExplosionGun_PhysicalMuzzle` / `NS_ExplosionGun_PhysicalImpact`；材质为 `MI_ExplosionGun_Rifle` / `M_ExplosionGun_Rifle` 与 `M_ExplosionGun_Outline`。41 项依赖全部归属 ExplosionGun；旧 SMG 模型、Physical 3 系统及无引用依赖共 43 项已删除，可从 Git 恢复。源光线性颜色 `(1,0.551385,0.147041)`、强度 300、半径 87.370407、SourceRadius 60、持续 0.1 秒，局部偏移 `(8.851011,-17.618745,2.96144)`。保留用户 ElectricGun 尺寸 2 倍，已封存检查点 `f5b8fb5`。最终结果不自动提交。验证详情见 FEAT-080 archive。
 
 - FEAT-079 核心实现与 5/5 自动化保持有效，已封存在 WIP checkpoint `5a39440`；用户因暂无实际业务 Actor 暂缓其前台验收。
 - FEAT-080 三枪基础实现及无渲染自动化已完成。两把新枪与 RepairGun 可在 PIE 顺序切换并启动各自开火蒙太奇；两把新枪已有独立弹体、材质和统一武器命中表现。

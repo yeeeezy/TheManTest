@@ -80,9 +80,9 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 		{
 			TEXT("ExplosionGun"),
 			TEXT("/Game/Weapons/ExplosionGun/Blueprint/BP_ExplosionGun.BP_ExplosionGun_C"),
-			TEXT("/Game/Weapons/ExplosionGun/Meshes/SM_ExplosionGun.SM_ExplosionGun"),
-			TEXT("/Game/Weapons/ExplosionGun/Effects/Muzzle/Systems/NS_ExplosionGun_Muzzle.NS_ExplosionGun_Muzzle"),
-			TEXT("/Game/Weapons/ExplosionGun/Effects/Impact/Systems/NS_ExplosionGun_Impact.NS_ExplosionGun_Impact"),
+			TEXT("/Game/Weapons/ExplosionGun/Meshes/SM_ExplosionGun_Rifle.SM_ExplosionGun_Rifle"),
+			TEXT("/Game/Weapons/ExplosionGun/Effects/Muzzle/Systems/NS_ExplosionGun_PhysicalMuzzle.NS_ExplosionGun_PhysicalMuzzle"),
+			TEXT("/Game/Weapons/ExplosionGun/Effects/Impact/Systems/NS_ExplosionGun_PhysicalImpact.NS_ExplosionGun_PhysicalImpact"),
 			TEXT("/Game/Weapons/ExplosionGun/Effects/Impact/Materials/MI_ExplosionGun_ImpactDecal.MI_ExplosionGun_ImpactDecal"),
 			TEXT("/Game/Weapons/ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Impact.GC_Weapon_ExplosionGun_Impact_C"),
 			TEXT("/Game/Weapons/ExplosionGun/Blueprint/BP_ExplosionGunBullet.BP_ExplosionGunBullet_C"),
@@ -129,20 +129,21 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 			Weapon->GetMuzzleFlashLight()->bUseInverseSquaredFalloff);
 		TestTrue(FString::Printf(TEXT("%s muzzle light affects translucent materials"), Expected.Name),
 			Weapon->GetMuzzleFlashLight()->bAffectTranslucentLighting);
-		const bool bExpectedMuzzleLight = FCString::Strcmp(Expected.Name, TEXT("ElectricGun")) == 0;
+		const bool bElectricGun = FCString::Strcmp(Expected.Name, TEXT("ElectricGun")) == 0;
+		const bool bExpectedMuzzleLight = bElectricGun || FCString::Strcmp(Expected.Name, TEXT("ExplosionGun")) == 0;
 		TestEqual(FString::Printf(TEXT("%s muzzle flash light enablement is correct"), Expected.Name),
 			Weapon->bEnableMuzzleFlashLight, bExpectedMuzzleLight);
-		if (bExpectedMuzzleLight)
+		if (bElectricGun)
 		{
 			TestTrue(TEXT("ElectricGun muzzle location matches the source weapon"),
 				Weapon->MuzzleLocalTransform.GetTranslation().Equals(
 					FVector(0.000751f, 67.696307f, 6.434297f), KINDA_SMALL_NUMBER));
 			TestTrue(TEXT("ElectricGun directional muzzle VFX stays aligned to camera forward"),
 				Weapon->MuzzleEffectRotation.Equals(FRotator::ZeroRotator));
-			TestTrue(TEXT("ElectricGun muzzle VFX uses source scale"),
-				Weapon->MuzzleEffectScale.Equals(FVector::OneVector));
+			TestTrue(TEXT("ElectricGun muzzle VFX retains the user-selected scale"),
+				Weapon->MuzzleEffectScale.Equals(FVector(2.f)));
 			TestEqual(TEXT("ElectricGun muzzle effect size scalar matches its largest axis"),
-				Weapon->GetMuzzleEffectSizeScale(), 1.f);
+				Weapon->GetMuzzleEffectSizeScale(), 2.f);
 			const FNiagaraVariable MuzzleScaleParameter(
 				FNiagaraTypeDefinition::GetFloatDef(), TEXT("User.MuzzleScale"));
 			TestTrue(TEXT("Electric muzzle exposes its sprite-size scale parameter"),
@@ -442,6 +443,70 @@ bool FElectricMuzzleVisualCaptureTest::RunTest(const FString& Parameters)
 	ADD_LATENT_AUTOMATION_COMMAND(FCaptureElectricMuzzleFlashCommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.3f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidateElectricMuzzleCaptureCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FExplosionVisualStepCommand, FAutomationTestBase*, Test, int32, Step);
+bool FExplosionVisualStepCommand::Update()
+{
+	UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	AFPSCharacterBase* Player = PC ? Cast<AFPSCharacterBase>(PC->GetPawn()) : nullptr;
+	AFirearm* Weapon = Player && Player->GetEquipmentManager()
+		? Cast<AFirearm>(Player->GetEquipmentManager()->GetCurrentEquipment()) : nullptr;
+	if (!Weapon || !Weapon->GetClass()->GetPathName().Contains(TEXT("ExplosionGun")))
+	{
+		Test->AddError(TEXT("ExplosionGun must be equipped for visual verification"));
+		return true;
+	}
+	if (Step == 0)
+	{
+		const int32 AmmoBefore = Weapon->GetCurrentAmmo();
+		Player->PrimaryFire();
+		Test->TestEqual(TEXT("ExplosionGun actual shot consumes ammunition"), Weapon->GetCurrentAmmo(), AmmoBefore - 1);
+		Test->TestTrue(TEXT("ExplosionGun shot activates its light"), Weapon->GetMuzzleFlashLight()->IsVisible());
+	}
+	else if (Step == 1)
+	{
+		Test->TestTrue(TEXT("ExplosionGun light is visible on capture frame"), Weapon->GetMuzzleFlashLight()->IsVisible());
+		FViewport* Viewport = World->GetGameViewport() ? World->GetGameViewport()->Viewport : nullptr;
+		if (!Viewport) { Test->AddError(TEXT("Missing PIE viewport")); return true; }
+		TArray<FColor> Pixels;
+		const FIntPoint Size = Viewport->GetSizeXY();
+		if (!Viewport->ReadPixels(Pixels) || Pixels.Num() != Size.X * Size.Y)
+		{ Test->AddError(TEXT("Could not read PIE pixels")); return true; }
+		TArray64<uint8> Png;
+		FImageUtils::PNGCompressImageArray(Size.X, Size.Y, Pixels, Png);
+		Test->TestTrue(TEXT("ExplosionGun rendered screenshot saved"), FFileHelper::SaveArrayToFile(Png,
+			*FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("Screenshots/WindowsEditor/TMT_ExplosionGun_Physical1.png"))));
+	}
+	else
+	{
+		Test->TestFalse(TEXT("ExplosionGun light fades after firing"), Weapon->GetMuzzleFlashLight()->IsVisible());
+	}
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FExplosionVisualTest,
+	"TheManTest.Player.Weapons.ExplosionVisualCapture",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FExplosionVisualTest::RunTest(const FString& Parameters)
+{
+	AutomationOpenMap(TEXT("/Game/Maps/VFXTest/VFXTestMap"));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
+	ADD_LATENT_AUTOMATION_COMMAND(FSwitchToNextWeaponCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.7f));
+	ADD_LATENT_AUTOMATION_COMMAND(FSwitchToNextWeaponCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
+	ADD_LATENT_AUTOMATION_COMMAND(FExplosionVisualStepCommand(this, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
+	ADD_LATENT_AUTOMATION_COMMAND(FExplosionVisualStepCommand(this, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.016f));
+	ADD_LATENT_AUTOMATION_COMMAND(FExplosionVisualStepCommand(this, 1));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.3f));
+	ADD_LATENT_AUTOMATION_COMMAND(FExplosionVisualStepCommand(this, 2));
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }
