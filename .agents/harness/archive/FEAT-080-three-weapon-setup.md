@@ -1,5 +1,12 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 修正Mixamo适配腿软
+
+- 用户反馈腿软，逐帧审计确认Back源动作最大屈膝93.5°/骨盆下降13.7cm，前版适配125.9°/32.3cm。根因是为了追到过远脚目标而额外下沉骨盆。用户授权保留源骨盆起伏/膝盖方向，通过调整步幅适配。检查点5c73314保存上轮全部已知Mixamo接入/Rig删除结果，不含用户地图、声音或VFX。
+- 外部adapt_mixamo_rifle.py取消按水平伸腿距离压低骨盆；脚目标超出腿长时只收缩水平伸脚距离，脚高度仍来自源动画。膝盖弯曲平面直接取源大腿到膝盖方向，不从已经变化的目标姿势反推。垂直够不到时仅限制骨盆向上抬升，最大修正约1.9–2.9cm；不再因远处脚位蹲下几十厘米。
+- 最终Front/Back/Left/Right最大屈膝67.3/78.7/75.9/80.6°，骨盆下降4.34/13.51/7.62/.99cm。收缩脚目标最大18.4/58.2/26.7/35cm，特别Back与原脚轨迹差异大；本版是可达步幅修正，并非严格支撑脚接触锁定或步态重规划，脚步自然度仍需用户观感评价。求解目标位置误差<.00006cm、右握点<.00003cm。四条的帧数、时长与Root轨道逐帧同前版，其他系统不改。
+- TMIIR的MixamoLegFixCreate/Cold生成和验证通过，仅成品四条重导入TheManTest；MixamoLegFixTargetCold逐帧70骨/配置/依赖/无Rig通过。MixamoLegFixRuntime输出MIXAMO_RUNTIME_OK：24部位方向×静止/移动、武器挂点、重复与结束恢复、Root无墙144.61cm/墙33.45cm/关闭0cm和关闭恢复移动通过。新增预览Humanoid_Mixamo_Rifle_LegFix_Normal.gif已生成打开，主要受力帧已查看。没有C++/蓝图改动，无需重编译；MixamoLegFixAttachment.log的AttachedLimbReaction与StickyBodySurfaces两项均Success，测试编辑器退出状态0。
+
 ## 2026-09-05 Mixamo持枪动作正式接入，删除旧受击Rig
 
 - 最终相关7项回归全部通过：MixamoRegression首轮5项成功，另2项声音断言因测试误加-nosound失败；移除该启动参数，MixamoAudioRegression的ExplosionRadialDamage、StickyExplosionAndBlood均Success，未改声音代码/参数来规避测试。最终持枪GIF已按规范方向重渲染、检查并打开。测试编辑器退出、地图未保存，架构文档同步；结果未最终提交/push。用户当前接受4方向作为首批，不宣称已补齐24种独立部位动作。
