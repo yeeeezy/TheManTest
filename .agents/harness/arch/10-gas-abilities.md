@@ -1,5 +1,11 @@
 # GAS 技能系统
 
+## 2026-09-05 玩家实体弹准星汇聚
+
+- GA_Shoot读取PlayerController.GetPlayerViewPoint的实际视点（无Controller时HeadCamera兜底）。Projectile分支由Visibility中心射线求AimPoint，无命中时用HitscanRange；弹体从枪口朝AimPoint发射，零向量/身后目标回退CameraForward，避免近距倒射。
+- 镜头至枪口按子弹CDO球半径、ObjectType及CollisionResponse做Sweep；有阻挡时在表面近侧生成并调用既有ProcessHit，防止枪口穿墙/穿入目标后漏判。无阻挡保持枪口生成，后续伤害仍由实体弹飞行碰撞结算。忽略玩家及挂载装备；没有把胶囊判定改成逐骨骼判定。
+- ProjectileCrosshairAim真实PrimaryFire验证1.5/3/10m目标面轨迹误差<0.1cm和实际附着，以及20cm墙面、枪口在墙后时的近侧阻挡。ProjectileAim.log三项Success：此测试、StickyExplosionAndBlood、ThreeWeaponPIESwitch。
+
 ## 2026-09-05 当前Enemy Air 007（覆盖下文Enemy Ground配置）
 
 - EnemyEffectScale现可直接控制Air007内部尺寸：22个发射器ParticleUpdate接ApplyOwnerScaleToAttributes，Owner Scale链接Engine.Owner.Scale；Sprite/Ribbon/CameraOffset开启，世界空间另开启初速度/力/Mesh缩放，本地运动沿用组件变换，Drag不缩放。当前Cue保存值0.1；倍率只影响表现，不影响爆炸伤害半径。Editor自动化ExplosionScaleAudit默认只读，仅显式-InstallEnemyScale可修改并保存该System。

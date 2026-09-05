@@ -1,5 +1,12 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 实体弹近距离准星汇聚（实现与自验完成）
+
+- 用户确认按排查方案动手。原GA_Shoot从枪口以CameraForward平行发射，近距准星/枪口视差明显。检查点e287ecf选择性保存上轮Phantom固定靶；用户地图/ExternalActor/Explosion Cue参数不纳入。
+- GA_Shoot改为读取PlayerController实际视点，Projectile先Visibility射线确定中心目标，再从枪口汇聚；无目标使用HitscanRange远点。沿镜头→枪口按弹体球半径/碰撞通道/Response做Sweep，阻挡时在近侧生成并走原ProcessHit，避免贴墙生成到墙后；退化/身后目标不倒射。正常飞行仍由ProjectileMovement碰撞，不远程直接结算目标。忽略玩家及挂载装备，未改Enemy胶囊/骨骼命中规则。
+- Development Editor Win64构建成功，无新增C++警告。ProjectileCrosshairAim通过真实PrimaryFire路径准备1.5/3/10米汇聚与20cm墙面挡枪验证；三枪切换和StickyExplosionAndBlood回归进行中。
+- 最终ProjectileAim.log三项3/3 Success：ProjectileCrosshairAim验证三个距离目标面轨迹误差<0.1cm、实际命中附着、消耗一发弹药、20cm贴墙枪口越界仍在墙前附着且不倒射；StickyExplosionAndBlood、ThreeWeaponPIESwitch回归通过。未修改资产/地图或用户震屏和Enemy VFX开关，结果未最终Git提交/push。
+
 ## 2026-09-05 Phantom固定靶临时开关
 
 - 用户要求敌人始终不移动、不自动朝向玩家，以测试不同方向的受击动作。根因为EnemyBase.ReactToProjectileHit直接旋转，加上Humanoid设置Aim/AI Focus，零速度不足以阻止转向。

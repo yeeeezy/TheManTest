@@ -12,6 +12,7 @@
 #include "NiagaraComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Components/SphereComponent.h"
 
 UGA_Shoot::UGA_Shoot()
 {
@@ -64,8 +65,13 @@ void UGA_Shoot::ActivateAbility(
 	}
 
 	UCameraComponent* Camera        = Character->GetHeadCamera();
-	const FVector CameraLocation    = Camera->GetComponentLocation();
-	const FVector CameraForward     = Camera->GetForwardVector();
+	FVector CameraLocation = Camera->GetComponentLocation();
+	FRotator ViewRotation = Camera->GetComponentRotation();
+	if (APlayerController* PC = Cast<APlayerController>(Character->GetController()))
+	{
+		PC->GetPlayerViewPoint(CameraLocation, ViewRotation);
+	}
+	const FVector CameraForward = ViewRotation.Vector();
 
 	const FVector MuzzleLocation = Firearm->GetMuzzleWorldTransform().GetLocation();
 
@@ -105,12 +111,40 @@ void UGA_Shoot::ActivateAbility(
 		}
 		else
 		{
-			// ── Projectile：从枪口生成，飞行碰撞后自动触发 ProcessHit ──
+			// Converge the muzzle trajectory on the point under the center-screen crosshair.
+			FCollisionQueryParams AimQuery(SCENE_QUERY_STAT(PlayerProjectileAim), true, Character);
+			AimQuery.AddIgnoredActor(Firearm);
+			TArray<AActor*> Equipment;
+			Character->GetAttachedActors(Equipment);
+			AimQuery.AddIgnoredActors(Equipment);
+			const FVector AimEnd = CameraLocation + CameraForward * FMath::Max(1.f, Firearm->GetHitscanRange());
+			FHitResult AimHit;
+			const bool bAimHit = GetWorld()->LineTraceSingleByChannel(AimHit, CameraLocation, AimEnd, ECC_Visibility, AimQuery);
+			const FVector AimPoint = bAimHit ? AimHit.ImpactPoint : AimEnd;
+			FVector ShotDirection = (AimPoint - MuzzleLocation).GetSafeNormal(UE_SMALL_NUMBER, CameraForward);
+			if (FVector::DotProduct(ShotDirection, CameraForward) <= 0.f) ShotDirection = CameraForward;
+
+			// A protruding muzzle must not spawn the projectile on the far side of a wall.
+			// Match the projectile's collision responses and thickness, not just visibility.
+			const USphereComponent* BulletSphere = Firearm->GetBulletClass()->GetDefaultObject<ABulletBase>()->FindComponentByClass<USphereComponent>();
+			FHitResult MuzzleBlock;
+			bool bMuzzleBlocked = false;
+			float BulletRadius = 0.f;
+			if (BulletSphere)
+			{
+				BulletRadius = BulletSphere->GetScaledSphereRadius();
+				bMuzzleBlocked = GetWorld()->SweepSingleByChannel(MuzzleBlock, CameraLocation, MuzzleLocation,
+					FQuat::Identity, BulletSphere->GetCollisionObjectType(), FCollisionShape::MakeSphere(BulletRadius),
+					AimQuery, FCollisionResponseParams(BulletSphere->GetCollisionResponseToChannels()));
+			}
+			const FVector SpawnLocation = bMuzzleBlocked
+				? MuzzleBlock.ImpactPoint + MuzzleBlock.ImpactNormal * (BulletRadius + .1f) : MuzzleLocation;
 			ABulletBase* SpawnedBullet = GetWorld()->SpawnActor<ABulletBase>(
-				Firearm->GetBulletClass(), MuzzleLocation, CameraForward.Rotation(), SpawnParams);
+				Firearm->GetBulletClass(), SpawnLocation, ShotDirection.Rotation(), SpawnParams);
 			if (SpawnedBullet)
 			{
 				SpawnedBullet->InitBullet(Character, SourceASC);
+				if (bMuzzleBlocked) SpawnedBullet->ProcessHit(MuzzleBlock, Character, SourceASC);
 			}
 		}
 	}
