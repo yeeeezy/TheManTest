@@ -13,6 +13,8 @@ public:
  float EffectLifeSpan=8.f;
  UGCN_ExplosionGunExplosion();
  UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Explosion") TObjectPtr<UNiagaraSystem> ExplosionEffect;
+ // Empty enemy VFX means sound/shake only, never fall back to the ground decal.
+ UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Explosion") TObjectPtr<UNiagaraSystem> EnemyExplosionEffect;
  UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Explosion") TObjectPtr<USoundBase> ExplosionSound;
  UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Explosion",meta=(ClampMin="0.01")) float EffectScale=1.f;
  UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Explosion",meta=(ClampMin="0.0")) float VolumeMultiplier=1.f;

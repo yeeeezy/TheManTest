@@ -1,14 +1,23 @@
 #pragma once
 #include "Weapons/_Shared/Firearms/Bullets/BulletBase.h"
+#include "Core/_Shared/Feedback/HitStopSubsystem.h"
 #include "ExplosionGunBullet.generated.h"
 
-// First impact retains BulletBase damage/feedback. Delayed blast adds Chaos, not radial damage.
+// First impact retains BulletBase damage/feedback. Both impact types attach and detonate.
 UCLASS()
 class THEMANTEST_API AExplosionGunBullet : public ABulletBase
 {
  GENERATED_BODY()
 public:
  AExplosionGunBullet();
+ UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion|Hit Stop", meta=(ShowOnlyInnerProperties))
+ FHitStopSettings HitStop;
+ UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion|Damage", meta=(ClampMin="0"))
+ float ExplosionDamage=20.f;
+ UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion|Damage", meta=(ClampMin="0", Units="cm"))
+ float ExplosionDamageRadius=400.f;
+ UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion|Damage")
+ TSubclassOf<UGameplayEffect> ExplosionDamageEffectClass;
  UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion", meta=(ClampMin="0.0",Units="s"))
  float ExplosionDelay=2.f;
  UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion", meta=(Categories="GameplayCue.Weapon.ExplosionGun"))
@@ -38,6 +47,7 @@ protected:
 private:
  void Detonate();
  void TriggerChaos(const FVector& Origin);
+ void ApplyExplosionDamage(const FVector& Origin);
  FTimerHandle ExplosionTimer;
  bool bAttached=false;
  bool bDetonated=false;

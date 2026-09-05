@@ -6,14 +6,19 @@
 
 ## 爆炸枪附着弹（2026-09-04）
 
-- 延时爆炸新增非Enemy的Chaos破碎，不新增伤害。Bullet|Explosion|Chaos可调ChaosRadius(400cm)/ChaosStrain(500000)/ChaosImpulse(1200，速度变化)；碰撞时缓存Enemy分类，只有非Enemy分支处理半径内GeometryCollection（去重并排除Enemy）。Strain后0.05秒施加径向冲量，弱引用不依赖已销毁弹体。
+- 最新覆盖：Enemy与环境均附着/倒计时，结束均执行范围伤害、Chaos、爆炸Cue和HitStop。`ExplosionDamage=20`、`ExplosionDamageRadius=400cm`、`ExplosionDamageEffectClass=GE_BulletDamage`只影响延时爆炸，原Damage=5首次伤害不变。Overlap候选按Enemy去重，Visibility墙体遮挡先判定，敌人不互相充当墙；只向Enemy ASC施加一次GE，源ASC失效时目标ASC构建Context/Spec。玩家与其他Actor不受范围伤害。
+- `Bullet|Explosion|Hit Stop`内FHitStopSettings：Enabled=true、Duration=.06真实秒、TimeScale=.05、InnerRadius=200cm、OuterRadius=1500cm、MaxContinuousDuration=.12真实秒。由弹体Detonate独立请求Core/_Shared/Feedback/HitStopSubsystem，不由GC管理；离相机越远越弱，无本地玩家或非单机网络模式不触发。
+- HitStopSubsystem是World级管理器：真实时钟计时、相对进入前TimeDilation缩放、最强请求优先、连续时长上限、结束50ms恢复窗口；恢复原速度而非强制1，外部系统改速度时让出所有权，WorldEndPlay/Deinitialize清理。世界运动/动画/Niagara/Chaos和游戏时间定时器会短暂放慢，声音不变速。
+- 爆炸视觉类型通过Params.AggregatedTargetTags的原生元数据Data.Explosion.EnemyImpact快照传入，目标死亡后仍保留原命中分类。环境沿用Ground投影；EnemyExplosionEffect独立且默认空，不回退地面大decal。声音/震屏共享同一Explosion Cue配置，不复制两套Cue。
+
+- 延时爆炸两种命中均触发Chaos。Bullet|Explosion|Chaos可调ChaosRadius(400cm)/ChaosStrain(500000)/ChaosImpulse(1200，速度变化)；半径内GeometryCollection去重并排除Enemy所属组件。Strain后0.05游戏秒施加径向冲量，弱引用不依赖已销毁弹体。
 - Bullet|Explosion|Ground：GroundSearchDistance=2000cm、GroundMaxSlope=45度。仅Actor Tags里的ExplosionGround为地面，不是Component Tag或Gameplay Tag；Object Multi Trace跳过阻挡Cube，法线Z判坡度，拒绝Enemy/弹体/GeometryCollection。
 - 可摆放类Actors/DestructibleCube/ChaosDestructibleCube拥有GeometryCollection根组件；蓝图/Game/Actors/DestructibleCube/Blueprint/BP_ChaosDestructibleCube。FractureAsset与Toughness可逐实例配置，大小使用Actor Scale。关闭碰撞伤害，使用Destructible通道。显式CreateTestCubeAsset(bRebuild=false)仅编辑器创建预切分GC；true显式重建同路径资产，不在运行时切网格。现为42块大小混合的Voronoi，24分散随机点+18密集点、seed92417、断面0.8cm噪声；在临时集合切割成功后替换资产，保留实例引用。
-- ChaosAngularSpeed默认5rad/s，与原ChaosImpulse独立；释放碎块的延迟回调中向同一范围提交RandomVector角速度场，径向Mask限制半径（Culling_Outside保留Mask非零值）。只在原非Enemy分支，不修改伤害/Fuse/Cue。
+- ChaosAngularSpeed默认5rad/s，与原ChaosImpulse独立；两种爆炸释放碎块的延迟回调均向同一范围提交RandomVector角速度场，径向Mask限制半径（Culling_Outside保留Mask非零值）。
 
 - `Weapons/ExplosionGun/Bullets/ExplosionGunBullet.h/.cpp`：`AExplosionGunBullet : ABulletBase`，`BP_ExplosionGunBullet` 的原生父类。基类先处理首次伤害、原 Impact Cue 与 Phantom 穿透；有效命中后停止碰撞/移动，附着组件或骨骼并计时。基类仅增加protected只读 `HasProcessedHit()`，其他枪行为不变。
 - 蓝图 `Bullet|Explosion / ExplosionDelay` 默认2秒，可调；`AttachmentOffset` 默认4cm。零秒延后到下一Tick执行，重复碰撞不重复触发，EndPlay取消计时。
-- 倒计时结束调用独立 `GameplayCue.Weapon.ExplosionGun.Explosion`，再销毁弹体。本阶段无第二次/范围伤害。
+- 倒计时结束执行上述范围伤害并调用独立 `GameplayCue.Weapon.ExplosionGun.Explosion`，随后销毁弹体。
 - ExplosionGun/Effects/Explosion/Systems/NS_ExplosionGun_Detonation 来源TMIIR的N_ExplosionGround_006；全部116包依赖owner-local。Cue包与音频分别在本枪GAS/GameplayCues和Audio。原PhysicalImpact与首次5点伤害不变。
 
 **何时读取：** 新增装备类型、修改装备生命周期（Equip / Unequip 行为）、新增插槽或动画层时。

@@ -2,6 +2,9 @@
 
 ## 随机命中与空间音频（当前配置）
 
+- Enemy Hit额外播放PainSound=`Enemy/_Shared/Audio/SCue_Enemy_Pain`（下载424116 Wizard Pain），独立PainVolumeMultiplier=1、PainCooldown=.6真实秒，原肉体ImpactSound/倍率5不变。懒创建UEnemyHitAudioComponent保存每敌人冷却与弱AudioComponent，播放期间不重叠，声音附着目标，目标结束时停止；静态GC自身不持有运行时冷却。
+- 爆炸GC只负责Niagara/声音/震屏，不处理HitStop或二次伤害。Data.Explosion.EnemyImpact元数据选EnemyExplosionEffect（默认空），使用真实爆点；无该标记时原ExplosionEffect仍使用Ground投影。Enemy分支空VFX不代表跳过声音、震屏、Chaos或伤害。新Gameplay二次伤害在ExplosionGunBullet中处理，详见arch09。
+
 - `UGCN_ImpactFeedbackBase::SpawnImpactSound`统一在命中点创建自动销毁AudioComponent，传入ImpactAttenuation/ImpactConcurrency。随机已移到Sound Cue，原PitchVariation/CharacterSoundMultiplier删除；新增音效强制遵守arch/14-audio-policy.md。
 - 当前EnemyHit.VolumeMultiplier为用户设置的5，覆盖下文历史值1。打人时武器Impact完全不出声，由角色自己的Hit Cue发声；ShouldPlayImpactSound由EnemyHit重写拥有自身声音。四项命中Cue共用`/Game/Core/_Shared/Audio/SA_ProjectileImpact`：180cm内全量，外加2200cm线性衰减，Spatialize开启、StereoSpread=0。并发分别SC_ProjectileImpact=12与Enemy专属SC_EnemyFleshHit=8，StopQuietest。
 - FleshHit源音频不改样本，输出到Enemy/_Shared/Audio/SMX_EnemyFleshHit，经SFX_EnemyFleshLimiter限制过大峰值；并非保证所有主输出绝不削波。

@@ -7,6 +7,7 @@ UE_DEFINE_GAMEPLAY_TAG(TAG_Input_Weapon_Reload,        "Input.Weapon.Reload")
 UE_DEFINE_GAMEPLAY_TAG(TAG_Input_Character_Interact,   "Input.Character.Interact")
 
 UE_DEFINE_GAMEPLAY_TAG(TAG_Data_Damage,                "Data.Damage")
+UE_DEFINE_GAMEPLAY_TAG(TAG_Data_Explosion_EnemyImpact, "Data.Explosion.EnemyImpact")
 
 UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_Weapon_RepairGun_Impact, "GameplayCue.Weapon.RepairGun.Impact")
 UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_Weapon_ElectricGun_Impact, "GameplayCue.Weapon.ElectricGun.Impact")

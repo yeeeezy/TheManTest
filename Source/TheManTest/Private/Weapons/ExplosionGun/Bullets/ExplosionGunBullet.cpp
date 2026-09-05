@@ -12,6 +12,9 @@
 #include "GeometryCollection/GeometryCollectionComponent.h"
 #include "Field/FieldSystemObjects.h"
 #include "Engine/OverlapResult.h"
+#include "Enemy/EnemyAttributeSetBase.h"
+#include "GameplayEffect.h"
+#include "Components/CapsuleComponent.h"
 
 const FName AExplosionGunBullet::ExplosionGroundTag(TEXT("ExplosionGround"));
 
@@ -20,6 +23,7 @@ AExplosionGunBullet::AExplosionGunBullet()
  bDestroyOnHit=false;
  CollisionSphere->SetCollisionResponseToChannel(ECC_Destructible,ECR_Block);
  ExplosionCueTag=TAG_GameplayCue_Weapon_ExplosionGun_Explosion;
+ ExplosionDamageEffectClass=HitEffectClass;
 }
 void AExplosionGunBullet::ProcessHit_Implementation(const FHitResult& Hit,AActor* Shooter,UAbilitySystemComponent* Source)
 {
@@ -28,8 +32,8 @@ void AExplosionGunBullet::ProcessHit_Implementation(const FHitResult& Hit,AActor
  // The base path handles pass-through, exactly-once direct damage and the existing impact Cue.
  Super::ProcessHit_Implementation(Hit,Shooter,Source);
  if(!HasProcessedHit() || IsActorBeingDestroyed())return;
- bAttached=true;ExplosionSourceASC=Source;ExplosionInstigator=Shooter;
  bHitEnemy=bEnemyImpact;
+ bAttached=true;ExplosionSourceASC=Source;ExplosionInstigator=Shooter;
  ProjectileMovement->StopMovementImmediately();ProjectileMovement->Deactivate();ProjectileMovement->SetComponentTickEnabled(false);
  CollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
  SetLifeSpan(0.f);
@@ -66,6 +70,7 @@ void AExplosionGunBullet::Detonate()
  Params.Location=GetActorTransform().TransformPosition(LocalImpactPoint);
  Params.Normal=GetActorQuat().RotateVector(LocalImpactNormal);
  Params.Instigator=ExplosionInstigator.Get();Params.EffectCauser=this;
+ if(bHitEnemy)Params.AggregatedTargetTags.AddTag(TAG_Data_Explosion_EnemyImpact);
  // Location remains the actual attached blast origin for sound, shake and physics.
  // Only the context hit is projected onto explicitly marked ground for the ground Niagara/decal.
  FHitResult GroundHit;
@@ -74,14 +79,62 @@ void AExplosionGunBullet::Detonate()
   Params.EffectContext=FGameplayEffectContextHandle(new FGameplayEffectContext());
   Params.EffectContext.AddHitResult(GroundHit);
  }
- if(!bHitEnemy)TriggerChaos(Params.Location);
+ // Resolve visibility before Chaos opens holes in the blocking geometry.
+ ApplyExplosionDamage(FVector(Params.Location)+FVector(Params.Normal)*2.f);
+ TriggerChaos(Params.Location);
  if(ExplosionCueTag.IsValid())
  {
   if(UAbilitySystemComponent* ASC=ExplosionSourceASC.Get())ASC->InvokeGameplayCueEvent(ExplosionCueTag,EGameplayCueEvent::Executed,Params);
   else UAbilitySystemGlobals::Get().GetGameplayCueManager()->HandleGameplayCue(this,ExplosionCueTag,EGameplayCueEvent::Executed,Params);
  }
- // No radial damage: this milestone intentionally retains only the existing first-hit damage.
+ if(auto* Feedback=GetWorld()->GetSubsystem<UHitStopSubsystem>())
+  Feedback->RequestHitStopAtLocation(Params.Location,HitStop);
  Destroy();
+}
+void AExplosionGunBullet::ApplyExplosionDamage(const FVector& Origin)
+{
+ if(!GetWorld()||ExplosionDamage<=0.f||ExplosionDamageRadius<=0.f||!ExplosionDamageEffectClass)return;
+ TArray<FOverlapResult> Overlaps;
+ FCollisionQueryParams Query(SCENE_QUERY_STAT(ExplosionDamage),false,this);
+ GetWorld()->OverlapMultiByObjectType(Overlaps,Origin,FQuat::Identity,
+  FCollisionObjectQueryParams(FCollisionObjectQueryParams::AllObjects),FCollisionShape::MakeSphere(ExplosionDamageRadius),Query);
+ TSet<TWeakObjectPtr<AEnemyBase>> Candidates;
+ for(const auto& Overlap:Overlaps)
+  if(auto* Enemy=Cast<AEnemyBase>(Overlap.GetActor());IsValid(Enemy))Candidates.Add(Enemy);
+ TArray<TWeakObjectPtr<AEnemyBase>> Visible;
+ for(const auto& Candidate:Candidates)
+ {
+  auto* Enemy=Candidate.Get();
+  if(!Enemy||Enemy->IsActorBeingDestroyed())continue;
+  auto* ASC=Enemy->GetAbilitySystemComponent();
+  if(!ASC||ASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute())<=0.f)continue;
+  FCollisionQueryParams Sight(SCENE_QUERY_STAT(ExplosionDamageVisibility),true,this);
+  // Enemies do not act as walls shielding other enemies in the same blast.
+  for(const auto& Other:Candidates)if(Other.IsValid())Sight.AddIgnoredActor(Other.Get());
+  if(ExplosionInstigator.IsValid())Sight.AddIgnoredActor(ExplosionInstigator.Get());
+  FHitResult Block;
+  if(!GetWorld()->LineTraceSingleByChannel(Block,Origin,Enemy->GetActorLocation(),ECC_Visibility,Sight))Visible.Add(Enemy);
+ }
+ for(const auto& Candidate:Visible)
+ {
+  auto* Enemy=Candidate.Get();
+  if(!IsValid(Enemy)||Enemy->IsActorBeingDestroyed())continue;
+  auto* TargetASC=Enemy->GetAbilitySystemComponent();
+  auto* SourceASC=ExplosionSourceASC.IsValid()?ExplosionSourceASC.Get():TargetASC;
+  if(!TargetASC||!SourceASC)continue;
+  FGameplayEffectContextHandle Context=SourceASC->MakeEffectContext();
+  Context.AddInstigator(ExplosionInstigator.Get(),this);
+  const FVector Point=Enemy->GetActorLocation();
+  FHitResult Hit(Enemy,Enemy->GetCapsuleComponent(),Point,(Point-Origin).GetSafeNormal());
+  Hit.bBlockingHit=true;
+  Context.AddHitResult(Hit,true);
+  auto Spec=SourceASC->MakeOutgoingSpec(ExplosionDamageEffectClass,1.f,Context);
+  if(Spec.IsValid())
+  {
+   Spec.Data->SetSetByCallerMagnitude(TAG_Data_Damage,-ExplosionDamage);
+   SourceASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(),TargetASC);
+  }
+ }
 }
 bool AExplosionGunBullet::FindExplosionGround(const FVector& Origin,FHitResult& OutHit) const
 {

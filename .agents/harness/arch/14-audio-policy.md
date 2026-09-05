@@ -17,6 +17,7 @@
 | 空仓机械声 | 0.97–1.03 | 0.95–1.00 | Weapons/_Shared/Audio/SA_WeaponMechanical / 100 + 900cm |
 | 武器环境命中 | 0.95–1.05 | 0.95–1.00 | Core/_Shared/Audio/SA_ProjectileImpact / 180 + 2200cm |
 | 肉体受击 | 0.92–1.08 | 0.95–1.00 | 同上 |
+| Enemy痛呼 | 0.97–1.03 | 0.95–1.00 | 同上；每敌人独立冷却/并发 |
 | 爆炸 | 0.96–1.04 | 0.95–1.00 | ExplosionGun/Audio/SA_ExplosionGun_Detonation / 300 + 5700cm |
 
 - 均为球形、线性、3D空间定位，StereoSpread=0；未额外启用遮挡。Sound Cue.VolumeMultiplier固定1，避免引擎默认0.75意外压低声音。
@@ -44,3 +45,4 @@
 - Scripts/Audio/configure_audio_cues.py：显式12项现用音效消费者接入；`-AudioValidateOnly`只读冷验证。该脚本不是全项目任意Wave自动覆盖工具。
 - TheManTest.Audio.AssetVariationPolicy：12个图/源Wave/参数/并发/衰减、未来多素材及禁止覆盖测试。
 - TheManTest.Player.Weapons.SpatialImpactFeedback：实际PIE命中声分工和左右/远近录音；StickyExplosionAndBlood验证真实角色Hit声及既有伤害/血迹。
+- 新痛呼验收：Scripts/Audio/configure_enemy_pain.py导入指定424116音频并创建SCue_Enemy_Pain/SC_EnemyPain，`-AudioValidateOnly`冷回读；并发1、LimitToOwner、PreventNew，组件另做0.6秒真实时间冷却与播放中防重入。TheManTest.Feedback.HitStopAndPain验证两敌人独立、冷却、重播和销毁停止；StickyExplosionAndBlood验证真实Hit路径痛呼与肉体声同时播放。

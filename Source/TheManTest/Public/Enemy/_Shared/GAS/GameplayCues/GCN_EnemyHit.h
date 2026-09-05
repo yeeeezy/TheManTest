@@ -10,6 +10,9 @@ class THEMANTEST_API UGCN_EnemyHit : public UGCN_ImpactFeedbackBase
 
 public:
 	UGCN_EnemyHit();
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Impact|Pain") TObjectPtr<USoundBase> PainSound;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Impact|Pain", meta=(ClampMin="0")) float PainVolumeMultiplier=1.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Impact|Pain", meta=(ClampMin="0", Units="s")) float PainCooldown=.6f;
 	virtual bool ShouldPlayImpactSound(bool bCharacterImpact) const override { return true; }
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Blood")

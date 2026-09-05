@@ -2,10 +2,19 @@
 
 ## Active Feature
 
-- FEAT-080：三枪独立表现，in_progress；本轮Sound Cue统一随机、按用途衰减及角色Hit独占声音已实现并验收，整体功能不关闭。
+- FEAT-080：三枪独立表现，in_progress；本轮HitStop、范围伤害、Enemy分支和痛呼已实现并验收，整体功能不关闭。
 - 历史配置、变更与验证见 archive/FEAT-080-three-weapon-setup.md。
 
-## 最新工作：音效统一资产配置
+## 最新完成：HitStop、范围伤害与痛呼
+
+- 最终要求：Enemy/环境都附着倒计时，结束均触发Chaos、声音、震屏、HitStop和范围伤害，只有爆炸Niagara不同。中途“Enemy立即销毁/只倒计时销毁”的方案均已撤销。
+- BP_ExplosionGunBullet新增ExplosionDamage=20、ExplosionDamageRadius=400cm、ExplosionDamageEffectClass=GE_BulletDamage。范围只伤Enemy，候选去重，Visibility墙体遮挡，先判断遮挡再执行GE/Chaos；玩家不受范围伤害。
+- 同一蓝图Bullet|Explosion|Hit Stop：Enabled=true、Duration=.06真实秒、TimeScale=.05、InnerRadius=200、OuterRadius=1500cm、MaxContinuousDuration=.12真实秒。Core/_Shared/Feedback/HitStopSubsystem保存/恢复原TimeDilation，连续上限与50ms恢复窗口，外部改速时让出控制，WorldEndPlay/Deinitialize清理。GC不管理时间/伤害。
+- GC_Weapon_ExplosionGun_Explosion新增EnemyExplosionEffect，目前为空，以后填入后用实际爆点；环境ExplosionEffect继续Ground投影。Data.Explosion.EnemyImpact快照保存原命中类型。声音3倍、震屏8不变。
+- GC_Character_Enemy_Hit叠加SCue_Enemy_Pain（下载424116 Wizard Pain），PainVolumeMultiplier=1、PainCooldown=.6真实秒。EnemyHitAudioComponent按每个敌人保存状态，附着/1条并发/播放中不重叠/销毁停止；原肉体声5倍率不变，痛呼有轻微随机和3D衰减。
+- Development Editor Win64成功；HitStopPainDamageRegression六项Success。验证100→95→75、环境范围伤害/墙后和玩家免伤、Enemy Chaos及空VFX、时停恢复原速度/独立于GC和子弹销毁、两敌人痛呼独立/冷却/销毁停止。
+
+## 保留：音效统一资产配置
 
 - 12个现用玩法音效已封装owner-local SCue_*，Modulator轻微随机音高/音量（音量0.95~1），未来多素材支持Random无放回。扫描启停识别音保留稳定；未新增原本不存在的切枪/换弹声音。
 - 开火/机械/环境命中/肉体/爆炸按用途配置衰减及并发，具体参数见arch/14-audio-policy.md。打角色时武器Impact不创建声音，角色自己的Hit负责；原粒子/贴花/伤害不变。
@@ -23,14 +32,14 @@
 
 - 可复用蓝图：/Game/Actors/DestructibleCube/Blueprint/BP_ChaosDestructibleCube，原生AChaosDestructibleCube。现为42块不规则Voronoi，大小混合、0.8cm断面凹凸；不再是27块规则网格。FractureAsset/Toughness可逐实例配置，大小使用Actor Scale；初碰不自动碎。
 - VFXTestMap新增3个Cube，标签VFXTest_ChaosCube_1~3。其他场景直接拖入同一蓝图。
-- ExplosionGunBullet内触发非Enemy的Chaos：ChaosRadius=400cm、ChaosStrain=500000、ChaosImpulse=1200速度变化、ChaosAngularSpeed=5rad/s随机翻滚；Strain后0.05秒弱引用径向冲量/范围内逐粒子角速度。Enemy命中仅保留原附着/倒计时/Cue，不触发Chaos，不新增伤害。
+- ExplosionGunBullet两种命中都触发Chaos：ChaosRadius=400cm、ChaosStrain=500000、ChaosImpulse=1200速度变化、ChaosAngularSpeed=5rad/s随机翻滚；Strain后0.05游戏秒弱引用径向冲量/范围内逐粒子角速度。
 - GroundSearchDistance=2000cm、GroundMaxSlope=45度。Actor Tag ExplosionGround不是Gameplay Tag/Component Tag；Object Multi Trace穿过Cube，拒绝Enemy/子弹/GeometryCollection。无合格地面时跳过Ground Niagara/内含decal。
 - 地面标记：GASPTest的Plane；VFXTestMap的VFXTest_Floor；TestMap的Landscape与64个StreamingProxy（共65外部Actor包）。未标记墙、天花板、Cube或LobbyMap。
 - Cue参数：Location为真实爆点，用于声音/震屏；EffectContext.HitResult携带地面落点，Niagara在地面+1cm播放。物理以真实爆点为中心，不在Cue里执行。
 
 ## 必须保留的前置配置
 
-- BP_ExplosionGunBullet：ExplosionDelay=2秒，AttachmentOffset=4cm。首次5点伤害与原PhysicalImpact不变，无延时二次伤害。
+- BP_ExplosionGunBullet：ExplosionDelay=2秒，AttachmentOffset=4cm。首次5点伤害与原PhysicalImpact不变，新增上述延时范围伤害。
 - 正式Explosion Cue：VolumeMultiplier=3、CameraShakeScale=8；Alien Cannon指定音频不改样本，0.45秒/200~1800cm方位衰减。Enemy Hit指定FleshHit音频倍率5（用户覆盖）。
 - Ground Niagara：ExplosionGun/Effects/Explosion/Systems/NS_ExplosionGun_Detonation，来自TMIIR N_ExplosionGround_006，116包owner-local依赖，EffectLifeSpan=8秒兜底清理。
 - ElectricGun Damage=0，有效首次Hit仍触发血花/受击声；正伤害、穿透、重复命中行为不变。血迹12秒、喷溅0.55秒。
@@ -52,8 +61,8 @@
 
 ## 会话交接
 
-- 本轮范围完成，可在VFXTestMap试连续开火/空仓/命中/爆炸的随机变化。声音参数在各自Audio/SCue_*；未改伤害、Fuse、震屏和Chaos逻辑。音频传播范围按arch14配置。
-- 最新安全检查点d8badd4保存随机血迹/空间命中前置状态；本轮结果未最终Git提交，未push。地图/用户新增外部Actor保持原样。
+- 本轮范围完成：爆炸子弹蓝图调HitStop/范围伤害，爆炸Cue填EnemyExplosionEffect，Enemy Hit Cue调Pain参数。HitStop是单机世界减速，短暂放慢游戏时间定时器/物理/动画，声音不变速。
+- 最新安全检查点258bf70保存统一Sound Cue前置状态；本轮结果未最终Git提交，未push。地图/用户新增外部Actor保持原样。Scripts/Audio/configure_enemy_pain.py支持-AudioValidateOnly冷回读。
 - TestMap的65个外部Actor包改动均为这次地形标记，不要误当无关编辑撤销。
 - 可复用编辑器资产创建命令CreateTestCubeAsset(bRebuild=false)不在运行时/Construction调用；仅显式true重建不规则资产。PlanarCut插件与PlanarCut/Voronoi依赖限Editor。最新生成脚本Saved/Codex/rebuild_irregular_cube.py，不重存地图；旧install_chaos_cube.py用于首次布场，不要为重建碎块重新执行。
 - 既有M_UE4Man_Body材质缺纹理及AimIK警告未在本轮处理。

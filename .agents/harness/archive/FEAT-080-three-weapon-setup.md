@@ -1,5 +1,17 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-04 爆炸Hit Stop、Enemy分支与痛呼（本轮完成）
+
+- 最新用户确认覆盖中途方案：Enemy和环境命中都附着倒计时，结束均触发Chaos/声音/震屏/HitStop/二次范围伤害，唯有爆炸Niagara不同。EnemyExplosionEffect独立可配、暂为空；不回退环境大地面decal。用户最终接受半径400cm、20伤害、只伤Enemy、同一Enemy一次、墙体阻挡，伤害/半径可调；原首次伤害不变。
+- 检查点258bf70保留统一Sound Cue前置状态；地图与用户外部Actor保持原样。中途“Enemy立即销毁/只倒计时销毁”均已被最新要求撤销，不得按旧描述继续。
+- 新Core/_Shared/Feedback/HitStopSubsystem负责单机世界时间：真实时钟、相机距离衰减、保存/恢复原速度、强者优先/连续上限、结束50ms恢复窗口、外部速度改变时让出控制及WorldEndPlay/Deinitialize清理。爆炸子弹参数默认0.06秒/0.05倍率/200~1500cm/0.12秒上限；GC不写时间或伤害。
+- 新EnemyHitAudioComponent按Actor保存痛呼状态，不在Static GC CDO保存冷却；0.6秒真实时间间隔且同一敌人不重叠，附着/销毁停止。指定下载424116-Wizard-Pain-Vocal-Hurt-Uhh.wav导入S_Enemy_Pain，0.87579秒立体声；SCue_Enemy_Pain轻微随机0.97~1.03、音量0.95~1，共用命中3D衰减、SC_EnemyPain按Owner限制1条PreventNew。原肉体声5倍率不变。
+- ConfigureEnemyPain.log首次导入/配置通过。新增ExplosionDamage/Radius/EffectClass，沿用GE_BulletDamage和Data.Damage；范围候选去重，先快照Visibility可见目标再施加GE/Chaos。源ASC消失时使用目标ASC构造保留Context的GE。两次中途C++编译通过；正在补充与运行HitStop/Pain/范围伤害及既有回归。
+- 最终Development Editor Win64构建成功。HitStopPainDamageRegression.log六项全部Success（进程exit0）：HitStopAndPain、ExplosionRadialDamage、StickyExplosionAndBlood、ExplosionChaosGround、ExplosionDirectionalShake、ThreeWeaponBaseline。验证真实时间恢复原0.5速度、最强/连续上限、外部速度覆盖、弹体销毁/GC缺失不影响HitStop恢复，痛呼每敌人独立/冷却/再次播放/销毁停止。
+- 范围伤害实测环境无即时伤害，爆炸后可见敌人100→80，墙后/范围外敌人100不变、范围内玩家不变；附着Enemy实测100→95→75且附近Chaos RootBroken。EnemyExplosionEffect空时即使带GroundHit也不生成环境地面Niagara；原环境Cue/Shake/清理与零伤害Hit保留。
+- ConfigureEnemyPainFinal完成Enemy Hit/Explosion Cue/Bullet三Blueprint打开编译保存。ValidateEnemyPainHitStop冷启动回读ENEMY_PAIN_HITSTOP_OK，验证音频长度/声道、Modulator参数、衰减/按Owner并发、消费者/源音频依赖/无Redirector、HitStop默认和范围伤害默认。当前痛呼默认1，肉体5/爆炸3/震屏8保留。
+- 参数位置与职责已同步arch07/09/10/14，工作面板已更新。未最终Git提交/未push，地图与用户External Actor保留原样。
+
 ## 2026-09-04 声音资产统一随机化（本轮完成）
 
 - 用户确认把随机音高/音量移到Sound Cue，按用途共用衰减；打人只由角色Hit发声，环境由武器Impact发声，其他表现不变。以后新增音效必须沿用并验证规则。检查点d8badd4保留上轮随机血迹/3D命中结果，地图用户改动不纳入。

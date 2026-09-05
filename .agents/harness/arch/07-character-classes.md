@@ -12,6 +12,8 @@
 
 **敌人：**
 
+- 默认Enemy Hit通过Enemy/_Shared/Audio/EnemyHitAudioComponent懒创建每实例痛呼状态，GCN_EnemyHit只配置PainSound/PainVolumeMultiplier/PainCooldown；不在共享GC CDO保存冷却，不改变EnemyBase继承或AI。
+
 | 文件 | 对应角色 |
 |---|---|
 | `Source/TheManTest/Public/Enemy/EnemyBase.h/.cpp` | 敌人基类，ASC + UEnemyAttributeSetBase 挂在自身 |

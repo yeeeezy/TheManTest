@@ -8,6 +8,8 @@
 #include "Weapons/ExplosionGun/GAS/GameplayCues/GCN_ExplosionGunExplosion.h"
 #include "Enemy/_Shared/Effects/EnemyBloodSpray.h"
 #include "Enemy/_Shared/GAS/GameplayCues/GCN_EnemyHit.h"
+#include "Enemy/_Shared/Audio/EnemyHitAudioComponent.h"
+#include "Core/_Shared/Feedback/HitStopSubsystem.h"
 #include "Enemy/Humanoid/Phantom/Phantom.h"
 #include "Enemy/EnemyAttributeSetBase.h"
 #include "Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h"
@@ -90,20 +92,19 @@ public:
    Enemy->SetCloaked(true);Bullet->ProcessHit(Hit,Player,Player->GetAbilitySystemComponent());
    Test->TestFalse(TEXT("Cloaked Phantom is not sticky"),Bullet->IsAttachedAndCountingDown());
    Enemy->SetCloaked(false);Bullet->ProcessHit(Hit,Player,Player->GetAbilitySystemComponent());
-   Test->TestTrue(TEXT("First hit starts countdown and keeps bullet"),IsValid(Bullet)&&Bullet->IsAttachedAndCountingDown());
-   Test->TestTrue(TEXT("Enemy classification retained for delayed detonation"),Bullet->DidHitEnemy());
+   Test->TestTrue(TEXT("Enemy hit keeps attached projectile and starts fuse"),IsValid(Bullet)&&Bullet->IsAttachedAndCountingDown());
+   Test->TestTrue(TEXT("Enemy classification retained"),Bullet->DidHitEnemy());
+   Test->TestFalse(TEXT("Enemy hit never requests hit stop"),World->GetSubsystem<UHitStopSubsystem>()->IsHitStopActive());
    Test->TestEqual(TEXT("Original five-point impact damage"),Before-Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),5.f);
    Bullet->ProcessHit(Hit,Player,Player->GetAbilitySystemComponent());
    Test->TestEqual(TEXT("Repeated hit cannot duplicate damage"),Before-Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),5.f);
-   Test->TestEqual(TEXT("Attached bullet collision disabled"),Bullet->CollisionSphere->GetCollisionEnabled(),ECollisionEnabled::NoCollision);
-   Test->TestTrue(TEXT("Attached bullet stopped"),Bullet->ProjectileMovement->Velocity.IsNearlyZero());
-   Test->TestTrue(TEXT("Adjustable fuse remains positive"),Bullet->GetRemainingExplosionTime()>0.5f);
+   Test->TestTrue(TEXT("Enemy fuse remains adjustable"),Bullet->GetRemainingExplosionTime()>.5f);
    UDecalComponent* BodyDecal=nullptr;
    for(TObjectIterator<UDecalComponent> It;It;++It)if(It->GetWorld()==World&&It->GetAttachParent()==Enemy->GetMesh()){BodyDecal=*It;break;}
    const FVector OldStainLocation=BodyDecal?BodyDecal->GetComponentLocation():FVector::ZeroVector;
    const FVector OldLocation=Bullet->GetActorLocation();Enemy->AddActorWorldOffset(FVector(0,80,0),false);
+   Test->TestTrue(TEXT("Enemy projectile follows target while counting down"),Bullet->GetActorLocation().Equals(OldLocation+FVector(0,80,0),.1f));
    Test->TestTrue(TEXT("Body blood follows moving target"),BodyDecal&&BodyDecal->GetComponentLocation().Equals(OldStainLocation+FVector(0,80,0),.1));
-   Test->TestTrue(TEXT("Attachment follows target movement"),Bullet->GetActorLocation().Equals(OldLocation+FVector(0,80,0),.1f));
    int32 Sprays=0;for(TActorIterator<AEnemyBloodSpray> It(World);It;++It)++Sprays;
    Test->TestTrue(TEXT("Actual damage invokes enemy blood Hit Cue"),Sprays>0);
    Test->TestEqual(TEXT("Positive hit produces exactly one blood spray"),Sprays,1);
@@ -135,12 +136,13 @@ public:
    Test->TestTrue(TEXT("Blood stain attaches to actual enemy mesh bone"),AttachedStains>0);
    Test->TestTrue(TEXT("Blood stain components are spawned"),Stains>0);
    auto* Zero=World->SpawnActor<AExplosionGunBullet>(BulletClass,FVector(900,400,100),FRotator::ZeroRotator,Spawn);
-   State.ZeroBullet=Zero;Zero->ExplosionDelay=0;
+   State.ZeroBullet=Zero;Zero->ExplosionDelay=0;Zero->ExplosionDamage=0;
    FHitResult Floor;Floor.ImpactPoint=FVector(900,400,100);Floor.ImpactNormal=FVector::UpVector;
    Zero->ProcessHit(Floor,nullptr,nullptr);
    Test->TestTrue(TEXT("Zero fuse stays safe until next tick"),IsValid(Zero)&&Zero->IsAttachedAndCountingDown());
    auto* Orphan=World->SpawnActor<AExplosionGunBullet>(BulletClass,FVector(900,500,100),FRotator::ZeroRotator,Spawn);
-   State.OrphanBullet=Orphan;Orphan->ExplosionDelay=.2f;Orphan->ProcessHit(Floor,nullptr,nullptr);
+   State.OrphanBullet=Orphan;Orphan->ExplosionDelay=.2f;Orphan->ExplosionDamage=0;Orphan->ProcessHit(Floor,nullptr,nullptr);
+   Test->TestTrue(TEXT("Environment still keeps attached projectile and adjustable fuse"),Orphan->IsAttachedAndCountingDown()&&Orphan->GetRemainingExplosionTime()>0.f);
    State.Start=World->GetTimeSeconds();State.Stage=1;return false;
   }
   const float Elapsed=World->GetTimeSeconds()-State.Start;
@@ -150,6 +152,8 @@ public:
    bool bFleshPlaying=false;
    for(TObjectIterator<UAudioComponent> It;It;++It)if(It->GetWorld()==World&&It->Sound&&It->Sound->GetName()==TEXT("SCue_Enemy_FleshHit")&&It->IsPlaying())bFleshPlaying=true;
    Test->TestTrue(TEXT("Actual enemy Hit Cue is playing supplied flesh sound"),bFleshPlaying);
+   auto* Pain=State.Enemy.IsValid()?State.Enemy->FindComponentByClass<UEnemyHitAudioComponent>():nullptr;
+   Test->TestTrue(TEXT("Actual enemy Hit Cue also plays attached pain voice"),Pain&&Pain->GetPainVoice()&&Pain->GetPainVoice()->IsPlaying());
    auto* Modifier=Cast<UCameraModifier_CameraShake>(World->GetFirstPlayerController()->PlayerCameraManager->FindCameraModifierByClass(UCameraModifier_CameraShake::StaticClass()));
    TArray<FActiveCameraShakeInfo> Active;
    if(Modifier)Modifier->GetActiveCameraShakes(Active);
@@ -157,19 +161,19 @@ public:
    for(const auto& Entry:Active)if(Entry.ShakeInstance&&Entry.ShakeInstance->IsA<UExplosionCameraShake>())bShake=true;
    Test->TestTrue(TEXT("Detonation Cue starts directional shake on local player camera"),bShake);
   }
-  if(Elapsed<1.f&&State.Stage!=3)return false;
+  if(Elapsed<1.4f&&State.Stage!=3)return false;
   if(State.Stage==1)
   {
   Capture(TEXT("TMT_StickyExplosion.png"));
-  Test->TestFalse(TEXT("Sticky bullet disappears after fuse"),State.Bullet.IsValid());
+  Test->TestFalse(TEXT("Enemy projectile consumed when fuse finishes"),State.Bullet.IsValid());
   Test->TestFalse(TEXT("Zero fuse detonates"),State.ZeroBullet.IsValid());
   Test->TestFalse(TEXT("Missing source ASC still detonates"),State.OrphanBullet.IsValid());
   if(State.EnemyNearbyCube.IsValid())
   {
-   Test->TestFalse(TEXT("Enemy attachment explosion does not trigger nearby Chaos"),State.EnemyNearbyCube->GeometryCollection->IsRootBroken());
+   Test->TestTrue(TEXT("Enemy detonation triggers nearby Chaos"),State.EnemyNearbyCube->GeometryCollection->IsRootBroken());
    State.EnemyNearbyCube->Destroy();
   }
-  if(State.Enemy.IsValid())Test->TestEqual(TEXT("Explosion adds no second damage"),State.Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),95.f);
+  if(State.Enemy.IsValid())Test->TestEqual(TEXT("Enemy takes original 5 plus one delayed 20 damage"),State.Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),75.f);
   int32 Sprays=0;for(TActorIterator<AEnemyBloodSpray> It(World);It;++It)++Sprays;
   Test->TestEqual(TEXT("Blood spray cleans itself up"),Sprays,0);
   bool bExplosion=false;for(TObjectIterator<UNiagaraComponent> It;It;++It)if(It->GetWorld()==World && It->GetAsset() && It->GetAsset()->GetName()==TEXT("NS_ExplosionGun_Detonation"))bExplosion=true;

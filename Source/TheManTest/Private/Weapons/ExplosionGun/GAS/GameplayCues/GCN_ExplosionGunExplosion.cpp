@@ -24,10 +24,13 @@ bool UGCN_ExplosionGunExplosion::OnExecute_Implementation(AActor* Target,const F
  if(!Target||!Target->GetWorld())return false;
  // N_ExplosionGround_006 is authored along +Z, unlike directional muzzle/impact systems.
  const FHitResult* Ground=P.EffectContext.GetHitResult();
- const FVector Normal=Ground?Ground->ImpactNormal.GetSafeNormal(UE_SMALL_NUMBER,FVector::UpVector):FVector::UpVector;
- if(ExplosionEffect && Ground)
+ const bool bEnemy=P.AggregatedTargetTags.HasTagExact(TAG_Data_Explosion_EnemyImpact);
+ UNiagaraSystem* SelectedEffect=bEnemy?EnemyExplosionEffect.Get():ExplosionEffect.Get();
+ const FVector Normal=bEnemy?FVector(P.Normal).GetSafeNormal(UE_SMALL_NUMBER,FVector::UpVector):Ground?Ground->ImpactNormal.GetSafeNormal(UE_SMALL_NUMBER,FVector::UpVector):FVector::UpVector;
+ if(SelectedEffect && (bEnemy || Ground))
  {
-  if(UNiagaraComponent* Effect=UNiagaraFunctionLibrary::SpawnSystemAtLocation(Target,ExplosionEffect,Ground->ImpactPoint+Normal,FRotationMatrix::MakeFromZ(Normal).Rotator(),FVector(EffectScale)))
+  const FVector Point=bEnemy?FVector(P.Location):Ground->ImpactPoint+Normal;
+  if(UNiagaraComponent* Effect=UNiagaraFunctionLibrary::SpawnSystemAtLocation(Target,SelectedEffect,Point,FRotationMatrix::MakeFromZ(Normal).Rotator(),FVector(EffectScale)))
   {
    // The source ground effect has a long tail. Bound its lifetime independently of the projectile.
    FTimerHandle Cleanup;
