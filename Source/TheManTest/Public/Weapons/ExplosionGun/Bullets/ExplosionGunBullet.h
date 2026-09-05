@@ -63,6 +63,7 @@ private:
  FName AttachedHitBone;
  TWeakObjectPtr<AActor> AttachedHitActor;
  FVector ImpactDirection=FVector::ForwardVector;
+ FVector ImpactLocalDirection=FVector::ZeroVector;
  FVector LocalImpactNormal=FVector::UpVector;
  TWeakObjectPtr<UAbilitySystemComponent> ExplosionSourceASC;
  TWeakObjectPtr<AActor> ExplosionInstigator;

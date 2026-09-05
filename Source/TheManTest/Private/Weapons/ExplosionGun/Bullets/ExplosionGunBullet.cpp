@@ -32,6 +32,7 @@ void AExplosionGunBullet::ProcessHit_Implementation(const FHitResult& Hit,AActor
  if(bAttached || HasProcessedHit())return;
  const bool bEnemyImpact=IsValid(Hit.GetActor()) && Hit.GetActor()->IsA<AEnemyBase>();
  ImpactDirection=GetVelocity().GetSafeNormal(UE_SMALL_NUMBER,GetActorForwardVector());
+ ImpactLocalDirection=bEnemyImpact?Hit.GetActor()->GetActorQuat().UnrotateVector(ImpactDirection):FVector::ZeroVector;
  FHitResult Surface=Hit;
  UPrimitiveComponent* Parent=Hit.GetComponent();
  bool bBodySurface=false;
@@ -184,11 +185,10 @@ bool AExplosionGunBullet::ApplyExplosionDamage(const FVector& Origin)
    SourceASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(),TargetASC);
    // Death switches to physics before the following radial impulse pass.
    bKilledEnemy|=HealthBefore>0.f && TargetASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute())<=0.f;
-   if(IsValid(Enemy)&&!Enemy->IsActorBeingDestroyed())
+   if(IsValid(Enemy)&&!Enemy->IsActorBeingDestroyed() && AttachedHitActor.Get()==Enemy)
     if(auto* Reaction=Enemy->FindComponentByClass<UEnemyHitReactionComponent>())
      Reaction->ReactToExplosion(Origin,ImpactDirection,
-      FMath::Lerp(1.f,.3f,FMath::Clamp(FVector::Distance(Origin,Point)/ExplosionDamageRadius,0.f,1.f)),
-      AttachedHitActor.Get()==Enemy?AttachedHitBone:NAME_None);
+      1.f,AttachedHitBone,ImpactLocalDirection);
   }
  }
  return bKilledEnemy;

@@ -1,5 +1,16 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 强爆炸部位方向动作（实现与自验完成）
+
+- 用户授权：只让爆炸弹附着的敌人播放存活受击动画，按四肢/躯干/头部和命中方向选择，幅度明显增强；旧Rig链保留关闭。写前检查点8afe766保存前轮源码/harness及已知动画BP状态，未纳入地图/音效/电击弹设置。
+- BodyAnimations为6部位×前后左右配置，骨骼通过BoneMapping的臂/腿/颈祖先分类。爆炸弹在首次命中、伤害转向之前记录Actor局部入射方向，爆炸时只给AttachedHitActor传原骨骼及方向、Strength=1；范围伤害/物理/子弹时间不改。腿部动画在地面移动中也走全身混合，非腿移动仍上半身，空中保留原上半身规则。
+- 外部D:/Blender Projects/HumanoidHitReactions/create_limb_reactions.py制作24条AS_Humanoid_Blast_{Torso,Head,LeftArm,RightArm,LeftLeg,RightLeg}_{Front,Back,Left,Right}，1.4秒/30fps，快速冲击/滞后头手/小幅反摆/恢复。腿部18cm骨盆下降、受击脚约27cm抬起，支撑脚IK；手臂可松开支撑手。原5条动作作为兼容回退保留。
+- Blender工程Humanoid_Blast_Limb_Reactions.blend及24动作对照图Limb_Reactions_24.png已生成、查看并自动打开。TMIIR的ReactionPrep/LimbFinal创建最终动画并导出FBX；LimbReactionCold逐帧70骨冷读全部通过。目标项目只导入最终动画，没有源骨架/模型/重定向工作资源。第一次C++构建已通过，资产安装和PIE验证正在进行。
+- LimbReactionImport/Install成功，BP_Phantom六组24条引用保存；共享ABP仅重编译，原图和Rig连线不改。目标LimbReactionColdFinal逐帧24条动作、70骨、六组配置冷读/再编译、依赖与无Redirector通过。初次校验未允许既有ACLPlugin压缩设置导致断言，补充该引擎插件允许路径后通过；不是外部源骨架残留。
+- LimbReactionRuntime输出LIMB_RUNTIME_OK 24 standing + 24 moving：所有部位/方向/Actor旋转选择正确、Alpha>.95、旧Rig输出0、主AnimClass保留、枪挂点误差<.1cm、动作结束恢复、重复命中不重启。移动为隔离地图地板的Flying+150cm/s、非下落条件，确认腿部full-body而非腿upper-body；真实Walking附着由既有MovingEnemyAttachmentCleanup覆盖，不宣称脚步无滑动。动态预览Humanoid_Blast_Limb_Preview.gif已生成打开，1.4秒动作预览放慢播放。
+- LimbReactionRegression中AttachedLimbReaction、EnemyDeathRagdoll、EnemyExplosionControlRig、ExplosionOutcomeBulletTime、MovingEnemyAttachmentCleanup、StickyExplosionAndBlood六项Success。新增附着测试确实解析到左腿，命中后转90度仍播LeftLeg_Back；旁边Enemy扣20血但无动画，致死直接布娃娃。ExplosionRadialDamage仅因用户EnemyExplosionEffect=None而旧测试强制非空失败，保留用户关闭设置，将该配置允许为空后重新构建成功，单项重验中。
+- 最终LimbReactionDamageFinal.log的ExplosionRadialDamage Success，相关7项最终均通过。最终Development Editor Win64成功；所有测试编辑器已退出，未保存地图或改用户VFX/声音参数。本轮24条成品动画和配置已正式接入，结果未最终提交/push。完整FEAT-080仍in_progress，主观自然度/力度待用户实战反馈。
+
 ## 2026-09-05 直接Chaos命中子弹时间与致命枪击击飞（实现与自验完成）
 
 - 用户确认动手：子弹时间条件改为本次爆炸击杀Enemy，或爆炸弹直接命中GeometryCollection；统一在Fuse结束时请求。命中时记录真实Hit组件分类，不再监听范围内Chaos Break。直接命中无需实际破碎，波及破碎仍正常但不触发慢动作。旧ExplosionOutcomeSubsystem保留但爆炸弹不再调用。

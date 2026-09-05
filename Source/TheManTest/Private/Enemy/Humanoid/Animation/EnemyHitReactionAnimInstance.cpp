@@ -16,6 +16,7 @@ void UEnemyHitReactionAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
    Reaction->Sample(ReactionRotation,ReactionBone);ReactionFrame=Reaction->SampleFrame();
    UAnimSequence* Sequence=nullptr;Reaction->SampleAnimation(Sequence,ReactionTime,ReactionAlpha);ReactionAnimation=Sequence;
    bUseFullBodyReaction=Owner->GetVelocity().SizeSquared2D()<100.f;
+   if(Sequence && (Reaction->ActiveRegion==EEnemyHitRegion::LeftLeg || Reaction->ActiveRegion==EEnemyHitRegion::RightLeg))bUseFullBodyReaction=true;
    if(const auto* Character=Cast<ACharacter>(Owner))
     if(Character->GetCharacterMovement()->IsFalling())bUseFullBodyReaction=false;
   }

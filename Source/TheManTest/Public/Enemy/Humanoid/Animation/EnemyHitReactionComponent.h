@@ -12,6 +12,20 @@ enum class EEnemyHitReactionMode : uint8
  ControlRig
 };
 
+UENUM(BlueprintType)
+enum class EEnemyHitRegion : uint8 { Torso, Head, LeftArm, RightArm, LeftLeg, RightLeg };
+
+USTRUCT(BlueprintType)
+struct FEnemyBodyReactionAnimations
+{
+ GENERATED_BODY()
+ UPROPERTY(EditAnywhere,BlueprintReadWrite) EEnemyHitRegion Region=EEnemyHitRegion::Torso;
+ UPROPERTY(EditAnywhere,BlueprintReadWrite) TObjectPtr<UAnimSequence> Front;
+ UPROPERTY(EditAnywhere,BlueprintReadWrite) TObjectPtr<UAnimSequence> Back;
+ UPROPERTY(EditAnywhere,BlueprintReadWrite) TObjectPtr<UAnimSequence> Left;
+ UPROPERTY(EditAnywhere,BlueprintReadWrite) TObjectPtr<UAnimSequence> Right;
+};
+
 /** Enemy-owned, additive explosion reaction. Never moves the character capsule. */
 UCLASS(ClassGroup=(Enemy), meta=(BlueprintSpawnableComponent))
 class THEMANTEST_API UEnemyHitReactionComponent : public UActorComponent
@@ -20,6 +34,8 @@ class THEMANTEST_API UEnemyHitReactionComponent : public UActorComponent
 public:
  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Reaction") bool bEnabled=true;
  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Reaction") EEnemyHitReactionMode ReactionMode=EEnemyHitReactionMode::Animation;
+ UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Reaction|Animation") TArray<FEnemyBodyReactionAnimations> BodyAnimations;
+ UPROPERTY(BlueprintReadOnly, Transient, Category="Reaction") EEnemyHitRegion ActiveRegion=EEnemyHitRegion::Torso;
  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Reaction|Animation") TObjectPtr<UAnimSequence> FrontAnimation;
  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Reaction|Animation") TObjectPtr<UAnimSequence> BackAnimation;
  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Reaction|Animation") TObjectPtr<UAnimSequence> LeftAnimation;
@@ -35,7 +51,8 @@ public:
  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Reaction") FHumanoidReactionBones BoneMapping;
  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Reaction",meta=(ClampMin="0",ClampMax=".2")) float FollowDelay=.045f;
  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Reaction",meta=(ClampMin="0",ClampMax="15",Units="cm")) float LegCompression=7.f;
- UFUNCTION(BlueprintCallable,Category="Reaction") void ReactToExplosion(FVector Origin,FVector FallbackDirection,float Strength,FName Bone=NAME_None);
+ UFUNCTION(BlueprintCallable,Category="Reaction") void ReactToExplosion(FVector Origin,FVector FallbackDirection,float Strength,FName Bone=NAME_None,FVector HitLocalDirection=FVector::ZeroVector);
+ UFUNCTION(BlueprintPure,Category="Reaction") EEnemyHitRegion ClassifyHitBone(FName Bone) const;
  void Sample(FVector& OutRotationVectorCS,FName& OutBone) const;
  FHumanoidReactionFrame SampleFrame() const;
  void SampleAnimation(UAnimSequence*& OutAnimation,float& OutTime,float& OutAlpha) const;

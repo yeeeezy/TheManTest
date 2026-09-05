@@ -1,5 +1,9 @@
 # 动画实例
 
+- 2026-09-05最新：默认BodyAnimations六部位×四方向24条强爆炸动作，优先于下文旧五条回退。ClassifyHitBone按BoneMapping的upperarm/thigh/neck祖先识别左右四肢/头部，其他为躯干；具体Sequence仍由Enemy组件配置。ExplosionGunBullet只对AttachedHitActor触发，传首次命中时保存的Actor局部入射方向，爆炸期间转身不会改变选择；固定Strength=1、混入.035秒。范围波及者仍受伤但不播放此反应。
+- ActiveRegion为左右腿且有有效动画时，移动中也选择全身混合，确保受击腿/骨盆动作可见；非腿移动保持原上半身混合，IsFalling时仍上半身。没有暂停移动、没有RootMotion或胶囊击退；移动中脚滑仍可能出现，不等于运动匹配。死亡继续关闭后处理并转布娃娃。
+- 24条AS_Humanoid_Blast_{部位}_{方向}位于Phantom/Animations/Reactions，绑定当前70骨Skeleton；1.4秒/30fps/非Additive，外部Blender/TMIIR制作和验证后导入成品。旧五条AS_Humanoid_RifleHit_*及ControlRig分支保留。所有人形可复用选择组件，但不同骨架仍需外部适配并配置各自Sequence。
+
 - 当前默认受击已切Animation模式：EnemyHitReactionComponent按Actor局部爆炸来源选四方向，Strength>=.9的正面使用HeavyTwist；组件五条Sequence在BP_Phantom配置，不硬编码到人形基类。游戏时间采样、.06秒混入/.18秒混出、PlayRate=1，当前动作未结束时忽略重复反应，不影响每次爆炸伤害。
 - 共享ABP_Humanoid_HitReaction现在包含两条可选链：默认动态SequenceEvaluator的动画混合，以及保留的原ControlRig链。NativeUpdateAnimation输出ReactionAnimation/Time/Alpha、UseAnimationReaction和UseFullBodyReaction。站立全身；水平速度>=10cm/s或下落时仅混spine_01以上，腿/骨盆沿用主AnimBP。主AnimInstance始终继续运行，结束Alpha=0还原输入。ReactionMode改为ControlRig即可切回旧链；Animation时不评估旧Rig分支。
 

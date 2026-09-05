@@ -12,7 +12,20 @@ float UEnemyHitReactionComponent::EvaluateEnvelope(float Age,float Attack,float 
  const float T=FMath::Clamp((Age-Attack)/FMath::Max(.05f,Recovery),0.f,1.f);
  return FMath::Square(1-T)*FMath::Cos(T*PI*1.5f);
 }
-void UEnemyHitReactionComponent::ReactToExplosion(FVector Origin,FVector FallbackDirection,float Strength,FName Bone)
+EEnemyHitRegion UEnemyHitReactionComponent::ClassifyHitBone(FName Bone) const
+{
+ const auto* Enemy=Cast<AEnemyBase>(GetOwner());
+ const auto* Mesh=Enemy?Enemy->GetMesh():nullptr;
+ if(!Mesh || Mesh->GetBoneIndex(Bone)==INDEX_NONE)return EEnemyHitRegion::Torso;
+ auto Under=[&](FName Root){return !Root.IsNone() && (Bone==Root || Mesh->BoneIsChildOf(Bone,Root));};
+ if(Under(BoneMapping.LeftArm))return EEnemyHitRegion::LeftArm;
+ if(Under(BoneMapping.RightArm))return EEnemyHitRegion::RightArm;
+ if(Under(BoneMapping.LeftThigh))return EEnemyHitRegion::LeftLeg;
+ if(Under(BoneMapping.RightThigh))return EEnemyHitRegion::RightLeg;
+ if(Under(BoneMapping.Neck))return EEnemyHitRegion::Head;
+ return EEnemyHitRegion::Torso;
+}
+void UEnemyHitReactionComponent::ReactToExplosion(FVector Origin,FVector FallbackDirection,float Strength,FName Bone,FVector HitLocalDirection)
 {
  auto* Enemy=Cast<AEnemyBase>(GetOwner());
  if(!bEnabled||!Enemy||Enemy->IsDead()||!GetWorld()||Origin.ContainsNaN()||FallbackDirection.ContainsNaN()||!FMath::IsFinite(Strength)||Strength<=0)return;
@@ -30,14 +43,26 @@ void UEnemyHitReactionComponent::ReactToExplosion(FVector Origin,FVector Fallbac
  {
   // Let the current reaction finish, rather than repeatedly snapping back to its first frame.
   if(ActiveAnimation && GetWorld()->GetTimeSeconds()-AnimationStartTime<ActiveAnimation->GetPlayLength()/ActivePlayRate)return;
-  const FVector SourceDirection=Enemy->GetActorQuat().UnrotateVector(-Away);
+  if(HitLocalDirection.ContainsNaN())return;
+  const FVector SourceDirection=HitLocalDirection.IsNearlyZero()?Enemy->GetActorQuat().UnrotateVector(-Away):-HitLocalDirection;
+  const EEnemyHitRegion Region=ClassifyHitBone(HitBone);
   UAnimSequence* Selected=nullptr;
+  for(const auto& Set:BodyAnimations)
+   if(Set.Region==Region)
+   {
+    if(FMath::Abs(SourceDirection.X)>=FMath::Abs(SourceDirection.Y))Selected=SourceDirection.X>=0?Set.Front.Get():Set.Back.Get();
+    else Selected=SourceDirection.Y>=0?Set.Right.Get():Set.Left.Get();
+    break;
+   }
+  if(!Selected)
+  {
   if(FMath::Abs(SourceDirection.X)>=FMath::Abs(SourceDirection.Y))
    Selected=SourceDirection.X>=0 ? (HeavyFrontAnimation && Strength>=HeavyFrontMinStrength ? HeavyFrontAnimation.Get():FrontAnimation.Get()) : BackAnimation.Get();
   else Selected=SourceDirection.Y>=0 ? RightAnimation.Get():LeftAnimation.Get();
+  }
   // Animation assets are configured by the concrete enemy; never load a Phantom asset here.
   if(!Selected||!Mesh->GetSkeletalMeshAsset()||Selected->GetSkeleton()!=Mesh->GetSkeletalMeshAsset()->GetSkeleton()||Selected->IsValidAdditive())return;
-  ActiveAnimation=Selected;AnimationStartTime=GetWorld()->GetTimeSeconds();
+  ActiveRegion=Region;ActiveAnimation=Selected;AnimationStartTime=GetWorld()->GetTimeSeconds();
   ActivePlayRate=FMath::Clamp(AnimationPlayRate,.1f,3.f);AnimationStrength=FMath::Clamp(Strength,0.f,1.f);
   return;
  }
