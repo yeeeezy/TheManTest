@@ -2,7 +2,14 @@
 
 ## Active Feature
 
-- FEAT-080，in_progress。强爆炸部位方向动作已接入并完成自验，待用户实战观感反馈。仅被爆炸弹附着的敌人播放存活受击动作；范围伤害、Chaos子弹时间和死亡击飞保留。
+- FEAT-080，in_progress。用户否定原24条腿部动作，要求网上找动作参考并复刻“受冲击→迈步踉跄→站稳恢复”。本轮先交付4条完整踉跄样片供确认；当前游戏仍运行下文24条旧版，不能称其已获用户验收。
+
+## 最新样片（未接入游戏）
+
+- 参考MorStudios HitReact Pro官方展示 https://www.youtube.com/watch?v=Qoq9pzQ_tA4 的84–89秒Stumble_B，已实际查看分帧：上身先失衡，双腿交替迈步承重，站稳后抬身恢复。四方向是视觉重建及持枪适配，不是视频精确动捕提取。
+- 外部D:/Blender Projects/HumanoidHitReactions/Humanoid_Referenced_Staggers.blend有4条AS_Humanoid_StaggerRef_*，2.2秒/30fps，两步主要接重心+一步小调整，步高约10cm，支撑脚锁点，固定膝盖弯曲平面；前后根位移76cm、左右62cm，最终留在新位置恢复。
+- 预览Humanoid_Referenced_Staggers_Normal.gif和Humanoid_Referenced_Staggers_Slow.gif，参考索引References/Showcase_Index.jpg、Stumble_Timing.jpg及REFERENCE.md。新动作尚未导入TheManTest或替换运行时；后续需处理根位移/胶囊碰撞，不能直接套旧无RootMotion后处理。
+- 自动审批拦截参考视频裁GIF并打开的命令，仅返回blocked by policy，已告知用户；未重试该操作。自己制作的角色动画预览正常生成。
 
 ## 当前行为和入口
 
@@ -28,6 +35,8 @@
 - 前轮条件子弹时间/致命枪击、Relax挂枪、准星附着精度验证详见archive，不重复列历史日志。
 
 ## 会话交接
+
+- 最新检查点f27cd3e保存上一轮24条动作/配置/源码/harness作为恢复点。当前仅外部四方向参考样片和harness更新，未改游戏C++/资产，不需要新编译。等用户看四方向样片后再继续扩展与接入；原24条仅是技术验证通过，视觉已被用户否定。
 
 - 最新检查点8afe766保存前轮代码/harness和已知动画BP状态；本轮源码、24资产、BP配置、脚本与文档未最终提交/push。用户地图/ExternalActor/音效/血纹理/电击弹/Explosion Cue改动不得全量提交或覆盖。
 - 本轮脚本Scripts/VFX/import_limb_reactions.py、install_limb_reactions.py、validate_limb_reaction_assets.py、validate_limb_reaction_runtime.py；新原生测试AttachedReactionTests.cpp。旧安装脚本仍保留旧五条配置，但不应拿它覆盖本轮部位配置。

@@ -1,5 +1,14 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 用户否定原腿部动作，改为网络参考踉跄样片
+
+- 用户反馈24条动作腿部奇怪，需要受冲击后迈步踉跄再恢复，所有受击都应有腿部参与。确认先做四方向完整踉跄预览，再看观感决定部位扩展/游戏替换；随后明确要求先网上找动图或视频参考再复刻，不能继续凭空设计。
+- 检查点f27cd3e保存上一轮24条动作及其配置/源码/文档，仅作为历史恢复点，不代表用户验收。用户地图/音效/VFX/电击弹参数不纳入。
+- 已搜索并读取MorStudios官方Fab的HitReact Pro，下载公开YouTube Showcase（Qoq9pzQ_tA4）供逐帧参考，查看总览和84–89秒Stumble_B动作：上身先失衡、交替迈步接住身体、落脚后恢复。参考资料和时间索引放D:/Blender Projects/HumanoidHitReactions/References。尝试裁出参考GIF并打开的命令被自动审批拦截，仅返回blocked by policy，未重试该操作，已向用户说明。
+- 外部create_reference_staggers.py根据视觉参考制作4条AS_Humanoid_StaggerRef_{Front,Back,Left,Right}，2.2秒/30fps，交替两步接重心+一步小调整。固定解剖膝盖朝向、每只脚落地后锁点；步高约10cm，前后位移76cm/左右62cm，站稳于新位置不滑回起点。支撑脚误差<.00005cm。这里是视觉重建/持枪适配，非从视频恢复精确动捕数据；侧向和正面按所见背部受击步态调整。
+- Humanoid_Referenced_Staggers.blend和stagger_reference_motion.json已生成，四方向预览渲染中。新样片未导入游戏，当前游戏仍是用户否定的24条版本；后续若接入，需要处理真实移动/碰撞和根位移，不能直接按旧无RootMotion后处理播放。
+- 已生成并打开Humanoid_Referenced_Staggers_Normal.gif与Slow.gif（正常/半速，含首尾停留），Referenced_Stagger_Phases.jpg阶段对照已查看。预览最初带有导入枪械的UCX碰撞壳，已在渲染中隐藏并重渲染；不影响骨骼数据或游戏资产。四条样片均有交替脚步与位移、落脚锁点、最终站稳，待用户确认自然度后再扩展部位。没有本轮C++/UE资产修改，未最终提交/push。
+
 ## 2026-09-05 强爆炸部位方向动作（实现与自验完成）
 
 - 用户授权：只让爆炸弹附着的敌人播放存活受击动画，按四肢/躯干/头部和命中方向选择，幅度明显增强；旧Rig链保留关闭。写前检查点8afe766保存前轮源码/harness及已知动画BP状态，未纳入地图/音效/电击弹设置。
