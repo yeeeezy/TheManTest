@@ -1,5 +1,7 @@
 # 动画实例
 
+- Rifle_01动画包含hand_r_wep武器骨骼轨道；Phantom通过该骨骼下的hand_r_wepSocket挂枪，单位缩放，在Relax/Aim间自动跟随原始动画的武器姿势。普通hand_r上的hand_rSocket_Aim/Relaxed是静态偏移，不能替代武器动画骨骼。
+
 - 死亡切布娃娃时EnemyBase禁用Mesh PostProcess并暂停动画求值，保持骨骼/物理刷新，由PhysicsAsset全身模拟接管。存活时仍使用下述共享受击Rig，不将布娃娃叠到Rig上。
 
 - 当前共享人形受击：EnemyHitReactionAnimInstance现为ABP_Humanoid_HitReaction的数据父类，新增ReactionFrame（Torso/Follow/Compression/BoneMapping），仍在游戏线程采样。共享无骨架模板ABP只做输入Pose→ControlRig→输出；从Humanoid基类自动接Mesh组件OverridePostProcess，不再由Phantom模型资产挂载。Rig使用可配骨骼名称/脊柱权重、延迟头肩响应以及双腿解析解保持输入动画脚位。适配其他骨架时仍须保证映射与Rig层级兼容；本轮无动画重定向。

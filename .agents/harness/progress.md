@@ -2,10 +2,12 @@
 
 ## Active Feature
 
-- FEAT-080，in_progress。2026-09-05最新一轮死亡布娃娃/统一弹体冲量/可调尸体寿命已实现并自验；整体保留用户手感/观感验收。
+- FEAT-080，in_progress。死亡布娃娃用户认可；Phantom Relax持枪偏移已修复，源项目挂点/相对缩放恢复，编译保存/冷读/实际PIE三状态及截图核对通过。受击动画候选准备暂缓，等用户恢复。
 - 前序准星仰射、身体附着、Enemy Air007/缩放、条件子弹时间均已完成，细节见archive/FEAT-080-three-weapon-setup.md。
 
 ## 当前行为和入口
+
+- BP_Phantom.WeaponAttachSocket=hand_r_wepSocket，WeaponMesh.RelativeScale3D=(1,1,1)。源TMIIR Overview的5把示范枪都采用该配置，Socket挂在带动画轨道的hand_r_wep；此前固定hand_rSocket_Aim/.9枪械缩放错误。不能按Aim/Relax切两个静态手部Socket。只改BP_Phantom，没有修改动画轨道或C++。
 
 - 人形基类自动接`Enemy/Humanoid/_Shared/Animations/ControlRig/ABP_Humanoid_HitReaction`与`CR_Humanoid_HitReaction`。ABP无TargetSkeleton，Rig无Phantom资产引用；Phantom模型原PostProcess槽已清空，通过基类组件Override接入。
 - ExplosionHitReaction组件：MaxAngleDegrees=38、AttackDuration=.055、RecoveryDuration=.85、FollowDelay=.045、LegCompression=7cm，BoneMapping可配。胸腹受力、头肩滞后跟随、髋部/膝盖缓冲，脚保持输入动画位置，胶囊不移动。不同骨骼层级仍须映射和Rig兼容适配，不是自动重定向。正式触发仍为爆炸范围伤害，普通直接子弹未额外触发此Rig。
@@ -28,6 +30,8 @@
 - SharedReactionColdVerified.log：共享ABP只依赖共享Rig，Rig无/Game依赖，Phantom导入源/预览/骨架引用清除，旧路径及Redirector均无；实际调参38/.85/.045/7冷读通过。
 
 ## 会话交接
+
+- 最新选择性检查点a1d338f保存已完成布娃娃工作；本轮BP_Phantom握枪修复未提交。Scripts/VFX/fix_phantom_weapon_mount.py安装/-MountValidateOnly冷验证；PhantomMountInstall/Cold均成功。最终PhantomMountVisualFinal.log为MOUNT_PIE_OK，实际Relax/Aim/ReturnRelax挂点误差0、相对缩放1；已查看截图，Relax左手回到护木。角色Mesh自身.9体型保留，枪世界缩放随之.9。临时场景清理、退出，地图未保存，无剩余修复步骤。
 
 - 写前选择性检查点b2bf304保存上轮共享Rig/物理爆炸状态；本轮最终结果未提交/push。
 - 新入口Scripts/VFX/install_shared_humanoid_reaction.py与validate_shared_humanoid_reaction.py；旧Audio配置脚本已移除Phantom Rig创建逻辑，避免还原旧路径。

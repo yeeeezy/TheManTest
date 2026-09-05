@@ -1,5 +1,10 @@
 # 动画蓝图架构（ABP 层 / Slot / 节点图）
 
+## 当前更正
+
+- Phantom OriginalRifle武器挂hand_r_wepSocket/单位缩放，父骨骼hand_r_wep带源动画轨道；Relax/Aim不切Socket。ABP_HumanoidEnemy/ABP_Phantom_OriginalRifle图保持原样。
+- 当前受击后处理是Humanoid/_Shared/Animations/ControlRig下的ABP_Humanoid_HitReaction/CR_Humanoid_HitReaction，由人形基类自动接入，旧Phantom专属资产已移走；详情见arch06。死亡后关闭该后处理，转PhysicsAsset布娃娃。下节2026-09-05早期方案仅为历史。
+
 ## 2026-09-05 Phantom爆炸方向受击（当前）
 
 - 原ABP_Phantom_OriginalRifle及共享ABP_HumanoidEnemy图不改。Phantom/OriginalRifle/Meshes/SK_Mannequin的PostProcessAnimBlueprint指向Phantom/Animations/ControlRig/ABP_Phantom_ExplosionReaction，C++父类UEnemyHitReactionAnimInstance；图为LinkedInputPose → ControlRig → Output。

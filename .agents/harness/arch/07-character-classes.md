@@ -12,6 +12,8 @@
 
 **敌人：**
 
+- Phantom原始Rifle_01持枪配置：WeaponAttachSocket=hand_r_wepSocket（父骨骼hand_r_wep），WeaponMesh单位缩放。这是TMIIR Overview的原始配置，动画驱动武器骨骼完成Aim/Relax变化；禁止根据状态切换hand_rSocket_Aim/Relaxed，也不要恢复旧固定Aim挂点和.9缩放。
+
 - 当前死亡流程：AEnemyBase::OnDeath为virtual；停止技能/AI/移动、关闭胶囊/Actor Tick、移除波次订阅，Mesh有PhysicsAsset时转布娃娃（暂停动画、禁用PostProcess，全身体物理）。Enemy|Death暴露CorpseLifetime=5游戏秒（最小.1）与ProjectileHitImpulse=5000 kg cm/s。尸体保留Pawn对象类型以兼容所有既有弹体查询，范围爆炸不再按Enemy类型排除。没有PhysicsAsset时仍延时消失，但无法布娃娃。
 - AHumanoidEnemy::OnDeath置AIState=Dead/bIsAiming=false，并关闭附着武器碰撞以免干扰布娃娃；APhantom死亡取消隐身。重复死亡不会刷新尸体寿命，身体Decal和附着弹在最终EndPlay清理。
 

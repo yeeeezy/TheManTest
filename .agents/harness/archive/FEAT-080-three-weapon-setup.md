@@ -1,5 +1,13 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 Phantom Relax持枪挂点修复（实现与自验完成）
+
+- 用户截图112822显示Relax左手偏离护木。初次仅看Aim/Relax两Socket差异误判需状态切换；用户要求核对源工程后纠正：TMIIR/Rifle_01/Overview的5把示范枪全部挂hand_r_wepSocket，单位缩放/零局部位移旋转，包括Aim_To_Relaxed。该Socket父骨骼hand_r_wep本身带动画，Aim/Relax手枪相对运动已由动画驱动，不需要自行切两个静态手部Socket。
+- 原Phantom CDO保存WeaponAttachSocket=hand_rSocket_Aim、WeaponMesh.Scale=.9，失去武器骨骼动画；武器无grip_l，左手IK无自动补偿。用户明确请求直接修复。选择性检查点a1d338f保存上轮布娃娃工作，不含用户地图/Explosion Cue。
+- 仅BP_Phantom恢复WeaponAttachSocket=hand_r_wepSocket、WeaponMesh.RelativeScale3D=(1,1,1)。Scripts/VFX/fix_phantom_weapon_mount.py显式安装，-MountValidateOnly冷只读。PhantomMountInstall.log编译/保存通过，PhantomMountCold.log独立冷读挂点/父骨骼/单位缩放通过。无C++/动画轨道/骨架修改或重定向。实际PIE Relax/Aim/返回Relax截图验证进行中。
+- 最终PhantomMountVisualFinal.log输出MOUNT_PIE_OK：实际BP_Phantom在PIE中Patrol→Aim→Patrol，Actor与AnimInstance状态一致，三次枪械位置到hand_r_wepSocket误差均0；相对缩放1，角色Mesh自身世界缩放.9，因此枪世界缩放同样.9，未改变角色体型。已查看TMT_PhantomMount_Relax/Aim截图：Relax枪呈斜横持握、左手回到护木，Aim可正常抬枪。临时测试Actor/相机/灯光清理，地图未保存，测试编辑器正常退出。
+- 预览最初ExecutePythonScript自动退出、Python缺少GameplayStatics生成API、Transient Actor不进入PIE均已避开，最终使用未保存的临时场景Actor进行正常PIE；首张过曝截图已重拍。结果仅BP_Phantom两项配置，未最终提交/push。受击动画准备暂缓，等用户恢复该任务。
+
 ## 2026-09-05 死亡布娃娃与统一弹体冲量（实现与自验完成）
 
 - 用户确认动手：死亡切布娃娃，所有子弹命中位置施加冲量，爆炸推动刚死/已有尸体，可配尸体寿命。写前选择性检查点b2bf304；地图/ExternalActor/用户Explosion Cue设置未纳入。
