@@ -189,7 +189,7 @@ protected:
 	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilityClasses;
 
 private:
-	void PlayInitialEquipEffect();
+
 
 	UPROPERTY(Transient)
 	TObjectPtr<UCameraShakeBase> ActiveMovementCameraShake;

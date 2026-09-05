@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-04-feat080-electric-muzzle-video-standard",
+    "last_updated":  "2026-09-04-shared-equipment-equip-vfx",
     "active_feature":  "FEAT-080",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -471,9 +471,10 @@
                          "description":  "为 RepairGun 正式接通现有第一人称开火蒙太奇；以 RepairGun 为完整配置基线创建电击枪和爆炸枪，两把新枪仅替换各自模型、枪口与命中特效。源模型和 VFX 来自外部 VFXPack 项目；不迁移源角色、武器蓝图或动画。即使表现依赖内容相同，也按武器所有权复制到各自语义目录并重命名，使三把枪后续可以独立调整。",
                          "archive_file":  "archive/FEAT-080-three-weapon-setup.md",
                          "created":  "2026-09-03",
-                         "updated":  "2026-09-04-explosion-physical1",
-                         "latest_verification_evidence":  "2026-09-04-explosion-physical1：按截图接入 Ballistics Rifle 01、Physical Burst 1/Impact 1 和源橙黄色点光（强度300、半径87.370407、SourceRadius60、0.1秒）；源描边材质独立迁入并绑定模型槽。41项依赖全部位于ExplosionGun，18项贴图参数保留；删除43项无引用旧资产，供应商资产/目录及Redirector均清空。保留用户ElectricGun 2倍尺寸。Development Editor构建成功，冷启动EXP_VALIDATE闭包41通过，最终D3D12 ThreeWeaponBaseline/ThreeWeaponPIESwitch/ExplosionVisualCapture 3/3 Success。截图Saved/Screenshots/WindowsEditor/TMT_ExplosionGun_Physical1.png。",
+                         "updated":  "2026-09-04-shared-equipment-equip-vfx",
+                         "latest_verification_evidence":  "2026-09-04：MuzzleEffectScale 原生/爆炸枪默认 XYZ=2；新增 EquipmentEquipEffectComponent 通用显现、材质恢复和取消，首装/切换统一入口，bPlayEquipAnimation 支持独立可选动画。共享材质/函数/噪声提升到 Weapons/_Shared/Equipment/Effects/Equip，维修枪骨骼材质接入共享函数，电击枪恢复正确溶解噪声；删除4项无引用旧资产并清理空目录。Development Editor构建和冷启动蓝图/依赖检查通过，最终D3D12 SharedEquipReveal、EquipDissolveEvidence、ThreeWeaponBaseline、ThreeWeaponPIESwitch 4/4 Success，ExplosionVisualCapture本轮也通过。",
                          "done_criteria":  [
+                                               "所有 EquipmentBase 默认使用共享切换显现 VFX，首装与切装入口统一；材质结束/取消后恢复，各装备可独立选择 EquipMontage 和动画层",
                                                "RepairGun、电击枪和爆炸枪都使用现有 MaintenanceWorker 第一人称持枪动画体系，并分别引用所属武器目录内的独立开火序列、开火蒙太奇、装备蒙太奇和 AnimBP 副本",
                                                "电击枪使用原爆炸枪的 SM_Weapon_Ballistics_Rifle_02 几何体；枪口使用 NE_VFX_Muzzle_Laser_Burst_2，所有目标统一使用 NE_VFX_Projectile_Impact_Laser_2，并保留仅环境生成的紫色贴花和 1.1 尺寸倍率",
                                                "爆炸枪使用 SM_Weapon_Ballistics_Rifle_01 几何体及描边、NE_VFX_Muzzle_Physical_Burst_1、NE_VFX_Projectile_Impact_Physical_1 和对应橙黄色短时点光；所有目标统一使用 Physical Impact 1，并保留仅环境生成的黄色贴花和 2.0 尺寸倍率",

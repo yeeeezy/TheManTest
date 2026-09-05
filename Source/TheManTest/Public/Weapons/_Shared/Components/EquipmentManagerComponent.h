@@ -55,10 +55,11 @@ public:
 	 * 🎒 内部数据资产
 	 * ========================================== */
 protected:
+    void QueueEquipPresentation(AEquipmentBase* Equipment);
 	void FinalizeUnequippedEquipment(AEquipmentBase* Equipment, USkeletalMeshComponent* TargetMesh);
 
-	// 带 Equip Montage 的切换在下一动画帧原子交换新旧武器可见性。
-	// 过渡只持续一帧；期间忽略额外滚轮输入，避免留下过期回调或双武器残影。
+	// Wait one frame for the linked pose; subsequent swaps also check the current
+	// equipment's reveal component instead of duplicating its duration in a timer.
 	bool bVisualSwapPending = false;
 
 	// 真正的背包数组！存放已经实例化的装备实体

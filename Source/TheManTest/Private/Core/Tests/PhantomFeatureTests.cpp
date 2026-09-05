@@ -1550,6 +1550,9 @@ public:
 		AEquipmentBase* Equipment = Player && Player->GetEquipmentManager()
 			? Player->GetEquipmentManager()->GetCurrentEquipment() : nullptr;
 		if (!Equipment) return false;
+		// Start the measured playback after PIE startup/shader work; the component
+		// may have already advanced the initial equip before this latent command runs.
+		if (SampleCount == 0) { Equipment->PlayEquipEffect(); }
 		const float Time = Equipment->GetEquipEffectElapsedForTesting();
 		const float Value = Equipment->GetEquipEffectValueForTesting();
 		if (Value == TNumericLimits<float>::Lowest()) return false;

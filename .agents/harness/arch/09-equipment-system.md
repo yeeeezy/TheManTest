@@ -5,21 +5,21 @@
 | 文件 | 关键内容 |
 |---|---|
 | `Source/TheManTest/Public/Weapons/_Shared/EquipmentBase/EquipmentBase.h` | `Equip()` / `Unequip()` / `PlayEquipMontage()`；StaticMesh / SkeletalMesh / RectLight 组件；插槽名；EquipMontage；EquipmentAnimLayerClass |
-| `Source/TheManTest/Private/Weapons/_Shared/EquipmentBase/EquipmentBase.cpp` | 动画层目标同时包含 `ArmsViewMesh` 与 `GetMesh()`；Equip 同步 Link、Unequip 同步 Unlink。活动装备入口现在调用 C++ `PlayEquipEffect()`：对装备全部 Mesh 创建 MID，固定使用 VFXPack 材质参数 `Amount (S)`，在 0.45 秒内由 1 平滑过渡到 -1。`PlayEquipMontage()` 与资产字段暂时保留兼容，但开局及切枪流程均不再调用。 |
+| `Source/TheManTest/Private/Weapons/_Shared/EquipmentBase/EquipmentBase.cpp` | FPS 只对 ArmsViewMesh Link/Unlink；PlayEquipEffect 委托共享组件并按 bPlayEquipAnimation 播放本装备 EquipMontage；Unequip 取消效果、恢复材质并停止自己的动画。 |
 
 装备 Montage 必须包含 `UpperBodySlot` 轨道：主 `TABP_BodyLocomotion` 的中央 `WeaponUpperBody` 会在 `DefaultSlot` 之后从 `spine_01` 覆盖上半身，所以只放 `DefaultSlot` 虽然 Montage 计时正常，动作仍会被最终武器层遮掉。`UpperBodySlot` 位于中央混合之后，适合 Equip/开火/换弹等需要进入最终上半身输出的动作。
 
-Equip Montage 兼容代码仍保留，但 FEAT-074 session178 起不再由开局或切枪流程播放。当前切枪在新层求值一帧后直接用材质溶解显示枪体，并标记一次无位移 Camera Cut 清除 TAA/TSR 的旧枪颜色历史。
+开局和切换统一由 EquipmentManager.QueueEquipPresentation 等待一帧新姿势后显示。所有装备继承共享显现效果；bPlayEquipAnimation 默认 false，开启后同时播放本装备 EquipMontage，不影响其他装备的动画配置。
 | `Source/TheManTest/Public/Weapons/_Shared/WeaponBase/WeaponBase.h` | 武器基类（继承 EquipmentBase，当前为空壳） |
 | `Source/TheManTest/Public/Weapons/_Shared/Firearms/Firearm.h` | 射击参数：`bIsHitscan` / `HitscanRange` / `FireRate` / `BulletClass` / `MuzzleSocketName`；弹药：`MagazineCapacity=30` / `CurrentAmmo` / `SpareMagazineCount=3`、Consume/Reload/CanFire/CanReload 与 `OnAmmoChanged`；主/副射击及独立 `ReloadAbilityClass`；**`GrantedASC` 缓存** |
 | `Source/TheManTest/Private/Weapons/_Shared/Firearms/Firearm.cpp` | BeginPlay 按蓝图容量初始化满弹；Consume/Reload 广播弹药事件；`Equip()` 写 AimSource 并 GrantAbilities；`Unequip()` 回收技能 |
 
-`AFirearm` 还提供可按具体武器覆盖的 `MuzzleEffect / MuzzleEffectRotation / MuzzleEffectScale`；`UGA_Shoot` 每发在实际 Muzzle Socket 附着一次性 Niagara，并在激活前把 `MuzzleEffectScale` 的最大绝对轴写入 Niagara 暴露参数 `User.MuzzleScale`。需要响应该统一尺寸参数的 Niagara System 必须暴露同名 float；`NS_ElectricGun_LaserMuzzle` 的 16 个 emitter 均在 Particle Spawn 阶段用它统一缩放 SpriteSize。建议武器蓝图把 XYZ 设为相同值，避免 Niagara 的统一倍率与组件非均匀 Transform 产生难以预测的组合。RepairGun 当前使用 `/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_SniperScout_Muzzle`（FEAT-072，从外部 Sniper Scout 精确迁入，包含枪口闪光与烟雾）；专属前向烟雾材质/纹理位于同一 RepairGun Muzzle 目录，其余复用依赖位于 `/Game/Core/_Shared/Effects/Muzzle/`。
+`AFirearm` 还提供可按具体武器覆盖的 `MuzzleEffect / MuzzleEffectRotation / MuzzleEffectScale`；MuzzleEffectScale 原生默认 `(2,2,2)`，ExplosionGun 同为 2，ElectricGun 保留 2，RepairGun 保留专属 0.85；`UGA_Shoot` 每发在实际 Muzzle Socket 附着一次性 Niagara，并在激活前把 `MuzzleEffectScale` 的最大绝对轴写入 Niagara 暴露参数 `User.MuzzleScale`。需要响应该统一尺寸参数的 Niagara System 必须暴露同名 float；`NS_ElectricGun_LaserMuzzle` 的 16 个 emitter 均在 Particle Spawn 阶段用它统一缩放 SpriteSize。建议武器蓝图把 XYZ 设为相同值，避免 Niagara 的统一倍率与组件非均匀 Transform 产生难以预测的组合。RepairGun 当前使用 `/Game/Weapons/RepairGun/Effects/Muzzle/Systems/NS_RepairGun_SniperScout_Muzzle`（FEAT-072，从外部 Sniper Scout 精确迁入，包含枪口闪光与烟雾）；专属前向烟雾材质/纹理位于同一 RepairGun Muzzle 目录，其余复用依赖位于 `/Game/Core/_Shared/Effects/Muzzle/`。
 该 RepairGun 专属 System 的火焰、Glow、Lens Flare、Y 形火焰和火花颜色曲线已灰度化为中性灰；共享依赖仍保持原色，不得为了 RepairGun 外观修改 `/Game/Core/_Shared`。
 
-`AFirearm` 同时提供默认关闭的 `MuzzleFlashLight` PointLight，以及 `bEnableMuzzleFlashLight / Color / Intensity / AttenuationRadius / SourceRadius / LocalOffset / Duration` 配置。组件固定使用 Unitless、Inverse Square、Cast Shadows 与 Affect Translucent Lighting；`UGA_Shoot` 只在成功消耗实弹后的开火反馈链调用，连续开火重置淡出计时，`Unequip` 立即清理。灯光尺寸与 Niagara 共用 `MuzzleEffectScale`：`AttenuationRadius` 和 `SourceRadius` 乘以最大绝对轴，Intensity、Color、Duration 与 LocalOffset 不变。当前仅 `BP_ElectricGun` 启用：Laser 枪口倍率 1.0，精确线性颜色 `(0.075319,1,0.652928)`、UE 5.7 视觉补偿强度 1800、半径 200、SourceRadius 60、0.1 秒线性淡出；灯位通过枪口局部偏移 `(1.480382,-6.734961,-15.577805)` 对齐源枪体的持枪侧。RepairGun 保持关闭。ExplosionGun 已按 Physical 1 源蓝图启用：线性颜色 `(1,0.551385,0.147041)`、强度 300、半径 87.370407、SourceRadius 60、持续 0.1 秒、局部偏移 `(8.851011,-17.618745,2.96144)`，枪口倍率 1。ElectricGun 后续用户将倍率调为 2，保持该覆盖。`VFXTestMap` 的 Bloom=4、Threshold=0.5 仅用于对照源项目 MainScene/参考视频的临时 VFX 审核环境，不是枪械效果的替代实现。
+`AFirearm` 同时提供默认关闭的 `MuzzleFlashLight` PointLight，以及 `bEnableMuzzleFlashLight / Color / Intensity / AttenuationRadius / SourceRadius / LocalOffset / Duration` 配置。组件固定使用 Unitless、Inverse Square、Cast Shadows 与 Affect Translucent Lighting；`UGA_Shoot` 只在成功消耗实弹后的开火反馈链调用，连续开火重置淡出计时，`Unequip` 立即清理。灯光尺寸与 Niagara 共用 `MuzzleEffectScale`：`AttenuationRadius` 和 `SourceRadius` 乘以最大绝对轴，Intensity、Color、Duration 与 LocalOffset 不变。当前仅 `BP_ElectricGun` 启用：Laser 枪口倍率 1.0，精确线性颜色 `(0.075319,1,0.652928)`、UE 5.7 视觉补偿强度 1800、半径 200、SourceRadius 60、0.1 秒线性淡出；灯位通过枪口局部偏移 `(1.480382,-6.734961,-15.577805)` 对齐源枪体的持枪侧。RepairGun 保持关闭。ExplosionGun 已按 Physical 1 源蓝图启用：线性颜色 `(1,0.551385,0.147041)`、强度 300、半径 87.370407、SourceRadius 60、持续 0.1 秒、局部偏移 `(8.851011,-17.618745,2.96144)`，枪口倍率 2。ElectricGun 后续用户将倍率调为 2，保持该覆盖。`VFXTestMap` 的 Bloom=4、Threshold=0.5 仅用于对照源项目 MainScene/参考视频的临时 VFX 审核环境，不是枪械效果的替代实现。
 
-FEAT-080 起，MaintenanceWorker 的三把初始枪均为 `AFirearm` Blueprint 配置：`BP_RepairGun`、`BP_ElectricGun`、`BP_ExplosionGun`。2026-09-04 用户要求互换两把新枪的枪体：电击枪的 owner-local `SM_ElectricGun` 当前承载 Ballistics Rifle 02 几何体，使用 `NS_ElectricGun_LaserMuzzle + NS_ElectricGun_LaserImpact`；爆炸枪现使用 owner-local `SM_ExplosionGun_Rifle` / `SM_ExplosionGun_Rifle_Outline`（Ballistics Rifle 01），使用 `NS_ExplosionGun_PhysicalMuzzle + NS_ExplosionGun_PhysicalImpact`；旧 SMG 模型及 Physical 3 系统已删除。枪体材质为 `MI_ExplosionGun_Rifle` / `M_ExplosionGun_Rifle`，描边为 `M_ExplosionGun_Outline`；均位于本武器 Materials。主模型、Outline、握持偏移与 `MuzzleLocalTransform` 必须作为一组保持对应。两把新枪的玩法数据复制 RepairGun，但动画、AnimBP、音频、CameraShake、Bullet、GameplayCue、弹体 Mesh/材质以及迁入的模型/VFX 依赖均位于各自 `/Game/Weapons/<WeaponName>/`，不得重新指回 RepairGun 专属资产。
+FEAT-080 起，MaintenanceWorker 的三把初始枪均为 `AFirearm` Blueprint 配置：`BP_RepairGun`、`BP_ElectricGun`、`BP_ExplosionGun`。2026-09-04 用户要求互换两把新枪的枪体：电击枪的 owner-local `SM_ElectricGun` 当前承载 Ballistics Rifle 02 几何体，使用 `NS_ElectricGun_LaserMuzzle + NS_ElectricGun_LaserImpact`；爆炸枪现使用 owner-local `SM_ExplosionGun_Rifle` / `SM_ExplosionGun_Rifle_Outline`（Ballistics Rifle 01），使用 `NS_ExplosionGun_PhysicalMuzzle + NS_ExplosionGun_PhysicalImpact`；旧 SMG 模型及 Physical 3 系统已删除。枪体材质为 `MI_ExplosionGun_Rifle` / 共享 `M_EquipmentEquipSurface`，描边为共享 `M_EquipmentOutline`；MI_ExplosionGun_Rifle 仍属于爆炸枪。共享资源统一位于 `/Game/Weapons/_Shared/Equipment/Effects/Equip/Materials`。主模型、Outline、握持偏移与 `MuzzleLocalTransform` 必须作为一组保持对应。两把新枪的玩法数据复制 RepairGun，但动画、AnimBP、音频、CameraShake、Bullet、GameplayCue、弹体 Mesh/材质以及迁入的模型/VFX 依赖均位于各自 `/Game/Weapons/<WeaponName>/`，不得重新指回 RepairGun 专属资产。
 
 RepairGun 的成功射击 SoundWave 为 `/Game/Weapons/RepairGun/Audio/S_RepairGun_Fire`，由 `BP_RepairGun.FireSound` 配置；`UGA_Shoot` 在真实枪口世界位置播放。空弹音效应使用独立字段/反馈链，不得复用实弹 `FireSound`。
 `AFirearm` 的空弹配置为 `DryFireSound` 及独立 Volume/Pitch Multiplier。RepairGun 使用 `/Game/Weapons/RepairGun/Audio/S_RepairGun_DryFire`；仅在当前弹匣为 0、`ConsumeRound()` 失败时播放。
@@ -72,5 +72,14 @@ FEAT-077 起，FPS 玩家只对 `ArmsViewMesh` Link/Unlink 武器层和播放装
 
 ## 2026-08-04 装备显现与统一动画层
 
-- VFXPack 装备显现由 `AEquipmentBase` 固定实现：MID 参数 `Amount (S)`，0.5 秒 cubic Hermite 1→0，首切线 -5.434987。
+- 2026-09-04 起，显现移至 `UEquipmentEquipEffectComponent`：MID 参数 `Amount (S)`，0.5 秒 cubic Hermite 1→0，首切线 -5.434987；只在效果期间 Tick，结束/卸下恢复原材质。
 - FPS 角色装备/卸下时，武器 Linked Anim Layer 链接到角色所有 SkeletalMesh AnimInstance；Shadow/Legs 即使是 Leader follower 也保持同一最终 AnimClass 架构。FEAT-075 最终由隐藏的完整 `CharacterMesh0` 直接 CastHiddenShadow；重复 ShadowBody/ShadowUpperBody 为空。shadow-only 静态枪体附着 `CharacterMesh0` 的 `GripPoint`，不可附着已弃用 ShadowBody。
+
+## 通用装备特效所有权（2026-09-04）
+
+- 运行时代码：Public/Private 下 `Weapons/_Shared/EquipmentBase/Effects/EquipmentEquipEffectComponent.h/.cpp`。由 AEquipmentBase 构造默认组件 EquipEffect；适用枪械、近战武器及其他装备。
+- 资产根：`/Game/Weapons/_Shared/Equipment/Effects/Equip/`。Materials 包含 M_EquipmentEquipSurface、M_EquipmentOutline、Functions/MF_EquipmentEquipDissolve；Textures 包含 T_EquipmentEquipNoise。
+- ElectricGun/ExplosionGun 保留各自材质实例并引用共享父材质。RepairGun 实际骨骼材质 M_SCFR_BaseMat 在原图上接共享函数，保留原纹理/颜色。原来无效的原因是骨骼材质没有溶解参数、电击枪 Noise 被表面纹理覆盖。
+- 新自定义材质应接共享函数和 Amount (S)；未接入的材质在 0.5 秒显现期间临时使用共享备用表面，结束或取消后恢复原材质。组件不会在运行时重写原资产，且跳过无模型/空材质槽。
+- 装备动画仍按各装备 EquipMontage / EquipmentAnimLayerClass 独立配置；bPlayEquipAnimation 可在蓝图开启，共用 VFX 不依赖动画内容。
+- 测试：`Private/Weapons/_Shared/EquipmentBase/Tests/EquipmentEquipEffectTests.cpp`，自动化 TheManTest.Equipment.SharedEquipReveal 验证三枪可见材质、切换、普通装备备用表面/恢复和可选动画。

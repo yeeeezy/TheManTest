@@ -13,7 +13,7 @@ class USceneComponent;
 class URectLightComponent;
 class UAnimMontage;
 class UAnimInstance;
-class UMaterialInstanceDynamic;
+class UEquipmentEquipEffectComponent;
 
 UCLASS()
 class THEMANTEST_API AEquipmentBase : public AActor
@@ -29,8 +29,7 @@ protected:
     virtual void BeginPlay() override;
 
 public: 
-    // 每一帧调用
-    virtual void Tick(float DeltaTime) override;
+
 
     /* ==========================================
      * 🌟 核心生命周期接口 (留空待实现)
@@ -44,19 +43,21 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Equipment|Action")
     virtual void Unequip();
 
-    // 播放拔枪/装备蒙太奇。与 Equip() 解耦：滚轮切枪时立即调用；
-    // 切换角色初次装备时推迟到手臂姿势就绪的下一帧再调用，避免起始位置错乱、音效误触发。
+    // Optional per-equipment montage; shared presentation calls it when enabled.
 	UFUNCTION(BlueprintCallable, Category = "Equipment|Action")
 	void PlayEquipMontage();
 
-    // VFXPack-style material dissolve used by the active equip lifecycle.
-    // Timing, parameter name and value range are intentionally owned by C++.
+    // Shared reveal plus the optional animation selected by this equipment.
     void PlayEquipEffect();
+    bool IsEquipEffectPlaying() const;
 
     /* ==========================================
      * 🎒 物理表现与组件
      * ========================================== */
 protected:
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Equipment|Components")
+    TObjectPtr<UEquipmentEquipEffectComponent> EquipEffect;
+
     // 虚拟根组件，用于在蓝图中随意调整 Mesh 的偏移和旋转以对齐手部
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Equipment|Components")
     USceneComponent* RootSceneComponent;
@@ -89,6 +90,10 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Equipment|Attachment")
     FName HolsterSocketName;
 
+    // Optional per-equipment animation; the common VFX always plays independently.
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Equipment|Animation")
+    bool bPlayEquipAnimation = false;
+
     // 这件装备专属的拔出动画蒙太奇
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Equipment|Animation")
     UAnimMontage* EquipMontage;
@@ -107,15 +112,9 @@ public:
     FORCEINLINE UAnimMontage* GetEquipMontage() const { return EquipMontage; }
 
 #if WITH_DEV_AUTOMATION_TESTS
-    float GetEquipEffectElapsedForTesting() const { return EquipEffectElapsed; }
+    float GetEquipEffectElapsedForTesting() const;
     float GetEquipEffectValueForTesting() const;
-    bool IsEquipEffectActiveForTesting() const { return bEquipEffectActive; }
+    bool IsEquipEffectActiveForTesting() const { return IsEquipEffectPlaying(); }
 #endif
 
-private:
-    UPROPERTY(Transient)
-    TArray<TObjectPtr<UMaterialInstanceDynamic>> EquipEffectMaterials;
-
-    float EquipEffectElapsed = 0.f;
-    bool bEquipEffectActive = false;
 };

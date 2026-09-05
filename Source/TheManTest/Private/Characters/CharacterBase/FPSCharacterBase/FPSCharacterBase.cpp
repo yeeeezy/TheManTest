@@ -243,25 +243,9 @@ void AFPSCharacterBase::BeginPlay()
 	HideMeshMaterialSlots(ArmsViewMesh, ArmsHiddenSections);
 	HideMeshMaterialSlots(LegsMesh, LegsHiddenSections);
 
-	// 角色与装备保持首帧可见；只把拔枪 Montage 延迟到下一帧，等待 AnimInstance
-	// 完成初始化。不要在这里隐藏整套 Mesh，否则进入地图时会出现一帧“角色未加载”的空白。
-	GetWorldTimerManager().SetTimerForNextTick(this, &AFPSCharacterBase::PlayInitialEquipEffect);
 
 }
 
-void AFPSCharacterBase::PlayInitialEquipEffect()
-{
-	// Keep the established next-tick equip hook, but reveal the weapon with the
-	// source VFXPack-style material dissolve instead of moving the player's arms.
-	if (EquipmentManager)
-	{
-		if (AEquipmentBase* Current = EquipmentManager->GetCurrentEquipment())
-		{
-			Current->PlayEquipEffect();
-			Current->SetActorHiddenInGame(false);
-		}
-	}
-}
 
 void AFPSCharacterBase::PossessedBy(AController* NewController)
 {

@@ -116,7 +116,7 @@ public:
 	FRotator MuzzleEffectRotation = FRotator::ZeroRotator;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|VFX")
-	FVector MuzzleEffectScale = FVector::OneVector;
+	FVector MuzzleEffectScale = FVector(2.f);
 
 	// Optional fire-time light. Disabled by default so existing firearms keep their current look.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|VFX|Muzzle Light")

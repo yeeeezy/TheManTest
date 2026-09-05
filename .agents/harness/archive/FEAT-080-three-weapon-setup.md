@@ -7,6 +7,17 @@
 - 两把新枪只替换模型、枪口 VFX、命中 VFX 与贴花；玩法、动画、音频、弹药、GAS、后坐力和子弹行为保持与 RepairGun 一致。
 - 外部来源仅迁移最终模型和 VFX 依赖，不迁移源项目角色、武器蓝图或动画。
 
+## 2026-09-04 通用装备显现与默认枪口倍率
+
+- 用户要求所有装备共用爆炸枪同款切换 VFX，但可有各自动画，并将默认 MuzzleEffectScale XYZ 改为 2。已将 AFirearm 原生默认改为 `(2,2,2)`，BP_ExplosionGun 同步覆盖；保留 ElectricGun 当前 2 倍与 RepairGun 专属 0.85 倍。
+- 定位到 RepairGun 实际显示的 SkeletalMesh 使用 M_SCFR_BaseMat，不含 Amount (S)，旧代码对它写参数无效；ElectricGun 的 Noise 被枪体 SurfaceDetail 贴图覆盖，导致溶解图案与源效果不同。
+- 新增 `Weapons/_Shared/EquipmentBase/Effects/EquipmentEquipEffectComponent.h/.cpp`，由所有 AEquipmentBase 原生创建。组件持有 0.5 秒 Hermite 1→0 时序、临时 MID、原材质恢复及取消逻辑；只在播放期间 Tick。没有溶解契约的未来自定义材质会在显现期间使用共享备用表面，结束/卸下时恢复原材质；接入共享函数的材质全程保留自身外观。
+- AEquipmentBase 只保留 PlayEquipEffect 委托、Equip/Unequip 和动画配置；新增独立 `bPlayEquipAnimation`（默认 false）允许同时播放每件装备自己的 EquipMontage，EquipmentAnimLayerClass 仍独立。切换和首次装备统一由 EquipmentManager.QueueEquipPresentation 延迟一帧等待姿势，然后播放 VFX/可选动画并显示；移除 FPSCharacterBase 的 PlayInitialEquipEffect 与重复入口。切换锁定直接读取组件是否仍播放，不再复制固定时长定时器。
+- 将爆炸枪工作正常的主材质、描边材质和函数通过 AssetTools 提升到 `/Game/Weapons/_Shared/Equipment/Effects/Equip/Materials/{M_EquipmentEquipSurface,M_EquipmentOutline,Functions/MF_EquipmentEquipDissolve}`。专用噪声 `Textures/T_EquipmentEquipNoise` 为共享副本，保留仍被枪口/命中使用的原 VFX 噪声。
+- ElectricGun / ExplosionGun 的独立材质实例及 RepairGun 静态材质引用共享父材质；RepairGun 实际骨骼材质在原颜色、法线、金属度、纹理和发光图后接入同一个函数。ElectricGun 与 RepairGun 静态 Outline 槽使用共享描边，所有当前表面统一使用共享噪声。
+- 删除 4 项已无引用的旧 RepairGun/ElectricGun 父材质与各自溶解函数；清理三把枪空的 Materials/Functions 目录。旧内容可从写入前 WIP checkpoint `2dff0c6` 恢复，结果未提交。
+- Development Editor / Win64 构建成功；冷启动验证共享父材质依赖闭包 3 项全部位于共享 Equip 目录、三把枪可见材质均接通共享函数/噪声与继承组件，相关 Blueprint 编译保存通过。D3D 首轮 SharedEquipReveal、ThreeWeaponBaseline、ThreeWeaponPIESwitch、ExplosionVisualCapture 均 Success。三张显现截帧为 `Saved/Screenshots/WindowsEditor/TMT_EquipReveal_0.png`、`_1.png`、`_2.png`。旧 EquipDissolveEvidence 初次因 PIE 启动工作错过首帧采样失败，已改为测试开始时明确启动测量播放，最终 D3D12 SharedEquipReveal、EquipDissolveEvidence、ThreeWeaponBaseline、ThreeWeaponPIESwitch 4/4 Success。
+
 ## 2026-09-04 爆炸枪按截图替换为 Physical 1
 
 - 用户明确授权替换模型、特效、光源和清理旧资产。截图 `屏幕截图 2026-09-04 192212.png` 中 `BP_Weapon_Rifle_Physical_Child` 在源 VFXPack 内重定向到 `BP_Weapon_Rifle_Physical_01_Child`。

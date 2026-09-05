@@ -68,3 +68,7 @@ Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE
 
 - 腿部材质同时计算像素到 `hand_r` 世界位置与 `CameraPositionWS` 的距离；两条归一化渐隐遮罩取 `Min`，所以靠近任意来源都会渐隐。
 - 右手侧参数沿用 `Proximity Clip Radius/Fade Width`；相机侧独立使用 `Camera Proximity Clip Radius/Fade Width`，不得由 C++ 每帧重复写相机位置。
+
+## 装备初始化职责（2026-09-04）
+
+FPSCharacterBase 继续指定 EquipmentManager.AttachTargetMesh=ArmsViewMesh、初始化背包并预热初始姿势。首装与切装的延迟显示/VFX 统一归 EquipmentManager.QueueEquipPresentation，旧 PlayInitialEquipEffect 方法及角色定时回调已删除。

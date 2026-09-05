@@ -8,41 +8,19 @@
 #include "Components/MeshComponent.h"
 #include "GameFramework/Character.h"
 #include "Animation/AnimInstance.h"
-#include "Materials/MaterialInstanceDynamic.h"
+#include "Weapons/_Shared/EquipmentBase/Effects/EquipmentEquipEffectComponent.h"
 #include "Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h"
-
-namespace
-{
-    const FName EquipDissolveParameter(TEXT("Amount (S)"));
-    // Exact FirstPersonCharacter Timeline_3 values from the source VFXPack.
-    // The embedded curve is a 0.5 s cubic Hermite from 1 to 0, with a user
-    // leave tangent of -5.434987 at the first key and a flat second key.
-    constexpr float EquipDissolveDuration = 0.5f;
-    constexpr float EquipDissolveHiddenValue = 1.f;
-    constexpr float EquipDissolveStartTangent = -5.434987f;
-
-    float EvaluateSourceEquipDissolve(float TimeSeconds)
-    {
-        const float Alpha = FMath::Clamp(TimeSeconds / EquipDissolveDuration, 0.f, 1.f);
-        const float AlphaSquared = Alpha * Alpha;
-        const float AlphaCubed = AlphaSquared * Alpha;
-        const float H00 = 2.f * AlphaCubed - 3.f * AlphaSquared + 1.f;
-        const float H10 = AlphaCubed - 2.f * AlphaSquared + Alpha;
-        return H00 * EquipDissolveHiddenValue
-            + H10 * EquipDissolveDuration * EquipDissolveStartTangent;
-    }
-}
 
 AEquipmentBase::AEquipmentBase()
 {
-    // Equip dissolve uses Tick only while this equipment is active; inventory items
-    // remain disabled by EquipmentManager until equipped.
+    // Firearm subclasses may tick; the reveal component ticks only during its effect.
     PrimaryActorTick.bCanEverTick = true;
     PrimaryActorTick.bStartWithTickEnabled = false;
 
     // 1. 创建虚拟根节点
     RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
     RootComponent = RootSceneComponent;
+    EquipEffect = CreateDefaultSubobject<UEquipmentEquipEffectComponent>(TEXT("EquipEffect"));
 
     // 🌟 2a. 创建静态模型并挂载到根节点下
     StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
@@ -78,24 +56,6 @@ void AEquipmentBase::BeginPlay()
     Super::BeginPlay();
 }
 
-void AEquipmentBase::Tick(float DeltaTime)
-{
-    Super::Tick(DeltaTime);
-
-    if (!bEquipEffectActive) { return; }
-
-    EquipEffectElapsed = FMath::Min(EquipEffectElapsed + DeltaTime, EquipDissolveDuration);
-    const float Alpha = EquipDissolveDuration > 0.f ? EquipEffectElapsed / EquipDissolveDuration : 1.f;
-    const float DissolveAmount = EvaluateSourceEquipDissolve(EquipEffectElapsed);
-    for (UMaterialInstanceDynamic* Material : EquipEffectMaterials)
-    {
-        if (Material)
-        {
-            Material->SetScalarParameterValue(EquipDissolveParameter, DissolveAmount);
-        }
-    }
-    bEquipEffectActive = Alpha < 1.f;
-}
 
 static void GetAnimLayerMeshes(AActor* Owner, TArray<USkeletalMeshComponent*>& OutMeshes)
 {
@@ -200,45 +160,18 @@ void AEquipmentBase::PlayEquipMontage()
 
 void AEquipmentBase::PlayEquipEffect()
 {
-    EquipEffectMaterials.Reset();
+    EquipEffect->Play();
+    if (bPlayEquipAnimation) { PlayEquipMontage(); }
+}
 
-    TArray<UMeshComponent*> MeshComponents;
-    GetComponents<UMeshComponent>(MeshComponents);
-    for (UMeshComponent* MeshComponent : MeshComponents)
-    {
-        if (!MeshComponent) { continue; }
-
-        // Some equipment owns helper mesh components (for example the firearm
-        // outline overlay) whose asset is intentionally empty. Such components
-        // can still report an override material slot, but creating a MID for it
-        // produces an invalid-material-index warning in PIE.
-        if (const UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(MeshComponent);
-            StaticMeshComponent && !StaticMeshComponent->GetStaticMesh())
-        {
-            continue;
-        }
-        if (const USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(MeshComponent);
-            SkeletalMeshComponent && !SkeletalMeshComponent->GetSkeletalMeshAsset())
-        {
-            continue;
-        }
-
-        for (int32 MaterialIndex = 0; MaterialIndex < MeshComponent->GetNumMaterials(); ++MaterialIndex)
-        {
-            if (UMaterialInstanceDynamic* Material = MeshComponent->CreateAndSetMaterialInstanceDynamic(MaterialIndex))
-            {
-                Material->SetScalarParameterValue(EquipDissolveParameter, EquipDissolveHiddenValue);
-                EquipEffectMaterials.Add(Material);
-            }
-        }
-    }
-
-    EquipEffectElapsed = 0.f;
-    bEquipEffectActive = EquipEffectMaterials.Num() > 0;
+bool AEquipmentBase::IsEquipEffectPlaying() const
+{
+    return EquipEffect && EquipEffect->IsPlaying();
 }
 
 void AEquipmentBase::Unequip()
 {
+    EquipEffect->Stop();
     AActor* CurrentOwner = GetOwner();
 
     if (ShadowStaticMesh)
@@ -274,16 +207,6 @@ void AEquipmentBase::Unequip()
 }
 
 #if WITH_DEV_AUTOMATION_TESTS
-float AEquipmentBase::GetEquipEffectValueForTesting() const
-{
-    float Value = TNumericLimits<float>::Lowest();
-    for (const UMaterialInstanceDynamic* Material : EquipEffectMaterials)
-    {
-        if (Material && Material->GetScalarParameterValue(EquipDissolveParameter, Value))
-        {
-            return Value;
-        }
-    }
-    return TNumericLimits<float>::Lowest();
-}
+float AEquipmentBase::GetEquipEffectElapsedForTesting() const { return EquipEffect->GetElapsed(); }
+float AEquipmentBase::GetEquipEffectValueForTesting() const { return EquipEffect->GetAmount(); }
 #endif

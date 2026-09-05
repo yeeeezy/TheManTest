@@ -80,13 +80,13 @@ void UEquipmentManagerComponent::InitializeEquipment(const TArray<TSubclassOf<AE
         if (AEquipmentBase* FirstEquipment = Inventory[CurrentEquipmentIndex])
         {
             FirstEquipment->Equip(OwnerCharacter);
-            // The first rendered weapon frame must already have the VFXPack dissolve
-            // material initialized. PlayInitialEquipEffect reveals it next tick.
+            // Initial equip and inventory swaps share the same deferred reveal.
             FirstEquipment->SetActorHiddenInGame(true);
             FirstEquipment->SetActorEnableCollision(true);
             FirstEquipment->SetActorTickEnabled(true);
             
             FirstEquipment->AttachToComponent(TargetMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, FirstEquipment->GetEquipSocketName());
+            QueueEquipPresentation(FirstEquipment);
 			OnCurrentEquipmentChanged.Broadcast(nullptr, FirstEquipment);
         }
     }
@@ -124,7 +124,7 @@ void UEquipmentManagerComponent::FinalizeUnequippedEquipment(
 // 极其纯净的无动画切枪逻辑
 void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
 {
-    if (bVisualSwapPending)
+    if (bVisualSwapPending || (GetCurrentEquipment() && GetCurrentEquipment()->IsEquipEffectPlaying()))
     {
         return;
     }
@@ -174,50 +174,25 @@ void UEquipmentManagerComponent::SwitchEquipment(int32 Direction)
         NewEquipment->SetActorTickEnabled(true);
         NewEquipment->AttachToComponent(TargetMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, NewEquipment->GetEquipSocketName());
 
-        // Let the newly linked layer evaluate once, then reveal the weapon through
-        // the source VFXPack-style material dissolve. No arm montage is played.
-        if (bNeedsVisualTransition)
-        {
-            bVisualSwapPending = true;
-            const TWeakObjectPtr<AEquipmentBase> EquipmentToPlay = NewEquipment;
-            GetWorld()->GetTimerManager().SetTimerForNextTick(
-                FTimerDelegate::CreateWeakLambda(this, [this, EquipmentToPlay]()
-                {
-                    if (EquipmentToPlay.IsValid() && GetCurrentEquipment() == EquipmentToPlay.Get())
-                    {
-                        EquipmentToPlay->PlayEquipEffect();
-                        EquipmentToPlay->SetActorHiddenInGame(false);
-
-						// 新旧第一人称枪体在同一像素区域原子替换时，TAA/TSR 仍可能保留
-						// 上一枪的颜色历史。标记一次无位移 Camera Cut，只清空该帧时域历史，
-						// 不改变相机 Transform，也不会给 gameplay 引入额外阶段。
-						ACharacter* TransitionOwner = Cast<ACharacter>(GetOwner());
-						if (APlayerController* PlayerController = TransitionOwner ? Cast<APlayerController>(TransitionOwner->GetController()) : nullptr)
-						{
-							if (PlayerController->PlayerCameraManager)
-							{
-								PlayerController->PlayerCameraManager->SetGameCameraCutThisFrame();
-							}
-						}
-
-                        // Keep the existing visual transition input lock for the C++
-                        // dissolve duration so repeated wheel input cannot overlap effects.
-                        FTimerHandle TransitionTimer;
-                        GetWorld()->GetTimerManager().SetTimer(
-                            TransitionTimer,
-                            FTimerDelegate::CreateWeakLambda(this, [this]()
-                            {
-                                bVisualSwapPending = false;
-                            }),
-                            0.5f,
-                            false);
-                        return;
-                    }
-
-                    bVisualSwapPending = false;
-                }));
-        }
+        QueueEquipPresentation(NewEquipment);
     }
 
 	OnCurrentEquipmentChanged.Broadcast(OldEquipment, NewEquipment);
+}
+
+void UEquipmentManagerComponent::QueueEquipPresentation(AEquipmentBase* Equipment)
+{
+    bVisualSwapPending = true;
+    const TWeakObjectPtr<AEquipmentBase> PendingEquipment = Equipment;
+    GetWorld()->GetTimerManager().SetTimerForNextTick(
+        FTimerDelegate::CreateWeakLambda(this, [this, PendingEquipment]()
+        {
+            bVisualSwapPending = false;
+            if (!PendingEquipment.IsValid() || GetCurrentEquipment() != PendingEquipment.Get()) { return; }
+            PendingEquipment->PlayEquipEffect();
+            PendingEquipment->SetActorHiddenInGame(false);
+            ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner());
+            APlayerController* PC = OwnerCharacter ? Cast<APlayerController>(OwnerCharacter->GetController()) : nullptr;
+            if (PC && PC->PlayerCameraManager) { PC->PlayerCameraManager->SetGameCameraCutThisFrame(); }
+        }));
 }
