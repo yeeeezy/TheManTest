@@ -5,7 +5,20 @@
 #include "NiagaraComponent.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
-UGCN_ExplosionGunExplosion::UGCN_ExplosionGunExplosion(){GameplayCueTag=TAG_GameplayCue_Weapon_ExplosionGun_Explosion;}
+#include "Weapons/ExplosionGun/Effects/ExplosionCameraShake.h"
+#include "Camera/PlayerCameraManager.h"
+#include "GameFramework/PlayerController.h"
+UGCN_ExplosionGunExplosion::UGCN_ExplosionGunExplosion()
+{
+ GameplayCueTag=TAG_GameplayCue_Weapon_ExplosionGun_Explosion;
+ CameraShakeClass=UExplosionCameraShake::StaticClass();
+}
+float UGCN_ExplosionGunExplosion::GetShakeScaleAtDistance(float Distance) const
+{
+ const float Inner=FMath::Max(0.f,ShakeInnerRadius);
+ const float Outer=FMath::Max(Inner+1.f,ShakeOuterRadius);
+ return CameraShakeScale*FMath::Square(1.f-FMath::Clamp((Distance-Inner)/(Outer-Inner),0.f,1.f));
+}
 bool UGCN_ExplosionGunExplosion::OnExecute_Implementation(AActor* Target,const FGameplayCueParameters& P) const
 {
  if(!Target||!Target->GetWorld())return false;
@@ -21,5 +34,19 @@ bool UGCN_ExplosionGunExplosion::OnExecute_Implementation(AActor* Target,const F
   }
  }
  if(ExplosionSound)UGameplayStatics::PlaySoundAtLocation(Target,ExplosionSound,P.Location,VolumeMultiplier);
+ if(CameraShakeClass)
+ {
+  for(FConstPlayerControllerIterator It=Target->GetWorld()->GetPlayerControllerIterator();It;++It)
+  {
+   APlayerController* PC=It->Get();
+   if(!PC||!PC->IsLocalController()||!PC->PlayerCameraManager)continue;
+   APlayerCameraManager* Camera=PC->PlayerCameraManager;
+   const FVector Away=Camera->GetCameraLocation()-FVector(P.Location);
+   const float Strength=GetShakeScaleAtDistance(Away.Size());
+   if(Strength>UE_KINDA_SMALL_NUMBER)
+    Camera->StartCameraShake(CameraShakeClass,Strength,ECameraShakePlaySpace::UserDefined,
+     Away.IsNearlyZero()?Camera->GetCameraRotation():Away.Rotation());
+  }
+ }
  return ExplosionEffect||ExplosionSound;
 }

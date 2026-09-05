@@ -7,6 +7,8 @@
 
 ## 当前配置
 
+- 爆炸音量倍率现为3.0；Explosion Cue新增0.45秒方位震屏，200cm内全强，1800cm外不震。配置CameraShakeClass/CameraShakeScale/ShakeInnerRadius/ShakeOuterRadius。
+
 - 爆炸弹 `BP_ExplosionGunBullet` 继承 `AExplosionGunBullet`，`Bullet|Explosion / ExplosionDelay=2s`，可调。原首次5点伤害及PhysicalImpact不变；附着后停止碰撞/移动，倒计时结束仅播放爆炸，不追加伤害。
 - 爆炸表现与音效配置于 `ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion`；系统 `Effects/Explosion/Systems/NS_ExplosionGun_Detonation` 来自TMIIR N_ExplosionGround_006；独立Audio/S_ExplosionGun_Detonation。EffectLifeSpan默认8秒兜底清理长尾焰（源效果在14秒仍active，已加weak Timer避免积累）。
 - 敌人默认 `GC_Character_Enemy_Hit` 配置 BloodSprayMaterial / BloodStainMaterial / BloodScale / BloodStainLifeSpan；血迹默认12秒并淡出，飙血0.55秒后销毁。资产在Enemy/_Shared/Effects/Hit，不改变各枪原命中Cue。
@@ -23,6 +25,8 @@
 
 ## 最新验证
 
+- 本轮最终 `ExplosionDirectionalShake.log`：ExplosionDirectionalShake、StickyExplosionAndBlood、ThreeWeaponBaseline 3/3 Success/exit0；三倍音量、左右方位、远近衰减、自动结束、真实爆炸Cue触发本地震屏均通过，原伤害/清理保持。Development Editor Win64编译成功。
+
 - 最终 `StickyBloodFinal.log`：StickyExplosionAndBlood + ThreeWeaponBaseline 2/2 Success，含爆炸/血迹14秒后均清理断言；`ValidateStickyBloodFinal2.log` Cue编译保存与116包引用复验成功。已查看截图 `TMT_StickyExplosion.png` 和 `TMT_EnemyBloodHit_Isolated.png`。测试编辑器正常退出，未写入关卡。
 
 - 最新Development Editor Win64构建成功；`StickyBloodD3D.log` 的StickyExplosionAndBlood、ThreeWeaponBaseline 2/2 Success：附着跟随、停止移动/碰撞、5点初次伤害、重复Hit、无二次伤害、0秒/缺失SourceASC、Phantom穿透、默认敌人血迹/喷溅及销毁均通过。
@@ -37,6 +41,9 @@
 - 删除4项描边资产，可从本地检查点3be752e恢复；RepairGun11项非语义重存已撤回，不误改原材质。
 
 ## 当前待办 / 会话交接
+
+- 本轮用户确认爆炸三倍音量+按方位震屏，已实现并编译，验证见ExplosionDirectionalShake.log。检查点84aa9cd保存前轮结果，本轮未最终提交。
+- 电击枪血花缺失已定位为BP_ElectricGunBullet.Damage=0，默认EnemyHit只在正伤害后触发。已异步询问“零伤害仍出血”或“改伤害5”，待用户选择；目前未更改电击枪或公共伤害/Hit规则。
 
 - 用户可在VFXTestMap审核附着弹、2秒延时爆炸和敌人血迹的最终观感。当前明确只保留第一次伤害，后续范围伤害另行确认，FEAT-080未整体归档。
 - 本轮结果不自动提交，等待用户明确要求“更新 Git”；未push。

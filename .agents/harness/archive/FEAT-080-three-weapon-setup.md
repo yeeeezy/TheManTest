@@ -7,6 +7,16 @@
 - 两把新枪只替换模型、枪口 VFX、命中 VFX 与贴花；玩法、动画、音频、弹药、GAS、后坐力和子弹行为保持与 RepairGun 一致。
 - 外部来源仅迁移最终模型和 VFX 依赖，不迁移源项目角色、武器蓝图或动画。
 
+## 2026-09-04 爆炸三倍音量与方位震屏
+
+- 用户确认爆炸音量至少原来的3倍，并按相对玩家方位加入震屏。写入前本地检查点 `84aa9cd` 保存上一轮附着弹/爆炸Cue/默认血迹；本轮不自动最终提交。
+- `UGCN_ExplosionGunExplosion.VolumeMultiplier` 默认从1改为3，正式Cue继承并通过UE编译保存确认。保留原合成SoundWave，不重复合成/叠播，不改变原命中或开火声。
+- 新 `UExplosionCameraShake / UExplosionCameraShakePattern` 位于本枪 `Effects/ExplosionCameraShake.h/.cpp`。0.45秒有限衰减冲击，位移主轴沿爆炸点→相机的UserDefined播放空间，含旋转抖动；不改变ControllerRotation，不替代开火震屏。
+- 爆炸Cue配置 `CameraShakeClass / CameraShakeScale / ShakeInnerRadius / ShakeOuterRadius`，默认强度1、200cm以内全强、1800cm以外0、中间平方衰减。遍历本地玩家相机，可见方向由爆炸位置而不是表面法线决定。
+- 电击枪不出血花根因已确认：`BP_ElectricGunBullet.Damage=0`，HitEffectClass仍为GE_BulletDamage；默认敌人Hit Cue只响应DamageTaken>0。不是材质缺失。已异步询问用户保留零伤害但命中也出血，还是伤害改5；未得到选择前保持原伤害/触发规则，不擅改。
+- `ExplosionAudioElectricAudit.log` UE配置/编译保存0错误0警告；Development Editor Win64编译通过。方向/衰减/自动结束单测与D3D爆炸Cue链回归见 `ExplosionDirectionalShake.log`。
+- 最终 `ExplosionDirectionalShake.log`：ExplosionDirectionalShake、StickyExplosionAndBlood、ThreeWeaponBaseline 3/3 Success/exit0。验证正式Cue音量3、左右爆炸相反偏移、距离倍率、0.45秒自动结束、真实弹体爆炸Cue向本地PlayerCameraManager添加震屏；原5点伤害与特效清理回归仍通过。测试编辑器正常退出。
+
 ## 2026-09-04 附着倒计时爆炸与默认敌人血迹
 
 - 用户确认增加附着弹与可调倒计时；明确保留首次伤害和全部已有武器命中表现，本轮爆炸仅表现，不追加范围伤害。追加要求默认 Enemy Hit Cue 提供血迹、短促飙血。写入前检查点 `5f029d4`，结果未最终提交。

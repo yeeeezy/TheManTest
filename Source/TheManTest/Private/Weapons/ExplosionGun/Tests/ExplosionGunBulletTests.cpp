@@ -20,6 +20,9 @@
 #include "NiagaraComponent.h"
 #include "NiagaraSystem.h"
 #include "Camera/CameraActor.h"
+#include "Camera/PlayerCameraManager.h"
+#include "Camera/CameraModifier_CameraShake.h"
+#include "Weapons/ExplosionGun/Effects/ExplosionCameraShake.h"
 #include "Engine/GameViewportClient.h"
 #include "ImageUtils.h"
 #include "Misc/FileHelper.h"
@@ -104,7 +107,16 @@ public:
    State.Start=World->GetTimeSeconds();State.Stage=1;return false;
   }
   const float Elapsed=World->GetTimeSeconds()-State.Start;
-  if(!State.bBloodCaptured&&Elapsed>.08f){Capture(TEXT("TMT_EnemyBloodHit.png"));State.bBloodCaptured=true;}
+  if(!State.bBloodCaptured&&Elapsed>.08f)
+  {
+   Capture(TEXT("TMT_EnemyBloodHit.png"));State.bBloodCaptured=true;
+   auto* Modifier=Cast<UCameraModifier_CameraShake>(World->GetFirstPlayerController()->PlayerCameraManager->FindCameraModifierByClass(UCameraModifier_CameraShake::StaticClass()));
+   TArray<FActiveCameraShakeInfo> Active;
+   if(Modifier)Modifier->GetActiveCameraShakes(Active);
+   bool bShake=false;
+   for(const auto& Entry:Active)if(Entry.ShakeInstance&&Entry.ShakeInstance->IsA<UExplosionCameraShake>())bShake=true;
+   Test->TestTrue(TEXT("Detonation Cue starts directional shake on local player camera"),bShake);
+  }
   if(Elapsed<1.f&&State.Stage!=3)return false;
   if(State.Stage==1)
   {

@@ -2,6 +2,8 @@
 
 ## 爆炸延时 Cue 与 Enemy 血迹（2026-09-04）
 
+- 爆炸Cue音量倍率3.0；`UExplosionCameraShake` / `UExplosionCameraShakePattern`（Weapons/ExplosionGun/Effects）提供0.45秒方位冲击。Cue按爆炸点→本地相机方向传入UserDefined播放空间，200cm内全强、1800cm外不震、中间平方衰减；CameraShakeClass/Scale/InnerRadius/OuterRadius在Cue配置。与开火震屏和ControllerRotation独立。
+
 - `GameplayCue.Weapon.ExplosionGun.Explosion` → `/Game/Weapons/ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion` → `UGCN_ExplosionGunExplosion`。由附着弹Timer触发，不合并原ImpactCue；ExplosionEffect/ExplosionSound/EffectScale/VolumeMultiplier独立配置，Niagara按+Z对齐法线。EffectLifeSpan默认8秒，通过弱绑定Timer兜底清理源效果的长尾焰，防止连续射击累积。无伤害GE。
 - 默认 `GameplayCue.Character.Enemy.Hit` → `UGCN_EnemyHit` 现在配置 `BloodSprayMaterial/BloodStainMaterial/BloodScale/BloodStainLifeSpan`，默认12秒血迹，0.55秒喷溅。仍由真实Health扣减后的敌人ASC调用，不在某把枪内添加敌人分支。
 - `Enemy/_Shared/Effects/EnemyBloodSpray.h/.cpp` 是默认EnemyHit的瞬态表现Actor（9个无碰撞/无阴影卡片、短弹道、朝向相机、MID Fade、自动销毁）。共享默认Cue由Phantom与其他Enemy继承；差异化敌人可改自身HitReactionCueTag。
