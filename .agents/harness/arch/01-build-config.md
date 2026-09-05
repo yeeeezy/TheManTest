@@ -1,5 +1,7 @@
 # 构建配置
 
+- 2026-09-05 EnemyEffectScale：Editor-only增加NiagaraEditor，供ExplosionScaleAudit检查/显式安装本枪Niagara缩放模块；运行时与Game目标不引入编辑器模块。
+
 - 2026-09-05：Private运行时依赖增加RigVM，供原生FRigUnit_EnemyHitReaction；复用既有ControlRig依赖及Editor-only ControlRigDeveloper/AnimGraph/AssetTools。无新插件，不引入重定向模块。
 
 - FEAT-080命中验收：Editor-only增加AudioMixer与RHI，分别用于PIE实际输出录音及材质Shader编译错误断言；不增加Game目标依赖。

@@ -1,5 +1,14 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 EnemyEffectScale修复（实现与自验完成）
+
+- 用户确认动手并要求继续。写前检查点4838cfa选择性保存条件子弹时间与Air007迁入；地图/ExternalActor不纳入。
+- 冷审计Air007共22发射器，局部/世界空间混合，现有组件Scale没有统一影响SpriteSize、RibbonWidth和世界空间速度。对本枪System内22条ParticleUpdate栈接引擎ApplyOwnerScaleToAttributes，在Solve前执行，Owner Scale绑定Engine.Owner.Scale；Sprite/Ribbon/CameraOffset统一，世界空间另缩放初速度/力/mesh，本地运动保持既有组件变换以避免双重缩放，Drag不缩放。
+- 新增Editor-only NiagaraEditor依赖以及显式-InstallEnemyScale安装入口；无标志时审计只读。首次模块默认全false，已开启目标静态开关；第二次安装重连已有override触发引擎断言（未保存），已改为保留已有链接，InstallEnemyScale3成功编译保存。Development Editor Win64成功；0.25/1/2三倍率真实PIE渲染和粒子尺寸验证进行中。
+- 最终Development Editor Win64构建成功，无新增编译警告。EnemyScaleFinal.log四项4/4 Success：ExplosionScaleAudit、EnemyExplosionScaleVisual、ExplosionRadialDamage、StickyExplosionAndBlood。审计检查22个发射器各一个缩放模块、Owner Scale链接及空间对应静态开关；默认不写资产。
+- 实际Enemy Cue在无GroundHit条件下生成Air007；固定18步×1/60秒CPU取样，倍率1/.25/2的火球尺寸分别913.798/228.566/1828.529，碎片平均半径263.855/63.168/763.051cm，亮区2939/252/8401像素。火球尺寸近似线性，碎片扩散随倍率变化，原随机运动/力/碰撞不保证轨迹严格等比。截图TMT_EnemyExplosionScale_0/1/2.png保存在Saved/Screenshots/WindowsEditor，已目视确认缩放；测试内临时确定性设置恢复且不保存。
+- ValidateEnemyScaleCold.log输出AIR_COLD_OK 115；依赖闭包、无Redirector和供应商目录、Enemy/环境两个槽位与原子弹时间均通过。冷读确认用户当前EnemyEffectScale实际为0.1（保留），震屏6、子弹时间.05/.01/1/.01。本轮只改Enemy System与编辑器安装/验证代码，不改运行时伤害或Cue分支。结果未最终提交/push，地图与External Actor保持用户状态。
+
 ## 2026-09-05 条件子弹时间与Enemy Air 007（实现与自验完成）
 
 - 用户确认：仅当本次爆炸实际造成新的Chaos破坏或击杀Enemy时触发子弹时间；普通爆炸/仅受伤不触发。同时指定Enemy身上爆炸使用TMIIR地图的N_ExplosionAir_007，实际爆点播放，环境仍Ground006。
