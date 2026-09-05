@@ -1,5 +1,8 @@
 # 装备系统
 
+- 2026-09-05晚：ExplosionGunBullet对原来可见且受范围伤害的存活Humanoid调用EnemyHitReactionComponent，保留附着Surface.BoneName/目标弱引用/入射方向作近零方向兜底。伤害筛选/去重/Visibility墙体遮挡不变，墙后不触发受击Rig；不由Cue处理骨骼状态。
+- Enemy已配置迁入的N_ExplosionGround_006（NS_ExplosionGun_Detonation）和独立SCue_ExplosionGun_EnemyDetonation，不再空槽。EnemyEffectOnGround=true时仍用原GroundHit投影，缺地面跳过Niagara，声音/震屏用真实爆点。保留用户最新BP子弹时间TimeScale=.05/SlowIn=.01/Hold=1/Recovery=.01，震屏6，环境音量3；不是原生默认值。
+
 - FEAT-080随机音高/音量现归每个音效的Sound Cue资产，开火/空仓/环境命中/肉体/爆炸按用途配置衰减和并发，详见arch/14-audio-policy.md。GCN_ImpactFeedbackBase命中角色不出声，角色Hit负责自己的声音；粒子仍保持原规则。伤害与爆炸Fuse保持原流程。
 
 - ABulletBase零伤害有效命中Enemy时，单独以真实HitResult调用Enemy的HitReactionCue；穿透/重复Hit先返回，正伤害仍由Health路径负责，不重复表现。电击弹Damage=0保持不变。

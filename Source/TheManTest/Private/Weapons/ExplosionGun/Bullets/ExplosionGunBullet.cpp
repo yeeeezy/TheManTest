@@ -9,6 +9,7 @@
 #include "Core/_Shared/GAS/TheManGameplayTags.h"
 #include "TimerManager.h"
 #include "Enemy/EnemyBase.h"
+#include "Enemy/Humanoid/Animation/EnemyHitReactionComponent.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
 #include "Field/FieldSystemObjects.h"
 #include "Engine/OverlapResult.h"
@@ -29,6 +30,7 @@ void AExplosionGunBullet::ProcessHit_Implementation(const FHitResult& Hit,AActor
 {
  if(bAttached || HasProcessedHit())return;
  const bool bEnemyImpact=IsValid(Hit.GetActor()) && Hit.GetActor()->IsA<AEnemyBase>();
+ ImpactDirection=GetVelocity().GetSafeNormal(UE_SMALL_NUMBER,GetActorForwardVector());
  // The base path handles pass-through, exactly-once direct damage and the existing impact Cue.
  Super::ProcessHit_Implementation(Hit,Shooter,Source);
  if(!HasProcessedHit() || IsActorBeingDestroyed())return;
@@ -53,6 +55,7 @@ void AExplosionGunBullet::ProcessHit_Implementation(const FHitResult& Hit,AActor
  if(IsValid(Parent) && IsValid(Parent->GetOwner()) && !Parent->GetOwner()->IsActorBeingDestroyed())
   AttachToComponent(Parent,FAttachmentTransformRules::KeepWorldTransform,Surface.BoneName);
  LocalImpactPoint=GetActorTransform().InverseTransformPosition(Surface.ImpactPoint);
+ AttachedHitBone=Surface.BoneName;AttachedHitActor=Hit.GetActor();
  LocalImpactNormal=GetActorQuat().UnrotateVector(Normal);
  // Even a zero delay goes through the next tick, never re-enters the collision callback.
  if(ExplosionDelay<=0.f)ExplosionTimer=GetWorldTimerManager().SetTimerForNextTick(this,&AExplosionGunBullet::Detonate);
@@ -133,6 +136,11 @@ void AExplosionGunBullet::ApplyExplosionDamage(const FVector& Origin)
   {
    Spec.Data->SetSetByCallerMagnitude(TAG_Data_Damage,-ExplosionDamage);
    SourceASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(),TargetASC);
+   if(IsValid(Enemy)&&!Enemy->IsActorBeingDestroyed())
+    if(auto* Reaction=Enemy->FindComponentByClass<UEnemyHitReactionComponent>())
+     Reaction->ReactToExplosion(Origin,ImpactDirection,
+      FMath::Lerp(1.f,.3f,FMath::Clamp(FVector::Distance(Origin,Point)/ExplosionDamageRadius,0.f,1.f)),
+      AttachedHitActor.Get()==Enemy?AttachedHitBone:NAME_None);
   }
  }
 }

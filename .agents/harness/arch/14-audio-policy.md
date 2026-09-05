@@ -1,5 +1,7 @@
 # 音效接入规范
 
+- 2026-09-05晚新增Enemy爆炸：ExplosionGun/Audio/S_ExplosionGun_EnemyDetonation（程序合成1.3秒/48kHz/mono，非外部素材）→SCue_ExplosionGun_EnemyDetonation；Modulator pitch .95~1.05、volume .95~1，复用本枪SA_ExplosionGun_Detonation与SC_ExplosionGun_Detonation。只由爆炸GC的EnemyExplosionSound消费，环境Alien Cannon不改。配置/冷验证Scripts/Audio/configure_enemy_explosion.py，源生成器synthesize_enemy_detonation.py；ExplosionRadialDamage断言真实Enemy AudioComponent正在播放。Gameplay增益仍可能推高峰值，不宣称最终输出绝不削波。
+
 - 2026-09-05：同一个Explosion GC新增EnemyExplosionSound/EnemyVolumeMultiplier，空槽不回退环境Sound Cue；目前Enemy专用声音未提供，保持空。环境SCue_ExplosionGun_Detonation/VolumeMultiplier=3保留，用户震屏最新覆盖=4。未来Enemy爆炸音频仍须封装随机Sound Cue，不能直接接裸Wave。验证Scripts/Audio/validate_explosion_feedback.py（-FeedbackValidateOnly冷只读）；痛呼回归现为TheManTest.Feedback.BulletTimeAndPain，旧HitStopAndPain已替换。
 
 ## 职责与所有权

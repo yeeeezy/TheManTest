@@ -1,5 +1,12 @@
 # 动画蓝图架构（ABP 层 / Slot / 节点图）
 
+## 2026-09-05 Phantom爆炸方向受击（当前）
+
+- 原ABP_Phantom_OriginalRifle及共享ABP_HumanoidEnemy图不改。Phantom/OriginalRifle/Meshes/SK_Mannequin的PostProcessAnimBlueprint指向Phantom/Animations/ControlRig/ABP_Phantom_ExplosionReaction，C++父类UEnemyHitReactionAnimInstance；图为LinkedInputPose → ControlRig → Output。
+- 同目录CR_Phantom_ExplosionReaction以现役Mesh骨架构建运行时Rig，没有IK Retargeter/动画重定向。Forwards Solve → 原生FRigUnit_EnemyHitReaction；ReactionRotation/ReactionBone公开输入由后处理AnimBP连接。spine_01/02/03分配.2/.35/.45组件空间旋转，手臂命中向相应upperarm额外.45，头/颈命中向neck_01额外.3；缺骨骼跳过，根/腿不改，输入姿势逐帧提供基准，不累计姿势漂移。
+- 受击由爆炸子弹伤害筛选后请求，组件保存游戏时钟包络（随Bullet Time放慢），快速渐入、衰减回弹、回零。脚与胶囊不移动，未实现击退/死亡动画。头部四方向位移、脚不动、还原原Pose及左臂局部反应由EnemyExplosionControlRig PIE测试验证。
+- 编辑器创建/接线助手在TheManAnimationAssetLibrary::CreateEnemyHitReactionPostProcess/InstallEnemyHitReactionRig；Scripts/Audio/configure_enemy_explosion.py接入和冷回读。未来其他Skeleton须制作对应Rig/PostProcess配置，不能直接迁用Phantom引用。
+
 **何时读取：** 搭建或修改 ABP 层结构、Linked Anim Layer、Slot 蒙太奇插槽、AimIK 节点链、武器动画扩展时。
 
 > 本文是 `06-animation.md` 的详细版：06 速查 C++ AnimInstance 类与变量，本文讲 ABP 资产的层/Slot/节点图与扩展策略。

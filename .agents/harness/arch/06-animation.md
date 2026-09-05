@@ -1,5 +1,7 @@
 # 动画实例
 
+- 2026-09-05：新增Enemy/Humanoid/Animation/EnemyHitReactionAnimInstance，作为Phantom专属后处理AnimBP的数据父类，在NativeUpdateAnimation采样EnemyHitReactionComponent，输出ReactionRotation（Mesh组件空间轴角向量，弧度）/ReactionBone。原UHumanoidEnemyAnimInstance及其locomotion/AimIK不改。RigVM仅处理输入数据，不从动画工作线程读取Actor。
+
 **何时读取：** 新增动画变量、修改动画状态机所需的驱动参数时。
 
 > 完整 ABP 架构（层结构、Slot、节点流程、扩展策略、旧双骨骼系统）见 `.agents/harness/arch/12-anim-blueprint.md`

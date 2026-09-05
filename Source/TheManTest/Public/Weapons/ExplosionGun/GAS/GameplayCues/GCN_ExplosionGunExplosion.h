@@ -15,6 +15,7 @@ public:
  UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Explosion") TObjectPtr<UNiagaraSystem> ExplosionEffect;
  // Empty enemy VFX means sound/shake only, never fall back to the ground decal.
  UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Explosion") TObjectPtr<UNiagaraSystem> EnemyExplosionEffect;
+ UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Explosion|Enemy") bool bEnemyEffectOnGround=true;
  UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Explosion") TObjectPtr<USoundBase> ExplosionSound;
  // Independent enemy presentation. Empty is intentional; no environment fallback.
  UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Explosion|Enemy") TObjectPtr<USoundBase> EnemyExplosionSound;

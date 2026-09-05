@@ -1,5 +1,11 @@
 # GAS 技能系统
 
+## 2026-09-05晚 当前Enemy爆炸（覆盖下文空槽状态）
+
+- 同一GC_Weapon_ExplosionGun_Explosion的EnemyExplosionEffect接NS_ExplosionGun_Detonation（已迁入的TMIIR N_ExplosionGround_006），bEnemyEffectOnGround=true。Enemy与环境仍独立字段，当前按用户指定使用同个System；地面类效果必须GroundHit投影，不悬挂在身体/方块上。以后换非地面效果可关闭EnemyEffectOnGround，在实际爆点播放。
+- EnemyExplosionSound=SCue_ExplosionGun_EnemyDetonation，独立生成声；环境ExplosionSound仍是指定Alien Cannon。用SpawnSoundAtLocation自动销毁组件，声音留实际爆点且使用Sound Cue的3D/并发/随机。伤害与Control Rig触发由弹体/敌人组件负责。
+- 用户最新CameraShakeScale=6、环境音量3；EnemyEffectScale/EnemyVolumeMultiplier保留原配置。TimeScale=.05、SlowIn=.01、Hold=1、Recovery=.01原样保留。
+
 ## 2026-09-05 爆炸表现当前入口（覆盖下文历史值）
 
 - 同一GC_Weapon_ExplosionGun_Explosion：环境ExplosionEffect/ExplosionSound/EffectScale/VolumeMultiplier；EnemyExplosionEffect/EnemyExplosionSound/EnemyEffectScale/EnemyVolumeMultiplier独立，无回退。目前Enemy声/VFX两槽为空，等待用户资源，伤害/Chaos/震屏/子弹时间仍执行。

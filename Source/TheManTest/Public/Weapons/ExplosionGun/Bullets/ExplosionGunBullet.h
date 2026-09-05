@@ -53,6 +53,9 @@ private:
  bool bDetonated=false;
  bool bHitEnemy=false;
  FVector LocalImpactPoint=FVector::ZeroVector;
+ FName AttachedHitBone;
+ TWeakObjectPtr<AActor> AttachedHitActor;
+ FVector ImpactDirection=FVector::ForwardVector;
  FVector LocalImpactNormal=FVector::UpVector;
  TWeakObjectPtr<UAbilitySystemComponent> ExplosionSourceASC;
  TWeakObjectPtr<AActor> ExplosionInstigator;

@@ -1,5 +1,18 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 夜间自验：Enemy爆炸与Control Rig（实现/自动验收完成）
+
+- 用户确认：Enemy爆炸使用N_ExplosionGround_006，制作方向性上半身Control Rig，合成独立音效；助手自行验收并记录后正常关机，用户明日手动验收。死亡动画/击退不在本轮范围。写前当前任务范围干净，14d9138已推送远端作为恢复点；地图和外部Actor保持原样，不创建空检查点。
+- 新EnemyHitReactionComponent归人形敌人，保存爆点方向/部位与游戏时间包络；爆炸已通过原伤害/LOS筛选后请求，零距离使用缓存入射方向。默认22度/.055秒攻击/.55秒恢复，部分回弹，根/腿不动。Phantom专属Control Rig通过PostProcess AnimBP叠在原最终姿势上，避免改共享模板或替换locomotion；无重定向操作。
+- 新原生FRigUnit_EnemyHitReaction分配spine_01/02/03权重.2/.35/.45，手臂或头部命中额外反应；输入由专用EnemyHitReactionAnimInstance在游戏线程采样，不在RigVM工作线程读Actor。
+- 合成1.3秒48kHz单声道Enemy爆破声，程序化低频/噪声瞬态/能量尾声，峰值约-2.05dBFS，源脚本Scripts/Audio/synthesize_enemy_detonation.py。Sound Cue按arch14随机、3D衰减与并发。
+- 初次Rig变量创建遇UE5.7 AddMemberVariable对FVector类型要求对象路径而非CPP名导致编辑器断言；只保存了空Rig，无动画/地图更改，修正为/Script/CoreUObject.Vector后继续。C++已成功编译，资产接入与PIE自验进行中。
+- 完成：Phantom专属CR_Phantom_ExplosionReaction/ABP_Phantom_ExplosionReaction位于Phantom/Animations/ControlRig；SK_Mannequin.PostProcessAnimBlueprint已接通。EnemyEffect使用已迁入的N_ExplosionGround_006，EnemyEffectOnGround=true；EnemyExplosionSound为独立程序合成Sound Cue。全部Blueprint/Rig打开编译保存。ConfigureEnemyExplosion2在成功保存后Slate退出崩溃，未以此宣称验收；后续ValidateEnemyExplosionCold冷回读以及两轮独立PIE正常完成，证明持久化和运行路径有效。
+- 最终Development Editor Win64成功，无新增源码警告。EnemyExplosionRigFinal.log七项7/7 Success/exit0：EnemyExplosionControlRig、ExplosionRadialDamage、BulletTimeAndPain、StickyExplosionAndBlood、ExplosionChaosGround、ExplosionDirectionalShake、ThreeWeaponBaseline。四方向头部实际位移同向>2cm，脚/胶囊不动，回到冻结原Pose；左臂命中有独立左臂响应；真实范围伤害触发Rig、墙后无Rig；Enemy音频实际播放一次、地面Niagara落点正确。原伤害/倒计时/Chaos/血花/痛呼/子弹时间回归通过。
+- 已检查Saved/Screenshots/WindowsEditor/TMT_EnemyRig_Directions.png，四个人形呈不同方向偏转；Before图提供对照。冷验证检查新音频时长/单声道/Modulator/衰减/并发、Mesh→PostProcess→Rig引用、源Wave依赖和范围内无Redirector；工厂临时SK_Mannequin_CtrlRig.uasset磁盘不存在。
+- 用户最新保存值回读：TimeScale=.05、SlowIn=.01、Hold=1、Recovery=.01、Inner/Outer=200/1500；CameraShakeScale=6、环境音量3，全保留。通用验证脚本不再钉死旧用户值。未修改死亡即时销毁流程、地图、外部Actor或共享locomotion/AimIK。
+- 明日人工验收入口见progress.md。用户授权本轮自验/记录后正常关机，不强制关闭未保存程序；本轮结果未自动提交/push，14d9138仍为远端恢复点。
+
 ## 2026-09-05 平滑子弹时间与分支爆炸表现
 
 - 用户确认保留同一Explosion GC，Enemy/环境独立声音与VFX；移除HitStop，改为先减速再平滑恢复；加强余震并排查穿模。安全检查点4f6f676保存前置工作，未纳入地图/外部Actor。

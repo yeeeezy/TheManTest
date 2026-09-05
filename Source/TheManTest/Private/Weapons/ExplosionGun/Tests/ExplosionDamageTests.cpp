@@ -1,5 +1,7 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 #include "Misc/AutomationTest.h"
+#include "Components/AudioComponent.h"
+#include "Enemy/Humanoid/Animation/EnemyHitReactionComponent.h"
 #include "Tests/AutomationCommon.h"
 #include "Tests/AutomationEditorCommon.h"
 #include "Editor.h"
@@ -60,21 +62,34 @@ public:
 			FHitResult Hit;Hit.ImpactPoint=Origin;Hit.ImpactNormal=FVector::UpVector;
 			Shot->ProcessHit(Hit,nullptr,nullptr);Shot->ProcessHit(Hit,nullptr,nullptr);
 			Test->TestEqual(TEXT("Environment hit deals no immediate enemy damage"),Enemies[0]->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),100.f);
-			// Original enemy impact category must suppress the ground effect even with a valid ground hit.
+			// The chosen Enemy ground effect must use the supplied projected ground point.
 			auto* Cue=LoadClass<UGCN_ExplosionGunExplosion>(nullptr,TEXT("/Game/Weapons/ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion.GC_Weapon_ExplosionGun_Explosion_C"))->GetDefaultObject<UGCN_ExplosionGunExplosion>();
-			Test->TestNull(TEXT("Enemy effect deliberately unassigned"),Cue->EnemyExplosionEffect.Get());
+			Test->TestNotNull(TEXT("Enemy effect configured"),Cue->EnemyExplosionEffect.Get());
+			Test->TestTrue(TEXT("Enemy ground decal uses ground projection"),Cue->bEnemyEffectOnGround);
 			FGameplayCueParameters P;P.Location=Origin;P.Normal=FVector::UpVector;P.AggregatedTargetTags.AddTag(TAG_Data_Explosion_EnemyImpact);
 			P.EffectContext=FGameplayEffectContextHandle(new FGameplayEffectContext());P.EffectContext.AddHitResult(Hit);
 			Cue->OnExecute_Implementation(Shot,P);
+   int EnemyVoices=0;
+   for(TObjectIterator<UAudioComponent> It;It;++It)
+    if(It->GetWorld()==W&&It->Sound==Cue->EnemyExplosionSound&&It->IsPlaying())++EnemyVoices;
+   Test->TestEqual(TEXT("Actual Enemy explosion Sound Cue is playing once"),EnemyVoices,1);
 			int Count=0;for(TObjectIterator<UNiagaraComponent> It;It;++It)
 				if(It->GetWorld()==W&&It->GetAsset()==Cue->ExplosionEffect)++Count;
-			Test->TestEqual(TEXT("Enemy explosion never falls back to the environment ground decal"),Count,0);
+			Test->TestEqual(TEXT("Enemy explicitly selected ground system spawns once"),Count,1);
+   for(TObjectIterator<UNiagaraComponent> It;It;++It)
+    if(It->GetWorld()==W&&It->GetAsset()==Cue->EnemyExplosionEffect)
+     Test->TestTrue(TEXT("Enemy ground effect uses projected point not body surface"),It->GetComponentLocation().Equals(Hit.ImpactPoint+FVector::UpVector,1.f));
 			Start=W->GetTimeSeconds();Stage=1;return false;
 		}
 		if(W->GetTimeSeconds()-Start<.4f)return false;
 		Test->TestFalse(TEXT("Detonation consumes projectile exactly once"),Bullet.IsValid());
 		Test->TestEqual(TEXT("Visible enemy takes one 20 damage despite multiple overlapping components"),Enemies[0]->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),80.f);
 		Test->TestEqual(TEXT("Wall blocks explosion damage"),Enemies[1]->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),100.f);
+  FVector VisibleReaction,BlockedReaction;FName ReactionBone;
+  Enemies[0]->FindComponentByClass<UEnemyHitReactionComponent>()->Sample(VisibleReaction,ReactionBone);
+  Enemies[1]->FindComponentByClass<UEnemyHitReactionComponent>()->Sample(BlockedReaction,ReactionBone);
+  Test->TestTrue(TEXT("Real explosion triggers reaction on visible damaged Enemy"),!VisibleReaction.IsNearlyZero());
+  Test->TestTrue(TEXT("Wall-blocked Enemy receives no reaction"),BlockedReaction.IsNearlyZero());
 		Test->TestEqual(TEXT("Outside-radius enemy unaffected"),Enemies[2]->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),100.f);
 		Test->TestEqual(TEXT("Player inside radius unaffected"),PlayerASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),PlayerHealth);
 		for(auto E:Enemies)if(E.IsValid())E->Destroy();

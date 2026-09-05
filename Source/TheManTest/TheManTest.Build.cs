@@ -10,7 +10,7 @@ public class TheManTest : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "GameplayAbilities", "GameplayTags", "GameplayTasks", "BBBAimIK", "Niagara", "AIModule", "NavigationSystem", "UMG", "AnimGraphRuntime", "CinematicCamera", "Locomotor", "ControlRig", });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "GeometryCollectionEngine", "Chaos", "PhysicsCore", "FieldSystemEngine" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "GeometryCollectionEngine", "Chaos", "PhysicsCore", "FieldSystemEngine", "RigVM" });
 		if (Target.bBuildEditor)
 		{
 			PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "AssetTools", "AnimGraph", "BlueprintGraph", "ControlRigDeveloper", "AnimationBlueprintLibrary", "Kismet", "Slate", "SlateCore", "PlanarCut", "Voronoi", "AudioMixer", "RHI" });

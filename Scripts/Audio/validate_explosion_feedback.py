@@ -15,13 +15,15 @@ bullet,cue=[unreal.get_default_object(bp.generated_class()) for bp in assets]
 for name,value in [('explosion_delay',2),('damage',5),('explosion_damage',20),('explosion_damage_radius',400)]:
     assert bullet.get_editor_property(name)==value,(name,bullet.get_editor_property(name))
 settings=bullet.get_editor_property('bullet_time')
-for name,value in [('time_scale',.2),('slow_in_duration',.05),('hold_duration',.08),('recovery_duration',.25)]:
-    assert abs(settings.get_editor_property(name)-value)<.0001
+assert 0<settings.get_editor_property('time_scale')<=1
+for name in ['slow_in_duration','recovery_duration']:
+    assert settings.get_editor_property(name)>0
+assert settings.get_editor_property('hold_duration')>=0
 assert cue.get_editor_property('volume_multiplier')==3
-assert cue.get_editor_property('camera_shake_scale')==4  # Preserve the user's latest saved override.
+assert cue.get_editor_property('camera_shake_scale')>=0  # User authored, never reset here.
 assert abs(cue.get_editor_property('shake_duration')-.75)<.0001
-assert cue.get_editor_property('enemy_explosion_sound') is None
-assert cue.get_editor_property('enemy_explosion_effect') is None
+assert cue.get_editor_property('enemy_explosion_sound') is not None
+assert cue.get_editor_property('enemy_explosion_effect') is not None
 assert cue.get_editor_property('explosion_sound').get_name()=='SCue_ExplosionGun_Detonation'
 assert cue.get_editor_property('explosion_effect') is not None
 registry=unreal.AssetRegistryHelpers.get_asset_registry()

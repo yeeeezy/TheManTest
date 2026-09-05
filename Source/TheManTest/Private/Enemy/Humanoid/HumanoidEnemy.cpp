@@ -1,4 +1,5 @@
 #include "Enemy/Humanoid/HumanoidEnemy.h"
+#include "Enemy/Humanoid/Animation/EnemyHitReactionComponent.h"
 #include "Enemy/Humanoid/HumanoidEnemyAnimInstance.h"
 #include "Enemy/Humanoid/HumanoidAIController.h"
 #include "Actors/PatrolPoint.h"
@@ -11,6 +12,7 @@
 
 AHumanoidEnemy::AHumanoidEnemy()
 {
+ CreateDefaultSubobject<UEnemyHitReactionComponent>(TEXT("ExplosionHitReaction"));
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	AIControllerClass = AHumanoidAIController::StaticClass();
 

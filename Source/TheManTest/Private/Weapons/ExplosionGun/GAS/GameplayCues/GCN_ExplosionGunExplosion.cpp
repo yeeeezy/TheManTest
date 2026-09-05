@@ -27,10 +27,11 @@ bool UGCN_ExplosionGunExplosion::OnExecute_Implementation(AActor* Target,const F
  const FHitResult* Ground=P.EffectContext.GetHitResult();
  const bool bEnemy=P.AggregatedTargetTags.HasTagExact(TAG_Data_Explosion_EnemyImpact);
  UNiagaraSystem* SelectedEffect=bEnemy?EnemyExplosionEffect.Get():ExplosionEffect.Get();
- const FVector Normal=bEnemy?FVector(P.Normal).GetSafeNormal(UE_SMALL_NUMBER,FVector::UpVector):Ground?Ground->ImpactNormal.GetSafeNormal(UE_SMALL_NUMBER,FVector::UpVector):FVector::UpVector;
- if(SelectedEffect && (bEnemy || Ground))
+ const bool bUseGround=!bEnemy||bEnemyEffectOnGround;
+ const FVector Normal=!bUseGround?FVector(P.Normal).GetSafeNormal(UE_SMALL_NUMBER,FVector::UpVector):Ground?Ground->ImpactNormal.GetSafeNormal(UE_SMALL_NUMBER,FVector::UpVector):FVector::UpVector;
+ if(SelectedEffect && (!bUseGround || Ground))
  {
-  const FVector Point=bEnemy?FVector(P.Location):Ground->ImpactPoint+Normal;
+  const FVector Point=!bUseGround?FVector(P.Location):Ground->ImpactPoint+Normal;
   if(UNiagaraComponent* Effect=UNiagaraFunctionLibrary::SpawnSystemAtLocation(Target,SelectedEffect,Point,FRotationMatrix::MakeFromZ(Normal).Rotator(),FVector(bEnemy?EnemyEffectScale:EffectScale)))
   {
    // The source ground effect has a long tail. Bound its lifetime independently of the projectile.
@@ -39,7 +40,7 @@ bool UGCN_ExplosionGunExplosion::OnExecute_Implementation(AActor* Target,const F
   }
  }
  USoundBase* SelectedSound=GetExplosionSound(bEnemy);
- if(SelectedSound)UGameplayStatics::PlaySoundAtLocation(Target,SelectedSound,P.Location,bEnemy?EnemyVolumeMultiplier:VolumeMultiplier);
+ if(SelectedSound)UGameplayStatics::SpawnSoundAtLocation(Target,SelectedSound,P.Location,FRotator::ZeroRotator,bEnemy?EnemyVolumeMultiplier:VolumeMultiplier);
  if(CameraShakeClass)
  {
   for(FConstPlayerControllerIterator It=Target->GetWorld()->GetPlayerControllerIterator();It;++It)
