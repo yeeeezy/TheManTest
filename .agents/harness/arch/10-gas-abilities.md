@@ -4,7 +4,7 @@
 
 - 零伤害弹命中：ABulletBase仅在Damage==0的有效非穿透首次Hit显式调用Enemy.ExecuteHitReactionCue(Context,0,true)。新可选bAllowZeroDamageHit默认false，原Health回调仍只接受正伤害；显式零伤害使用即时Invoke，不修改Damage，不重复播放。电击弹Damage保持0也可播放默认血花。
 
-- 爆炸Cue音量倍率3.0；`UExplosionCameraShake` / `UExplosionCameraShakePattern`（Weapons/ExplosionGun/Effects）提供0.45秒方位冲击。Cue按爆炸点→本地相机方向传入UserDefined播放空间，200cm内全强、1800cm外不震、中间平方衰减；CameraShakeClass/Scale/InnerRadius/OuterRadius在Cue配置。与开火震屏和ControllerRotation独立。
+- 爆炸Cue使用用户提供的Alien Cannon音频 `Weapons/ExplosionGun/Audio/S_ExplosionGun_AlienDetonation`，近满幅素材保持VolumeMultiplier=1。`UExplosionCameraShake` / `UExplosionCameraShakePattern`（Weapons/ExplosionGun/Effects）提供0.45秒方位冲击，CameraShakeScale=3。Cue按爆炸点→本地相机方向传入UserDefined播放空间，200cm内全强、1800cm外不震、中间平方衰减；与开火震屏和ControllerRotation独立。默认Enemy Hit的ImpactSound为 `Enemy/_Shared/Audio/S_Enemy_FleshHit`，VolumeMultiplier=1；旧合成爆炸音频已无引用删除。
 
 - `GameplayCue.Weapon.ExplosionGun.Explosion` → `/Game/Weapons/ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion` → `UGCN_ExplosionGunExplosion`。由附着弹Timer触发，不合并原ImpactCue；ExplosionEffect/ExplosionSound/EffectScale/VolumeMultiplier独立配置，Niagara按+Z对齐法线。EffectLifeSpan默认8秒，通过弱绑定Timer兜底清理源效果的长尾焰，防止连续射击累积。无伤害GE。
 - 默认 `GameplayCue.Character.Enemy.Hit` → `UGCN_EnemyHit` 现在配置 `BloodSprayMaterial/BloodStainMaterial/BloodScale/BloodStainLifeSpan`，默认12秒血迹，0.55秒喷溅。仍由真实Health扣减后的敌人ASC调用，不在某把枪内添加敌人分支。

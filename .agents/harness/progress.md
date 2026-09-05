@@ -7,10 +7,10 @@
 
 ## 当前配置
 
-- 爆炸音量倍率现为3.0；Explosion Cue新增0.45秒方位震屏，200cm内全强，1800cm外不震。配置CameraShakeClass/CameraShakeScale/ShakeInnerRadius/ShakeOuterRadius。
+- 爆炸现用用户指定Alien Cannon音频（S_ExplosionGun_AlienDetonation），源峰值-0.5dBFS，Cue音量倍率1；CameraShakeScale提高到3，保留0.45秒方位震屏、200cm内全强/1800cm外不震。敌人Hit音效S_Enemy_FleshHit，倍率1。
 
 - 爆炸弹 `BP_ExplosionGunBullet` 继承 `AExplosionGunBullet`，`Bullet|Explosion / ExplosionDelay=2s`，可调。原首次5点伤害及PhysicalImpact不变；附着后停止碰撞/移动，倒计时结束仅播放爆炸，不追加伤害。
-- 爆炸表现与音效配置于 `ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion`；系统 `Effects/Explosion/Systems/NS_ExplosionGun_Detonation` 来自TMIIR N_ExplosionGround_006；独立Audio/S_ExplosionGun_Detonation。EffectLifeSpan默认8秒兜底清理长尾焰（源效果在14秒仍active，已加weak Timer避免积累）。
+- 爆炸表现与音效配置于 `ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion`；系统 `Effects/Explosion/Systems/NS_ExplosionGun_Detonation` 来自TMIIR N_ExplosionGround_006；独立Audio/S_ExplosionGun_AlienDetonation。EffectLifeSpan默认8秒兜底清理长尾焰。旧合成S_ExplosionGun_Detonation和WAV无引用后删除，可从4a40cd8恢复。
 - 敌人默认 `GC_Character_Enemy_Hit` 配置 BloodSprayMaterial / BloodStainMaterial / BloodScale / BloodStainLifeSpan；血迹默认12秒并淡出，飙血0.55秒后销毁。资产在Enemy/_Shared/Effects/Hit，不改变各枪原命中Cue。
 
 - ElectricGun：Ballistics Rifle 02，LaserMuzzle/LaserImpact；专属 M_ElectricGun_Surface + MI_ElectricGun，深色金属、青蓝能量嵌条。
@@ -24,6 +24,8 @@
 - VFXTestMap 路径 /Game/Maps/VFXTest/VFXTestMap；静止Phantom、敌人血条及临时关闭视角后坐配置保留。
 
 ## 最新验证
+
+- 最新UserAudioShakeFinal.log：ExplosionDirectionalShake、StickyExplosionAndBlood、ThreeWeaponBaseline 3/3 Success/exit0；指定爆炸/肉体音频引用与震屏强度3断言通过，零伤害/附着弹回归保持。ValidateUserAudio.log冷验证0错误0警告，Development Editor Win64编译成功。
 
 - 最新ZeroDamageEnemyHit.log：D3D PIE三项StickyExplosionAndBlood、ThreeWeaponBaseline、ExplosionDirectionalShake 3/3 Success。电击弹零伤害有效Hit出一次血花，重复/穿透不出额外血花，Health不变，正伤害血花不重复。Development Editor Win64编译通过。
 
@@ -43,6 +45,8 @@
 - 删除4项描边资产，可从本地检查点3be752e恢复；RepairGun11项非语义重存已撤回，不误改原材质。
 
 ## 当前待办 / 会话交接
+
+- 最新：用户指定的两段音频已接入，震屏强度3；编译与冷加载引用检查通过，D3D回归日志UserAudioShakeFinal.log。检查点4a40cd8保存前轮结果；当前未最终提交，下载源文件未改动。
 
 - 本轮用户确认爆炸三倍音量+按方位震屏，已实现并编译，验证见ExplosionDirectionalShake.log。检查点84aa9cd保存前轮结果，本轮未最终提交。
 - 用户已确认零伤害也触发血花：ABulletBase有效零伤害首次Hit显式通知敌人Cue，Damage仍为0。正伤害走原Health回调，穿透/重复Hit不触发额外Cue。最新检查点dca1224保存前轮爆炸音量/震屏，当前代码未最终提交；验证日志ZeroDamageEnemyHit.log。

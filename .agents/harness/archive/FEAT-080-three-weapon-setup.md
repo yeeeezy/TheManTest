@@ -7,6 +7,16 @@
 - 两把新枪只替换模型、枪口 VFX、命中 VFX 与贴花；玩法、动画、音频、弹药、GAS、后坐力和子弹行为保持与 RepairGun 一致。
 - 外部来源仅迁移最终模型和 VFX 依赖，不迁移源项目角色、武器蓝图或动画。
 
+## 2026-09-04 指定爆炸/肉体命中音频与震屏增强
+
+- 用户指定Downloads/512565-Alien-Game-Explosion-Robot-Cannon-4-Big-Hard-Impact-Glitchy.wav用于爆炸、166553-Bullet-Hit-Body-Flesh_05.wav用于敌人Hit，并确认增强震屏及删除无用资产。检查点 `4a40cd8` 保存前轮零伤害Cue修复。
+- 源音频审计：爆炸6.960秒/96kHz/24bit/stereo，峰值-0.50dBFS、RMS-16.79dBFS；肉体0.565秒/48kHz/24bit/mono，峰值-1.34dBFS、RMS-17.53dBFS。保留原WAV样本，不套旧合成音频3倍增益；两Cue音量倍率1，避免单声源超满幅。
+- 爆炸音频新路径 `Weapons/ExplosionGun/Audio/S_ExplosionGun_AlienDetonation`，敌人受击 `Enemy/_Shared/Audio/S_Enemy_FleshHit`；源码WAV跟随各自资产放入项目，Downloads原文件不动。分别配置Explosion Cue.ExplosionSound和默认EnemyHit.ImpactSound。所有武器原Impact/Fire音频保留。
+- CameraShakeScale从1提高到3（正式Cue及原生默认），200/1800cm距离范围与0.45秒时长不变，仍保持方位偏向和距离平方衰减。
+- 通过完整D3D编辑器Python导入/编译保存，避免无音频commandlet解码问题。旧S_ExplosionGun_Detonation经硬引用确认无使用方后用EditorAssetLibrary删除，旧合成WAV同步删除，两项可从4a40cd8恢复；未删除其他在用VFX/音频。
+- Development Editor Win64编译成功；ValidateUserAudio.log冷回读音频路径、时长、两Cue倍率、震屏强度、旧音频不存在及无Redirector，0错误0警告。新素材引用/3倍震屏断言与零伤害/爆炸回归见UserAudioShakeFinal.log。
+- 最终UserAudioShakeFinal.log：ExplosionDirectionalShake、StickyExplosionAndBlood、ThreeWeaponBaseline全部3/3 Success/exit0，D3D运行无音频解码错误。核验两段指定声音资产与3倍震屏配置；原零伤害血花、正伤害、附着倒计时和自动清理仍通过。
+
 ## 2026-09-04 零伤害有效命中触发敌人 Cue
 
 - 用户明确确认零伤害命中也出血花，不改变Damage。写入前检查点 `dca1224` 保存前轮3倍爆炸音量/方位震屏。
