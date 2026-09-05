@@ -203,10 +203,6 @@ public:
 	FORCEINLINE UPointLightComponent* GetMuzzleFlashLight() const { return MuzzleFlashLight; }
 
 private:
-	// 可选的静态枪体叠加壳（例如 VFXPack Rifle Outline）；附着主 StaticMesh，不参与碰撞/弹道。
-	UPROPERTY(VisibleAnywhere, Category = "Weapon|Visual")
-	TObjectPtr<UStaticMeshComponent> StaticMeshOverlay;
-
 	UPROPERTY(VisibleAnywhere, Category = "Weapon|VFX|Muzzle Light")
 	TObjectPtr<UPointLightComponent> MuzzleFlashLight;
 

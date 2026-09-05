@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-04-shared-equipment-equip-vfx",
+    "last_updated":  "2026-09-04-weapon-surface-scale-fix",
     "active_feature":  "FEAT-080",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -471,13 +471,14 @@
                          "description":  "为 RepairGun 正式接通现有第一人称开火蒙太奇；以 RepairGun 为完整配置基线创建电击枪和爆炸枪，两把新枪仅替换各自模型、枪口与命中特效。源模型和 VFX 来自外部 VFXPack 项目；不迁移源角色、武器蓝图或动画。即使表现依赖内容相同，也按武器所有权复制到各自语义目录并重命名，使三把枪后续可以独立调整。",
                          "archive_file":  "archive/FEAT-080-three-weapon-setup.md",
                          "created":  "2026-09-03",
-                         "updated":  "2026-09-04-shared-equipment-equip-vfx",
-                         "latest_verification_evidence":  "2026-09-04：MuzzleEffectScale 原生/爆炸枪默认 XYZ=2；新增 EquipmentEquipEffectComponent 通用显现、材质恢复和取消，首装/切换统一入口，bPlayEquipAnimation 支持独立可选动画。共享材质/函数/噪声提升到 Weapons/_Shared/Equipment/Effects/Equip，维修枪骨骼材质接入共享函数，电击枪恢复正确溶解噪声；删除4项无引用旧资产并清理空目录。Development Editor构建和冷启动蓝图/依赖检查通过，最终D3D12 SharedEquipReveal、EquipDissolveEvidence、ThreeWeaponBaseline、ThreeWeaponPIESwitch 4/4 Success，ExplosionVisualCapture本轮也通过。",
+                         "updated":  "2026-09-04-weapon-surface-scale-fix",
+                         "latest_verification_evidence":  "2026-09-04：修复描边壳被备用材质覆盖导致的灰壳，删除通用灰色fallback和StaticMeshOverlay；三枪4项描边资产清理。两枪新增owner-local科幻PBR表面，共享显现保留原材质；PhysicalMuzzle9发射器接User.MuzzleScale。Development Editor构建、ValidateWeaponSurfacesFinal冷验证成功0警告；WeaponSurfacesD3DFinal五项渲染回归5/5 Success；1倍与2倍实际开火截图验证尺寸改变，BP默认保持2。结果未最终提交，观感待用户审核。",
                          "done_criteria":  [
-                                               "所有 EquipmentBase 默认使用共享切换显现 VFX，首装与切装入口统一；材质结束/取消后恢复，各装备可独立选择 EquipMontage 和动画层",
+                                               "所有 EquipmentBase 继承共享显现组件；自定义材质接共享函数后全程保留自身外观，不使用灰色备用材质；首装/切装入口统一，各装备独立选择动画",
+                                         "三枪不保留描边组件/模型/材质；两把新枪具有独立科幻PBR表面，爆炸枪与电击枪的枪口粒子均实际响应MuzzleEffectScale",
                                                "RepairGun、电击枪和爆炸枪都使用现有 MaintenanceWorker 第一人称持枪动画体系，并分别引用所属武器目录内的独立开火序列、开火蒙太奇、装备蒙太奇和 AnimBP 副本",
                                                "电击枪使用原爆炸枪的 SM_Weapon_Ballistics_Rifle_02 几何体；枪口使用 NE_VFX_Muzzle_Laser_Burst_2，所有目标统一使用 NE_VFX_Projectile_Impact_Laser_2，并保留仅环境生成的紫色贴花和 1.1 尺寸倍率",
-                                               "爆炸枪使用 SM_Weapon_Ballistics_Rifle_01 几何体及描边、NE_VFX_Muzzle_Physical_Burst_1、NE_VFX_Projectile_Impact_Physical_1 和对应橙黄色短时点光；所有目标统一使用 Physical Impact 1，并保留仅环境生成的黄色贴花和 2.0 尺寸倍率",
+                                               "爆炸枪使用 SM_Weapon_Ballistics_Rifle_01 几何体、NE_VFX_Muzzle_Physical_Burst_1、NE_VFX_Projectile_Impact_Physical_1 和对应橙黄色短时点光；所有目标统一使用 Physical Impact 1，并保留仅环境生成的黄色贴花和 2.0 尺寸倍率",
                                                "两把新枪除模型与 VFX 外完整复制 RepairGun 的射击、弹药、音频、GAS、后坐力和装备配置；子弹使用 ABulletBase 通用行为及各自的 BlenderMCP 独立弹体、材质和纹理，不继承 RepairGun 专属泡泡行为",
                                                "武器专属资产分别位于 /Game/Weapons/ElectricGun 与 /Game/Weapons/ExplosionGun 并使用语义化重命名；不保留供应商正式目录或源项目蓝图/动画",
                                                "BP_MaintenanceWorker 初始装备列表包含三把枪，可稳定切换且技能不重复授予",

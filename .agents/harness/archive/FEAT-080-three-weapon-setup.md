@@ -7,6 +7,20 @@
 - 两把新枪只替换模型、枪口 VFX、命中 VFX 与贴花；玩法、动画、音频、弹药、GAS、后坐力和子弹行为保持与 RepairGun 一致。
 - 外部来源仅迁移最终模型和 VFX 依赖，不迁移源项目角色、武器蓝图或动画。
 
+## 2026-09-04 枪体材质、灰壳与爆炸枪尺寸修复
+
+- 用户确认实施：修复切换时灰模、参考 RepairGun 做两枪科幻材质、删除三枪描边及无引用资产、按 ElectricGun 接通 ExplosionGun 的真实枪口尺寸倍率。写入前检查点 `3be752e` 保存前轮共享装备 VFX 工作。
+- 排查发现 Outline 材质无 Amount (S)，旧共享组件会把描边壳替换为通用不透明显现表面；移除该备用替换，MID 只继承原材质，未接溶解契约的材质保持原样。三把当前武器表面均已接入共享溶解函数；新装备仍自动继承组件，但自定义材质需接同一函数才能参与溶解。
+- 删除 AFirearm.StaticMeshOverlay 原生组件；三 BP 清空旧引用并重新编译保存，按外部引用检查删除三把枪 Outline mesh 与 M_EquipmentOutline（4项），可从检查点恢复。
+- 新建各枪专属 M_ElectricGun_Surface / M_ExplosionGun_Surface：参考 RepairGun 的 PBR 分层但不套用不匹配 UV 的维修枪贴图。使用枪体局部坐标生成面板接缝、分区金属、能量嵌条、微法线和粗糙度变化，配合原有 owner-local SurfaceDetail 纹理。电击青蓝，爆炸黑化金属/黄铜/橙；保留共享显现函数，不使用整枪 Fresnel 发光。
+- 原共享 M_EquipmentEquipSurface 不再有两个使用方，迁回 RepairGun/Materials/M_RepairGun_Rifle，共享目录只保留显现函数和噪声。两枪独立材质实例改为各自表面主材质。
+- 通过一次性 Editor migration 按 ElectricGun 已验证的 Spawn ScaleSpriteSize 模块模式，为 PhysicalMuzzle 全部9发射器追加 Uniform Scale Factor = User.MuzzleScale；默认参数1，枪体BP倍率2。迁移代码及临时 NiagaraEditor 构建依赖已移除，并重新冷编译成功。
+- ValidateWeaponSurfacesFinal.log：三枪可见表面、无描边组件、材质图输出、纹理参数、蓝图编译、Redirector 校验成功0警告。检查过程中对 RepairGun 11 个材质产生的非语义重存已精确恢复检查点版本，不改变维修枪自身材质。
+- Development Editor/Win64 最终构建成功；WeaponSurfacesD3DFinal.log 五项 SharedEquipReveal、EquipDissolveEvidence、ExplosionVisualCapture、ThreeWeaponBaseline、ThreeWeaponPIESwitch 全部 Success/exit0。新增 MID.Parent 与原表面精确一致断言、兼容普通装备/不兼容槽保留原材质断言。
+- 首轮 ThreeWeaponPIESwitch 因 TestMap 加载卡顿导致固定 wall-clock 等待早于游戏时间显现完成，切枪输入被正确锁定拒绝；测试已改为最多15秒等待实际可见且显现结束后发输入，不改玩法锁。最终通过。
+- ExplosionScale1D3D.log 的1倍实际射击与显现证据均 Success；1/2倍对照截图 TMT_ExplosionScale_1.png / _2.png 已查看，2倍闪光、Sprite与折射范围明显增大。参数覆盖仅运行时测试对象，不改 BP 的2倍默认。
+- 已查看 TMT_WeaponSurface_1.png / _2.png（电击/爆炸）和 TMT_EquipReveal_2.png：金属分区、青蓝/橙能量嵌条可见，显现时保留同一表面，没有灰壳。既有 M_UE4Man_Body 缺图材质警告仍与本轮无关。结果未最终提交，待用户审核观感。
+
 ## 2026-09-04 通用装备显现与默认枪口倍率
 
 - 用户要求所有装备共用爆炸枪同款切换 VFX，但可有各自动画，并将默认 MuzzleEffectScale XYZ 改为 2。已将 AFirearm 原生默认改为 `(2,2,2)`，BP_ExplosionGun 同步覆盖；保留 ElectricGun 当前 2 倍与 RepairGun 专属 0.85 倍。

@@ -131,6 +131,11 @@ bool FThreeWeaponBaselineTest::RunTest(const FString& Parameters)
 			Weapon->GetMuzzleFlashLight()->bAffectTranslucentLighting);
 		const bool bElectricGun = FCString::Strcmp(Expected.Name, TEXT("ElectricGun")) == 0;
 		const bool bExpectedMuzzleLight = bElectricGun || FCString::Strcmp(Expected.Name, TEXT("ExplosionGun")) == 0;
+		if (bExpectedMuzzleLight)
+		{
+			TestTrue(TEXT("Both new muzzle systems expose the particle size multiplier"), Weapon->MuzzleEffect->GetExposedParameters().IndexOf(
+				FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("User.MuzzleScale"))) != INDEX_NONE);
+		}
 		TestEqual(FString::Printf(TEXT("%s muzzle flash light enablement is correct"), Expected.Name),
 			Weapon->bEnableMuzzleFlashLight, bExpectedMuzzleLight);
 		if (bElectricGun)
@@ -295,7 +300,15 @@ bool FValidateElectricMuzzleLightFadedCommand::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSwitchToNextWeaponCommand, FAutomationTestBase*, Test);
+class FSwitchToNextWeaponCommand final : public IAutomationLatentCommand
+{
+public:
+	explicit FSwitchToNextWeaponCommand(FAutomationTestBase* InTest) : Test(InTest) {}
+	bool Update() override;
+private:
+	FAutomationTestBase* Test;
+	double WaitStarted = 0.0;
+};
 
 bool FSwitchToNextWeaponCommand::Update()
 {
@@ -306,6 +319,16 @@ bool FSwitchToNextWeaponCommand::Update()
 	Test->TestNotNull(TEXT("Equipment manager exists before switching"), Manager);
 	if (Manager)
 	{
+		if (WaitStarted == 0.0) { WaitStarted = FPlatformTime::Seconds(); }
+		// Latent wall-clock waits may elapse during shader/map stalls while the
+		// game's reveal has not advanced. Wait for the actual presentation state.
+		if (AEquipmentBase* Current = Manager->GetCurrentEquipment();
+			Current && (Current->IsHidden() || Current->IsEquipEffectPlaying()))
+		{
+			if (FPlatformTime::Seconds() - WaitStarted < 15.0) { return false; }
+			Test->AddError(TEXT("Equipment reveal did not finish within 15 seconds"));
+			return true;
+		}
 		Manager->SwitchEquipment(1);
 	}
 	return true;
@@ -462,6 +485,11 @@ bool FExplosionVisualStepCommand::Update()
 	}
 	if (Step == 0)
 	{
+		float Scale = Weapon->GetMuzzleEffectSizeScale();
+		if (FParse::Value(FCommandLine::Get(), TEXT("ExplosionCaptureScale="), Scale))
+		{
+			Weapon->MuzzleEffectScale = FVector(Scale);
+		}
 		const int32 AmmoBefore = Weapon->GetCurrentAmmo();
 		Player->PrimaryFire();
 		Test->TestEqual(TEXT("ExplosionGun actual shot consumes ammunition"), Weapon->GetCurrentAmmo(), AmmoBefore - 1);
@@ -480,6 +508,8 @@ bool FExplosionVisualStepCommand::Update()
 		FImageUtils::PNGCompressImageArray(Size.X, Size.Y, Pixels, Png);
 		Test->TestTrue(TEXT("ExplosionGun rendered screenshot saved"), FFileHelper::SaveArrayToFile(Png,
 			*FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("Screenshots/WindowsEditor/TMT_ExplosionGun_Physical1.png"))));
+		Test->TestTrue(TEXT("ExplosionGun scale comparison saved"), FFileHelper::SaveArrayToFile(Png,
+			*FPaths::Combine(FPaths::ProjectSavedDir(), FString::Printf(TEXT("Screenshots/WindowsEditor/TMT_ExplosionScale_%.0f.png"), Weapon->GetMuzzleEffectSizeScale()))));
 	}
 	else
 	{

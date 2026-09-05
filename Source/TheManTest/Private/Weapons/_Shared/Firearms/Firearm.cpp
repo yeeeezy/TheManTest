@@ -17,12 +17,6 @@
 
 AFirearm::AFirearm()
 {
-	StaticMeshOverlay = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshOverlay"));
-	StaticMeshOverlay->SetupAttachment(GetStaticMesh());
-	StaticMeshOverlay->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	StaticMeshOverlay->SetGenerateOverlapEvents(false);
-	StaticMeshOverlay->SetCastShadow(false);
-
 	MuzzleFlashLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("MuzzleFlashLight"));
 	MuzzleFlashLight->SetupAttachment(RootComponent);
 	MuzzleFlashLight->SetMobility(EComponentMobility::Movable);

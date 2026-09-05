@@ -2,36 +2,33 @@
 
 ## Active Feature
 
-- FEAT-080：RepairGun、电击枪与爆炸枪统一动画和独立 VFX，状态 in_progress。
-- 当前任务已完成：爆炸枪 Physical 1 资产替换，以及所有装备共用切换显现 VFX、独立可选动画和默认枪口倍率 2。
-- 详细历史：archive/FEAT-080-three-weapon-setup.md。
+- FEAT-080：三枪独立表现，in_progress；本轮枪体材质、灰壳、描边清理与爆炸枪尺寸修复完成。
+- 历史与验证详情：archive/FEAT-080-three-weapon-setup.md。
 
 ## 当前配置
 
-- ExplosionGun：Ballistics Rifle 01、Physical Burst 1 / Impact 1、黄色环境贴花 2.0；源橙黄色点光强度 300、基础半径 87.370407、SourceRadius 60、0.1 秒淡出。
-- MuzzleEffectScale：原生默认 XYZ=2，ExplosionGun=2，ElectricGun=2，RepairGun 专属 0.85。灯光范围仍随倍率变化。
-- 切装备 VFX：共享 UEquipmentEquipEffectComponent，0.5 秒溶解显现；首装/切换入口统一在 EquipmentManager。所有 EquipmentBase 自动继承；效果结束或取消恢复原材质。
-- 共享材质/函数/噪声位于 /Game/Weapons/_Shared/Equipment/Effects/Equip；三枪保留各自表面材质实例和动画。
-- bPlayEquipAnimation 默认 false，可为任意装备开启并指定自己的 EquipMontage；EquipmentAnimLayerClass 保持独立。
-- VFXTestMap 位于 /Game/Maps/VFXTest/VFXTestMap，Phantom 为静止命中目标，EnemyBase 血条与无视角后坐测试配置保留。
+- ElectricGun：Ballistics Rifle 02，LaserMuzzle/LaserImpact；专属 M_ElectricGun_Surface + MI_ElectricGun，深色金属、青蓝能量嵌条。
+- ExplosionGun：Ballistics Rifle 01，PhysicalMuzzle/PhysicalImpact；专属 M_ExplosionGun_Surface + MI_ExplosionGun_Rifle，黑化金属、黄铜分区、橙色能量嵌条。
+- MuzzleEffectScale 原生默认与两把新枪均 XYZ=2，RepairGun 保留0.85。ElectricGun16个/ExplosionGun9个发射器的 Spawn ScaleSpriteSize 都读取 User.MuzzleScale；点光范围也跟随倍率。
+- 三枪描边壳、共享描边材质已删除；AFirearm.StaticMeshOverlay 已移除。
+- 切装备由 EquipmentManager.QueueEquipPresentation 统一调用 EquipmentBase.PlayEquipEffect → EquipmentEquipEffectComponent；0.5秒，MID只继承原材质，不再临时换成灰色备用表面。
+- 共享目录 Weapons/_Shared/Equipment/Effects/Equip 只保留溶解函数和噪声；新自定义材质要接该函数及 Amount (S) 才参与显现，未接的槽保持原材质。
+- 原共享表面仅剩 RepairGun 使用，迁回 RepairGun/Materials/M_RepairGun_Rifle；维修枪实际骨骼材质保持原样。
+- 各装备 bPlayEquipAnimation 默认false，可独立选择 EquipMontage / EquipmentAnimLayerClass。
+- VFXTestMap 路径 /Game/Maps/VFXTest/VFXTestMap；静止Phantom、敌人血条及临时关闭视角后坐配置保留。
 
-## 验证和清理
+## 最新验证
 
-- Development Editor / Win64 构建成功；相关蓝图编译保存和共享依赖冷启动检查通过。
-- D3D12 SharedEquipReveal、EquipDissolveEvidence、ThreeWeaponBaseline、ThreeWeaponPIESwitch 最终 4/4 Success；本轮 ExplosionVisualCapture 也已通过。
-- 三枪显现截图：Saved/Screenshots/WindowsEditor/TMT_EquipReveal_0.png、_1.png、_2.png。
-- 本轮删除 4 项无引用旧父材质/溶解函数并清理空目录；原文件可从本地检查点 2dff0c6 恢复。
+- Development Editor / Win64 构建成功；ValidateWeaponSurfacesFinal.log 冷回读、BP编译、材质/引用检查成功0警告。
+- WeaponSurfacesD3DFinal.log：SharedEquipReveal、EquipDissolveEvidence、ExplosionVisualCapture、ThreeWeaponBaseline、ThreeWeaponPIESwitch 5/5 Success。
+- ExplosionScale1D3D.log：1倍开火与显现证据2/2 Success；BP默认仍2。1/2倍对照已查看，粒子尺寸实际改变。
+- 截图 Saved/Screenshots/WindowsEditor/TMT_WeaponSurface_1.png、_2.png；TMT_EquipReveal_0~2.png；TMT_ExplosionScale_1.png、_2.png。
+- 删除4项描边资产，可从本地检查点3be752e恢复；RepairGun11项非语义重存已撤回，不误改原材质。
 
-## 当前待办
+## 当前待办 / 会话交接
 
-- 在 VFXTestMap 继续爆炸弹玩法逻辑；三枪主观视觉可直接在编辑器审核。
-- FEAT-080 尚未整体归档；结果不自动提交，等待明确要求“更新 Git”。
-- FEAT-079 暂缓实际业务 Actor 前台验收，既有核心实现和 5/5 自动化保持有效。
-
-## 会话交接
-
-- 写入前检查点 2dff0c6 保存前轮 ExplosionGun Physical 1 替换（前轮已删除43项旧资产）。
-- 维修枪 VFX 无效根因是可见骨骼材质无 Amount (S)，电击枪是 Noise 被 SurfaceDetail 覆盖；均已接上共享函数/噪声并实际截帧确认。
-- 通用 VFX 代码位于 Weapons/_Shared/EquipmentBase/Effects；FPSCharacterBase.PlayInitialEquipEffect 已删除，首装/切换统一入口在 EquipmentManager.QueueEquipPresentation。
-- 未来自定义材质未接溶解函数时，组件临时使用共享备用表面并在结束后恢复；需要显现期间保留原纹理时接共享函数。
-- 旧 EquipDissolveEvidence 已改为 PIE 准备后明确启动测量播放，避免启动/着色器工作错过首帧；最终回归通过。
+- 用户可在测试地图审核两枪材质及枪口倍率；后续继续爆炸弹玩法逻辑。FEAT-080未整体归档。
+- 本轮结果不自动提交，等待用户明确要求“更新 Git”；未push。
+- 3be752e封存前轮共享装备显现改动。一次性Niagara迁移代码及NiagaraEditor临时依赖已清除，最终源码不含迁移入口。
+- 切枪回归测试已改为等待实际显现结束（最多15秒），避免加载卡顿期间固定wall-clock等待过早发送切枪输入；运行时切换锁没有改动。
+- 既有 M_UE4Man_Body 缺失纹理和AimIK警告仍存在，不属本轮枪体材质。

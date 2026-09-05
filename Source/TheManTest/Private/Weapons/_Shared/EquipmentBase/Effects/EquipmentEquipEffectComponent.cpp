@@ -3,7 +3,6 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "UObject/ConstructorHelpers.h"
 
 namespace
 {
@@ -21,9 +20,6 @@ UEquipmentEquipEffectComponent::UEquipmentEquipEffectComponent()
 {
     PrimaryComponentTick.bCanEverTick = true;
     PrimaryComponentTick.bStartWithTickEnabled = false;
-    static ConstructorHelpers::FObjectFinder<UMaterialInterface> Surface(
-        TEXT("/Game/Weapons/_Shared/Equipment/Effects/Equip/Materials/M_EquipmentEquipSurface.M_EquipmentEquipSurface"));
-    FallbackMaterial = Surface.Object;
 }
 
 void UEquipmentEquipEffectComponent::Play()
@@ -40,10 +36,10 @@ void UEquipmentEquipEffectComponent::Play()
             UMaterialInterface* Original = Mesh->GetMaterial(Slot);
             if (!Original) { continue; }
             float ExistingAmount = 0.f;
-            UMaterialInterface* Parent = Original->GetScalarParameterValue(AmountParameter, ExistingAmount)
-                ? Original : FallbackMaterial.Get();
-            if (!Parent) { continue; }
-            UMaterialInstanceDynamic* Dynamic = UMaterialInstanceDynamic::Create(Parent, this);
+            // Never replace an unsupported surface with a generic grey shell.
+            // Equipment materials opt into the shared dissolve function at authoring time.
+            if (!Original->GetScalarParameterValue(AmountParameter, ExistingAmount)) { continue; }
+            UMaterialInstanceDynamic* Dynamic = UMaterialInstanceDynamic::Create(Original, this);
             Dynamic->SetScalarParameterValue(AmountParameter, 1.f);
             Mesh->SetMaterial(Slot, Dynamic);
             FEquipmentEffectMaterial& Entry = Materials.AddDefaulted_GetRef();

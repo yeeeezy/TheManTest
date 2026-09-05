@@ -37,9 +37,6 @@ protected:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-    // A future custom surface without the dissolve contract still gets a reveal;
-    // its original surface is restored when the effect ends or equipment is removed.
-    UPROPERTY() TObjectPtr<UMaterialInterface> FallbackMaterial;
     UPROPERTY(Transient) TArray<FEquipmentEffectMaterial> Materials;
     float Elapsed = 0.f;
     float Amount = 0.f;

@@ -31,6 +31,11 @@ public:
         if (!Equipment) { return false; }
         if (!bStarted)
         {
+            UMeshComponent* Surface = Equipment->GetSkeletalMesh()->GetSkeletalMeshAsset()
+                ? static_cast<UMeshComponent*>(Equipment->GetSkeletalMesh()) : Equipment->GetStaticMesh();
+            Originals.Reset();
+            Equipment->FindComponentByClass<UEquipmentEquipEffectComponent>()->Stop();
+            for (auto* Material : Surface->GetMaterials()) { Originals.Add(Material); }
             Equipment->PlayEquipEffect();
             bStarted = true;
             return false;
@@ -45,6 +50,8 @@ public:
             {
                 auto* MID = Cast<UMaterialInstanceDynamic>(Mesh->GetMaterial(I));
                 Test->TestNotNull(TEXT("Every visible material receives the shared effect"), MID);
+                Test->TestTrue(TEXT("Reveal MID retains the exact original surface parent"),
+                    MID && Originals.IsValidIndex(I) && MID->Parent == Originals[I]);
                 float Value = 0.f;
                 Test->TestTrue(TEXT("Shared dissolve parameter is active on visible surface"),
                     MID && MID->GetScalarParameterValue(TEXT("Amount (S)"), Value)
@@ -70,25 +77,42 @@ public:
         Test->TestTrue(TEXT("Reveal sampled while active"), bCaptured);
         Test->TestFalse(TEXT("Reveal component stops ticking after completion"),
             Equipment->FindComponentByClass<UEquipmentEquipEffectComponent>()->IsComponentTickEnabled());
+        if (World->GetGameViewport() && World->GetGameViewport()->Viewport)
+        {
+            FViewport* Viewport=World->GetGameViewport()->Viewport;
+            TArray<FColor> Pixels; const FIntPoint Size=Viewport->GetSizeXY();
+            if (Viewport->ReadPixels(Pixels) && Pixels.Num()==Size.X*Size.Y)
+            {
+                TArray64<uint8> Png; FImageUtils::PNGCompressImageArray(Size.X,Size.Y,Pixels,Png);
+                Test->TestTrue(TEXT("Finished weapon surface captured"),FFileHelper::SaveArrayToFile(Png,
+                    *FPaths::Combine(FPaths::ProjectSavedDir(),FString::Printf(TEXT("Screenshots/WindowsEditor/TMT_WeaponSurface_%d.png"),Index))));
+            }
+        }
         if (++Index < 3)
         {
             Player->GetEquipmentManager()->SwitchEquipment(1);
             bCaptured = false;
+            bStarted = false;
             return false;
         }
 
-        // Ordinary non-firearm equipment with an unprepared material gets the same
-        // default reveal and restores its exact original material on interruption.
+        // An unsupported custom surface must never be replaced with a grey fallback.
         AEquipmentBase* Generic = World->SpawnActor<AEquipmentBase>();
         UStaticMeshComponent* Cube = Generic->GetStaticMesh();
         Cube->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Cube.Cube")));
         UMaterialInterface* Original = Cube->GetMaterial(0);
         Generic->PlayEquipEffect();
-        Test->TestTrue(TEXT("Non-firearm equipment gets a reveal automatically"), Generic->IsEquipEffectPlaying());
-        Test->TestNotEqual(TEXT("Unprepared surface uses shared fallback during reveal"), Cube->GetMaterial(0),Original);
+        Test->TestFalse(TEXT("Unsupported material does not start a false reveal"), Generic->IsEquipEffectPlaying());
+        Test->TestEqual(TEXT("Unprepared surface keeps its exact material"), Cube->GetMaterial(0),Original);
         Generic->Unequip();
         Test->TestEqual(TEXT("Interrupted reveal restores original material"),Cube->GetMaterial(0),Original);
         Test->TestFalse(TEXT("Unequip cancels the reveal"),Generic->IsEquipEffectPlaying());
+        Original=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Weapons/ElectricGun/Materials/MI_ElectricGun.MI_ElectricGun"));
+        Cube->SetMaterial(0,Original);
+        Generic->PlayEquipEffect();
+        Test->TestTrue(TEXT("Non-firearm equipment with a compatible surface inherits shared VFX"),Generic->IsEquipEffectPlaying());
+        Generic->Unequip();
+        Test->TestEqual(TEXT("Compatible surface is restored exactly on cancellation"),Cube->GetMaterial(0),Original);
         Generic->Destroy();
 
         // Per-equipment animation is independent from the shared dissolve.
@@ -109,6 +133,7 @@ private:
     int32 Index=0;
     bool bStarted=false;
     bool bCaptured=false;
+    TArray<UMaterialInterface*> Originals;
 };
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSharedEquipmentRevealTest,
