@@ -3,7 +3,7 @@
 #include "Tests/AutomationCommon.h"
 #include "Tests/AutomationEditorCommon.h"
 #include "Editor.h"
-#include "Core/_Shared/Feedback/HitStopSubsystem.h"
+#include "Core/_Shared/Feedback/BulletTimeSubsystem.h"
 #include "Weapons/ExplosionGun/Bullets/ExplosionGunBullet.h"
 #include "Enemy/_Shared/GAS/GameplayCues/GCN_EnemyHit.h"
 #include "Enemy/_Shared/Audio/EnemyHitAudioComponent.h"
@@ -16,7 +16,7 @@
 
 namespace
 {
-class FHitStopPainCommand : public IAutomationLatentCommand
+class FBulletTimePainCommand : public IAutomationLatentCommand
 {
 	FAutomationTestBase* Test;
 	int Stage=0;
@@ -24,40 +24,44 @@ class FHitStopPainCommand : public IAutomationLatentCommand
 	TWeakObjectPtr<AExplosionGunBullet> Bullet;
 	TWeakObjectPtr<ACharacter> EnemyA, EnemyB;
 public:
-	explicit FHitStopPainCommand(FAutomationTestBase* In):Test(In){}
+	explicit FBulletTimePainCommand(FAutomationTestBase* In):Test(In){}
 	virtual bool Update() override
 	{
 		UWorld* World=GEditor?GEditor->PlayWorld:nullptr;
 		if(!World){Test->AddError(TEXT("Missing PIE world"));return true;}
-		auto* Stop=World->GetSubsystem<UHitStopSubsystem>();
+		auto* Stop=World->GetSubsystem<UBulletTimeSubsystem>();
 		auto* WS=World->GetWorldSettings();
 		const double Now=FPlatformTime::Seconds();
 		if(Stage==0)
 		{
 			if(!Test->TestNotNull(TEXT("World feedback manager exists"),Stop))return true;
-			FHitStopSettings Settings;
-			Test->TestEqual(TEXT("Near blast full hit stop"),Settings.GetStrength(100),1.f);
-			Test->TestEqual(TEXT("Far blast no hit stop"),Settings.GetStrength(1600),0.f);
+			FBulletTimeSettings Settings;
+			Test->TestEqual(TEXT("Near blast full bullet time"),Settings.GetStrength(100),1.f);
+			Test->TestEqual(TEXT("Far blast no bullet time"),Settings.GetStrength(1600),0.f);
 			Test->TestEqual(TEXT("Mid distance attenuates"),Settings.GetStrength(850),.5f);
 			Settings.bEnabled=false;
 			Test->TestEqual(TEXT("Disabled preset never affects time"),Settings.GetStrength(0),0.f);
-			Test->TestFalse(TEXT("Zero duration ignored"),Stop->RequestHitStop(0,.05f,.12f));
+			Settings.bEnabled=true;
+			Test->TestEqual(TEXT("Smooth envelope starts at original speed"),Settings.Evaluate(0),1.f);
+			Test->TestTrue(TEXT("Deceleration midpoint"),FMath::IsNearlyEqual(Settings.Evaluate(.025f),.6f));
+			Test->TestTrue(TEXT("Slow hold"),FMath::IsNearlyEqual(Settings.Evaluate(.1f),.2f));
+			Test->TestTrue(TEXT("Smooth acceleration midpoint"),FMath::IsNearlyEqual(Settings.Evaluate(.255f),.6f));
+			Test->TestEqual(TEXT("Recovers without overspeed"),Settings.Evaluate(1),1.f);
 			WS->SetTimeDilation(.5f);
-			Test->TestTrue(TEXT("Short hit stop starts"),Stop->RequestHitStop(.08f,.1f,.12f));
-			Test->TestEqual(TEXT("Hit stop scales previous world speed"),WS->TimeDilation,.05f);
-			Stop->RequestHitStop(.3f,.5f,.12f);
-			Test->TestEqual(TEXT("Weaker overlapping request does not weaken current stop"),WS->TimeDilation,.05f);
+			Test->TestTrue(TEXT("Bullet time starts"),Stop->RequestBulletTime(Settings));
+			Test->TestEqual(TEXT("No instantaneous freeze"),WS->TimeDilation,.5f);
+			Test->TestFalse(TEXT("Overlap cannot restart envelope"),Stop->RequestBulletTime(Settings));
 			Start=Now;Stage=1;return false;
 		}
 		if(Stage==1)
 		{
-			if(Now-Start<.25)return false;
-			Test->TestFalse(TEXT("Real-time cap expires despite slow game time"),Stop->IsHitStopActive());
+			if(Now-Start<.6)return false;
+			Test->TestFalse(TEXT("Real-time cap expires despite slow game time"),Stop->IsBulletTimeActive());
 			Test->TestEqual(TEXT("Restores previous 0.5, not hardcoded 1"),WS->TimeDilation,.5f);
-			Stop->RequestHitStop(.1f,.2f,.12f);Stop->CancelHitStop();
+			Test->TestTrue(TEXT("Can request after recovery"),Stop->RequestBulletTime(FBulletTimeSettings()));Stop->CancelBulletTime();
 			Test->TestEqual(TEXT("Cancellation restores original speed"),WS->TimeDilation,.5f);
-			Stop->RequestHitStop(.1f,.2f,.12f);WS->SetTimeDilation(.75f);Stop->Tick(0);
-			Test->TestFalse(TEXT("External speed change relinquishes ownership"),Stop->IsHitStopActive());
+			Stop->RequestBulletTime(FBulletTimeSettings());WS->SetTimeDilation(.75f);Stop->Tick(0);
+			Test->TestFalse(TEXT("External speed change relinquishes ownership"),Stop->IsBulletTimeActive());
 			Test->TestEqual(TEXT("Does not overwrite external speed"),WS->TimeDilation,.75f);
 			WS->SetTimeDilation(1.f);Start=Now;Stage=2;return false;
 		}
@@ -65,28 +69,28 @@ public:
 		{
 			if(Now-Start<.1)return false;
 			const FVector Origin=World->GetFirstPlayerController()->PlayerCameraManager->GetCameraLocation()+FVector(0,0,100);
-			FHitStopSettings Settings;
-			Test->TestFalse(TEXT("Distant actual request ignored"),Stop->RequestHitStopAtLocation(Origin+FVector(10000,0,0),Settings));
+			FBulletTimeSettings Settings;
+			Test->TestFalse(TEXT("Distant actual request ignored"),Stop->RequestBulletTimeAtLocation(Origin+FVector(10000,0,0),Settings));
 			FActorSpawnParameters Spawn;Spawn.SpawnCollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 			auto* Class=LoadClass<AExplosionGunBullet>(nullptr,TEXT("/Game/Weapons/ExplosionGun/Blueprint/BP_ExplosionGunBullet.BP_ExplosionGunBullet_C"));
 			auto* Shot=World->SpawnActor<AExplosionGunBullet>(Class,Origin,FRotator::ZeroRotator,Spawn);
-			Bullet=Shot;Shot->ExplosionDelay=0;Shot->HitStop.Duration=.15f;Shot->HitStop.MaxContinuousDuration=.2f;
+			Bullet=Shot;Shot->ExplosionDelay=0;Shot->BulletTime=FBulletTimeSettings();
 			Shot->ChaosRadius=0;Shot->ExplosionCueTag=FGameplayTag(); // Gameplay feedback works without a presentation Cue.
 			FHitResult Hit;Hit.ImpactPoint=Origin;Hit.ImpactNormal=FVector::UpVector;
 			Shot->ProcessHit(Hit,nullptr,nullptr);
-			Test->TestFalse(TEXT("Initial environment attachment is not the hit-stop trigger"),Stop->IsHitStopActive());
+			Test->TestFalse(TEXT("Initial environment attachment is not the bullet-time trigger"),Stop->IsBulletTimeActive());
 			Start=Now;Stage=3;return false;
 		}
 		if(Stage==3)
 		{
 			if(Bullet.IsValid())return false;
-			Test->TestTrue(TEXT("Detonation requests stop independently of destroyed bullet and missing GC"),Stop->IsHitStopActive());
+			Test->TestTrue(TEXT("Detonation requests stop independently of destroyed bullet and missing GC"),Stop->IsBulletTimeActive());
 			Start=Now;Stage=4;return false;
 		}
 		if(Stage==4)
 		{
-			if(Now-Start<.3)return false;
-			Test->TestFalse(TEXT("Stop expires after projectile destruction"),Stop->IsHitStopActive());
+			if(Now-Start<.6)return false;
+			Test->TestFalse(TEXT("Stop expires after projectile destruction"),Stop->IsBulletTimeActive());
 			Test->TestEqual(TEXT("Gameplay speed fully restored"),WS->TimeDilation,1.f);
 			FActorSpawnParameters Spawn;Spawn.SpawnCollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 			EnemyA=World->SpawnActor<ACharacter>(FVector(100,300,100),FRotator::ZeroRotator,Spawn);
@@ -115,13 +119,13 @@ public:
 	}
 };
 }
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FHitStopPainTest,"TheManTest.Feedback.HitStopAndPain",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
-bool FHitStopPainTest::RunTest(const FString&)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBulletTimePainTest,"TheManTest.Feedback.BulletTimeAndPain",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
+bool FBulletTimePainTest::RunTest(const FString&)
 {
 	AutomationOpenMap(TEXT("/Game/Maps/VFXTest/VFXTestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
-	ADD_LATENT_AUTOMATION_COMMAND(FHitStopPainCommand(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FBulletTimePainCommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
 	return true;
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include "Weapons/_Shared/Firearms/Bullets/BulletBase.h"
-#include "Core/_Shared/Feedback/HitStopSubsystem.h"
+#include "Core/_Shared/Feedback/BulletTimeSubsystem.h"
 #include "ExplosionGunBullet.generated.h"
 
 // First impact retains BulletBase damage/feedback. Both impact types attach and detonate.
@@ -10,8 +10,8 @@ class THEMANTEST_API AExplosionGunBullet : public ABulletBase
  GENERATED_BODY()
 public:
  AExplosionGunBullet();
- UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion|Hit Stop", meta=(ShowOnlyInnerProperties))
- FHitStopSettings HitStop;
+ UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion|Bullet Time", meta=(ShowOnlyInnerProperties))
+ FBulletTimeSettings BulletTime;
  UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion|Damage", meta=(ClampMin="0"))
  float ExplosionDamage=20.f;
  UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bullet|Explosion|Damage", meta=(ClampMin="0", Units="cm"))

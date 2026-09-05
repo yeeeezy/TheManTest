@@ -1,5 +1,7 @@
 # 角色基类（Character Base）
 
+- 2026-09-05爆炸反馈修正：爆炸CameraShake只旋转、不平移，避免后处理视点离开HeadCamera而ArmsViewMesh仍留在原组件位置造成穿模。未修改此处相机/手臂组件层级、静态构图或近距材质；普通武器穿墙不属于此项修复。参数在Explosion GC，详见arch10。
+
 **何时读取：** 修改角色通用行为、组件布局、GAS 初始化流程、增加所有角色共享的属性或函数时。
 
 > ⚠️ **唯一玩家基类为 `AFPSCharacterBase`。旧 `ATheManCharacterBase` 双骨骼系统已于 FEAT-041 删除（不再有"保留弃用"代码）。**

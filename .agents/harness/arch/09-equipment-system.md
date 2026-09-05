@@ -4,7 +4,10 @@
 
 - ABulletBase零伤害有效命中Enemy时，单独以真实HitResult调用Enemy的HitReactionCue；穿透/重复Hit先返回，正伤害仍由Health路径负责，不重复表现。电击弹Damage=0保持不变。
 
-## 爆炸枪附着弹（2026-09-04）
+## 爆炸枪附着弹（2026-09-05，以下新规则覆盖旧HitStop实现）
+
+- HitStopSubsystem/FHitStopSettings/HitStop属性已删除，改为Core/_Shared/Feedback/BulletTimeSubsystem与FBulletTimeSettings。弹体Detonate独立请求BulletTime，不经过GC。BP_ExplosionGunBullet → Bullet|Explosion|Bullet Time：TimeScale=.2、SlowInDuration=.05、HoldDuration=.08、RecoveryDuration=.25，均真实秒，Inner/OuterRadius=200/1500cm。Smoothstep减速再恢复原World.TimeDilation，无超速；活动期不重启/延长，100ms恢复间隔，外部改速让出控制，WorldEndPlay/Deinitialize清理。世界物理/动画/游戏时间Timer放慢，声音不变速。
+- 同一个Explosion GC按Data.Explosion.EnemyImpact分别选择EnemyExplosionEffect/EnemyExplosionSound；两个Enemy槽目前均空，独立跳过且无环境回退；环境Ground规则不变。原Damage5/Fuse2/范围20伤害400cm/Chaos不变。下列旧HitStop参数仅属历史，不再是可调入口。
 
 - 最新覆盖：Enemy与环境均附着/倒计时，结束均执行范围伤害、Chaos、爆炸Cue和HitStop。`ExplosionDamage=20`、`ExplosionDamageRadius=400cm`、`ExplosionDamageEffectClass=GE_BulletDamage`只影响延时爆炸，原Damage=5首次伤害不变。Overlap候选按Enemy去重，Visibility墙体遮挡先判定，敌人不互相充当墙；只向Enemy ASC施加一次GE，源ASC失效时目标ASC构建Context/Spec。玩家与其他Actor不受范围伤害。
 - `Bullet|Explosion|Hit Stop`内FHitStopSettings：Enabled=true、Duration=.06真实秒、TimeScale=.05、InnerRadius=200cm、OuterRadius=1500cm、MaxContinuousDuration=.12真实秒。由弹体Detonate独立请求Core/_Shared/Feedback/HitStopSubsystem，不由GC管理；离相机越远越弱，无本地玩家或非单机网络模式不触发。

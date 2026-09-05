@@ -87,8 +87,8 @@ void AExplosionGunBullet::Detonate()
   if(UAbilitySystemComponent* ASC=ExplosionSourceASC.Get())ASC->InvokeGameplayCueEvent(ExplosionCueTag,EGameplayCueEvent::Executed,Params);
   else UAbilitySystemGlobals::Get().GetGameplayCueManager()->HandleGameplayCue(this,ExplosionCueTag,EGameplayCueEvent::Executed,Params);
  }
- if(auto* Feedback=GetWorld()->GetSubsystem<UHitStopSubsystem>())
-  Feedback->RequestHitStopAtLocation(Params.Location,HitStop);
+ if(auto* Feedback=GetWorld()->GetSubsystem<UBulletTimeSubsystem>())
+  Feedback->RequestBulletTimeAtLocation(Params.Location,BulletTime);
  Destroy();
 }
 void AExplosionGunBullet::ApplyExplosionDamage(const FVector& Origin)

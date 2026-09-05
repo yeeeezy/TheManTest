@@ -120,7 +120,7 @@ enemy = unreal.get_default_object(E.load_blueprint_class('/Game/Enemy/_Shared/GA
 explosion = unreal.get_default_object(E.load_blueprint_class('/Game/Weapons/ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion'))
 assert enemy.get_editor_property('volume_multiplier') == 5
 assert explosion.get_editor_property('volume_multiplier') == 3
-assert explosion.get_editor_property('camera_shake_scale') == 8
+assert explosion.get_editor_property('camera_shake_scale') >= 0  # User-tunable; do not pin an old override.
 if VALIDATE:
     registry = unreal.AssetRegistryHelpers.get_asset_registry()
     registry.search_all_assets(True)

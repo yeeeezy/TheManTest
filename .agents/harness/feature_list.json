@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-04-hitstop-pain-radial",
+    "last_updated":  "2026-09-05-bullet-time-feedback",
     "active_feature":  "FEAT-080",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -471,7 +471,8 @@
                          "description":  "为 RepairGun 正式接通现有第一人称开火蒙太奇；以 RepairGun 为完整配置基线创建电击枪和爆炸枪，两把新枪仅替换各自模型、枪口与命中特效。源模型和 VFX 来自外部 VFXPack 项目；不迁移源角色、武器蓝图或动画。即使表现依赖内容相同，也按武器所有权复制到各自语义目录并重命名，使三把枪后续可以独立调整。",
                          "archive_file":  "archive/FEAT-080-three-weapon-setup.md",
                          "created":  "2026-09-03",
-                         "updated":  "2026-09-04-hitstop-pain-radial",
+                         "updated":  "2026-09-05-bullet-time-feedback",
+                         "bullet_time_feedback_verification": "HitStop删除，替换.05秒减至.2、保持.08、.25秒平滑恢复原速度；真实时钟，活动期不重启。单GC独立Enemy声/VFX且暂空无回退。零位移旋转余震.75秒/12Hz/1.5度，同类不叠加；保留用户震屏4/音量3与伤害/Fuse/Chaos。Development Editor Win64成功，两个Blueprint打开编译保存，BulletTimeFeedbackRegression六项6/6 Success exit0。检查点4f6f676，本轮未最终提交。",
                          "hitstop_pain_radial_verification": "最新确认Enemy/环境均附着倒计时并触发Chaos/HitStop/声震/范围伤害，只区分Niagara，EnemyExplosionEffect暂空。范围20伤害/400cm、只伤Enemy、去重、墙体阻挡，可调。新增World HitStop管理器，默认.06秒/.05倍率/200~1500cm/.12秒上限；新增424116痛呼Sound Cue和每敌人.6秒冷却/1条并发。Development Editor Win64成功；HitStopPainDamageRegression六项Success，100→95→75、环境范围伤害/墙后和玩家免伤、Enemy Chaos及空VFX、真实时间恢复和独立痛呼均验证通过。检查点258bf70，未最终提交。",
                          "audio_cue_policy_verification": "用户确认随机音高/音量收进Sound Cue，按用途共享衰减/并发，打角色仅角色Hit发声。12个现用玩法音效已创建owner-local SCue并更新9消费者；扫描识别音例外保持稳定。新增音效规范写入AGENTS/arch14，提供初始化助手及清单验证脚本。Development Editor Win64成功，ValidateAudioCues冷验证12/12通过；AudioPolicyRegression六项Success，实际录音两类声音左右优势>2倍、远处RMS<近处70%。AudioPolicyHitRouting补充三枪实际OnExecute命中角色不创建武器声断言Success。检查点d8badd4，结果未最终提交。",
                          "spatial_hit_verification": "随机血迹/弹痕MID、尺度与旋转；身体血迹Mesh表面Trace/骨骼附着；四Cue共用3D衰减与独立并发，保留用户肉体音量5、打人武器撞击层0.3。Development Editor Win64成功，HitFeedbackFinal六项Success。HitSpatialFocused独立真实录音非零，两种声音左右声道优势超过2倍、远处RMS低于近处70%；材质Shader零错误，身体附着/移动跟随及肉体声播放断言通过。独立肉体限幅降低削波但未完全消除。结果未最终Git提交。",

@@ -1,5 +1,14 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 平滑子弹时间与分支爆炸表现
+
+- 用户确认保留同一Explosion GC，Enemy/环境独立声音与VFX；移除HitStop，改为先减速再平滑恢复；加强余震并排查穿模。安全检查点4f6f676保存前置工作，未纳入地图/外部Actor。
+- 写前冷审计用户实际BP覆盖：CameraShakeScale=4、VolumeMultiplier=3、旧HitStop.Duration=.5（仍受旧.12上限约束）；原Damage=5、ExplosionDelay=2、范围20/400cm。保留震屏4/音量3与全部伤害、倒计时和Chaos数据。
+- 删除旧HitStopSubsystem，新增Core/_Shared/Feedback/BulletTimeSubsystem和FBulletTimeSettings。BP_ExplosionGunBullet的Bullet|Explosion|Bullet Time默认TimeScale=.2、SlowInDuration=.05、HoldDuration=.08、RecoveryDuration=.25真实秒，距离200~1500cm。Smoothstep渐入/渐出，恢复进入前速度，不超速；活动期请求不重启/延长曲线，结束100ms恢复窗口；外部改速让出所有权，WorldEndPlay/Deinitialize恢复。
+- 同一个GC新增EnemyExplosionSound、EnemyVolumeMultiplier=3、EnemyEffectScale=1；Enemy声音与VFX分别为空时跳过各层，不回退环境。暂未提供Enemy专用资源，两个槽保持空。环境原Ground投影、SCue_ExplosionGun_Detonation保持不变。
+- 旧相机位移5cm乘用户4倍会产生约20cm未碰撞检测的视点偏移，而ArmsViewMesh仍挂HeadCamera，属于明确穿模风险。新爆炸Shake零平移，0.75真实秒/12Hz多次衰减旋转，原生幅度1.5度；Cue暴露ShakeDuration/ShakeFrequency/ShakeRotationDegrees，CameraShakeScale最多按8使用。每本地相机只保留本类一个爆炸Shake，不无限叠加；方位与200~1800cm平方衰减保留。不承诺解决独立的武器贴墙穿透。
+- Development Editor Win64构建成功；ConfigureExplosionFeedback.log完成两个Blueprint打开/编译/保存，继承新默认，原伤害/音量/用户震屏覆盖回读通过。BulletTimeFeedbackRegression.log六项6/6 Success、exit0（BulletTimeAndPain、ExplosionDirectionalShake、ExplosionRadialDamage、StickyExplosionAndBlood、ExplosionChaosGround、ThreeWeaponBaseline）：曲线渐入/保持/恢复、重入不延长、原速恢复/外部所有权、弹体销毁/无GC、痛呼独立、方向/衰减/多次过零/全程零平移、伤害/Chaos全通过。ValidateExplosionFeedbackCold.log独立冷回读EXPLOSION_FEEDBACK_OK cold-read，新默认/用户覆盖/两个Enemy空槽/无Redirector均通过。未最终提交/push；实际震感与独立贴墙穿透仍需用户体验反馈。
+
 ## 2026-09-04 爆炸Hit Stop、Enemy分支与痛呼（本轮完成）
 
 - 最新用户确认覆盖中途方案：Enemy和环境命中都附着倒计时，结束均触发Chaos/声音/震屏/HitStop/二次范围伤害，唯有爆炸Niagara不同。EnemyExplosionEffect独立可配、暂为空；不回退环境大地面decal。用户最终接受半径400cm、20伤害、只伤Enemy、同一Enemy一次、墙体阻挡，伤害/半径可调；原首次伤害不变。

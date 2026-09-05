@@ -62,11 +62,12 @@ if not validate:
 assert cdo.get_editor_property('pain_sound')==cue
 assert abs(cdo.get_editor_property('pain_cooldown')-.6)<.0001
 assert cdo.get_editor_property('volume_multiplier')==5
-h=bullet_cdo.get_editor_property('hit_stop')
+h=bullet_cdo.get_editor_property('bullet_time')
 assert h.get_editor_property('enabled')
-assert abs(h.get_editor_property('duration')-.06)<.0001
-assert abs(h.get_editor_property('time_scale')-.05)<.0001
-assert abs(h.get_editor_property('max_continuous_duration')-.12)<.0001
+assert abs(h.get_editor_property('slow_in_duration')-.05)<.0001
+assert abs(h.get_editor_property('hold_duration')-.08)<.0001
+assert abs(h.get_editor_property('time_scale')-.2)<.0001
+assert abs(h.get_editor_property('recovery_duration')-.25)<.0001
 assert bullet_cdo.get_editor_property('explosion_damage')==20
 assert bullet_cdo.get_editor_property('explosion_damage_radius')==400
 assert bullet_cdo.get_editor_property('explosion_damage_effect_class') is not None
@@ -80,5 +81,5 @@ if validate:
     refs=[str(p) for p in registry.get_referencers(cue_path,options)]
     assert '/Game/Enemy/_Shared/GAS/GameplayCues/GC_Character_Enemy_Hit' in refs,refs
     assert not [a for a in registry.get_assets_by_path(root.rstrip('/'),True) if str(a.asset_class_path.asset_name)=='ObjectRedirector']
-print('ENEMY_PAIN_HITSTOP_OK',wave.get_editor_property('duration'),wave.get_editor_property('num_channels'))
+print('ENEMY_PAIN_BULLET_TIME_OK',wave.get_editor_property('duration'),wave.get_editor_property('num_channels'))
 unreal.SystemLibrary.execute_console_command(None,'QUIT_EDITOR')

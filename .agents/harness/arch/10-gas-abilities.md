@@ -1,5 +1,11 @@
 # GAS 技能系统
 
+## 2026-09-05 爆炸表现当前入口（覆盖下文历史值）
+
+- 同一GC_Weapon_ExplosionGun_Explosion：环境ExplosionEffect/ExplosionSound/EffectScale/VolumeMultiplier；EnemyExplosionEffect/EnemyExplosionSound/EnemyEffectScale/EnemyVolumeMultiplier独立，无回退。目前Enemy声/VFX两槽为空，等待用户资源，伤害/Chaos/震屏/子弹时间仍执行。
+- Explosion|Camera：保留用户CameraShakeScale=4（运行时上限8）、ShakeInner/OuterRadius=200/1800；新增ShakeDuration=.75真实秒、ShakeFrequency=12Hz、ShakeRotationDegrees=1.5。多次衰减余震，零相机位移；Cue初始化Pattern，每相机同类爆炸仅一条，防止无限叠加。方向仍由爆点→视点决定；未改ControllerRotation、手臂挂载或普通开火震屏。
+- 环境爆炸音量3，Enemy肉体5，痛呼1。HitStop已删除，改为弹体向Core/_Shared/Feedback/BulletTimeSubsystem请求平滑子弹时间；GC只负责表现，详见arch09。
+
 ## 随机命中与空间音频（当前配置）
 
 - Enemy Hit额外播放PainSound=`Enemy/_Shared/Audio/SCue_Enemy_Pain`（下载424116 Wizard Pain），独立PainVolumeMultiplier=1、PainCooldown=.6真实秒，原肉体ImpactSound/倍率5不变。懒创建UEnemyHitAudioComponent保存每敌人冷却与弱AudioComponent，播放期间不重叠，声音附着目标，目标结束时停止；静态GC自身不持有运行时冷却。

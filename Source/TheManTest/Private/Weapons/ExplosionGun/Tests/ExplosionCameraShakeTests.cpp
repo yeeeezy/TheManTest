@@ -33,14 +33,29 @@ bool FExplosionDirectionalShakeTest::RunTest(const FString& Parameters)
  };
  const auto Left=Sample(FRotator(0,-90,0),1.f);
  const auto Right=Sample(FRotator(0,90,0),1.f);
- TestTrue(TEXT("Opposite blast sides produce opposite lateral offsets"),Left.Location.Y<0&&Right.Location.Y>0);
+ TestTrue(TEXT("Explosion never displaces camera"),Left.Location.IsNearlyZero()&&Right.Location.IsNearlyZero());
+ TestTrue(TEXT("Opposite blast directions change rotation"),!Left.Rotation.Equals(Right.Rotation,.01f));
  TestTrue(TEXT("Blast produces camera rotation"),!Right.Rotation.IsNearlyZero());
  const auto Far=Sample(FRotator(0,90,0),.25f);
- TestTrue(TEXT("Far blast is proportionally weaker"),FMath::IsNearlyEqual(Far.Location.Y,Right.Location.Y*.25,.01));
+ TestTrue(TEXT("Far blast is proportionally weaker"),FMath::IsNearlyEqual(Far.Rotation.Roll,Right.Rotation.Roll*.25,.02));
+ auto* MutableCue=NewObject<UGCN_ExplosionGunExplosion>();
+ MutableCue->ExplosionSound=Cue->ExplosionSound;
+ TestNull(TEXT("Enemy sound never falls back to environment"),MutableCue->GetExplosionSound(true));
+ MutableCue->EnemyExplosionSound=GetDefault<UGCN_EnemyHit>()->ImpactSound;
+ TestEqual(TEXT("Environment selection is independent"),MutableCue->GetExplosionSound(false),Cue->ExplosionSound.Get());
  UExplosionCameraShake* Shake=NewObject<UExplosionCameraShake>();
  Shake->StartShake(nullptr,1.f,ECameraShakePlaySpace::CameraLocal);
  FMinimalViewInfo View;
- for(int i=0;i<40;++i)Shake->UpdateAndApplyCameraShake(.02f,1.f,View);
+ int Crossings=0;float Previous=0;
+ for(int i=0;i<40;++i)
+ {
+  View.Location=FVector::ZeroVector;View.Rotation=FRotator::ZeroRotator;
+  Shake->UpdateAndApplyCameraShake(.02f,1.f,View);
+  if(Previous*View.Rotation.Pitch<0)++Crossings;
+  Previous=View.Rotation.Pitch;
+  TestTrue(TEXT("No translation throughout aftershock"),View.Location.IsNearlyZero());
+ }
+ TestTrue(TEXT("Multiple oscillations, not one kick"),Crossings>=6);
  TestTrue(TEXT("Short explosion shake finishes automatically"),Shake->IsFinished());
  Shake->TeardownShake();return true;
 }

@@ -1,5 +1,7 @@
 # 音效接入规范
 
+- 2026-09-05：同一个Explosion GC新增EnemyExplosionSound/EnemyVolumeMultiplier，空槽不回退环境Sound Cue；目前Enemy专用声音未提供，保持空。环境SCue_ExplosionGun_Detonation/VolumeMultiplier=3保留，用户震屏最新覆盖=4。未来Enemy爆炸音频仍须封装随机Sound Cue，不能直接接裸Wave。验证Scripts/Audio/validate_explosion_feedback.py（-FeedbackValidateOnly冷只读）；痛呼回归现为TheManTest.Feedback.BulletTimeAndPain，旧HitStopAndPain已替换。
+
 ## 职责与所有权
 
 - Gameplay Cue不是Sound Cue。前者决定触发时机/命中位置/目标分工，后者封装音频素材、随机和声音配置。

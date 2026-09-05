@@ -9,7 +9,7 @@
 #include "Enemy/_Shared/Effects/EnemyBloodSpray.h"
 #include "Enemy/_Shared/GAS/GameplayCues/GCN_EnemyHit.h"
 #include "Enemy/_Shared/Audio/EnemyHitAudioComponent.h"
-#include "Core/_Shared/Feedback/HitStopSubsystem.h"
+#include "Core/_Shared/Feedback/BulletTimeSubsystem.h"
 #include "Enemy/Humanoid/Phantom/Phantom.h"
 #include "Enemy/EnemyAttributeSetBase.h"
 #include "Characters/CharacterBase/FPSCharacterBase/FPSCharacterBase.h"
@@ -94,7 +94,7 @@ public:
    Enemy->SetCloaked(false);Bullet->ProcessHit(Hit,Player,Player->GetAbilitySystemComponent());
    Test->TestTrue(TEXT("Enemy hit keeps attached projectile and starts fuse"),IsValid(Bullet)&&Bullet->IsAttachedAndCountingDown());
    Test->TestTrue(TEXT("Enemy classification retained"),Bullet->DidHitEnemy());
-   Test->TestFalse(TEXT("Enemy hit never requests hit stop"),World->GetSubsystem<UHitStopSubsystem>()->IsHitStopActive());
+   Test->TestFalse(TEXT("Enemy hit never requests bullet time"),World->GetSubsystem<UBulletTimeSubsystem>()->IsBulletTimeActive());
    Test->TestEqual(TEXT("Original five-point impact damage"),Before-Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),5.f);
    Bullet->ProcessHit(Hit,Player,Player->GetAbilitySystemComponent());
    Test->TestEqual(TEXT("Repeated hit cannot duplicate damage"),Before-Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),5.f);

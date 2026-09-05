@@ -7,6 +7,7 @@
 #include "TimerManager.h"
 #include "Weapons/ExplosionGun/Effects/ExplosionCameraShake.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Camera/CameraModifier_CameraShake.h"
 #include "GameFramework/PlayerController.h"
 UGCN_ExplosionGunExplosion::UGCN_ExplosionGunExplosion()
 {
@@ -30,14 +31,15 @@ bool UGCN_ExplosionGunExplosion::OnExecute_Implementation(AActor* Target,const F
  if(SelectedEffect && (bEnemy || Ground))
  {
   const FVector Point=bEnemy?FVector(P.Location):Ground->ImpactPoint+Normal;
-  if(UNiagaraComponent* Effect=UNiagaraFunctionLibrary::SpawnSystemAtLocation(Target,SelectedEffect,Point,FRotationMatrix::MakeFromZ(Normal).Rotator(),FVector(EffectScale)))
+  if(UNiagaraComponent* Effect=UNiagaraFunctionLibrary::SpawnSystemAtLocation(Target,SelectedEffect,Point,FRotationMatrix::MakeFromZ(Normal).Rotator(),FVector(bEnemy?EnemyEffectScale:EffectScale)))
   {
    // The source ground effect has a long tail. Bound its lifetime independently of the projectile.
    FTimerHandle Cleanup;
    Target->GetWorld()->GetTimerManager().SetTimer(Cleanup,FTimerDelegate::CreateWeakLambda(Effect,[Effect](){Effect->DestroyComponent();}),FMath::Max(.1f,EffectLifeSpan),false);
   }
  }
- if(ExplosionSound)UGameplayStatics::PlaySoundAtLocation(Target,ExplosionSound,P.Location,VolumeMultiplier);
+ USoundBase* SelectedSound=GetExplosionSound(bEnemy);
+ if(SelectedSound)UGameplayStatics::PlaySoundAtLocation(Target,SelectedSound,P.Location,bEnemy?EnemyVolumeMultiplier:VolumeMultiplier);
  if(CameraShakeClass)
  {
   for(FConstPlayerControllerIterator It=Target->GetWorld()->GetPlayerControllerIterator();It;++It)
@@ -48,9 +50,23 @@ bool UGCN_ExplosionGunExplosion::OnExecute_Implementation(AActor* Target,const F
    const FVector Away=Camera->GetCameraLocation()-FVector(P.Location);
    const float Strength=GetShakeScaleAtDistance(Away.Size());
    if(Strength>UE_KINDA_SMALL_NUMBER)
-    Camera->StartCameraShake(CameraShakeClass,Strength,ECameraShakePlaySpace::UserDefined,
+   {
+    // Explicitly replace this explosion class; custom initializers otherwise allow stacking.
+    Camera->StopAllInstancesOfCameraShake(CameraShakeClass,true);
+    FAddCameraShakeParams ShakeParams(FMath::Min(Strength,8.f),ECameraShakePlaySpace::UserDefined,
      Away.IsNearlyZero()?Camera->GetCameraRotation():Away.Rotation());
+    ShakeParams.Initializer=FOnInitializeCameraShake::CreateLambda([this](UCameraShakeBase* Shake)
+    {
+     if(auto* Pattern=Cast<UExplosionCameraShakePattern>(Shake->GetRootShakePattern()))
+     {
+      Pattern->Duration=FMath::Clamp(ShakeDuration,.1f,2.f);
+      Pattern->RotationDegrees=FMath::Clamp(ShakeRotationDegrees,0.f,3.f);
+      Pattern->Frequency=FMath::Clamp(ShakeFrequency,1.f,30.f);
+     }
+    });
+    Camera->StartCameraShake(CameraShakeClass,ShakeParams);
+   }
   }
  }
- return ExplosionEffect||ExplosionSound;
+ return SelectedEffect||SelectedSound||CameraShakeClass;
 }

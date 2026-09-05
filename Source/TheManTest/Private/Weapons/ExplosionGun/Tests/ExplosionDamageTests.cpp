@@ -56,7 +56,7 @@ public:
 			auto* Shot=W->SpawnActor<AExplosionGunBullet>(Class,Origin,FRotator::ZeroRotator,Spawn);Bullet=Shot;
 			Test->TestEqual(TEXT("Default radial damage"),Shot->ExplosionDamage,20.f);
 			Test->TestEqual(TEXT("Default damage radius"),Shot->ExplosionDamageRadius,400.f);
-			Shot->ExplosionDelay=.15f;Shot->ChaosRadius=0;Shot->HitStop.bEnabled=false;
+			Shot->ExplosionDelay=.15f;Shot->ChaosRadius=0;Shot->BulletTime.bEnabled=false;
 			FHitResult Hit;Hit.ImpactPoint=Origin;Hit.ImpactNormal=FVector::UpVector;
 			Shot->ProcessHit(Hit,nullptr,nullptr);Shot->ProcessHit(Hit,nullptr,nullptr);
 			Test->TestEqual(TEXT("Environment hit deals no immediate enemy damage"),Enemies[0]->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),100.f);
