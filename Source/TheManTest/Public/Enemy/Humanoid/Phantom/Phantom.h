@@ -10,6 +10,11 @@ class THEMANTEST_API APhantom : public AHumanoidEnemy
 	GENERATED_BODY()
 
 public:
+	// Temporary directional hit testing. Evaluated at spawn; restart PIE after changing.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Phantom|Testing")
+	bool bStationaryHitTest = true;
+
+	virtual void ReactToProjectileHit(AActor* HitInstigator) override;
 	virtual void SetCombatPhase(int32 NewPhase) override;
 	virtual bool ShouldProjectilePassThrough() const override { return bCloaked; }
 
@@ -20,6 +25,8 @@ public:
 	bool IsCloaked() const { return bCloaked; }
 
 protected:
+	virtual void BeginPlay() override;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Phantom|Phase", meta=(ClampMin="0.0", ClampMax="1.0"))
 	float CloakedOpacity = 0.18f;
 

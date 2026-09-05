@@ -159,7 +159,12 @@ public:
    if(Modifier)Modifier->GetActiveCameraShakes(Active);
    bool bShake=false;
    for(const auto& Entry:Active)if(Entry.ShakeInstance&&Entry.ShakeInstance->IsA<UExplosionCameraShake>())bShake=true;
-   Test->TestTrue(TEXT("Detonation Cue starts directional shake on local player camera"),bShake);
+   auto* CueClass=LoadClass<UGCN_ExplosionGunExplosion>(nullptr,TEXT("/Game/Weapons/ExplosionGun/GAS/GameplayCues/GC_Weapon_ExplosionGun_Explosion.GC_Weapon_ExplosionGun_Explosion_C"));
+   if(Test->TestNotNull(TEXT("Explosion Cue class"),CueClass))
+   {
+    const auto* Cue=CueClass->GetDefaultObject<UGCN_ExplosionGunExplosion>();
+    Test->TestEqual(TEXT("Detonation respects configured camera shake switch"),bShake,Cue->CameraShakeClass!=nullptr && Cue->CameraShakeScale>0.f);
+   }
   }
   if(Elapsed<1.4f&&State.Stage!=3)return false;
   if(State.Stage==1)

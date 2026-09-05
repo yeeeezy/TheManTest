@@ -12,6 +12,8 @@
 
 **敌人：**
 
+- APhantom新增默认true的bStationaryHitTest（Phantom|Testing），仅本类固定靶用途；BeginPlay停AI/移动/角色Tick，受击不进入父类转向逻辑，保留Mesh和方向性受击组件。开关在生成时生效，取消后重新PIE恢复。
+
 - 2026-09-05：AHumanoidEnemy构造原生ExplosionHitReaction组件（UEnemyHitReactionComponent，Enemy/Humanoid/Animation）。负责存活敌人的爆炸方向、部位与恢复参数，不驱动AI/胶囊/死亡。默认Enabled=true、MaxAngleDegrees=22、AttackDuration=.055、RecoveryDuration=.55游戏秒。Phantom Mesh已接专属PostProcess AnimBP，其他骨架需单独配置兼容Rig，不自动替换其动画。
 
 - 默认Enemy Hit通过Enemy/_Shared/Audio/EnemyHitAudioComponent懒创建每实例痛呼状态，GCN_EnemyHit只配置PainSound/PainVolumeMultiplier/PainCooldown；不在共享GC CDO保存冷却，不改变EnemyBase继承或AI。

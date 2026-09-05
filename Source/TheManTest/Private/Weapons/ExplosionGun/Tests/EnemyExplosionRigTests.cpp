@@ -50,7 +50,9 @@ public:
    for(int I=0;I<4;++I)
    {
     auto* E=W->SpawnActor<AEnemyBase>(Class,FVector(-6000,I*180,100),FRotator::ZeroRotator,P);
-    Enemies.Add(E);E->GetCharacterMovement()->DisableMovement();E->GetMesh()->GlobalAnimRateScale=0;
+    Enemies.Add(E);E->GetMesh()->GlobalAnimRateScale=0;
+    Test->TestNull(TEXT("Stationary Phantom has no AI controller"),E->GetController());
+    Test->TestEqual(TEXT("Stationary Phantom movement disabled"),E->GetCharacterMovement()->MovementMode.GetValue(),MOVE_None);
     auto* C=E->FindComponentByClass<UEnemyHitReactionComponent>();
     if(!C){Test->AddError(TEXT("Missing reaction component"));return true;}
     C->AttackDuration=.2f;C->RecoveryDuration=1.f;
@@ -69,6 +71,10 @@ public:
     auto* E=Enemies[I].Get();auto* M=E->GetMesh();
     Test->TestNotNull(TEXT("Actual skeletal mesh executes post-process reaction AnimBP"),Cast<UEnemyHitReactionAnimInstance>(M->GetPostProcessInstance()));
     Heads.Add(M->GetSocketLocation(TEXT("head")));Feet.Add(M->GetSocketLocation(TEXT("foot_l")));Roots.Add(E->GetActorLocation());
+    auto* Shooter=W->SpawnActor<AActor>(E->GetActorLocation()-Directions[I]*200,FRotator::ZeroRotator);
+    E->ReactToProjectileHit(Shooter);
+    Test->TestTrue(TEXT("Projectile hit does not turn stationary Phantom"),E->GetActorRotation().Equals(FRotator::ZeroRotator,.01));
+    Shooter->Destroy();
     auto* C=E->FindComponentByClass<UEnemyHitReactionComponent>();
     C->ReactToExplosion(M->GetSocketLocation(TEXT("spine_03"))-Directions[I]*100,Directions[I],1,TEXT("spine_03"));
    }
@@ -83,6 +89,7 @@ public:
     const FVector Delta=M->GetSocketLocation(TEXT("head"))-Heads[I];
     Test->TestTrue(FString::Printf(TEXT("Rendered skeleton bends away from blast direction %d: %s"),I,*Delta.ToString()),FVector::DotProduct(Delta,Directions[I])>2);
     Test->TestTrue(TEXT("Reaction does not move capsule"),E->GetActorLocation().Equals(Roots[I],.01));
+    Test->TestTrue(TEXT("AI does not turn target after hit"),E->GetActorRotation().Equals(FRotator::ZeroRotator,.01));
     Test->TestTrue(TEXT("Reaction does not move support foot"),M->GetSocketLocation(TEXT("foot_l")).Equals(Feet[I],.1));
    }
    Capture(TEXT("TMT_EnemyRig_Directions.png"));Stage=3;return false;

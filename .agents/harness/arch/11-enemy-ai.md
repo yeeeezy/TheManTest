@@ -53,6 +53,8 @@ AEnemyBase（Public/Enemy/）  ← 所有敌人基类，ASC+属性挂自身（�
 
 ### FEAT-080 临时 Phantom 静止测试配置
 
+- 2026-09-05：APhantom新增默认开启的`Phantom|Testing → Stationary Hit Test`。BeginPlay解除并销毁自身AI控制器、清角色计时器、关闭角色Tick与Movement；ReactToProjectileHit跳过父类转向/Focus，Mesh与受击组件仍更新。适用于固定方向受击测试。取消勾选并重启PIE恢复原生AI路径；以下测试树/零速度配置仍需恢复才回正式战斗。
+
 - `/Game/Enemy/Humanoid/Phantom/AI/BT_Phantom_TestIdle`：`Root -> Sequence -> Wait(86400s)`，无移动和攻击节点。
 - `/Game/Enemy/Humanoid/Phantom/AI/BP_Phantom_TestIdleAIController`：公共 `BP_HumanoidAIController` 的 Phantom 专用测试副本，运行静止树。
 - `BP_Phantom` 当前临时指向该测试 Controller，四项状态速度与 CharacterMovement `MaxWalkSpeed` 均为 0，用作爆炸弹命中/范围逻辑的静止目标。

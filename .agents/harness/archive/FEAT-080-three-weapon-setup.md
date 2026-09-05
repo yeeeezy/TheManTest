@@ -1,5 +1,12 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 Phantom固定靶临时开关
+
+- 用户要求敌人始终不移动、不自动朝向玩家，以测试不同方向的受击动作。根因为EnemyBase.ReactToProjectileHit直接旋转，加上Humanoid设置Aim/AI Focus，零速度不足以阻止转向。
+- 选择性检查点7b77124保存上轮EnemyScale修复；用户地图/ExternalActor与本轮发现的Explosion Cue调参不纳入、不修改。Phantom新增默认开启的Phantom|Testing → Stationary Hit Test，BeginPlay移除该实例AI控制器、清巡逻计时器、关闭角色Tick和Movement；ProjectileHit跳过转向/Aim。Mesh及ExplosionHitReaction组件继续工作，未改伤害/死亡/受击表现。取消开关并重新PIE恢复原行为，旧静止树/零速度配置需另恢复才回正式巡逻。
+- 首次编译因用户编辑器锁定DLL失败；MCP确认DIRTY_CONTENT/DIRTY_MAPS均为空后正常关闭，当前地图TestMap，完成构建验证后重新打开。
+- Development Editor Win64构建成功，无新增C++警告（既有StructUtils插件弃用提示保留）。StationaryPhantom.log中EnemyExplosionControlRig Success，新增断言确认四方向ProjectileHit不改Actor朝向、无AI Controller、Movement=None，实际骨骼仍沿四方向弯曲并恢复，胶囊/支撑脚不动。StickyExplosionAndBlood首次因用户已关闭CameraShake而触发旧的强制震屏断言；改为按当前Cue开关检查，StationaryPhantomRegression.log最终Success，未改用户震屏配置。测试完成重新打开TestMap，结果未最终提交/push。
+
 ## 2026-09-05 EnemyEffectScale修复（实现与自验完成）
 
 - 用户确认动手并要求继续。写前检查点4838cfa选择性保存条件子弹时间与Air007迁入；地图/ExternalActor不纳入。

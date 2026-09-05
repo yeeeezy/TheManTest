@@ -2,6 +2,36 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/Controller.h"
+#include "TimerManager.h"
+
+void APhantom::BeginPlay()
+{
+	Super::BeginPlay();
+	if (!bStationaryHitTest) return;
+
+	// Remove perception, focus and behavior-tree execution for this test target only.
+	if (AController* AI = GetController())
+	{
+		AI->UnPossess();
+		AI->Destroy();
+	}
+	GetWorldTimerManager().ClearAllTimersForObject(this);
+	SetActorTickEnabled(false);
+	bUseControllerRotationYaw = false;
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationRoll = false;
+	bIsAiming = false;
+	GetCharacterMovement()->StopMovementImmediately();
+	GetCharacterMovement()->DisableMovement();
+	// Mesh and hit-reaction component keep ticking so directional feedback remains visible.
+}
+
+void APhantom::ReactToProjectileHit(AActor* HitInstigator)
+{
+	if (!bStationaryHitTest) Super::ReactToProjectileHit(HitInstigator);
+}
 
 void APhantom::SetCombatPhase(int32 NewPhase)
 {
