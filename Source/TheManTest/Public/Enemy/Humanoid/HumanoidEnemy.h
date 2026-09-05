@@ -18,6 +18,7 @@ class THEMANTEST_API AHumanoidEnemy : public AEnemyBase
 	GENERATED_BODY()
 
 public:
+	virtual void OnDeath() override;
 	AHumanoidEnemy();
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Enemy|Hit Reaction")
 	TSoftClassPtr<UAnimInstance> HitReactionPostProcess;

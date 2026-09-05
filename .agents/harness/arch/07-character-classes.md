@@ -12,6 +12,9 @@
 
 **敌人：**
 
+- 当前死亡流程：AEnemyBase::OnDeath为virtual；停止技能/AI/移动、关闭胶囊/Actor Tick、移除波次订阅，Mesh有PhysicsAsset时转布娃娃（暂停动画、禁用PostProcess，全身体物理）。Enemy|Death暴露CorpseLifetime=5游戏秒（最小.1）与ProjectileHitImpulse=5000 kg cm/s。尸体保留Pawn对象类型以兼容所有既有弹体查询，范围爆炸不再按Enemy类型排除。没有PhysicsAsset时仍延时消失，但无法布娃娃。
+- AHumanoidEnemy::OnDeath置AIState=Dead/bIsAiming=false，并关闭附着武器碰撞以免干扰布娃娃；APhantom死亡取消隐身。重复死亡不会刷新尸体寿命，身体Decal和附着弹在最终EndPlay清理。
+
 - 2026-09-05共享人形全身反应：AHumanoidEnemy新增HitReactionPostProcess软类，默认`/Game/Enemy/Humanoid/_Shared/Animations/ControlRig/ABP_Humanoid_HitReaction_C`（完整对象路径见代码），BeginPlay设置Mesh OverridePostProcessAnimBP；非Phantom人形自动接入。同骨骼层级可复用，其他骨架须配置BoneMapping并保证Rig层级兼容。Phantom SK_Mannequin原资产级PostProcess槽已清空，避免双重叠加。
 
 - APhantom新增默认true的bStationaryHitTest（Phantom|Testing），仅本类固定靶用途；BeginPlay停AI/移动/角色Tick，受击不进入父类转向逻辑，保留Mesh和方向性受击组件。开关在生成时生效，取消后重新PIE恢复。

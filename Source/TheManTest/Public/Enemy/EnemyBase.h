@@ -52,7 +52,15 @@ public:
 
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
-	void OnDeath();
+	virtual void OnDeath();
+
+	// Game seconds from death; repeated hits do not extend the corpse lifetime.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy|Death", meta = (ClampMin = "0.1", Units = "s"))
+	float CorpseLifetime = 5.f;
+
+	// Physical impulse (kg cm/s) at the struck body, shared by all projectile types. Zero disables it.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy|Death", meta = (ClampMin = "0.0"))
+	float ProjectileHitImpulse = 5000.f;
 
 	// Positive damage comes from Health; a confirmed zero-damage projectile hit can explicitly opt in.
 	void ExecuteHitReactionCue(const FGameplayEffectContextHandle& EffectContext, float DamageTaken, bool bAllowZeroDamageHit = false);

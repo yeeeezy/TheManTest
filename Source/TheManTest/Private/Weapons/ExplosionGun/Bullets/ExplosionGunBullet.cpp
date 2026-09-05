@@ -154,7 +154,7 @@ bool AExplosionGunBullet::ApplyExplosionDamage(const FVector& Origin)
  for(const auto& Candidate:Candidates)
  {
   auto* Enemy=Candidate.Get();
-  if(!Enemy||Enemy->IsActorBeingDestroyed())continue;
+  if(!Enemy||Enemy->IsDead()||Enemy->IsActorBeingDestroyed())continue;
   auto* ASC=Enemy->GetAbilitySystemComponent();
   if(!ASC||ASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute())<=0.f)continue;
   FCollisionQueryParams Sight(SCENE_QUERY_STAT(ExplosionDamageVisibility),true,this);
@@ -183,7 +183,7 @@ bool AExplosionGunBullet::ApplyExplosionDamage(const FVector& Origin)
    const float HealthBefore=TargetASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute());
    Spec.Data->SetSetByCallerMagnitude(TAG_Data_Damage,-ExplosionDamage);
    SourceASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(),TargetASC);
-   // The default death handler destroys the Actor synchronously; ASC memory remains valid here.
+   // Death switches to physics before the following radial impulse pass.
    bKilledEnemy|=HealthBefore>0.f && TargetASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute())<=0.f;
    if(IsValid(Enemy)&&!Enemy->IsActorBeingDestroyed())
     if(auto* Reaction=Enemy->FindComponentByClass<UEnemyHitReactionComponent>())
@@ -277,7 +277,7 @@ void AExplosionGunBullet::ApplyPhysicsImpulse(const FVector& Origin)
  {
   auto* Component=Hit.GetComponent();
   if(!IsValid(Component)||!Component->IsSimulatingPhysics()||Applied.Contains(Component)
-    ||Cast<UGeometryCollectionComponent>(Component)||Component->GetOwner()->IsA<AEnemyBase>())continue;
+    ||Cast<UGeometryCollectionComponent>(Component))continue;
   Applied.Add(Component);
   FVector Point=Component->GetCenterOfMass();
   FCollisionQueryParams Sight(SCENE_QUERY_STAT(ExplosionPhysicsVisibility),true,this);

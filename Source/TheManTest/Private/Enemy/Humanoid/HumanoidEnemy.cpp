@@ -180,6 +180,16 @@ void AHumanoidEnemy::RequestTurn(float Angle)
 	SetDesiredMaxWalkSpeed(TurnWalkSpeed);
 }
 
+void AHumanoidEnemy::OnDeath()
+{
+	if (IsDead()) return;
+	AIState = EHumanoidEnemyAIState::Dead;
+	bIsAiming = false;
+	// The held mesh follows a simulated hand; it must not act as a kinematic obstacle to the corpse.
+	if (WeaponMesh) WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Super::OnDeath();
+}
+
 void AHumanoidEnemy::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);

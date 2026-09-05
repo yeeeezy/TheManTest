@@ -7,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "Enemy/_Shared/Audio/EnemyHitAudioComponent.h"
+#include "Enemy/EnemyBase.h"
 
 UGCN_EnemyHit::UGCN_EnemyHit()
 {
@@ -18,7 +19,8 @@ bool UGCN_EnemyHit::OnExecute_Implementation(AActor* Target,const FGameplayCuePa
 	if(!IsValid(Target)||!Target->GetWorld()||Target->GetNetMode()==NM_DedicatedServer)return false;
 	// The character owns its hit voice; the weapon's impact Cue is silent on characters.
 	Super::OnExecute_Implementation(Target,Parameters);
-	if(PainSound)
+	const auto* Enemy=Cast<AEnemyBase>(Target);
+	if(PainSound && (!Enemy || !Enemy->IsDead()))
 	{
 		auto* Audio=Target->FindComponentByClass<UEnemyHitAudioComponent>();
 		if(!Audio)

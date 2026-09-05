@@ -37,6 +37,7 @@ public:
    Box->SetBoxExtent(FVector(2000,2000,10));Box->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);Box->SetCollisionResponseToAllChannels(ECR_Block);Box->RegisterComponent();A->SetActorLocation(FVector(-15000,0,-10));
    auto* Fixture=LoadClass<AHumanoidEnemy>(nullptr,TEXT("/Game/Enemy/Humanoid/Phantom/Blueprint/BP_Phantom.BP_Phantom_C"))->GetDefaultObject<AHumanoidEnemy>();
    auto* E=W->SpawnActorDeferred<AHumanoidEnemy>(AHumanoidEnemy::StaticClass(),FTransform(FVector(-15000,0,100)),nullptr,nullptr,ESpawnActorCollisionHandlingMethod::AlwaysSpawn);Enemy=E;
+   E->CorpseLifetime=.8f;
    E->AutoPossessAI=EAutoPossessAI::Disabled;
    E->GetMesh()->SetSkeletalMeshAsset(Fixture->GetMesh()->GetSkeletalMeshAsset());E->GetMesh()->SetRelativeTransform(Fixture->GetMesh()->GetRelativeTransform());
    E->GetMesh()->SetAnimInstanceClass(Fixture->GetMesh()->GetAnimClass());
@@ -94,10 +95,18 @@ public:
    }
    Start=W->GetTimeSeconds();Stage=4;return false;
   }
-  if(W->GetTimeSeconds()-Start<.1)return false;
-  Test->TestFalse(TEXT("Enemy death destroys pending attached bullet"),Bullet.IsValid());
-  Test->TestFalse(TEXT("Enemy actually died"),Enemy.IsValid());
-  Test->TestTrue(TEXT("Enemy death destroys owned body decal"),!Stain.IsValid()||!Stain->IsRegistered());
+  if(W->GetTimeSeconds()-Start<.25)return false;
+  if(Stage==4)
+  {
+   Test->TestTrue(TEXT("Dead enemy remains as a ragdoll"),Enemy.IsValid()&&Enemy->IsDead()&&Enemy->GetMesh()->IsSimulatingPhysics());
+   Test->TestTrue(TEXT("Pending explosive remains attached to corpse"),Bullet.IsValid()&&Bullet->GetAttachParentActor()==Enemy.Get());
+   Test->TestTrue(TEXT("Body stain follows corpse bone"),Stain.IsValid()&&Stain->GetAttachParent()==Enemy->GetMesh()&&Stain->GetRelativeLocation().Equals(StainLocal,.01));
+   Stage=5;
+  }
+  if(W->GetTimeSeconds()-Start<1.2)return false;
+  Test->TestFalse(TEXT("Corpse expiry destroys pending attached bullet"),Bullet.IsValid());
+  Test->TestFalse(TEXT("Corpse actually expired"),Enemy.IsValid());
+  Test->TestTrue(TEXT("Corpse expiry destroys owned body decal"),!Stain.IsValid()||!Stain->IsRegistered());
   Floor->Destroy();
   if(!BlastDeath){BlastDeath=true;Reacted=false;Stage=0;return false;}
   return true;

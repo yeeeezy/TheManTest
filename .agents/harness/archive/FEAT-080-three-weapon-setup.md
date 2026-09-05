@@ -1,5 +1,17 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 死亡布娃娃与统一弹体冲量（实现与自验完成）
+
+- 用户确认动手：死亡切布娃娃，所有子弹命中位置施加冲量，爆炸推动刚死/已有尸体，可配尸体寿命。写前选择性检查点b2bf304；地图/ExternalActor/用户Explosion Cue设置未纳入。
+- EnemyBase死亡停止技能/AI/移动/角色Tick、清自身计时器及波次订阅，关闭胶囊；有PhysicsAsset时Mesh关闭PostProcess、暂停动画，启用全身物理。保留Pawn对象类型用于既有子弹查询。CorpseLifetime默认5游戏秒（最小.1），ProjectileHitImpulse默认5000 kg cm/s，Enemy|Death可配；重复中枪不延期。人形AIState置Dead，Phantom取消隐身。
+- ABulletBase在伤害/转向前定位Mesh PhysicsAsset命中骨骼/局部点，伤害后对模拟身体AddImpulseAtLocation，覆盖致命一枪和后续尸体射击（含0伤害）。无模拟身体不施加，尸体不再扣血。Explosion普通物理移除Enemy类型排除，保留GeometryCollection独立路径；先范围伤害启动布娃娃再径向冲量，不因推动已有尸体触发子弹时间。
+- 附着弹与身体血痕跟随尸体，到Owner真正EndPlay时清理；保留弹体原Fuse，可在尸体上继续爆炸。正在验证三种正式弹体致死/实际飞行打尸体、爆炸致死击飞、尸体寿命及移动/血痕清理/旧子弹时间回归。
+- 首次构建因局部Mesh遮蔽ACharacter成员触发C4458，已改BodyMesh；Development Editor Win64随后构建成功。第一轮六项中五项通过，致命枪击骨盆方向断言失败；补充全身质量加权动量检查以区分关节回摆和总冲量方向，尚待最终验证。
+- 后续定位：不是单纯骨盆回摆，EnemyRagdollMomentum.log显示致命枪击总X动量约-3300。关闭Humanoid手持WeaponMesh在死亡后的碰撞后，EnemyRagdollWeaponCollision.log专项Success，三枪总X动量约4780~4815（设定冲量5000），实际飞行0伤害弹再击尸体的骨盆速度约103~116cm/s，爆炸致死骨盆X速度约487cm/s。修复为正式死亡流程的一部分，未改PhysicsAsset或武器存活碰撞。
+- 尸体正伤害弹跳过扣血后显式发一次Enemy Hit，保留肉体声/血迹，GCN_EnemyHit对死人不启动新痛呼；没有新增或改音频资产/音量。最终Development Editor Win64构建成功，无新增C++警告。EnemyRagdollFinal.log全套回归待收尾。
+- 最终EnemyRagdollFinal.log六项6/6 Success：EnemyDeathRagdoll、EnemyExplosionControlRig、ExplosionOutcomeBulletTime、ExplosionSimulatedPhysics、MovingEnemyAttachmentCleanup、StickyExplosionAndBlood。三种正式弹体致死后立即启物理，真实飞行弹打尸体仍施力；爆炸刚杀死的目标受径向冲量。分别2秒/.8秒尸体寿命测试通过，死亡到期前骨骼附着与身体血痕保留，最终Actor/挂弹/身体Decal清理。条件子弹时间九场景与存活Rig/普通物理/原血迹声音回归通过。测试编辑器正常退出，未写资产或地图，结果未最终提交/push。
+
+
 ## 2026-09-05 共享人形全身受击、死亡清理与物理爆炸（实现与自验完成）
 
 - 用户批准合并实施：共享人形Rig归属/映射，更大更自然的全身含腿受击；真实移动/转身附着验证；敌人死亡清除悬空子弹/身体血痕；普通SimulatePhysics物体受爆炸冲量且不因此触发子弹时间。检查点8406b19保存上轮仰射及用户现有ABP状态，地图/ExternalActor/其他参数不纳入。

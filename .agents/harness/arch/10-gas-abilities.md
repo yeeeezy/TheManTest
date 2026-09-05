@@ -1,5 +1,7 @@
 # GAS 技能系统
 
+- 死亡布娃娃：Health回调仍负责首次OnDeath，但Actor延时销毁。ABulletBase施加伤害后在命中骨骼处施加物理冲量，致命一枪同样生效；已有尸体跳过GE扣血，通过显式Enemy Hit Cue保留肉体声/血迹，GCN_EnemyHit对死人不新触发PainSound。爆炸仍仅新击杀或Chaos新破碎请求子弹时间。
+
 ## 2026-09-05 人形共享全身爆炸受击（覆盖历史Phantom专属Rig路径）
 
 - 共享资产`Enemy/Humanoid/_Shared/Animations/ControlRig/CR_Humanoid_HitReaction`及`ABP_Humanoid_HitReaction`；ABP为无TargetSkeleton的模板，通过Humanoid基类HitReactionPostProcess自动接入。Rig清空PreviewMesh、SourceHierarchyImport、SourceCurveImport，没有Phantom资产依赖。HumanoidReactionFrame经原生AnimInstance传入Rig，含Torso/Follow/Compression/BoneMapping，原生节点按映射处理脊柱、头肩跟随、髋部下沉和双腿脚位保持。默认38度/.85秒恢复，头肩延迟.045秒，腿压缩7cm；胶囊不移动。

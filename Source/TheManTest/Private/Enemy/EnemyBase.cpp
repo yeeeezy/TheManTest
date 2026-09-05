@@ -9,6 +9,10 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Enemy/UI/EnemyHealthBarWidgetBase.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "AIController.h"
+#include "BrainComponent.h"
 
 AEnemyBase::AEnemyBase()
 {
@@ -206,7 +210,7 @@ void AEnemyBase::GrantAbilities(const TArray<TSubclassOf<UGameplayAbility>>& Abi
 
 bool AEnemyBase::UseRandomSkill(AActor* Target, EEnemySkillRange Range)
 {
-	if (!Target || !AbilitySystemComponent) { return false; }
+	if (IsDead() || !Target || !AbilitySystemComponent) { return false; }
 
 	const int32 PhaseIndex = CurrentPhase - 1;
 	if (!PhaseSkillSets.IsValidIndex(PhaseIndex)) { return false; }
@@ -243,9 +247,44 @@ void AEnemyBase::OnDeath()
 	if (bIsDead) return;
 	bIsDead = true;
 	EnemyHealthBarComponent->SetVisibility(false);
+	if (ATheManGameStateBase* GS = GetWorld()->GetGameState<ATheManGameStateBase>())
+	{
+		GS->OnMidRoundStrengthIncrease.RemoveDynamic(this, &AEnemyBase::HandleMidRoundStrengthIncrease);
+		GS->OnCombatPhaseChanged.RemoveDynamic(this, &AEnemyBase::HandleCombatPhaseChanged);
+	}
 
-	// 敌人死亡：销毁 Actor（具体表现蓝图覆写）
-	Destroy();
+	const FVector DeathVelocity = GetVelocity();
+	if (AbilitySystemComponent) AbilitySystemComponent->CancelAllAbilities();
+	if (AAIController* AI = Cast<AAIController>(GetController()))
+	{
+		if (AI->GetBrainComponent()) AI->GetBrainComponent()->StopLogic(TEXT("Death"));
+		AI->ClearFocus(EAIFocusPriority::Gameplay);
+		AI->StopMovement();
+	}
+	DetachFromControllerPendingDestroy();
+	GetWorldTimerManager().ClearAllTimersForObject(this);
+	GetCharacterMovement()->StopMovementImmediately();
+	GetCharacterMovement()->DisableMovement();
+	SetActorTickEnabled(false);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (USkeletalMeshComponent* BodyMesh = GetMesh(); BodyMesh && BodyMesh->GetPhysicsAsset())
+	{
+		BodyMesh->SetDisablePostProcessBlueprint(true);
+		BodyMesh->bPauseAnims = true;
+		BodyMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+		BodyMesh->SetCollisionProfileName(TEXT("Ragdoll"));
+		// Existing projectile channels target Pawn; the capsule is now disabled, so they hit bodies.
+		BodyMesh->SetCollisionObjectType(ECC_Pawn);
+		BodyMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Block);
+		BodyMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+		BodyMesh->SetSimulatePhysics(true);
+		BodyMesh->SetAllBodiesSimulatePhysics(true);
+		BodyMesh->SetAllBodiesPhysicsBlendWeight(1.f);
+		BodyMesh->SetEnableGravity(true);
+		BodyMesh->SetAllPhysicsLinearVelocity(DeathVelocity);
+		BodyMesh->WakeAllRigidBodies();
+	}
+	SetLifeSpan(FMath::Max(.1f, CorpseLifetime));
 }
 
 void AEnemyBase::RefreshEnemyHealthBar()

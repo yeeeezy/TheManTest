@@ -7,6 +7,7 @@
 #include "GameplayEffect.h"
 #include "Core/_Shared/GAS/TheManGameplayTags.h"
 #include "Enemy/EnemyBase.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "UObject/ConstructorHelpers.h"
 
 ABulletBase::ABulletBase()
@@ -91,12 +92,42 @@ void ABulletBase::ProcessHit_Implementation(
 	UAbilitySystemComponent* SourceASC)
 {
 	if (bHasProcessedHit) { return; }
+	const FVector ShotDirection = GetVelocity().GetSafeNormal(UE_SMALL_NUMBER, GetActorForwardVector());
+	FName ImpulseBone = NAME_None;
+	FVector ImpulseLocalPoint = FVector::ZeroVector;
+	TWeakObjectPtr<AEnemyBase> ImpulseTarget;
 	if (AEnemyBase* Enemy = Cast<AEnemyBase>(HitResult.GetActor()))
 	{
 		if (Enemy->ShouldProjectilePassThrough())
 		{
 			if (CollisionSphere) CollisionSphere->IgnoreActorWhenMoving(Enemy, true);
 			return;
+		}
+		// Resolve against actual bodies before the damage/alert callbacks can change the pose.
+		if (USkeletalMeshComponent* Mesh = Enemy->GetMesh(); Mesh && Mesh->GetPhysicsAsset())
+		{
+			FHitResult BodyHit = HitResult;
+			bool bFound = HitResult.GetComponent() == Mesh && !HitResult.BoneName.IsNone();
+			if (!bFound)
+			{
+				const FVector PathPoint = HitResult.TraceStart.Equals(HitResult.TraceEnd)
+					? GetActorLocation() : FVector(HitResult.Location);
+				const float Span = FMath::Max(100.f, Mesh->Bounds.SphereRadius * 2.f);
+				FCollisionQueryParams Query(SCENE_QUERY_STAT(ProjectileBodyImpulse), false);
+				bFound = Mesh->LineTraceComponent(BodyHit, PathPoint-ShotDirection*Span, PathPoint+ShotDirection*Span, Query);
+				if (!bFound)
+				{
+					FVector Point, Normal; float Distance = 0.f; FName Bone;
+					bFound = Mesh->K2_GetClosestPointOnPhysicsAsset(HitResult.ImpactPoint, Point, Normal, Bone, Distance);
+					if (bFound) { BodyHit.ImpactPoint = Point; BodyHit.BoneName = Bone; }
+				}
+			}
+			if (bFound && !BodyHit.BoneName.IsNone())
+			{
+				ImpulseTarget = Enemy;
+				ImpulseBone = BodyHit.BoneName;
+				ImpulseLocalPoint = Mesh->GetSocketTransform(ImpulseBone).InverseTransformPosition(BodyHit.ImpactPoint);
+			}
 		}
 		// 只把玩家/非敌方发射者视为威胁；避免敌人友军火力互相改写战斗目标。
 		if (HitInstigator && !HitInstigator->IsA<AEnemyBase>())
@@ -126,7 +157,9 @@ void ABulletBase::ProcessHit_Implementation(
 	}
 
 	// 命中目标若带 ASC 则施加伤害 GE；打墙/地等无 ASC 目标跳过此步，但子弹仍会按下方逻辑销毁。
-	if (HitEffectClass && SourceASC)
+	const AEnemyBase* HitEnemy = Cast<AEnemyBase>(HitResult.GetActor());
+	const bool bHitCorpse = HitEnemy && HitEnemy->IsDead();
+	if (HitEffectClass && SourceASC && !bHitCorpse)
 	{
 		if (AActor* HitActor = HitResult.GetActor())
 		{
@@ -151,9 +184,19 @@ void ABulletBase::ProcessHit_Implementation(
 		}
 	}
 
-	// Zero-damage hits do not produce the positive Health callback that owns normal enemy feedback.
-	// Explicitly notify only this case, after the shared pass-through / duplicate-hit guards.
-	if (Damage == 0.f)
+	// Damage can enable ragdoll synchronously: the lethal shot and later corpse hits use this same path.
+	if (AEnemyBase* Enemy = ImpulseTarget.Get(); Enemy && Enemy->ProjectileHitImpulse > 0.f)
+	{
+		USkeletalMeshComponent* Mesh = Enemy->GetMesh();
+		if (Mesh && Mesh->IsSimulatingPhysics(ImpulseBone))
+		{
+			const FVector Point = Mesh->GetSocketTransform(ImpulseBone).TransformPosition(ImpulseLocalPoint);
+			Mesh->AddImpulseAtLocation(ShotDirection * Enemy->ProjectileHitImpulse, Point, ImpulseBone);
+		}
+	}
+
+	// Zero-damage and corpse hits have no Health callback; still play flesh/decal feedback once.
+	if (Damage == 0.f || bHitCorpse)
 	{
 		if (AEnemyBase* Enemy = Cast<AEnemyBase>(HitResult.GetActor()); IsValid(Enemy) && !Enemy->IsActorBeingDestroyed())
 		{

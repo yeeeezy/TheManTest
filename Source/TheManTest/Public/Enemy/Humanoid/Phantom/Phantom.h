@@ -16,7 +16,8 @@ public:
 
 	virtual void ReactToProjectileHit(AActor* HitInstigator) override;
 	virtual void SetCombatPhase(int32 NewPhase) override;
-	virtual bool ShouldProjectilePassThrough() const override { return bCloaked; }
+	virtual bool ShouldProjectilePassThrough() const override { return !IsDead() && bCloaked; }
+	virtual void OnDeath() override { if (!IsDead()) SetCloaked(false); Super::OnDeath(); }
 
 	UFUNCTION(BlueprintCallable, Category="Phantom|Phase")
 	void SetCloaked(bool bEnabled);

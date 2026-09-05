@@ -1,5 +1,7 @@
 # 敌人 AI 与战斗系统
 
+- 当前OnDeath不立即Destroy：先取消ASC技能、停止AI Brain/移动并解除Controller，清Actor计时器/波次订阅，关闭角色Tick与胶囊，进入布娃娃；CorpseLifetime默认5游戏秒后Destroy。Humanoid AIState置Dead，武器网格无碰撞并跟手部骨骼；Phantom取消隐身。UseRandomSkill拒绝死人。
+
 **何时读取：** 修改敌人巡逻/转身/感知/战斗状态、行为树、敌人技能集（阶段×近中远）、敌人 GAS 或敌人动画驱动时。
 
 > 相关：敌人动画状态机细节见 `06-animation.md`；敌人 GAS 技能/技能集见 `10-gas-abilities.md`；属性/死亡见 `04-gas-attributes.md`。本文聚焦 AI 行为与系统关系。

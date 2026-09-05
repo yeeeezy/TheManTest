@@ -94,7 +94,7 @@ public:
   Test->TestFalse(FString(Names[Case])+TEXT(" bullet destroyed"),Bullet.IsValid());
   Test->TestEqual(TEXT("World speed restored"),W->GetWorldSettings()->TimeDilation,1.f);
   if(Case==1)Test->TestEqual(TEXT("Surviving enemy loses 20 health"),Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),80.f);
-  if(Case==2||Case==6||Case==8)Test->TestFalse(TEXT("Lethal blast really killed enemy"),Enemy.IsValid());
+  if(Case==2||Case==6||Case==8)Test->TestTrue(TEXT("Lethal blast really killed enemy"),Enemy.IsValid() && Enemy->IsDead());
   if(Case==7)Test->TestEqual(TEXT("Wall really blocked lethal blast"),Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),20.f);
   if(Cube.IsValid())
   {

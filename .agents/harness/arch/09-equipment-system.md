@@ -1,5 +1,11 @@
 # 装备系统
 
+## 当前死亡布娃娃与子弹物理
+
+- ABulletBase统一在伤害/警觉转向前定位敌人Mesh PhysicsAsset上的命中骨骼与骨骼局部点，伤害后对模拟身体施加AddImpulseAtLocation。致命一枪与后续尸体命中共用路径；零伤害同样可推物理身体，存活非模拟身体不受此冲量。冲量强度统一取Enemy|Death.ProjectileHitImpulse。尸体不再扣血或刷新寿命，但仍通过显式Hit Cue播放肉体声/血迹，不新触发痛呼。
+- ApplyPhysicsImpulse移除Enemy类型排除，IsSimulatingPhysics已过滤非物理目标；仍排除GeometryCollection防重复Chaos冲量。先范围伤害切布娃娃，再对刚死/已有尸体及其他模拟物体施加径向冲量。PhysicsImpulseRadius/Strength仍为400/800，距离衰减、墙体遮挡保留；推动旧尸体不触发子弹时间。
+- 死亡不再等于EndPlay：附着弹保留Fuse并跟随布娃娃骨骼，可在尸体上爆炸；尸体寿命到期销毁Actor时，清理未爆弹与身体血痕。地面血迹按原寿命。
+
 ## 2026-09-05 爆炸普通物理冲量和附着生命周期
 
 - ExplosionGunBullet新增Bullet|Explosion|Physics：PhysicsImpulseRadius=400cm、PhysicsImpulseStrength=800（速度变化强度）。范围内SimulatePhysics组件去重并排除Enemy与GeometryCollection，以Visibility测试墙体遮挡后AddRadialImpulse线性衰减、bVelChange=true。Chaos仍走独立破碎/冲量路径，不重复施加；普通物体飞散不请求子弹时间。
