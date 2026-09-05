@@ -12,12 +12,12 @@ bool FExplosionDirectionalShakeTest::RunTest(const FString& Parameters)
  if(!TestNotNull(TEXT("Explosion Cue loads"),CueClass))return false;
  const auto* Cue=CueClass->GetDefaultObject<UGCN_ExplosionGunExplosion>();
  TestEqual(TEXT("Supplied explosion uses user-requested threefold gain"),Cue->VolumeMultiplier,3.f);
- TestEqual(TEXT("Supplied alien explosion audio is assigned"),Cue->ExplosionSound ? Cue->ExplosionSound->GetName() : FString(),FString(TEXT("S_ExplosionGun_AlienDetonation")));
+ TestEqual(TEXT("Supplied alien explosion Sound Cue is assigned"),Cue->ExplosionSound ? Cue->ExplosionSound->GetName() : FString(),FString(TEXT("SCue_ExplosionGun_Detonation")));
  UClass* EnemyCueClass=LoadClass<UGCN_EnemyHit>(nullptr,TEXT("/Game/Enemy/_Shared/GAS/GameplayCues/GC_Character_Enemy_Hit.GC_Character_Enemy_Hit_C"));
  if(TestNotNull(TEXT("Enemy Hit Cue loads"),EnemyCueClass))
  {
   const auto* EnemyCue=EnemyCueClass->GetDefaultObject<UGCN_EnemyHit>();
-  TestEqual(TEXT("Supplied flesh hit sound is assigned"),EnemyCue->ImpactSound ? EnemyCue->ImpactSound->GetName() : FString(),FString(TEXT("S_Enemy_FleshHit")));
+  TestEqual(TEXT("Supplied flesh hit Sound Cue is assigned"),EnemyCue->ImpactSound ? EnemyCue->ImpactSound->GetName() : FString(),FString(TEXT("SCue_Enemy_FleshHit")));
  }
  TestNotNull(TEXT("Explosion has its own camera shake"),Cue->CameraShakeClass.Get());
  TestEqual(TEXT("Configured shake inside inner radius"),Cue->GetShakeScaleAtDistance(100),Cue->CameraShakeScale);

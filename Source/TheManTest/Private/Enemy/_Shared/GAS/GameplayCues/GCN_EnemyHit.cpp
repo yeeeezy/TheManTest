@@ -15,6 +15,7 @@ UGCN_EnemyHit::UGCN_EnemyHit()
 bool UGCN_EnemyHit::OnExecute_Implementation(AActor* Target,const FGameplayCueParameters& Parameters) const
 {
 	if(!IsValid(Target)||!Target->GetWorld()||Target->GetNetMode()==NM_DedicatedServer)return false;
+	// The character owns its hit voice; the weapon's impact Cue is silent on characters.
 	Super::OnExecute_Implementation(Target,Parameters);
 	UWorld* World=Target->GetWorld();
 	const FVector Point=Parameters.Location;

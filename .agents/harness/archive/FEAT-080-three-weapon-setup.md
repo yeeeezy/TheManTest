@@ -1,5 +1,17 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-04 声音资产统一随机化（本轮完成）
+
+- 用户确认把随机音高/音量移到Sound Cue，按用途共用衰减；打人只由角色Hit发声，环境由武器Impact发声，其他表现不变。以后新增音效必须沿用并验证规则。检查点d8badd4保留上轮随机血迹/3D命中结果，地图用户改动不纳入。
+- AuditAllAudio.log全项目SoundWave/SoundCue/MetaSoundSource审计：13个有引用的源音频；三枪开火/空仓/命中、肉体声、爆炸声与TestGun共12个适合随机化；扫描识别音保持稳定作为例外。另2个RepairGun旧切枪/模板音频无引用，不添加原本不存在的播放行为。
+- 新TheManAudioAssetLibrary编辑器助手创建标准Modulator/WavePlayer图，多素材支持Random无放回，拒绝覆写已有图。Scripts/Audio/configure_audio_cues.py显式消费者清单与冷验证入口；不移动或改写源Wave，不改用户5/3倍音量与8倍震屏。
+- 已移除PitchVariation/CharacterSoundMultiplier代码随机；ShouldPlayImpactSound由普通武器拒绝Character、EnemyHit显式拥有自身声音。首次C++编译成功。资产脚本初次停在Factory Python名称差异，未改消费者；已核对引擎SoundCueFactoryNew，继续执行验证。
+- 创建图时还发现UE5.7要求ChildNodes与图引脚数量一致，首个未保存Cue触发断言；现添加ReconstructNode后连接/编译，无消费者在失败时改写。ConfigureAudioCues3成功保存12个Cue和9个消费者Blueprint；ValidateAudioCues冷回读12/12、源Wave依赖、实际消费者、无Redirector及用户倍率5/3/8均通过。
+- AudioPolicyRegression.log六项Success：AssetVariationPolicy、AmmoLifecycle、ExplosionDirectionalShake、SpatialImpactFeedback、StickyExplosionAndBlood、ThreeWeaponBaseline。覆盖实际Sound Cue源Wave图连接、随机区间/并发/3D，未来多素材无放回助手及拒绝覆盖，真实血花/肉体声/伤害/倒计时/震屏/弹药。
+- 实际输出六份WAV均非零：肉体近左RMS=0.14701/0.02558、近右0.02723/0.15658、远左0.06671/0.01155；电击近左0.16916/0.02928、近右0.02967/0.17139、远左0.04102/0.00710。左右优势>2倍、远处总RMS<近处70%断言通过。
+- 最后补充三枪实际OnExecute携带角色HitResult的声音组件计数断言：AudioPolicyHitRouting.log的SpatialImpactFeedback为Success，三枪均不创建武器声音；原Niagara仍播放。补丁后Development Editor Win64再次成功。测试背景音量覆盖增加析构恢复，失败退出也不遗留设置。
+- 接入规范已写AGENTS.md与arch/14-audio-policy.md；以后新音效需加Sound Cue随机/用途衰减/并发及消费者验收，例外说明原因。结果未最终Git提交/未push，用户地图与前置Chaos资产不变。
+
 ## 目标
 
 - 为 RepairGun 接通现有第一人称开火蒙太奇。

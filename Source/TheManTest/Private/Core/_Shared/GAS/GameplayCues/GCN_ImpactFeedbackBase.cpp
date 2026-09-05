@@ -16,10 +16,9 @@ UGCN_ImpactFeedbackBase::UGCN_ImpactFeedbackBase()
 }
 UAudioComponent* UGCN_ImpactFeedbackBase::SpawnImpactSound(UWorld* World,const FVector& Location,bool bCharacterImpact) const
 {
-	if(!World||!ImpactSound)return nullptr;
+	if(!World||!ImpactSound||!ShouldPlayImpactSound(bCharacterImpact))return nullptr;
 	return UGameplayStatics::SpawnSoundAtLocation(World,ImpactSound,Location,FRotator::ZeroRotator,
-		VolumeMultiplier*(bCharacterImpact?CharacterSoundMultiplier:1.f),
-		FMath::Max(.1f,PitchMultiplier*FMath::FRandRange(1.f-PitchVariation,1.f+PitchVariation)),
+		VolumeMultiplier, PitchMultiplier,
 		0.f,ImpactAttenuation,ImpactConcurrency,true);
 }
 FRotator UGCN_ImpactFeedbackBase::MakeDecalRotation(const FVector& Normal,bool bRandomize)

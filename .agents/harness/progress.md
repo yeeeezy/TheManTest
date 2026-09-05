@@ -2,13 +2,20 @@
 
 ## Active Feature
 
-- FEAT-080：三枪独立表现，in_progress；本轮随机血迹/身体附着/3D命中声已实现并验证，整体功能不关闭。
+- FEAT-080：三枪独立表现，in_progress；本轮Sound Cue统一随机、按用途衰减及角色Hit独占声音已实现并验收，整体功能不关闭。
 - 历史配置、变更与验证见 archive/FEAT-080-three-weapon-setup.md。
 
-## 最新完成：随机血迹与空间命中声
+## 最新工作：音效统一资产配置
+
+- 12个现用玩法音效已封装owner-local SCue_*，Modulator轻微随机音高/音量（音量0.95~1），未来多素材支持Random无放回。扫描启停识别音保留稳定；未新增原本不存在的切枪/换弹声音。
+- 开火/机械/环境命中/肉体/爆炸按用途配置衰减及并发，具体参数见arch/14-audio-policy.md。打角色时武器Impact不创建声音，角色自己的Hit负责；原粒子/贴花/伤害不变。
+- 新增音效强制规范已写AGENTS.md；编辑器作者工具TheManAudioAssetLibrary与Scripts/Audio/configure_audio_cues.py提供可重复接入/冷验证。
+- Development Editor Win64成功，ConfigureAudioCues3完成12Cue及9消费者Blueprint打开/编译/保存；ValidateAudioCues冷回读12/12通过，原素材依赖/消费者/无Redirector和音量5/3、震屏8检查通过。AudioPolicyRegression六项Success，实际录音左右/远近断言通过；AudioPolicyHitRouting补充三枪实际OnExecute打人不创建武器声断言Success。
+
+## 保留：随机血迹与空间命中声
 
 - 血迹与武器弹痕随机尺寸、旋转、长宽和MID图案；身体血迹修正为Mesh表面法线与骨骼附着，补Trace失败不悬空生成。血迹12秒/喷溅0.55秒不变。
-- 四项Hit Cue接SA_ProjectileImpact：180cm内全量、再衰减2200cm，左右空间定位；并发12/8。Enemy肉体音量保留用户5，武器打人撞击层降到0.3；独立肉体Submix限幅减少峰值削波。
+- 四项Hit Cue接SA_ProjectileImpact：180cm内全量、再衰减2200cm，左右空间定位；并发12/8。Enemy肉体音量保留用户5，武器打人撞击层现在完全禁声；独立肉体Submix限幅减少峰值削波。
 - Development Editor Win64成功；HitFeedbackFinal六项回归Success，HitSpatialFocused独立录音验证肉体/电击声音左右和远近均生效。测试临时取消后台静音并恢复，未改全局配置。新增三项材质Shader错误数0。
 - 具体资产/字段/录音RMS见FEAT-080 archive与arch/10。视觉已查看孤立血迹截图，最终手感待用户反馈。
 
@@ -45,8 +52,8 @@
 
 ## 会话交接
 
-- 本轮范围完成，可在VFXTestMap试不同距离/方位命中及身体血迹。未改伤害、Fuse、爆炸声震和Chaos逻辑。
-- 最新安全检查点8f2f1e6保存不规则Cube前置状态，e1ed363保存用户EnemyHit音量5；本轮结果未最终Git提交，未push。地图/用户新增外部Actor保持原样。
+- 本轮范围完成，可在VFXTestMap试连续开火/空仓/命中/爆炸的随机变化。声音参数在各自Audio/SCue_*；未改伤害、Fuse、震屏和Chaos逻辑。音频传播范围按arch14配置。
+- 最新安全检查点d8badd4保存随机血迹/空间命中前置状态；本轮结果未最终Git提交，未push。地图/用户新增外部Actor保持原样。
 - TestMap的65个外部Actor包改动均为这次地形标记，不要误当无关编辑撤销。
 - 可复用编辑器资产创建命令CreateTestCubeAsset(bRebuild=false)不在运行时/Construction调用；仅显式true重建不规则资产。PlanarCut插件与PlanarCut/Voronoi依赖限Editor。最新生成脚本Saved/Codex/rebuild_irregular_cube.py，不重存地图；旧install_chaos_cube.py用于首次布场，不要为重建碎块重新执行。
 - 既有M_UE4Man_Body材质缺纹理及AimIK警告未在本轮处理。

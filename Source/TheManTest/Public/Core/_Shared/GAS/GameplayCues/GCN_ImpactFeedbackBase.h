@@ -23,10 +23,8 @@ public:
 	TObjectPtr<USoundAttenuation> ImpactAttenuation;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Impact|Audio")
 	TObjectPtr<USoundConcurrency> ImpactConcurrency;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Impact|Audio", meta=(ClampMin="0",ClampMax="0.5"))
-	float PitchVariation=.06f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Impact|Audio", meta=(ClampMin="0",ClampMax="1"))
-	float CharacterSoundMultiplier=1.f;
+	// Random pitch/volume belong to the Sound Cue, never to the gameplay caller.
+	virtual bool ShouldPlayImpactSound(bool bCharacterImpact) const { return !bCharacterImpact; }
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Impact|Decal", meta=(ClampMin="0",ClampMax="0.8"))
 	float DecalSizeVariation=.3f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Impact|Decal")

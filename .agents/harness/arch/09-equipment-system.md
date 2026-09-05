@@ -1,6 +1,6 @@
 # 装备系统
 
-- FEAT-080命中随机/空间声由Core/_Shared/GAS/GameplayCues/GCN_ImpactFeedbackBase统一处理；敌人身体血迹由Enemy/_Shared/GAS/GameplayCues/GCN_EnemyHit处理。枪械/弹体不重复实现音频衰减或身体贴花，伤害与爆炸Fuse保持原流程。具体配置见arch/10-gas-abilities.md。
+- FEAT-080随机音高/音量现归每个音效的Sound Cue资产，开火/空仓/环境命中/肉体/爆炸按用途配置衰减和并发，详见arch/14-audio-policy.md。GCN_ImpactFeedbackBase命中角色不出声，角色Hit负责自己的声音；粒子仍保持原规则。伤害与爆炸Fuse保持原流程。
 
 - ABulletBase零伤害有效命中Enemy时，单独以真实HitResult调用Enemy的HitReactionCue；穿透/重复Hit先返回，正伤害仍由Health路径负责，不重复表现。电击弹Damage=0保持不变。
 

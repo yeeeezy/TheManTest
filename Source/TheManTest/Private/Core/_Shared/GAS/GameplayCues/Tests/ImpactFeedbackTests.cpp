@@ -27,11 +27,16 @@ class FSpatialImpactCommand : public IAutomationLatentCommand
  int Stage=0,Sample=0;
  float Start=0;
  float PreviousUnfocusedVolume=0.f;
+ bool bChangedUnfocusedVolume=false;
  UGCN_EnemyHit* Cue=nullptr;
  FVector Listener=FVector(0,0,160);
  TArray<TWeakObjectPtr<UDecalComponent>> Decals;
 public:
  explicit FSpatialImpactCommand(FAutomationTestBase* T):Test(T){}
+ virtual ~FSpatialImpactCommand() override
+ {
+  if(bChangedUnfocusedVolume)FApp::SetUnfocusedVolumeMultiplier(PreviousUnfocusedVolume);
+ }
  virtual bool Update() override
  {
   UWorld* World=GEditor?GEditor->PlayWorld:nullptr;
@@ -41,6 +46,7 @@ public:
   {
    PreviousUnfocusedVolume=FApp::GetUnfocusedVolumeMultiplier();
    FApp::SetUnfocusedVolumeMultiplier(1.f);
+   bChangedUnfocusedVolume=true;
    auto* Class=LoadClass<UGCN_EnemyHit>(nullptr,TEXT("/Game/Enemy/_Shared/GAS/GameplayCues/GC_Character_Enemy_Hit.GC_Character_Enemy_Hit_C"));
    if(!Class){Test->AddError(TEXT("Missing enemy Cue"));return true;}
    Cue=Class->GetDefaultObject<UGCN_EnemyHit>();
@@ -54,6 +60,32 @@ public:
    // Same impact position must still yield varying projected rotation, size and noise pattern.
    auto* WeaponClass=LoadClass<UGCN_ImpactFeedbackBase>(nullptr,TEXT("/Game/Weapons/ElectricGun/GAS/GameplayCues/GC_Weapon_ElectricGun_Impact.GC_Weapon_ElectricGun_Impact_C"));
    auto* Weapon=WeaponClass->GetDefaultObject<UGCN_ImpactFeedbackBase>();
+   Test->TestNull(TEXT("Weapon creates no voice when hitting a character"),Weapon->SpawnImpactSound(World,Listener,true));
+   Test->TestFalse(TEXT("Weapon owns no character hit voice"),Weapon->ShouldPlayImpactSound(true));
+   Test->TestTrue(TEXT("Character Cue owns character hit voice"),Cue->ShouldPlayImpactSound(true));
+   // Exercise the real OnExecute route for every weapon, not only the audio helper.
+   FGameplayCueParameters CharacterParams;
+   CharacterParams.Location=Listener;
+   CharacterParams.Normal=FVector::UpVector;
+   CharacterParams.EffectContext=FGameplayEffectContextHandle(new FGameplayEffectContext());
+   CharacterParams.EffectContext.AddHitResult(FHitResult(PC->GetPawn(),nullptr,Listener,FVector::UpVector));
+   for(const TCHAR* Name:{TEXT("RepairGun"),TEXT("ElectricGun"),TEXT("ExplosionGun")})
+   {
+    const FString Path=FString::Printf(TEXT("/Game/Weapons/%s/GAS/GameplayCues/GC_Weapon_%s_Impact.GC_Weapon_%s_Impact_C"),Name,Name,Name);
+    auto* HitClass=LoadClass<UGCN_ImpactFeedbackBase>(nullptr,*Path);
+    if(!HitClass){Test->AddError(TEXT("Missing weapon hit Cue"));continue;}
+    auto* HitCue=HitClass->GetDefaultObject<UGCN_ImpactFeedbackBase>();
+    auto CountVoices=[World,HitCue]()
+    {
+     int Count=0;
+     for(TObjectIterator<UAudioComponent> It;It;++It)
+      if(It->GetWorld()==World&&It->Sound==HitCue->ImpactSound)++Count;
+     return Count;
+    };
+    const int Before=CountVoices();
+    HitCue->OnExecute_Implementation(PC->GetPawn(),CharacterParams);
+    Test->TestEqual(FString::Printf(TEXT("%s OnExecute on character creates no weapon voice"),Name),CountVoices(),Before);
+   }
    FGameplayCueParameters Params;Params.Location=FVector(0,300,1);Params.Normal=FVector::UpVector;
    for(int I=0;I<5;++I)Weapon->OnExecute_Implementation(PC->GetPawn(),Params);
    for(TObjectIterator<UDecalComponent> It;It;++It)
@@ -96,6 +128,7 @@ public:
   if(++Sample<6){Stage=1;Start=World->GetTimeSeconds();return false;}
   PC->ClearAudioListenerOverride();
   FApp::SetUnfocusedVolumeMultiplier(PreviousUnfocusedVolume);
+  bChangedUnfocusedVolume=false;
   for(auto D:Decals)if(D.IsValid())D->DestroyComponent();
   return true;
  }

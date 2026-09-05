@@ -10,6 +10,7 @@ class THEMANTEST_API UGCN_EnemyHit : public UGCN_ImpactFeedbackBase
 
 public:
 	UGCN_EnemyHit();
+	virtual bool ShouldPlayImpactSound(bool bCharacterImpact) const override { return true; }
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Blood")
 	TObjectPtr<UMaterialInterface> BloodSprayMaterial;

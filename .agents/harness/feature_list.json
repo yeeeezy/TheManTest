@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-04-irregular-chaos",
+    "last_updated":  "2026-09-04-audio-cue-policy",
     "active_feature":  "FEAT-080",
     "archive_file":  "feature_archive.json",
     "features":  [
@@ -471,7 +471,8 @@
                          "description":  "为 RepairGun 正式接通现有第一人称开火蒙太奇；以 RepairGun 为完整配置基线创建电击枪和爆炸枪，两把新枪仅替换各自模型、枪口与命中特效。源模型和 VFX 来自外部 VFXPack 项目；不迁移源角色、武器蓝图或动画。即使表现依赖内容相同，也按武器所有权复制到各自语义目录并重命名，使三把枪后续可以独立调整。",
                          "archive_file":  "archive/FEAT-080-three-weapon-setup.md",
                          "created":  "2026-09-03",
-                         "updated":  "2026-09-04-spatial-hit-feedback",
+                         "updated":  "2026-09-04-audio-cue-policy",
+                         "audio_cue_policy_verification": "用户确认随机音高/音量收进Sound Cue，按用途共享衰减/并发，打角色仅角色Hit发声。12个现用玩法音效已创建owner-local SCue并更新9消费者；扫描识别音例外保持稳定。新增音效规范写入AGENTS/arch14，提供初始化助手及清单验证脚本。Development Editor Win64成功，ValidateAudioCues冷验证12/12通过；AudioPolicyRegression六项Success，实际录音两类声音左右优势>2倍、远处RMS<近处70%。AudioPolicyHitRouting补充三枪实际OnExecute命中角色不创建武器声断言Success。检查点d8badd4，结果未最终提交。",
                          "spatial_hit_verification": "随机血迹/弹痕MID、尺度与旋转；身体血迹Mesh表面Trace/骨骼附着；四Cue共用3D衰减与独立并发，保留用户肉体音量5、打人武器撞击层0.3。Development Editor Win64成功，HitFeedbackFinal六项Success。HitSpatialFocused独立真实录音非零，两种声音左右声道优势超过2倍、远处RMS低于近处70%；材质Shader零错误，身体附着/移动跟随及肉体声播放断言通过。独立肉体限幅降低削波但未完全消除。结果未最终Git提交。",
                          "irregular_chaos_verification": "规则27块替换为42块不规则Voronoi，大小混合/0.8cm断面噪声，总体积保持1000000.1cm³；ChaosAngularSpeed=5rad/s随机翻滚。原GC路径不变，不重排地图，不改伤害/Fuse/Cue。Development Editor Win64成功，IrregularCubeFinal.log五项自动化5/5 Success；已查看有照明PIE碎块截图。检查点db9a156，结果未最终提交。",
                          "chaos_ground_verification": "新增可摆放BP_ChaosDestructibleCube和27块真实Chaos资产；非Enemy附着爆炸按400cm半径施加Strain/Impulse，Enemy不触发，首次伤害不变。地面Actor Tag ExplosionGround+45度坡度+2000cm多命中查询；Cue声震用实际点，Ground Niagara用Context地面Hit，缺地面跳过。GASPTest/VFXTestMap地板及TestMap地形本体+64分块已标记，VFXTestMap摆3个Cube。Development Editor Win64成功，ExplosionChaosPhysics.log两项PIE Success；ValidateChaosAssets.log冷加载地板/65地形/3Cube、BP编译保存及音量3/震屏8验证通过。最终四项回归见ExplosionChaosFinal.log。",

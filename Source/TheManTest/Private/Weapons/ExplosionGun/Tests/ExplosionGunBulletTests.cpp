@@ -148,7 +148,7 @@ public:
   {
    Capture(TEXT("TMT_EnemyBloodHit.png"));State.bBloodCaptured=true;
    bool bFleshPlaying=false;
-   for(TObjectIterator<UAudioComponent> It;It;++It)if(It->GetWorld()==World&&It->Sound&&It->Sound->GetName()==TEXT("S_Enemy_FleshHit")&&It->IsPlaying())bFleshPlaying=true;
+   for(TObjectIterator<UAudioComponent> It;It;++It)if(It->GetWorld()==World&&It->Sound&&It->Sound->GetName()==TEXT("SCue_Enemy_FleshHit")&&It->IsPlaying())bFleshPlaying=true;
    Test->TestTrue(TEXT("Actual enemy Hit Cue is playing supplied flesh sound"),bFleshPlaying);
    auto* Modifier=Cast<UCameraModifier_CameraShake>(World->GetFirstPlayerController()->PlayerCameraManager->FindCameraModifierByClass(UCameraModifier_CameraShake::StaticClass()));
    TArray<FActiveCameraShakeInfo> Active;

@@ -567,7 +567,7 @@ bool FValidateCombatHUDCommand::Update()
 	Test->TestEqual(TEXT("Default magazine capacity"), Firearm->GetMagazineCapacity(), 30);
 	Test->TestEqual(TEXT("Default spare magazine count"), Firearm->GetSpareMagazineCount(), 3);
 	USoundBase* ExpectedDryFireSound = LoadObject<USoundBase>(nullptr,
-		TEXT("/Game/Weapons/RepairGun/Audio/S_RepairGun_DryFire.S_RepairGun_DryFire"));
+		TEXT("/Game/Weapons/RepairGun/Audio/SCue_RepairGun_DryFire.SCue_RepairGun_DryFire"));
 	Test->TestNotNull(TEXT("RepairGun dry-fire sound asset loads"), ExpectedDryFireSound);
 	Test->TestEqual(TEXT("Equipped RepairGun uses its dedicated dry-fire sound"), Firearm->DryFireSound, ExpectedDryFireSound);
 	Test->TestEqual(TEXT("HUD displays current ammo"), Widget->GetDisplayedCurrentAmmoForTesting(), 30);
@@ -632,7 +632,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 bool FCombatHUDAndAmmoTest::RunTest(const FString& Parameters)
 {
 	USoundBase* RepairGunImpactSound = LoadObject<USoundBase>(nullptr,
-		TEXT("/Game/Weapons/RepairGun/Audio/S_RepairGun_Impact.S_RepairGun_Impact"));
+		TEXT("/Game/Weapons/RepairGun/Audio/SCue_RepairGun_Impact.SCue_RepairGun_Impact"));
 	TestNotNull(TEXT("RepairGun impact sound loads"), RepairGunImpactSound);
 	UClass* RepairGunCueClass = LoadClass<UGCN_RepairGunImpact>(nullptr,
 		TEXT("/Game/Weapons/RepairGun/GAS/GameplayCues/GC_Weapon_RepairGun_Impact.GC_Weapon_RepairGun_Impact_C"));
