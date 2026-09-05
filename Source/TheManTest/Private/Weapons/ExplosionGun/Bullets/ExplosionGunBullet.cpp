@@ -4,6 +4,7 @@
 #include "GameplayCueManager.h"
 #include "Components/SphereComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Core/_Shared/GAS/TheManGameplayTags.h"
@@ -32,6 +33,47 @@ void AExplosionGunBullet::ProcessHit_Implementation(const FHitResult& Hit,AActor
  if(bAttached || HasProcessedHit())return;
  const bool bEnemyImpact=IsValid(Hit.GetActor()) && Hit.GetActor()->IsA<AEnemyBase>();
  ImpactDirection=GetVelocity().GetSafeNormal(UE_SMALL_NUMBER,GetActorForwardVector());
+ FHitResult Surface=Hit;
+ UPrimitiveComponent* Parent=Hit.GetComponent();
+ bool bBodySurface=false;
+ // Resolve before damage can turn/destroy the target. A sphere's contact point is offset
+ // from its flight axis; use the swept center instead when refining the body surface.
+ if(ACharacter* Character=Cast<ACharacter>(Hit.GetActor());IsValid(Character) && Character->GetMesh())
+ {
+  auto* Mesh=Character->GetMesh();
+  const FVector PathPoint=Hit.TraceStart.Equals(Hit.TraceEnd)?GetActorLocation():FVector(Hit.Location);
+  const float Span=FMath::Max(100.f,Mesh->Bounds.SphereRadius*2.f);
+  FCollisionQueryParams Query(SCENE_QUERY_STAT(StickyBulletAttachment),false);
+  FHitResult MeshHit;
+  auto ValidSurface=[&](const FHitResult& Candidate)
+  {
+   return !Candidate.bStartPenetrating && !Candidate.BoneName.IsNone()
+    && Mesh->GetBoneIndex(Candidate.BoneName)!=INDEX_NONE
+    && FVector::DotProduct(Candidate.ImpactNormal,ImpactDirection)<-.01f;
+  };
+  if(Mesh->LineTraceComponent(MeshHit,PathPoint-ImpactDirection*Span,PathPoint+ImpactDirection*Span,Query)
+    && ValidSurface(MeshHit))
+  {
+   Surface=MeshHit;bBodySurface=true;
+  }
+  else
+  {
+   // Grazing the capsule can miss the body along the flight axis. Snap only to a
+   // nearby entry-side physics surface, never silently leave a visible capsule attachment.
+   FVector Point,Normal;FName Bone;float Distance=0;
+   if(Mesh->K2_GetClosestPointOnPhysicsAsset(Hit.ImpactPoint,Point,Normal,Bone,Distance))
+   {
+    MeshHit=FHitResult(Character,Mesh,Point,Normal);MeshHit.BoneName=Bone;
+    if(ValidSurface(MeshHit) && Distance<=Character->GetCapsuleComponent()->GetScaledCapsuleRadius()+10.f
+      && FVector::DotProduct(Point-PathPoint,ImpactDirection)>=-CollisionSphere->GetScaledSphereRadius())
+    {Surface=MeshHit;bBodySurface=true;}
+   }
+  }
+  if(bBodySurface)Parent=Mesh;
+ }
+ const FTransform SurfaceFrame=IsValid(Parent)?Parent->GetSocketTransform(Surface.BoneName):FTransform::Identity;
+ const FVector BoneLocalPoint=SurfaceFrame.InverseTransformPosition(Surface.ImpactPoint);
+ const FVector BoneLocalNormal=SurfaceFrame.InverseTransformVectorNoScale(Surface.ImpactNormal);
  // The base path handles pass-through, exactly-once direct damage and the existing impact Cue.
  Super::ProcessHit_Implementation(Hit,Shooter,Source);
  if(!HasProcessedHit() || IsActorBeingDestroyed())return;
@@ -40,17 +82,13 @@ void AExplosionGunBullet::ProcessHit_Implementation(const FHitResult& Hit,AActor
  ProjectileMovement->StopMovementImmediately();ProjectileMovement->Deactivate();ProjectileMovement->SetComponentTickEnabled(false);
  CollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
  SetLifeSpan(0.f);
- FHitResult Surface=Hit;
- UPrimitiveComponent* Parent=Hit.GetComponent();
- // Capsule hits still deal the original damage; only refine the visual attachment onto the animated mesh.
- if(ACharacter* Character=Cast<ACharacter>(Hit.GetActor());IsValid(Character) && Character->GetMesh())
+ if(IsValid(Parent))
  {
-  FHitResult MeshHit;
-  const FVector Direction=GetActorForwardVector();
-  FCollisionQueryParams Query(SCENE_QUERY_STAT(StickyBulletAttachment),true);
-  if(Character->GetMesh()->LineTraceComponent(MeshHit,Hit.ImpactPoint-Direction*40.f,Hit.ImpactPoint+Direction*120.f,Query))
-  { Surface=MeshHit;Parent=Character->GetMesh(); }
+  const FTransform CurrentFrame=Parent->GetSocketTransform(Surface.BoneName);
+  Surface.ImpactPoint=CurrentFrame.TransformPosition(BoneLocalPoint);
+  Surface.ImpactNormal=CurrentFrame.TransformVectorNoScale(BoneLocalNormal);
  }
+ if(bEnemyImpact && !bBodySurface)BulletMesh->SetVisibility(false);
  const FVector Normal=Surface.ImpactNormal.GetSafeNormal(UE_SMALL_NUMBER,FVector::UpVector);
  SetActorLocation(Surface.ImpactPoint+Normal*AttachmentOffset,false,nullptr,ETeleportType::TeleportPhysics);
  if(IsValid(Parent) && IsValid(Parent->GetOwner()) && !Parent->GetOwner()->IsActorBeingDestroyed())

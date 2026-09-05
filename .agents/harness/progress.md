@@ -6,6 +6,7 @@
 - 用户确认：只有本次爆炸实际炸碎Chaos或击杀Enemy才触发子弹时间；Enemy身上爆炸使用TMIIR地图的N_ExplosionAir_007。
 - 当前最新：按用户要求将Phantom临时固定为不移动、不自动转向的靶子，保留方向性受击表现。BP_Phantom → Phantom|Testing → Stationary Hit Test默认开启；修改后重新PIE生效。
 - 当前最新射击修复：实体弹从枪口朝准星目标汇聚，镜头→枪口的球体遮挡检查防止贴墙穿射；敌人胶囊/骨骼判定规则未改。
+- 最新附着修复：爆炸弹身体定位改为沿实际飞行中心线查骨骼碰撞表面，检查入射侧并保持骨骼局部点；附近表面补点也失败时隐藏弹体，避免悬空胶囊附着。仍用PhysicsAsset近似表面，非逐三角形蒙皮。
 - 详细历史见archive/FEAT-080-three-weapon-setup.md。
 
 ## 最新行为与验收入口
@@ -23,6 +24,8 @@
 
 ## 实现与验证
 
+- 背部附着：Development Editor Win64成功，无新增C++警告；StickySurfacesFinal.log StickyBodySurfaces Success，六方向实际飞行后均附入射侧骨骼（误差<0.5cm），受击动画中确实随动。初次离屏骨骼不刷新仅影响测试，已让测试实例AlwaysTickPoseAndRefreshBones。StickySurfaces.log中ProjectileCrosshairAim、StickyExplosionAndBlood均Success。
+
 - 近距准星：Development Editor Win64成功，无新增C++警告。ProjectileAim.log 3/3 Success（ProjectileCrosshairAim、StickyExplosionAndBlood、ThreeWeaponPIESwitch）；真实PrimaryFire验证1.5/3/10m目标面误差<0.1cm及20cm近墙阻挡，实体弹实际附着、弹药和原爆炸行为通过。
 
 - Phantom固定靶：Development Editor Win64构建成功。StationaryPhantom.log的EnemyExplosionControlRig通过四方向不转身/不移动及骨骼受击恢复检查；StationaryPhantomRegression.log的StickyExplosionAndBlood通过。震屏断言现遵循用户当前Cue开关，无资产调参。已重新启动原TestMap。
@@ -37,6 +40,8 @@
 - 安装保存后的Python关闭编辑器调用发现close_all_asset_editors未暴露，已改为close_all_editors_for_asset；独立冷回读与PIE证明资产保存有效。既有M_UE4Man_Body缺纹理/AimIK警告未处理。
 
 ## 会话交接
+
+- 最近写前检查点0d9b19f保存准星汇聚；本轮ExplosionGunBullet身体附着修复和StickySurfaceTests未最终提交/push。编辑器测试已结束，未写任何资产/地图/用户参数。背部、斜向定位与随动已自验完成，等待用户手感验收。
 
 - 最近写前检查点e287ecf保存Phantom固定靶，本轮GA_Shoot准星汇聚与ProjectileAimTests未最终提交/push。测试编辑器已正常退出，资产及用户地图/ExternalActor/Explosion Cue配置未写入。本次无未完成实现步骤，等待用户近距离手感验收。
 

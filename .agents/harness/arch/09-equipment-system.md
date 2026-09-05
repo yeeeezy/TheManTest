@@ -1,5 +1,11 @@
 # 装备系统
 
+## 2026-09-05 当前爆炸弹身体附着修正
+
+- ExplosionGunBullet在Super伤害/转身前沿真实入射方向、Sweep中心线（非球体ImpactPoint）追踪Mesh PhysicsAsset，长度按Mesh Bounds计算；只接受有效骨骼、非初始穿透、朝入射侧法线。若掠空，仅允许胶囊半径+10cm内的入射侧最近PhysicsAsset表面补点；无法可靠定位时隐藏弹体Mesh，原伤害/倒计时保留，不显示悬空胶囊附着。
+- 解析出的点/法线先存到父骨骼局部空间，再于Super之后转回当前世界坐标并KeepWorld附着；实际爆点跟随骨骼。环境附着、准星汇聚不变。PhysicsAsset表面仍是模型近似，不是渲染蒙皮逐三角形表面。
+- StickyBodySurfaces六方向真实物理飞行验证入射侧位置、有效Mesh骨骼、可见弹体与受击骨骼随动；StickySurfacesFinal.log Success，准星和原Sticky回归均Success。
+
 ## 2026-09-05 当前爆炸结果触发（覆盖下文无条件子弹时间和Enemy Ground配置）
 
 - 仅本次延时范围伤害把Enemy的Health从正数降至0，或本次爆炸施加Strain后的真实Chaos Break事件，才请求BulletTime。仅命中/受伤/空地爆炸/Strain不足/已散落碎块再次受冲量不请求。首次5点命中伤害不属于本次延时爆炸击杀判定。

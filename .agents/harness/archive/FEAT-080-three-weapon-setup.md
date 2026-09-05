@@ -1,5 +1,12 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 爆炸弹背部附着定位（实现与自验完成）
+
+- 用户确认动手。检查点0d9b19f保存上轮准星汇聚；不纳入用户地图/ExternalActor/Explosion Cue设置。原附着从胶囊接触点沿actor forward追踪固定40/120cm，失败静默回落胶囊。
+- 当前实现：伤害/受击转身前，沿Sweep中心与缓存真实入射方向按Mesh Bounds长度检查骨骼PhysicsAsset表面；检查有效骨骼、非初始穿透、入射侧法线。射线掠空时只接受附近入射侧最近PhysicsAsset表面；失败隐藏可见弹体，保留原伤害/倒计时。骨骼局部点/法线在Super调用前保存，调用后转换回当前骨骼世界位置，避免即时转身导致落点沿用旧世界坐标。
+- Development Editor Win64编译通过；首次FVector_NetQuantize三元类型错误已显式转FVector修复。六方向实际飞行/骨骼附着/受击骨骼随动与准星/Sticky回归进行中。碰撞表面仍为PhysicsAsset近似，不宣称逐三角形蒙皮精度。
+- 最终Development Editor Win64成功、无新增编译警告。StickySurfaces.log中ProjectileCrosshairAim与StickyExplosionAndBlood Success，六方向附着位置/骨骼/可见性全部通过；随动初次因离屏测试未刷新骨骼失败。仅测试实例启用AlwaysTickPoseAndRefreshBones后，StickySurfacesFinal.log的StickyBodySurfaces Success：真实飞行命中胶囊后，前/后/四斜向均附入射侧Mesh有效骨骼，位置距独立表面射线预期<0.5cm，受击动画中弹体确实移动且保持骨骼局部位置。没有修改角色资产、碰撞配置或用户VFX/震屏参数。结果未最终提交/push。
+
 ## 2026-09-05 实体弹近距离准星汇聚（实现与自验完成）
 
 - 用户确认按排查方案动手。原GA_Shoot从枪口以CameraForward平行发射，近距准星/枪口视差明显。检查点e287ecf选择性保存上轮Phantom固定靶；用户地图/ExternalActor/Explosion Cue参数不纳入。
