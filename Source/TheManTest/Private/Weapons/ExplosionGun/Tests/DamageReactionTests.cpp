@@ -96,20 +96,24 @@ public:
    Enemy->ExplosionHitReaction->SampleAnimation(Animation,Time,Alpha);
    const FString Label=FString::Printf(TEXT("Case %d %s"),Case,Names[Index]);
    const float Health=Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute());
-   if(Case==0||Case==3)
+   if(Case==0)
    {
     const FString Expected=FString(TEXT("AS_Humanoid_BlastRifle_"))+Names[Index];
     Test->TestTrue(Label+TEXT(" selects direction in rotated target space"),Animation&&Animation->GetName()==Expected&&Alpha>.95f);
-    Test->TestEqual(Label+TEXT(" applies damage once"),Health,Case==0?80.f:95.f);
+    Test->TestEqual(Label+TEXT(" applies damage once"),Health,80.f);
     auto* Post=Cast<UEnemyHitReactionAnimInstance>(Enemy->GetMesh()->GetPostProcessInstance());
     Test->TestTrue(Label+TEXT(" reaches the live animation instance"),Post&&Post->ReactionAnimation==Animation&&Post->ReactionAlpha>.95f);
-    if(Case==3)
-    {
-     Shoot(World,Index);
-     float AfterTime=0;Enemy->ExplosionHitReaction->SampleAnimation(Animation,AfterTime,Alpha);
-     Test->TestEqual(Label+TEXT(" new damaging hit still deducts health"),Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),90.f);
-     Test->TestTrue(Label+TEXT(" new hit preserves current animation time"),AfterTime>=Time&&AfterTime>.2f);
-    }
+   }
+   else if(Case==3)
+   {
+    Test->TestEqual(Label+TEXT(" first impact still deals damage once"),Health,95.f);
+    Test->TestTrue(Label+TEXT(" first impact never starts a knockback animation"),!Animation&&Alpha==0.f);
+    auto* Post=Cast<UEnemyHitReactionAnimInstance>(Enemy->GetMesh()->GetPostProcessInstance());
+    Test->TestTrue(Label+TEXT(" live animation instance has no first-impact reaction"),Post&&!Post->ReactionAnimation&&Post->ReactionAlpha==0.f);
+    Shoot(World,Index);
+    Enemy->ExplosionHitReaction->SampleAnimation(Animation,Time,Alpha);
+    Test->TestEqual(Label+TEXT(" next direct hit still deducts health"),Enemy->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),90.f);
+    Test->TestTrue(Label+TEXT(" repeated direct damage does not start a reaction"),!Animation&&Alpha==0.f);
    }
    else if(Case==6)
     Test->TestTrue(Label+TEXT(" lethal direct hit uses ragdoll"),Enemy->IsDead()&&Health==0.f&&!Animation&&Enemy->GetMesh()->IsSimulatingPhysics(TEXT("pelvis")));

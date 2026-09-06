@@ -1,5 +1,17 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-06 用户验收并授权远端提交
+
+- 用户认可“首次中弹无击退、延时爆炸对所有实际扣血存活敌人按方位击退”，明确要求提交远端。目标origin/main，fetch确认远端无新增提交，本地已有23条待推送提交；保持现有历史，以普通fast-forward推送发布。
+- 当前新提交限定为3个C++/测试文件与6个harness文件；地图、ExternalActors、声音、VFX及电击弹等用户未提交资产不纳入。现有Development Editor Win64构建与3/3实际PIE验证已通过，源码无后续变化；发布提交以Git记录为准。
+
+## 2026-09-06 用户澄清：仅延时爆炸触发击退
+
+- 用户明确第一次中弹不应播放击退，只有第二次延时爆炸影响才播放。删除ProcessHit中的击退调用、首次血量快照和已无用途的局部来弹方向变量；保留ApplyExplosionDamage对所有实际扣血且存活目标的四方向反应。覆盖下方此前包含首次伤害的解释。
+- 写入前选择性检查点5ae54b2保存上一轮11个C++/测试/harness文件；用户资产未纳入。本轮无蓝图/资产改动。
+- AttachedLimbReaction改为真实首次5点伤害：明确检查100→95无动画、爆炸后→75播放，邻居→80也播放；致死仍布娃娃。ExplosionDamageReactions的4方向直接命中与重复命中均应扣血但无动画，范围爆炸四方向、零伤害/无扣血保护保留。
+- DelayedOnlyReactionBuild：Development Editor Win64编译成功。DelayedOnlyReactionRegression的AttachedLimbReaction、ExplosionDamageReactions、ExplosionRadialDamage三项PIE全部Success（3/3，exit0），实际动画实例、首次无击退/延时有击退及波及目标均通过。测试编辑器已退出，无资产/地图写入；修正与记录已保存，未最终提交/push。
+
 ## 2026-09-06 爆炸弹实际伤害触发四方向动画
 
 - 用户要求“只要被爆炸弹伤害到了，就根据方位播放击退动画”。按实际伤害解释为首次中弹和延时爆炸均触发：首次命中使用伤害前局部弹道，范围爆炸使用每个敌人在结算前的当前朝向与爆心关系，不再限定附着目标。两入口都比较Health前后值，只有实际扣血且存活才请求Strength=1动画。零伤害或GE没有修改Health不触发，死亡/遮挡/去重/播放中不重启保持。

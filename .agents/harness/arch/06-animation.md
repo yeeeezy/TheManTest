@@ -3,7 +3,7 @@
 - 2026-09-05当前受击仅播放成品动画：EnemyHitReactionComponent仅按Actor局部入射方向选择，BP_Phantom直接配置前后左右4条AS_Humanoid_BlastRifle_{Front,Back,Left,Right}，来自Mixamo并在外部适配现役70骨。原始时长/30fps保留，握枪和腿长差异已调整。
 - 共享无骨架后处理位于Humanoid/_Shared/Animations/Logic/ABP_Humanoid_HitReaction。输入Pose缓存与动态SequenceEvaluator混合后输出；ReactionAnimation/Time/Alpha、UseFullBodyReaction由NativeUpdateAnimation提供。旧ControlRig节点、模式选择、RigUnit和Frame/旋转/包络参数已删除，不存在切回Rig的入口。
 - ApplyAnimationRootMotion默认开启：非下落时临时暂停CharacterMovement模式，按游戏时间提取Root水平位移，经Mesh方向/缩放转换，用SafeMoveUpdatedComponent移动胶囊；结束或关闭恢复，死亡不恢复。动画force_root_lock避免重复位移。下落不消费Root且仅上半身；关闭参数时沿用静止全身/移动上半身的混合规则，没有部位例外。碰墙可截短步长，不进行落脚重规划。
-- 2026-09-06：爆炸弹首次命中和延时范围爆炸均在实际Health下降且目标存活后请求动画，不再限定AttachedHitActor。首次命中使用伤害前的Actor局部弹道方向；范围爆炸为每个目标在伤害前按当前朝向和爆心计算局部方向。零伤害、未扣血、墙后、范围外和死亡目标不播放。重复反应不重启，主AnimBP继续运行；声音/伤害/死亡布娃娃和附着清理独立。
+- 2026-09-06用户澄清：仅爆炸弹延时范围爆炸在实际Health下降且目标存活后请求动画，不再限定AttachedHitActor。首次中弹保留伤害和附着，但不触发击退动画。范围爆炸为每个目标在伤害前按当前朝向和爆心计算局部方向。零伤害、未扣血、墙后、范围外和死亡目标不播放。重复反应不重启，主AnimBP继续运行；声音/伤害/死亡布娃娃和附着清理独立。
 - 部位分类、BodyAnimations、ActiveRegion、BoneMapping、HumanoidReactionBones.h和HeavyFront参数均已删除。具体动画引用归Enemy组件，共享ABP不引用Phantom资产。其他骨架须在外部资源项目适配成品。
 - hand_r_wepSocket仍挂动画武器骨骼，单位武器缩放，Relax/Aim不切换静态手部Socket。
 

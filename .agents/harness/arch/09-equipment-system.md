@@ -1,6 +1,6 @@
 # 装备系统
 
-- 2026-09-06实际伤害触发方向反应：ExplosionGunBullet首次命中在Super前后比较Health，实际扣血且存活才以命中前Actor局部弹道方向请求动画。延时爆炸对所有实际扣血且存活的Enemy调用EnemyHitReactionComponent，不再限定AttachedHitActor；各目标在伤害前按当前朝向和爆心计算自己的局部方向，水平距离近零时回退弹道。统一Strength=1，前后左右4条动画，不区分部位，播放中不重启。伤害数值/遮挡/去重/死亡布娃娃/子弹时间/径向物理/附着骨骼保留原流程。正Damage但GE没有实际扣血同样不触发。
+- 2026-09-06用户澄清为仅延时爆炸击退：ExplosionGunBullet首次命中只走原伤害/附着流程，不调用击退组件。延时爆炸对所有实际扣血且存活的Enemy调用EnemyHitReactionComponent，不再限定AttachedHitActor；各目标在伤害前按当前朝向和爆心计算自己的局部方向，水平距离近零时回退弹道。统一Strength=1，前后左右4条动画，不区分部位，播放中不重启。伤害数值/遮挡/去重/死亡布娃娃/子弹时间/径向物理/附着骨骼保留原流程。正ExplosionDamage但GE没有实际扣血同样不触发。
 
 ## 2026-09-05 当前触发条件与致命枪击击飞（覆盖下文旧Chaos结果监听）
 

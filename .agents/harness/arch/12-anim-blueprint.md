@@ -4,7 +4,7 @@
 
 - `/Game/Enemy/Humanoid/_Shared/Animations/Logic/ABP_Humanoid_HitReaction`是无骨架后处理模板，父类EnemyHitReactionAnimInstance，由Humanoid基类默认软类和具体Enemy配置接入。旧ControlRig目录、CR_Humanoid_HitReaction、Rig节点/模式开关/原生RigUnit已删除。
 - 图：LinkedInputPose→ReactionInputPose缓存；SequenceEvaluator读取ReactionAnimation/ReactionTime→AuthoredReactionPose缓存；TwoWayBlend全身或LayeredBoneBlend(spine_01)上半身按ReactionAlpha混合，再由UseFullBodyReaction选出直接接Output。无UseAnimationReaction字段。InstallEnemyReactionAnimationBranch现在重建纯动画图，旧Rig安装API已删除。
-- 六部位分类已删除，BP_Phantom仅配置4条Mixamo持枪成品方向动画，不同命中部位共用方向判断。2026-09-06起爆炸弹首次命中和范围爆炸实际扣血的存活目标均触发；首次按来弹方向，爆炸按各目标相对爆心的方位，主AnimBP不换。动画评估不触发Notify；根位移由EnemyHitReactionComponent显式消费并碰撞扫掠，Sequence force_root_lock，避免重复位移。
+- 六部位分类已删除，BP_Phantom仅配置4条Mixamo持枪成品方向动画，不同命中部位共用方向判断。2026-09-06用户澄清为仅延时范围爆炸实际扣血的存活目标触发，首次中弹不触发；爆炸按各目标相对爆心的方位，主AnimBP不换。动画评估不触发Notify；根位移由EnemyHitReactionComponent显式消费并碰撞扫掠，Sequence force_root_lock，避免重复位移。
 - 非下落根位移反应临时暂停CharacterMovement，因速度归零使用全身；结束/关闭恢复移动模式。下落保留上半身与原空中运动。关闭根位移时仍保留原站立全身/移动上半身、腿受击全身的规则。
 - 具体资产/骨架、武器挂点均归Phantom；共享图无Phantom动画依赖。正式安装/冷读/PIE脚本使用Scripts/VFX/*mixamo*，旧Rig和旧动画安装验证脚本已删除。
 

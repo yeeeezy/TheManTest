@@ -33,14 +33,15 @@ public:
    if(Now-Start<.3)return false;
    auto* M=Target->GetMesh();const FVector P=M->GetSocketLocation(TEXT("calf_l"));
    auto* B=W->SpawnActor<AExplosionGunBullet>(P-FVector(100,0,0),FRotator::ZeroRotator);Bullet=B;
-   B->ExplosionDelay=.2f;B->ChaosRadius=0;B->BulletTime.bEnabled=false;B->ExplosionCueTag=FGameplayTag();B->Damage=0;
+   B->ExplosionDelay=.2f;B->ChaosRadius=0;B->BulletTime.bEnabled=false;B->ExplosionCueTag=FGameplayTag();B->Damage=5;
    FHitResult H(Target.Get(),M,P,-FVector::ForwardVector);H.BoneName=TEXT("calf_l");H.bBlockingHit=true;
-   B->ProcessHit(H,nullptr,nullptr);
+   B->ProcessHit(H,nullptr,Target->GetAbilitySystemComponent());
    Test->TestTrue(TEXT("Projectile really attached to target"),B->GetAttachParentActor()==Target.Get());
    const FName Bone=B->GetRootComponent()->GetAttachSocketName();
    Test->TestTrue(TEXT("Resolved actual physics surface is left leg"),Bone==TEXT("thigh_l") || M->BoneIsChildOf(Bone,TEXT("thigh_l")));
    UAnimSequence* Before=nullptr;float BeforeTime=0,BeforeAlpha=0;Target->ExplosionHitReaction->SampleAnimation(Before,BeforeTime,BeforeAlpha);
-   Test->TestTrue(TEXT("No animation before fuse"),!Before&&BeforeAlpha==0.f);
+   Test->TestEqual(TEXT("First impact deals five damage before fuse"),Target->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),Case==0?95.f:5.f);
+   Test->TestTrue(TEXT("No animation before fuse despite first-impact damage"),!Before&&BeforeAlpha==0.f);
    Target->SetActorRotation(FRotator(0,90,0));
    Start=Now;Stage=2;return false;
   }
@@ -49,7 +50,7 @@ public:
   Target->ExplosionHitReaction->SampleAnimation(A,Time,Alpha);
   if(Case==0){
    Test->TestTrue(TEXT("Attached damaged survivor gets full-strength directional animation"),A&&Alpha>.95f);
-   Test->TestEqual(TEXT("Attached target takes blast damage"),Target->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),80.f);
+   Test->TestEqual(TEXT("Attached target takes blast damage after initial hit"),Target->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),75.f);
   }else Test->TestTrue(TEXT("Lethal explosion uses ragdoll instead of living animation"),Target->IsDead()&&!A&&Target->GetMesh()->IsSimulatingPhysics(TEXT("pelvis")));
   Neighbor->ExplosionHitReaction->SampleAnimation(A,Time,Alpha);
   Test->TestTrue(TEXT("Collateral damaged neighbor reacts from its left toward the blast"),A&&A->GetName()==TEXT("AS_Humanoid_BlastRifle_Left")&&Alpha>.95f);
