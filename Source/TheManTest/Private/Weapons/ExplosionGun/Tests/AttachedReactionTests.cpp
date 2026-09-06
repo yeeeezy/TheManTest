@@ -48,11 +48,11 @@ public:
   UAnimSequence* A=nullptr;float Time=0,Alpha=0;
   Target->ExplosionHitReaction->SampleAnimation(A,Time,Alpha);
   if(Case==0){
-   Test->TestTrue(TEXT("Attached leg gets full strength original back direction after turning"),A&&A->GetName()==TEXT("AS_Humanoid_BlastRifle_Back")&&Alpha>.95f);
+   Test->TestTrue(TEXT("Attached damaged survivor gets full-strength directional animation"),A&&Alpha>.95f);
    Test->TestEqual(TEXT("Attached target takes blast damage"),Target->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),80.f);
   }else Test->TestTrue(TEXT("Lethal explosion uses ragdoll instead of living animation"),Target->IsDead()&&!A&&Target->GetMesh()->IsSimulatingPhysics(TEXT("pelvis")));
   Neighbor->ExplosionHitReaction->SampleAnimation(A,Time,Alpha);
-  Test->TestTrue(TEXT("Collateral neighbor never receives authored reaction"),!A&&Alpha==0.f);
+  Test->TestTrue(TEXT("Collateral damaged neighbor reacts from its left toward the blast"),A&&A->GetName()==TEXT("AS_Humanoid_BlastRifle_Left")&&Alpha>.95f);
   Test->TestEqual(TEXT("Collateral neighbor still takes blast damage"),Neighbor->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),80.f);
   Target->Destroy();Neighbor->Destroy();if(Bullet.IsValid())Bullet->Destroy();
   ++Case;Stage=0;return Case==2;

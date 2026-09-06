@@ -32,7 +32,7 @@ void AExplosionGunBullet::ProcessHit_Implementation(const FHitResult& Hit,AActor
  if(bAttached || HasProcessedHit())return;
  const bool bEnemyImpact=IsValid(Hit.GetActor()) && Hit.GetActor()->IsA<AEnemyBase>();
  ImpactDirection=GetVelocity().GetSafeNormal(UE_SMALL_NUMBER,GetActorForwardVector());
- ImpactLocalDirection=bEnemyImpact?Hit.GetActor()->GetActorQuat().UnrotateVector(ImpactDirection):FVector::ZeroVector;
+ const FVector ImpactLocalDirection=bEnemyImpact?Hit.GetActor()->GetActorQuat().UnrotateVector(ImpactDirection):FVector::ZeroVector;
  FHitResult Surface=Hit;
  UPrimitiveComponent* Parent=Hit.GetComponent();
  bool bBodySurface=false;
@@ -74,10 +74,17 @@ void AExplosionGunBullet::ProcessHit_Implementation(const FHitResult& Hit,AActor
  const FTransform SurfaceFrame=IsValid(Parent)?Parent->GetSocketTransform(Surface.BoneName):FTransform::Identity;
  const FVector BoneLocalPoint=SurfaceFrame.InverseTransformPosition(Surface.ImpactPoint);
  const FVector BoneLocalNormal=SurfaceFrame.InverseTransformVectorNoScale(Surface.ImpactNormal);
+ const TWeakObjectPtr<AEnemyBase> DirectTarget=Cast<AEnemyBase>(Hit.GetActor());
+ const auto* DirectASC=DirectTarget.IsValid()?DirectTarget->GetAbilitySystemComponent():nullptr;
+ const float DirectHealthBefore=DirectASC?DirectASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()):0.f;
  // The base path handles pass-through, exactly-once direct damage and the existing impact Cue.
  Super::ProcessHit_Implementation(Hit,Shooter,Source);
  if(!HasProcessedHit() || IsActorBeingDestroyed())return;
  if(bEnemyImpact && (!IsValid(Hit.GetActor()) || Hit.GetActor()->IsActorBeingDestroyed())){Destroy();return;}
+ if(auto* Enemy=DirectTarget.Get();Enemy&&!Enemy->IsDead())
+  if(auto* ASC=Enemy->GetAbilitySystemComponent();ASC&&ASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute())<DirectHealthBefore)
+   if(auto* Reaction=Enemy->FindComponentByClass<UEnemyHitReactionComponent>())
+    Reaction->ReactToExplosion(Surface.ImpactPoint,ImpactDirection,1.f,ImpactLocalDirection);
  bHitEnemy=bEnemyImpact;
  // Snapshot the actual collision component, never nearby actors in the blast overlap.
  bHitChaos=IsValid(Cast<UGeometryCollectionComponent>(Hit.GetComponent()));
@@ -181,14 +188,18 @@ bool AExplosionGunBullet::ApplyExplosionDamage(const FVector& Origin)
   if(Spec.IsValid())
   {
    const float HealthBefore=TargetASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute());
+   // Freeze each target's blast direction before damage callbacks can change its facing.
+   FVector IncomingDirection=Point-Origin;IncomingDirection.Z=0;
+   if(!IncomingDirection.Normalize())IncomingDirection=ImpactDirection;
+   const FVector LocalDirection=Enemy->GetActorQuat().UnrotateVector(IncomingDirection);
    Spec.Data->SetSetByCallerMagnitude(TAG_Data_Damage,-ExplosionDamage);
    SourceASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(),TargetASC);
    // Death switches to physics before the following radial impulse pass.
-   bKilledEnemy|=HealthBefore>0.f && TargetASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute())<=0.f;
-   if(IsValid(Enemy)&&!Enemy->IsActorBeingDestroyed() && AttachedHitActor.Get()==Enemy)
+   const float HealthAfter=TargetASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute());
+   bKilledEnemy|=HealthBefore>0.f && HealthAfter<=0.f;
+   if(IsValid(Enemy)&&!Enemy->IsActorBeingDestroyed()&&!Enemy->IsDead()&&HealthAfter<HealthBefore)
     if(auto* Reaction=Enemy->FindComponentByClass<UEnemyHitReactionComponent>())
-     Reaction->ReactToExplosion(Origin,ImpactDirection,
-      1.f,ImpactLocalDirection);
+     Reaction->ReactToExplosion(Origin,IncomingDirection,1.f,LocalDirection);
   }
  }
  return bKilledEnemy;

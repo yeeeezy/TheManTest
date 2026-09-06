@@ -2,27 +2,25 @@
 
 ## Active Feature
 
-- FEAT-080，in_progress；本次四方向受击简化已完成，全部验证通过。用户认可Continuity版动画，要求简化、验证、记录后关机。未要求最终Git提交或push。
+- FEAT-080，in_progress。2026-09-06用户要求爆炸弹只要造成伤害就按方位播放击退。已完成，Development Editor Win64编译成功，8项PIE回归全部Success，测试编辑器正常退出。未要求最终Git提交或push。
 
 ## 当前受击系统
 
-- EnemyHitReactionComponent仅配置FrontAnimation、BackAnimation、LeftAnimation、RightAnimation；按命中瞬间缓存的Actor局部弹道方向选择。删除部位枚举、BodyAnimations、ActiveRegion、BoneMapping、HumanoidReactionBones.h、HeavyFront额外分支及动画接口的Bone参数。
-- 正式使用AS_Humanoid_BlastRifle四条Continuity版，位于Phantom/Animations/Reactions，绑定现役70骨。外部源准备在D:/Blender Projects/HumanoidHitReactions和TMIIR。用户已评价新版还行。
-- 动画右握点准确，肘/膝使用稳定弯曲平面；腿部两轮对称三帧平滑。Root/躯干/头颈/时长保持原版。不是支撑脚锁定或碰墙步态重规划。
-- 只对爆炸弹附着的存活敌人播放；命中后转身不改变已缓存方向。重复命中不重启，主AnimBP继续。骨骼仍用于子弹/血痕附着和布娃娃冲量，不再参与动画选择。
-- 共享ABP_Humanoid_HitReaction在Humanoid/_Shared/Animations/Logic，纯动画混合，无Rig。ApplyAnimationRootMotion默认开启，非下落时扫掠胶囊消费水平根运动并暂存/恢复Movement模式；死亡不恢复。关闭根运动时静止全身/移动上半身；下落上半身，无腿部例外。
-- BlendIn=.035、BlendOut=.18、PlayRate=1。用户EnemyExplosionEffect=None、电击弹Damage=30、StationaryHitTest等原配置不动。死亡、声音、VFX、子弹时间条件保留。
+- ExplosionGunBullet首次命中和延时范围爆炸均比较Health前后值；只有实际扣血且存活的Enemy请求动画，不再要求是AttachedHitActor。首次命中按伤害前的局部弹道方向；爆炸按各目标结算前的当前朝向和爆心关系判断方向，水平距离近零回退弹道。
+- 零伤害、GE未修改Health、墙后、范围外和死亡不触发存活动画。重复伤害正常扣血但不重启播放。伤害数值、范围、遮挡、死亡布娃娃、声音、VFX、附着和子弹时间沿用现有逻辑。
+- EnemyHitReactionComponent仍仅配置前后左右4条AS_Humanoid_BlastRifle成品动画，来自用户认可的Continuity版本，位于Phantom/Animations/Reactions，绑定现役70骨。无部位分类或受击Rig。
+- 共享ABP_Humanoid_HitReaction位于Humanoid/_Shared/Animations/Logic。ApplyAnimationRootMotion默认开启，非下落时扫掠胶囊消费水平根位移并暂停/恢复Movement，死亡不恢复；下落仅上半身。主AnimBP继续运行。
+- 本轮仅修改C++、测试和harness；无动画资产、蓝图、地图、音效或VFX写入。
 
 ## 验证
 
-- FourDirectionBuild：Development Editor Win64编译成功，无新增编译警告。
-- FourDirectionInstall：BP_Phantom和共享后处理编译保存，直接四方向配置安装成功；FourDirectionCold冷读4条70骨、方向引用、旧部位字段不存在、依赖/无Rig校验通过。
-- FourDirectionRuntime实际PIE：6个不同命中位置×4方向，静止和移动均选择正确，武器挂点、重复、结束/禁用恢复与Root碰墙检查通过。
-- FourDirectionRegression共6项全部Success：AttachedLimbReaction、EnemyDeathRagdoll、ExplosionOutcomeBulletTime、ExplosionSimulatedPhysics、MovingEnemyAttachmentCleanup、StickyBodySurfaces。测试队列完成并正常退出。
+- DamageReactionBuild：Development Editor Win64编译成功。
+- DamageReactionRegression：8/8 Success（exit0），ExplosionDamageReactions、AttachedLimbReaction、ExplosionRadialDamage、StickyBodySurfaces、MovingEnemyAttachmentCleanup、EnemyDeathRagdoll、ExplosionOutcomeBulletTime、ExplosionSimulatedPhysics全部通过，测试编辑器已退出。
+- 新测试覆盖旋转37度目标的4方向、环境范围爆炸、首次直接伤害、零伤害、GE未扣血、重复命中不重播、致死布娃娃及实际后处理动画实例。
 
 ## 会话交接
 
-- 检查点5d62247保存此前用户接受的Continuity动画与记录。本轮简化结果已保存但未最终提交/push；不要stage用户地图/ExternalActors/声音/VFX/电击弹资产。
-- Scripts/VFX/install_mixamo_reactions.py、validate_mixamo_reaction_assets.py、validate_mixamo_reaction_runtime.py已适配四方向，不再访问旧部位字段。
-- 预览：D:/Blender Projects/HumanoidHitReactions/Humanoid_Mixamo_Rifle_Continuity_Normal.gif。
-- 用户授权全部验证通过并记录后关机；全部回归已通过，记录保存后执行普通关机，不强制关闭未保存的应用。历史细节见FEAT-080 archive。
+- 写前检查点c8dbe75保存上一轮已知四方向简化20个文件。本轮实现和验证记录已保存，尚未最终提交/push；不stage用户地图/ExternalActors/声音/VFX/电击弹资产。
+- 本次对“首次伤害是否也包括”的异步澄清暂无回复，已告知按字面含义包含首次中弹和延时爆炸；如用户明确只需延时爆炸，再收窄入口。
+- 本次未要求关机；上一轮关机记录属于已结束会话。
+- 历史动画验证与预览详见FEAT-080 archive；Continuity预览位于D:/Blender Projects/HumanoidHitReactions/Humanoid_Mixamo_Rifle_Continuity_Normal.gif。

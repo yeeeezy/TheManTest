@@ -1,5 +1,11 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-06 爆炸弹实际伤害触发四方向动画
+
+- 用户要求“只要被爆炸弹伤害到了，就根据方位播放击退动画”。按实际伤害解释为首次中弹和延时爆炸均触发：首次命中使用伤害前局部弹道，范围爆炸使用每个敌人在结算前的当前朝向与爆心关系，不再限定附着目标。两入口都比较Health前后值，只有实际扣血且存活才请求Strength=1动画。零伤害或GE没有修改Health不触发，死亡/遮挡/去重/播放中不重启保持。
+- 写入前检查点c8dbe75保存上一轮已知四方向简化的20个文件；未纳入用户地图、ExternalActors、音频、VFX、电击弹资产。本轮仅C++/测试/harness，无动画资产或蓝图修改。
+- 更新AttachedLimbReaction与ExplosionRadialDamage断言；新增ExplosionDamageReactions覆盖旋转37度的四方向、首次命中/环境范围爆炸、零伤害/无Health修改GE、连续伤害不重播、死亡布娃娃及实际后处理动画实例。DamageReactionBuild的Development Editor Win64编译成功。DamageReactionRegression共8项全部Success：ExplosionDamageReactions、AttachedLimbReaction、ExplosionRadialDamage、StickyBodySurfaces、MovingEnemyAttachmentCleanup、EnemyDeathRagdoll、ExplosionOutcomeBulletTime、ExplosionSimulatedPhysics；队列完成8项，exit0，测试编辑器已退出。未保存地图或资产，本轮结果未最终提交/push。
+
 ## 2026-09-05 用户接受动画，简化为四方向后关机
 
 - 用户认可Continuity版，明确要求仅前后左右，不再精确受击部位，验证记录后关机。检查点5d62247保存上一轮动画/记录，不含用户无关资产。
