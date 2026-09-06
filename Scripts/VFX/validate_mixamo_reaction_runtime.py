@@ -12,7 +12,7 @@ def post(e):return mesh(e).get_post_process_instance()
 def local(e,b):return mesh(e).get_socket_transform(b,unreal.RelativeTransformSpace.RTS_COMPONENT).translation
 def fire(e,c):
     r,b,d,v=c
-    reaction(e).react_to_explosion(mesh(e).get_socket_location(b),unreal.Vector(1,0,0),1,b,unreal.Vector(*v))
+    reaction(e).react_to_explosion(mesh(e).get_socket_location(b),unreal.Vector(1,0,0),1,unreal.Vector(*v))
 def check(moving):
     for i,(e,c) in enumerate(zip(enemies,cases)):
         r,b,d,v=c;p=post(e);a=p.get_editor_property('reaction_animation')
@@ -87,7 +87,7 @@ def tick(dt):
         if stage==7:
             if elapsed<.30:return
             check(True)
-            print('MIXAMO_RUNTIME_POSES_OK 24 standing + 24 moving')
+            print('MIXAMO_RUNTIME_POSES_OK four directions independent of six impact locations, standing + moving')
             world=unreal.EditorLevelLibrary.get_game_world()
             root_enemies=[unreal.GameplayStatics.get_all_actors_with_tag(world,'RootCheck'+str(i))[0] for i in range(3)]
             root_starts=[e.get_actor_location() for e in root_enemies]

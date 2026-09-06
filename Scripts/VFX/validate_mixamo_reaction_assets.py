@@ -21,11 +21,13 @@ E=unreal.EditorAssetLibrary
 bp=E.load_asset('/Game/Enemy/Humanoid/Phantom/Blueprint/BP_Phantom')
 for phase in range(2):
     c=unreal.get_default_object(bp.generated_class()).get_component_by_class(unreal.EnemyHitReactionComponent)
-    sets=c.get_editor_property('body_animations');assert len(sets)==6
     names=set()
-    for r in sets:
-        for field in ['front','back','left','right']:
-            a=r.get_editor_property(field);assert a;names.add(a.get_name())
+    for field in ['front','back','left','right']:
+        a=c.get_editor_property(field+'_animation');assert a;names.add(a.get_name())
+    for removed in ['body_animations','bone_mapping','heavy_front_animation','active_region']:
+        try:c.get_editor_property(removed)
+        except Exception:pass
+        else:raise AssertionError('Obsolete region property remains: '+removed)
     assert len(names)==4
     if phase==0:unreal.BlueprintEditorLibrary.compile_blueprint(bp)
 reg=unreal.AssetRegistryHelpers.get_asset_registry()

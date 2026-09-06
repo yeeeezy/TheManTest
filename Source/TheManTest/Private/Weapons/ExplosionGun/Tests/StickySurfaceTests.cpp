@@ -71,7 +71,7 @@ public:
     Test->TestTrue(TEXT("Resolved projectile mesh remains visible"),Bullet->FindComponentByClass<UStaticMeshComponent>()->IsVisible());
     LocalPoints.Add(Mesh->GetSocketTransform(Bone).InverseTransformPosition(Bullet->GetActorLocation()));WorldPoints.Add(Bullet->GetActorLocation());
     auto* Reaction=Enemies[I]->FindComponentByClass<UEnemyHitReactionComponent>();
-    Reaction->ReactToExplosion(Expected[I].ImpactPoint-Directions[I]*100,Directions[I],1,TEXT("spine_03"));
+    Reaction->ReactToExplosion(Expected[I].ImpactPoint-Directions[I]*100,Directions[I],1);
    }
    Start=World->GetTimeSeconds();Stage=3;return false;
   }

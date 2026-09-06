@@ -1,10 +1,10 @@
 # 动画实例
 
-- 2026-09-05当前受击仅播放成品动画：EnemyHitReactionComponent按命中部位与Actor局部入射方向选择。BP_Phantom六部位槽当前共用4条AS_Humanoid_BlastRifle_{Front,Back,Left,Right}，来自Mixamo并在外部适配现役70骨。原始时长/30fps保留，握枪和腿长差异已调整。
+- 2026-09-05当前受击仅播放成品动画：EnemyHitReactionComponent仅按Actor局部入射方向选择，BP_Phantom直接配置前后左右4条AS_Humanoid_BlastRifle_{Front,Back,Left,Right}，来自Mixamo并在外部适配现役70骨。原始时长/30fps保留，握枪和腿长差异已调整。
 - 共享无骨架后处理位于Humanoid/_Shared/Animations/Logic/ABP_Humanoid_HitReaction。输入Pose缓存与动态SequenceEvaluator混合后输出；ReactionAnimation/Time/Alpha、UseFullBodyReaction由NativeUpdateAnimation提供。旧ControlRig节点、模式选择、RigUnit和Frame/旋转/包络参数已删除，不存在切回Rig的入口。
-- ApplyAnimationRootMotion默认开启：非下落时临时暂停CharacterMovement模式，按游戏时间提取Root水平位移，经Mesh方向/缩放转换，用SafeMoveUpdatedComponent移动胶囊；结束或关闭恢复，死亡不恢复。动画force_root_lock避免重复位移。下落不消费Root且仅上半身；关闭参数时沿用静止全身/移动上半身（腿命中例外）的混合规则。碰墙可截短步长，不进行落脚重规划。
+- ApplyAnimationRootMotion默认开启：非下落时临时暂停CharacterMovement模式，按游戏时间提取Root水平位移，经Mesh方向/缩放转换，用SafeMoveUpdatedComponent移动胶囊；结束或关闭恢复，死亡不恢复。动画force_root_lock避免重复位移。下落不消费Root且仅上半身；关闭参数时沿用静止全身/移动上半身的混合规则，没有部位例外。碰墙可截短步长，不进行落脚重规划。
 - 只对爆炸弹AttachedHitActor存活目标播放；命中时保存的局部方向不随Fuse期间转身改变。重复反应不重启，主AnimBP继续运行；声音/伤害/死亡布娃娃和附着清理独立。
-- BoneMapping现在只负责颈/双臂/双大腿祖先分类，声明在HumanoidReactionBones.h。具体动画引用归Enemy组件，共享ABP不引用Phantom资产。其他骨架须在外部资源项目适配成品。
+- 部位分类、BodyAnimations、ActiveRegion、BoneMapping、HumanoidReactionBones.h和HeavyFront参数均已删除。具体动画引用归Enemy组件，共享ABP不引用Phantom资产。其他骨架须在外部资源项目适配成品。
 - hand_r_wepSocket仍挂动画武器骨骼，单位武器缩放，Relax/Aim不切换静态手部Socket。
 
 **何时读取：** 新增动画变量、修改动画状态机所需的驱动参数时。

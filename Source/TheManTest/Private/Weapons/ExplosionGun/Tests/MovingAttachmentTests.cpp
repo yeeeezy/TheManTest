@@ -45,7 +45,6 @@ public:
    const auto* FixtureReaction=Fixture->FindComponentByClass<UEnemyHitReactionComponent>();
    Reaction->FrontAnimation=FixtureReaction->FrontAnimation;Reaction->BackAnimation=FixtureReaction->BackAnimation;
    Reaction->LeftAnimation=FixtureReaction->LeftAnimation;Reaction->RightAnimation=FixtureReaction->RightAnimation;
-   Reaction->HeavyFrontAnimation=FixtureReaction->HeavyFrontAnimation;
    E->GetMesh()->VisibilityBasedAnimTickOption=EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
    E->FinishSpawning(FTransform(FVector(-15000,0,100)));
    E->GetAbilitySystemComponent()->SetNumericAttributeBase(UEnemyAttributeSetBase::GetMaxHealthAttribute(),100);
@@ -79,7 +78,7 @@ public:
    if(!Reacted&&W->GetTimeSeconds()-Start>.5)
    {
     Enemy->SetActorRotation(FRotator(0,45,0));
-    Enemy->FindComponentByClass<UEnemyHitReactionComponent>()->ReactToExplosion(Bullet->GetActorLocation()-FVector(80,0,0),FVector::ForwardVector,1,TEXT("spine_03"));Reacted=true;
+    Enemy->FindComponentByClass<UEnemyHitReactionComponent>()->ReactToExplosion(Bullet->GetActorLocation()-FVector(80,0,0),FVector::ForwardVector,1);Reacted=true;
    }
    Test->TestTrue(TEXT("Moving/turning/reacting bullet keeps its bone-local attachment"),Bullet->GetRootComponent()->GetRelativeLocation().Equals(BulletLocal,.01));
    Test->TestTrue(TEXT("Moving/turning/reacting stain keeps its bone-local attachment"),Stain->GetRelativeLocation().Equals(StainLocal,.01));

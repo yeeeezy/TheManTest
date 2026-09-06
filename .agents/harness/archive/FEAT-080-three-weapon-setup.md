@@ -1,5 +1,13 @@
 # FEAT-080 RepairGun、电击枪与爆炸枪统一动画和独立 VFX
 
+## 2026-09-05 用户接受动画，简化为四方向后关机
+
+- 用户认可Continuity版，明确要求仅前后左右，不再精确受击部位，验证记录后关机。检查点5d62247保存上一轮动画/记录，不含用户无关资产。
+- 删除EEnemyHitRegion、FEnemyBodyReactionAnimations、ActiveRegion、ClassifyHitBone、BoneMapping、HumanoidReactionBones.h、HeavyFrontAnimation/MinStrength。ReactToExplosion移除Bone参数；选择只用缓存Actor局部弹道方向，未提供方向时按Actor与爆心关系回退。移除腿命中强制全身例外。附着/血痕/布娃娃骨骼不受影响。
+- 更新爆炸调用和两项旧测试接口，附着测试直接检查Mesh祖先而不依赖动画分类。安装与冷读脚本仅使用4个直接动画字段，并断言旧字段已消失。PIE仍以6个不同命中点测试同方向不受部位影响。
+- FourDirectionBuild编译成功；FourDirectionInstall编译保存BP_Phantom与共享ABP成功；FourDirectionCold冷读4成品/70骨/引用/旧字段清理成功；FourDirectionRuntime实际播放、24位置方向组合×静止移动、Root碰墙、移动恢复和挂点通过。FourDirectionRegression六项全部Success，队列完成6项，测试编辑器退出；全部验证完成，记录保存后执行用户授权的普通关机。
+- 四条动画沿用用户接受的Continuity成品，无再次重定向。架构06/07/09/12同步四方向事实。结果未最终提交/push。
+
 ## 2026-09-05 Mixamo limb continuity repair
 
 - User reported both arm and leg twitching and authorized repair. Back frame19 had hand_l99.2/lowerarm_l56/upperarm_l51.6 degrees of local rotation per frame; previous leg peak45.1. Checkpointbd91655 preserves the preceding four assets and harness only.

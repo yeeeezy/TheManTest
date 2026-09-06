@@ -38,7 +38,7 @@ public:
    B->ProcessHit(H,nullptr,nullptr);
    Test->TestTrue(TEXT("Projectile really attached to target"),B->GetAttachParentActor()==Target.Get());
    const FName Bone=B->GetRootComponent()->GetAttachSocketName();
-   Test->TestTrue(TEXT("Resolved actual physics surface is left leg"),Target->ExplosionHitReaction->ClassifyHitBone(Bone)==EEnemyHitRegion::LeftLeg);
+   Test->TestTrue(TEXT("Resolved actual physics surface is left leg"),Bone==TEXT("thigh_l") || M->BoneIsChildOf(Bone,TEXT("thigh_l")));
    UAnimSequence* Before=nullptr;float BeforeTime=0,BeforeAlpha=0;Target->ExplosionHitReaction->SampleAnimation(Before,BeforeTime,BeforeAlpha);
    Test->TestTrue(TEXT("No animation before fuse"),!Before&&BeforeAlpha==0.f);
    Target->SetActorRotation(FRotator(0,90,0));

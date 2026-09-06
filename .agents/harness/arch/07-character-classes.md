@@ -12,7 +12,7 @@
 
 **敌人：**
 
-- 2026-09-05当前：ExplosionHitReaction仅有动画分支，Rig模式/参数/求解器已删除。默认HitReactionPostProcess为Humanoid/_Shared/Animations/Logic/ABP_Humanoid_HitReaction_C。BP_Phantom六部位槽共用4条AS_Humanoid_BlastRifle方向动画；具体Skeleton成品在外部资源项目适配。ApplyAnimationRootMotion默认开启，以扫掠胶囊消费非下落水平根位移，反应期间临时暂停Movement模式，结束/关闭恢复，死亡不恢复。组件构造启用Tick以消费位移，分类映射在HumanoidReactionBones.h。
+- 2026-09-05当前：ExplosionHitReaction仅有动画分支，Rig模式/参数/求解器已删除。默认HitReactionPostProcess为Humanoid/_Shared/Animations/Logic/ABP_Humanoid_HitReaction_C。BP_Phantom仅配置前后左右4条AS_Humanoid_BlastRifle方向动画；具体Skeleton成品在外部资源项目适配。ApplyAnimationRootMotion默认开启，以扫掠胶囊消费非下落水平根位移，反应期间临时暂停Movement模式，结束/关闭恢复，死亡不恢复。组件构造启用Tick以消费位移，受击部位分类及HumanoidReactionBones.h已删除。
 
 - 致命枪击新增Enemy|Death.ProjectileKillKnockbackSpeed=250cm/s、ProjectileKillUpwardSpeed=120cm/s，沿弹道与世界上方向给整个布娃娃叠加速度；两个值设0关闭。ABulletBase只在活体变死体的直接伤害之后施加一次，随后仍保留ProjectileHitImpulse的命中点冲量。打旧尸体不重复全身击飞，爆炸范围伤害保持独立径向冲量。
 

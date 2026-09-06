@@ -188,7 +188,7 @@ bool AExplosionGunBullet::ApplyExplosionDamage(const FVector& Origin)
    if(IsValid(Enemy)&&!Enemy->IsActorBeingDestroyed() && AttachedHitActor.Get()==Enemy)
     if(auto* Reaction=Enemy->FindComponentByClass<UEnemyHitReactionComponent>())
      Reaction->ReactToExplosion(Origin,ImpactDirection,
-      1.f,AttachedHitBone,ImpactLocalDirection);
+      1.f,ImpactLocalDirection);
   }
  }
  return bKilledEnemy;

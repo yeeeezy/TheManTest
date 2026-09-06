@@ -1,6 +1,6 @@
 # 装备系统
 
-- 2026-09-05部位方向反应：爆炸范围伤害继续作用所有可见Enemy，但只有AttachedHitActor调用EnemyHitReactionComponent。命中前缓存Actor局部弹道ImpactLocalDirection，附着骨骼沿用实际Mesh表面解析；Fuse结束后以原部位/方向、Strength=1请求24条部位动画之一。致命伤害转布娃娃，由组件死状态拒绝存活动画。子弹时间/径向物理保持既有独立条件。
+- 2026-09-05部位方向反应：爆炸范围伤害继续作用所有可见Enemy，但只有AttachedHitActor调用EnemyHitReactionComponent。命中前缓存Actor局部弹道ImpactLocalDirection，附着骨骼沿用实际Mesh表面解析；Fuse结束后以缓存的原方向、Strength=1请求前后左右4条动画之一，动画接口不再接收命中骨骼。致命伤害转布娃娃，由组件死状态拒绝存活动画。子弹时间/径向物理保持既有独立条件。
 
 ## 2026-09-05 当前触发条件与致命枪击击飞（覆盖下文旧Chaos结果监听）
 
