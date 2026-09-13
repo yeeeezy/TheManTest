@@ -1,5 +1,7 @@
 # 系统关系总览
 
+FEAT-081 新增敌人分支：`AEnemyBase → ABossEnemyBase → ACoreMorphBoss`。共用基类 ASC／Health，具体头领拥有形态与程序化分件；第一批只含飞行 GA、形态 GE 和独立检查地图，不继承人形逻辑。详见 `11-enemy-ai.md`。
+
 ```
 ATheManPlayerController
   ├── 持有增强输入绑定（IMC / IA）

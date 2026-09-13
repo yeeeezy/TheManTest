@@ -1,5 +1,7 @@
 # GAS 技能系统
 
+- FEAT-081 第一批：`Enemy/Boss/CoreMorph/GAS/Abilities/GA_CoreMorphFlight` 通过同头领 ASC 激活，结束／取消统一停飞；`GAS/Effects/GE_CoreMorphManta` 用具名 `UTargetTagsGameplayEffectComponent` 默认子对象授予 `State.CoreMorph.Form.Manta`。死亡移除形态 GE。预览复位不重授技能或回血，战斗阶段不改形态。当前只迁飞行，无攻击／重组 Cue；完整 GA／GE／Cue 战斗按后续批次接入。
+
 - 死亡布娃娃：Health回调仍负责首次OnDeath，但Actor延时销毁。ABulletBase施加伤害后在命中骨骼处施加物理冲量，致命一枪同样生效；已有尸体跳过GE扣血，通过显式Enemy Hit Cue保留肉体声/血迹，GCN_EnemyHit对死人不新触发PainSound。爆炸仍仅新击杀或Chaos新破碎请求子弹时间。
 
 ## 2026-09-05 人形共享全身爆炸受击（覆盖历史Phantom专属Rig路径）

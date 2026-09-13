@@ -14,3 +14,5 @@ UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_Weapon_ElectricGun_Impact, "GameplayCue.W
 UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_Weapon_ExplosionGun_Impact, "GameplayCue.Weapon.ExplosionGun.Impact")
 UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_Weapon_ExplosionGun_Explosion, "GameplayCue.Weapon.ExplosionGun.Explosion")
 UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_Character_Enemy_Hit,     "GameplayCue.Character.Enemy.Hit")
+
+UE_DEFINE_GAMEPLAY_TAG(TAG_State_CoreMorph_Form_Manta, "State.CoreMorph.Form.Manta")

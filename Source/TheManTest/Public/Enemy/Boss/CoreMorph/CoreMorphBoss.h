@@ -1,0 +1,32 @@
+#pragma once
+
+#include "Enemy/Boss/BossEnemyBase.h"
+#include "GameplayEffectTypes.h"
+#include "CoreMorphBoss.generated.h"
+
+class UCoreMorphVisualLayout;
+class UCoreMorphFlightComponent;
+
+UENUM(BlueprintType)
+enum class ECoreMorphForm : uint8 { Manta, Scorpion };
+
+UCLASS()
+class THEMANTEST_API ACoreMorphBoss : public ABossEnemyBase
+{
+	GENERATED_BODY()
+public:
+	ACoreMorphBoss();
+	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
+	virtual void OnDeath() override;
+	virtual void ReactToProjectileHit(AActor* HitInstigator) override;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="CoreMorph") TObjectPtr<UCoreMorphVisualLayout> VisualLayout;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CoreMorph") TObjectPtr<UCoreMorphFlightComponent> Flight;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CoreMorph") ECoreMorphForm CurrentForm = ECoreMorphForm::Manta;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CoreMorph") TObjectPtr<AActor> LastThreat;
+	UFUNCTION(BlueprintCallable, Category="CoreMorph|Review") bool StartFlightPreview();
+	UFUNCTION(BlueprintCallable, Category="CoreMorph|Review") void ResetFlightPreview();
+private:
+	FActiveGameplayEffectHandle FormEffect;
+};

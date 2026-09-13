@@ -24,4 +24,6 @@
 
 ## 测试地图
 
+- `/Game/Maps/CoreMorph/L_CoreMorphFlight`：FEAT-081 第一批独立飞行检查场，原生 GameModeBase 默认自由飞行 Pawn；`ACoreMorphFlightReview` 提供 V 播放、R 复位、P 暂停、F 跟随／自由相机。只绑定本地图相机 Actor 的输入，不修改正式 IMC、PlayerController 或默认地图。13.4 秒在粒子释放前停住，等待后续变形批次。
+
 - `/Game/Maps/VFXTest/VFXTestMap`：FEAT-080 使用的独立暗场武器 VFX 测试房。地图及专属材质统一收在 `/Game/Maps/VFXTest/`；World Settings 使用 `BP_TheManGamemodeBase_C`，PlayerStart 正对预放置的静止 `BP_Phantom`；固定 Manual Exposure，包含冷暖低强度灯光和环境命中靶面。它不替代主流程 `TestMap`。

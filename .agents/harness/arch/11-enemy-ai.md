@@ -16,12 +16,23 @@
 AEnemyBase（Public/Enemy/）  ← 所有敌人基类，ASC+属性挂自身（无 PlayerState）
   ├── AHumanoidEnemy（.../Enemy/Humanoid/）  ← 人形怪：巡逻/转身/战斗/武器/AI
   │     └── APhantom（.../Humanoid/Phantom/）  ← 幻影（空壳，差异化在蓝图）
-  └── ANightmareEnemy（.../Enemy/Nightmare/）  ← 梦魇（直接继承基类，空壳）
+  ├── ANightmareEnemy（.../Enemy/Nightmare/）  ← 梦魇（直接继承基类，空壳）
+  └── ABossEnemyBase（.../Enemy/Boss/） ← 头领公共语义层，不放具体变形
+        └── ACoreMorphBoss（.../Boss/CoreMorph/） ← 蝠鲼／蝎子，FEAT-081 分批迁移中
 ```
 
 ---
 
 ## 文件清单
+
+### CoreMorph 头领（FEAT-081，第一批）
+
+- `Enemy/Boss/BossEnemyBase.h` 为公共语义层；`CoreMorph/CoreMorphBoss.h/.cpp` 持有具体形态和飞行组件，继承一份 ASC／Health。没有人形骨骼、击退、布娃娃或血肉受击 Cue。
+- `CoreMorph/Movement/CoreMorphFlightPath` 保留源 FEAT058 编舞数学；`CoreMorphFlightComponent` 管理 154 个同 Owner 静态分件。编舞坐标固定，实际 Pawn 根位置跟随飞行，CharacterMovement 在飞行预览中关闭。
+- `CoreMorph/GAS/Abilities/GA_CoreMorphFlight` 管理飞行生命周期；`GAS/Effects/GE_CoreMorphManta` 持有形态 Tag。阶段仍走 EnemyBase 的 `PhaseSkillSets/SetCombatPhase`，预览复位不重置阶段、Health 或技能授予。
+- 正式资产 `/Game/Enemy/Boss/CoreMorph/{Blueprint,Data,Meshes,Materials}`。`BP_CoreMorphBoss` 引用 `DA_CoreMorphVisualLayout` 和已有 `GE_EnemyBase_Init`。
+- 本批尚未接战斗 BT，检查地图直接请求飞行 GA，在 13.4 秒粒子释放前冻结。主 BT／形态子树、变形、蝎子运动和攻击按后续批次接入；不得将当前预览误认为完整战斗。
+- 检查入口 `/Game/Maps/CoreMorph/L_CoreMorphFlight`，V 播放、R 复位、P 暂停、F 切换相机；控件只属于地图专属 `CoreMorph/Review/CoreMorphFlightReview`。
 
 ### 基类 / 属性 / 技能集
 
