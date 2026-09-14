@@ -14,3 +14,7 @@
 ## 会话交接
 
 操作前checkpoint为`7439d2a`。本轮地图、BuiltData、输入资产、PlayerController C++与harness改动未提交／push。用户接下来可直接打开`/Game/Maps/LobbyMap`并PIE，按键盘上方数字1检查Relax／举枪观感。
+
+## 最新视觉返修
+
+原配黑色Rifle_01展示枪和源动画握持偏移已恢复，挂hand_r（不是weapon），不再使用RepairGun白色合并网格。人物朝向与远近镜头对焦已校正。最终远近景四张截图已自查；lobby-grip-cold-pie.json ok=true，360样本，完整待机循环、One切换、冷加载与退出地图哈希通过。证据与具体差异见FEAT-082最新段落。编辑器已退出；按用户要求完成记录后关机。明日打开LobbyMap按1验收。本轮结果未最终提交／push。

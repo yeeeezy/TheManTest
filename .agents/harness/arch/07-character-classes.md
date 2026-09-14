@@ -8,7 +8,7 @@
 
 持枪Relax有两个成品：RelaxedIdle（普通版3.2667秒）和RelaxedIdle_02（v2，4.7秒），均在专属Animations下。在展示BP的Relaxed Animation属性中选择其一，Display Pose=Relaxed。空手仍用StandingAnimations两版本，Rifle为举枪动画，合计五条动画。
 
-维修工大厅展示复用正式`/Game/Weapons/RepairGun/Meshes/SM_RepairGun_Rifle`和组件覆盖材质`MI_RepairGun_Rifle`，不复制武器成品。DisplayWeapon附着hand_r；Relaxed／Rifle各有一份由动画hand_r_wepSocket相对hand_r变换与维修枪模型自身偏移组合出的相对Transform。切换时动画与对应Transform同步更新，不能恢复单一固定枪偏移。
+维修工大厅展示使用自身Lobby目录的SM_MaintenanceWorker_Lobby_Rifle与M_MaintenanceWorker_Lobby_Rifle（Rifle_01原配、约83.5cm长）。DisplayWeapon附着hand_r，Relaxed／Rifle使用从源动画hand_r_wepSocket相对hand_r实测的两套Transform。不要叠加RepairGun模型偏移；目标weapon骨骼没有保留源武器方向，直接挂它未通过验收。武器通过两套成品动画与对应挂点匹配双手；不修改玩法RepairGun。
 
 > 当前清理状态（2026-09-13）：用户要求立即清理测试设施，取代下文旧批次“总验收后清理”的安排。5张CoreMorph检查地图、专属地面材质、5个Tests cpp与CoreMorphFlightReview h/cpp均已删除。Boss的StartFlightPreview／ResetFlightPreview及Flight的ResetPreview已删除；Reassembly内部ResetPreview改名ResetAssembly，仍用于正式变形初始化。ReviewTarget已删除，正式BT目标由LastThreat／玩家决定。保留FlightRoute、正式主BT、GA／GE／Cue及490个头领资产。以后只有TestMap作为测试地图，不能再照旧地图入口操作。
 

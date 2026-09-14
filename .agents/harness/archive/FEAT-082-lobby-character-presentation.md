@@ -1,5 +1,15 @@
 # FEAT-082 大厅角色展示
 
+## 2026-09-14 最终持枪视觉返修与关机交接
+
+- 用户指出枪过大、白膜和握持错位，要求自行验收后关机。之前仅有按键／状态通过不能代表视觉通过。操作检查点见Git最新WIP checkpoint before final lobby grip review。
+- 最终BP使用Lobby自有SM_MaintenanceWorker_Lobby_Rifle／M_MaintenanceWorker_Lobby_Rifle，原配Rifle_01枪长约83.5cm，替换95.3cm且偏白的RepairGun合并静态网格。两套Transform恢复lobby-source-pose-check.json中源动画实测值，附着hand_r，不再组合RepairGun自身偏移。直接挂目标weapon骨骼的中间方案因方向错误撤回，未作为最终结果。未重新重定向或改动画序列，未改玩法RepairGun。
+- 展示实例Yaw改为180面向远景；原Far／Near相机重新瞄准人物，更新实际对焦距离，Near焦距30mm。地图未新增相机。
+- 最终LobbyFinalFar-Relaxed/Rifle、LobbyFinalNear-Relaxed/Rifle截图逐张查看；枪有完整黑色纹理，两个姿态右手握柄、左手托护木。LobbyGripFinal截图是临时PIE检查视角，未保存该临时相机变换。
+- 冷重启后lobby-grip-cold-pie.json ok=true（360运行时样本）：40个Lobby成品加载，原配Mesh/材质/hand_r挂点持久化，原嵌套地图不存在且新BuiltData存在。实际One按键Relaxed→Rifle→Relaxed，各保持4秒覆盖完整循环；枪可见，退出PIE后地图哈希不变。日志lobby-grip-cold-pie.log；所有证据位于D:/Unreal Projects/CoreMorph57Prep/Saved/Review。
+- 本轮仅改展示BP和LobbyMap及harness；沿用上轮已成功编译的C++，未新增源码或永久测试。自动验证编辑器已经正常退出。用户明日直接打开LobbyMap、PIE按上方1验收。结果未最终提交／push。
+
+
 ## 2026-09-14 正式大厅接线与测试入口
 
 - checkpoint `7439d2a`保存恢复的328个场景资产与此前harness状态。用户确认将正式选角场景改名为`/Game/Maps/LobbyMap`并删除旧同名空地图；场景依赖保留在`/Game/Maps/SciFiIndustrialBase`，1.4GB预计算数据改为`/Game/Maps/LobbyMap_BuiltData`。旧嵌套地图和BuiltData路径均删除；GameInstance原有`LobbyMapName=LobbyMap`无需改代码即可进入正式大厅。

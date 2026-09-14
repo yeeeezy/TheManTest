@@ -4,7 +4,7 @@
 
 ## 大厅人物展示资源（FEAT-082）
 
-用户新增大厅摆放用`/Game/Characters/MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby`，继承AMaintenanceWorkerLobbyCharacter→ALobbyCharacterBase→AActor。默认DisplayPose=Standing空手站立，StandingIdleIndex=0；UI用SetStandingIdleIndex(0/1)选择两种站立待机，也可用SetDisplayPose选择Standing／Relaxed／Rifle。大厅按钮的标准持枪接口是`SetWeaponReady(false/true)`：false进入Relaxed放松持枪，true进入Rifle举枪，`IsWeaponReady`读取状态。Standing隐藏武器。它只负责人物和展示武器，不创建Pawn／ASC／游戏装备；模型与五条动画在TMIIR完成适配，成品归MaintenanceWorker/Lobby。Relaxed Animation可配普通RelaxedIdle或v2 RelaxedIdle_02。维修工展示武器复用正式RepairGun模型和材质，两种持枪姿态同步使用独立挂点偏移。正式LobbyMap在角色焦点原点放置一个`MaintenanceWorker_LobbyDisplay`实例，初始为Relaxed。
+用户新增大厅摆放用`/Game/Characters/MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby`，继承AMaintenanceWorkerLobbyCharacter→ALobbyCharacterBase→AActor。默认DisplayPose=Standing空手站立，StandingIdleIndex=0；UI用SetStandingIdleIndex(0/1)选择两种站立待机，也可用SetDisplayPose选择Standing／Relaxed／Rifle。大厅按钮的标准持枪接口是`SetWeaponReady(false/true)`：false进入Relaxed放松持枪，true进入Rifle举枪，`IsWeaponReady`读取状态。Standing隐藏武器。它只负责人物和展示武器，不创建Pawn／ASC／游戏装备；模型与五条动画在TMIIR完成适配，成品归MaintenanceWorker/Lobby。Relaxed Animation可配普通RelaxedIdle或v2 RelaxedIdle_02。维修工展示武器使用自身Lobby目录的原配Rifle_01黑色步枪和完整贴图，两套持枪偏移使用源动画实测值，附着hand_r。正式LobbyMap在角色焦点原点放置一个`MaintenanceWorker_LobbyDisplay`实例，Yaw=180朝向远景，初始为Relaxed。两台原有镜头瞄准人物并按实际距离对焦。
 
 大厅手动展示验证复用`IA_Test`和键盘上方`1`。`IMC_CharacterSelect`将One映射到IA_Test，`BP_CharacterSelectPlayerController.TestAction`引用该Action；仅WITH_EDITOR PIE中，`ACharacterSelectPlayerController::HandleTestInput`查找场景中的ALobbyCharacterBase并在Relaxed／Rifle之间切换。战斗地图的`ATheManPlayerController::HandleTestInput`保持独立，不受大厅接线影响。
 
