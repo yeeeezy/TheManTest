@@ -140,3 +140,14 @@
 - 最终冷启动真实LobbyMap PIE：Saved/Codex/lobby-menu-validation.log为LOBBY_MENU_VALIDATION_OK，json ok=true，540镜头样本。三枪各Relaxed／Rifle共六组、12次远近切换实际UMG Button.OnClicked绑定调用通过；重复点击不重启过渡，0.75秒内落到目标、无越界回弹、焦距连续且到位，中途反向无位置跳变，鼠标角落位移5.78755cm低于5／3cm合成上限；背景输入不切镜头。退出后地图、GM、UI、全部大厅动画包哈希不变。
 - 已逐张查看最终Final-LobbyMenu-Weapon-{0..5}00002.png，0／1／2为维修／爆破／电击举枪，3／4／5为三枪放松；三枪枪口、握持均入镜，菜单清楚且不遮枪。全身视角Final-LobbyMenu-Character00002.png。截图为实机PIE含UI，未用假合成替代，位于Saved/Codex。数字1仍独立切姿势，菜单本身仅切相机。
 - 测试用Python脚本和日志只在Saved/Codex，不新增测试地图或永久验证对象。所有后台编辑器已退出，未关闭用户编辑器（实施期间未发现用户编辑器进程）。Git范围为菜单UMG、GM引用、LobbyMap两镜头／Switcher、相关C++与harness，无动画或正式武器资产改动。未最终提交／push，等待用户实际观感反馈。
+
+
+## 2026-09-14 场景相机预览与实际视图统一
+
+- 用户指出实际视角与摆放相机不一致并授权修复。checkpoint82e1b44保存此前菜单、地图和UI工作区。此次仅改CharacterSelectCameraSwitcher.cpp与harness，不保存地图／资产。
+- 每帧刷新Far／Near的CameraComponent世界变换，包含组件相对偏移，代替仅BeginPlay缓存Actor变换。运行中移动目标相机或组件后，已落位Rig同步更新。
+- 补齐ProjectionMode、宽高比约束和轴约束、FOV LOD、正交取景字段、Overscan／AsymmetricOverscan／裁切／分辨率选项、PostProcessSettings与BlendWeight同步。保留既有Cine画幅／焦距／对焦同步和0.7秒过渡；鼠标视差仍为有意叠加，比较基准为关闭视差或鼠标居中且过渡结束、同一视口尺寸。
+- lobby-camera-parity-build.log Development Editor Win64 Succeeded。validate_camera_parity.py实际LobbyMap PIE，比较源组件和Rig的GetCameraView输出：远／近位置旋转、FOV、宽高比／约束、投影／正交宽度、后处理权重一致；运行中改变Actor和组件位置、焦距、约束、overscan、vignette／PP权重后仍一致；返回远景清除近景参数。lobby-camera-parity.json ok=true／log CAMERA_PARITY_OK。
+- 已查看CameraParity-Rig00000.png与CameraParity-PlacedCamera00000.png，同一视口分别通过运行时Rig和直接场景相机渲染，构图一致。测试首轮Python Rotator.equals不存在，改成轴角数值比较后通过；没有以脚本错误宣称产品失败。测试仅瞬态关闭视差和暂停角色用于对照，退出后LobbyMap SHA256不变，后台编辑器全部退出。无最终提交／push。
+
+- 用户随后授权提交到远端；fetch确认origin/main相对本地为0落后／28领先。本次正常提交并推送当前main全部待发布历史、相机一致性修复和LFS资源，不squash／force push。产品验证沿用已通过的编译及四组PIE，不在发布过程中改代码或资产。

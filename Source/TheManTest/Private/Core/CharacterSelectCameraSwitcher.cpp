@@ -26,6 +26,7 @@ void ACharacterSelectCameraSwitcher::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	CacheBaseCameraTransforms();
 	UpdateMouseParallax(DeltaSeconds);
 	UpdateRigTransform(DeltaSeconds);
 	SyncRigCameraSettings();
@@ -93,11 +94,11 @@ void ACharacterSelectCameraSwitcher::CacheBaseCameraTransforms()
 {
 	if (FarCamera)
 	{
-		FarCameraBaseTransform = FarCamera->GetActorTransform();
+		FarCameraBaseTransform = FarCamera->GetCameraComponent()->GetComponentTransform();
 	}
 	if (NearCamera)
 	{
-		NearCameraBaseTransform = NearCamera->GetActorTransform();
+		NearCameraBaseTransform = NearCamera->GetCameraComponent()->GetComponentTransform();
 	}
 }
 
@@ -144,6 +145,23 @@ void ACharacterSelectCameraSwitcher::SyncRigCameraSettings() const
 		return;
 	}
 
+	// The placed camera owns framing and grading. The rig only adds movement.
+	RigComponent->ProjectionMode = SourceComponent->ProjectionMode;
+	RigComponent->bConstrainAspectRatio = SourceComponent->bConstrainAspectRatio;
+	RigComponent->bOverrideAspectRatioAxisConstraint = SourceComponent->bOverrideAspectRatioAxisConstraint;
+	RigComponent->AspectRatioAxisConstraint = SourceComponent->AspectRatioAxisConstraint;
+	RigComponent->bUseFieldOfViewForLOD = SourceComponent->bUseFieldOfViewForLOD;
+	RigComponent->OrthoWidth = SourceComponent->OrthoWidth;
+	RigComponent->OrthoNearClipPlane = SourceComponent->OrthoNearClipPlane;
+	RigComponent->OrthoFarClipPlane = SourceComponent->OrthoFarClipPlane;
+	RigComponent->bAutoCalculateOrthoPlanes = SourceComponent->bAutoCalculateOrthoPlanes;
+	RigComponent->bUpdateOrthoPlanes = SourceComponent->bUpdateOrthoPlanes;
+	RigComponent->Overscan = SourceComponent->Overscan;
+	RigComponent->AsymmetricOverscan = SourceComponent->AsymmetricOverscan;
+	RigComponent->bScaleResolutionWithOverscan = SourceComponent->bScaleResolutionWithOverscan;
+	RigComponent->bCropOverscan = SourceComponent->bCropOverscan;
+	RigComponent->PostProcessSettings = SourceComponent->PostProcessSettings;
+	RigComponent->PostProcessBlendWeight = SourceComponent->PostProcessBlendWeight;
 	RigComponent->SetFilmback(SourceComponent->Filmback);
 	RigComponent->SetLensSettings(SourceComponent->LensSettings);
 	FCameraFocusSettings Focus = SourceComponent->FocusSettings;

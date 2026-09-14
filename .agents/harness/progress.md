@@ -15,3 +15,14 @@
 - 早期取景过紧和字体缺字已在实机截图发现并修正。最终图为Saved/Codex/Final-LobbyMenu-Character00002.png及Final-LobbyMenu-Weapon-{0..5}00002.png，已逐张查看，三枪枪口均留有空间。
 - 写入前checkpoint cf805ce已保存前轮动画和用户地图改动；当前菜单、C++、地图与harness变更未最终提交／push。动画／正式武器资源本轮未修改。测试脚本／截图位于Saved/Codex，不新增永久测试关卡。
 - 旧握持制作工程与完整2816样本验证见D:/Blender Projects/LobbyWeaponGrip及FEAT-082 archive。
+
+
+## 最新交接：场景相机一致性修复
+
+- 每帧使用Far／Near相机组件世界变换，补齐宽高比／轴约束、过扫描、后处理等同步，保持原0.7秒切换和小幅鼠标视差。相同视口、鼠标居中且切换结束时与场景相机取景一致。
+- Development Editor Win64编译通过；lobby-camera-parity.json四组实际PIE GetCameraView对照通过，含运行中移动Actor／组件、修改镜头参数和返回远景。Rig／PlacedCamera两张实机对照截图已查看。地图未保存且哈希不变，后台编辑器退出。
+- 当前checkpoint82e1b44；此次只改Switcher.cpp与harness，无资产变化，未最终提交／push。前文固定取景坐标为菜单初版记录，之后用户调整以当前场景相机为准，不按旧数值覆盖。
+
+## 远端提交授权
+
+用户已明确要求提交文件到远端。本次提交相机一致性修复与交接文档，并正常推送main上此前28个未发布提交及其LFS资产；fetch确认远端无新增提交，不重写历史。编译与四组PIE验证已通过，本轮发布不改产品代码或资产。
