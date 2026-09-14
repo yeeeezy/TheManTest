@@ -31,7 +31,24 @@ namespace
 {
 ACoreMorphBoss* ScorpionBoss(){if(GEditor->PlayWorld)for(TActorIterator<ACoreMorphBoss> I(GEditor->PlayWorld);I;++I)return *I;return nullptr;}
 TWeakObjectPtr<ACoreMorphBoss> ExitOwner;
-void AdvanceScorpion(UCoreMorphScorpionCombat* C,float Seconds){for(float Left=Seconds;Left>KINDA_SMALL_NUMBER;Left-=1.f/120){const float Dt=FMath::Min(Left,1.f/120);C->TickComponent(Dt,LEVELTICK_All,nullptr);CastChecked<ACoreMorphBoss>(C->GetOwner())->TailEffects->TickComponent(Dt,LEVELTICK_All,nullptr);}}
+double TailMaxBend=0,TailMaxEndBend=0,TailLengthError=0;
+void ObserveTail(UCoreMorphScorpionCombat* C)
+{
+ const auto& N=C->GetTailNodes();const auto& L=C->GetTailLengths();
+ for(int32 J=0;J<L.Num();++J)
+ {
+  TailLengthError=FMath::Max(TailLengthError,FMath::Abs(FVector::Dist(N[J],N[J+1])-L[J]));
+  if(J==0)continue;
+  const double Bend=FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(FVector::DotProduct((N[J]-N[J-1]).GetSafeNormal(),(N[J+1]-N[J]).GetSafeNormal()),-1.0,1.0)));
+  TailMaxBend=FMath::Max(TailMaxBend,Bend);if(J==15)TailMaxEndBend=FMath::Max(TailMaxEndBend,Bend);
+ }
+}
+void AdvanceScorpion(UCoreMorphScorpionCombat* C,float Seconds)
+{
+ for(float Left=Seconds;Left>KINDA_SMALL_NUMBER;Left-=1.f/120)
+ {const float Dt=FMath::Min(Left,1.f/120);C->TickComponent(Dt,LEVELTICK_All,nullptr);ObserveTail(C);CastChecked<ACoreMorphBoss>(C->GetOwner())->TailEffects->TickComponent(Dt,LEVELTICK_All,nullptr);}
+}
+
 void SetHealth(AEnemyBase* B,float Value)
 {
  auto* GE=NewObject<UGameplayEffect>();GE->DurationPolicy=EGameplayEffectDurationType::Instant;
@@ -50,6 +67,7 @@ bool PrepareScorpion(ACoreMorphBoss* B)
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FCheckCoreMorphScorpion,FAutomationTestBase*,Test);
 bool FCheckCoreMorphScorpion::Update()
 {
+ TailMaxBend=TailMaxEndBend=TailLengthError=0;
  auto* B=ScorpionBoss();if(!Test->TestNotNull(TEXT("Scorpion boss in actual PIE"),B))return true;
  if(!Test->TestTrue(TEXT("Morph hands existing 301 parts to component motor"),PrepareScorpion(B)))return true;
  auto* C=B->ScorpionCombat.Get();auto* M=B->ScorpionMovement.Get();auto* ASC=B->GetAbilitySystemComponent();
@@ -137,7 +155,12 @@ bool FCheckCoreMorphScorpion::Update()
  B->SetCombatPhase(2);Test->TestTrue(TEXT("Phase switching preserves scorpion identity and grants"),B->CurrentForm==ECoreMorphForm::Scorpion && ASC->GetActivatableAbilities().Num()==3);B->SetCombatPhase(1);
  Victim->SetActorLocation(M->GetGroundLocation()+B->GetActorForwardVector()*3300+FVector(0,0,90));ClearCooldown(B);C->Target=Victim;
  Test->TestTrue(TEXT("Target-loss check starts GA"),B->UseRandomSkill(Victim,EEnemySkillRange::Near));AdvanceScorpion(C,.2f);Victim->Destroy();AdvanceScorpion(C,.1f);
- Test->TestFalse(TEXT("Target destruction cancels attack state"),C->IsAttacking());B->ResetFlightPreview();
+ Test->TestFalse(TEXT("Target destruction cancels attack state"),C->IsAttacking());
+ Test->TestTrue(TEXT("Tail joints stay below twenty degrees through every stage"),TailMaxBend<=20.01);
+ Test->TestTrue(TEXT("Rigid stinger follows the arc without a folded wrist"),TailMaxEndBend<=16.01);
+ Test->TestTrue(TEXT("All tail and stinger lengths remain rigid"),TailLengthError<.01);
+ Test->AddInfo(FString::Printf(TEXT("Tail geometry: max joint %.3f deg, stinger %.3f deg, length error %.6f cm"),TailMaxBend,TailMaxEndBend,TailLengthError));
+ B->ResetFlightPreview();
  Test->TestEqual(TEXT("Reset removes destination armor and transient effects"),TInlineComponentArray<UStaticMeshComponent*>(B).Num(),154);
  return true;
 }

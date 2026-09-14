@@ -183,3 +183,27 @@
 - `thunder-cold-audit.log/json`：485 个头领资产；两个新 Cue Asset Registry 名称完整匹配；三个新材质引用、2 秒蓄力、唯一技能授予、关卡回读通过。0 Redirector、0 源依赖，原 313 包不变。`adaptive-source-audit.json` 确认源 5195 文件 SHA-256 全不变。
 - 新增三个专属材质、两个 Cue 蓝图、TailEffects 组件及两个 Native Cue；既有 TailDamage GE 被 GA 用作一次范围伤害。没有新增／复用声音资产，没有改武器或人形逻辑。
 - 已关闭本轮全部后台编辑器。结果未提交／push，等待用户在 L_CoreMorphScorpion 校验观感；仍不进入第四批。旧全项目启动材质／缺资源提示及无 NavMesh 的检查地图提示未在本轮扩展修复，不声称全项目日志零警告。
+
+### 尾链折角反馈（2026-09-13，进行中）
+
+- 用户截图 `屏幕截图 2026-09-13 212333.png` 显示蓄力末端两节硬折角；用户确认修复关节限制、整链分担弯曲、刚性尾刺沿弧线朝向。
+- 写入前 WIP `750d496` 保存上一轮雷爆全部结果；无编辑器占用。本轮仅具体头领尾链求解与必要回归，不改 GA／GE／Cue 或资产。
+- 原末端位置 FABRIK 缺少曲率约束，末节吸收过多修正。改为根据尾根—目标距离求解整链统一曲率倍率，沿原解剖弧线分布每节转角并保留全部刚性节长；普通关节最多 20°，尾刺连接最多 16°。尾链平面跟随实际目标与身体上方向；超出可达域保持合法形态，不强拉折返。
+- 外部数值检查涵盖蓄力和 3300／3950 距离击地；当前输入均可准确达到。`tail-arc-build.log` Development Editor Win64 Succeeded；实际 PIE 与逐帧角度／节长断言进行中。此前 source AdvanceTail 数学一致证据为本次反馈前历史，不再适用于新的尾链求解；源项目未修改。
+
+- 最终 `tail-arc-pie.log` ScorpionBatch Success：逐帧采样最大关节 15.413°、尾刺连接 14.362°、节长误差输出 0.000000cm；原范围伤害／去重／遮挡、蓄力／刺出／收回取消、各时点死亡、完整主 BT 与活动 GA 退出检查全部通过。
+- 已查看实际 PIE 的 TailArc-Windup／TailArc-Thrust 截图，蓄力尾刺连接的硬折角消除，整链呈连续拱形；当前截图保存在 `Saved/CoreMorphMigration/`。用户主观校验待进行。
+- `adaptive-source-audit.json` 源 5195 文件 SHA-256 再次全部一致。未改任何 Content、GA／GE／Cue、八足或人形／武器文件。本轮仅尾链实现、对应测试及 harness 记录，结果未提交／push。后台编辑器已退出；不进入第四批。
+
+### 替换特效遗留审查（2026-09-13）
+
+- 用户认可尾链修正，随后要求检查并删除已替换的多余特效；后续替换应同步清理确认不再使用的资产。
+- `coremorph-obsolete-effects-audit.log/json` 冷编辑器审查通过：10 个特效材质／网格均能对应到 Reassembly 数值资产或 Boss TailEffects CDO 的实际字段，且源码确有渲染消费者；3 个 Gameplay Cue 通过正式 Tag 自动发现，不能以普通引用数为零判为闲置。
+- 旧平面 SandWave 是原资产原位改造，目标没有另存一套旧效果；Dust／Earth／Impact／StreamMetal／StreamSparks 仍用于重组、碎土和落地余效。扫描未发现目标项目其它 CoreMorph／GiantScorpion／MetalStream／SandWave 遗留候选；头领范围 Redirector 为零，485 资产均保留。
+- 可删闲置特效数量 0，因此本轮没有删除资产、修改 C++ 或改动源项目；没有为只读检查建立 checkpoint，也未提交之前的尾链改动。编辑器已退出。本轮专项审查不宣称第四批武器接入已完成。
+
+### 用户要求的完整 CoreMorph 回归（2026-09-13）
+
+- `coremorph-user-regression.log`：通过正式离屏编辑器执行 `TheManTest.Enemy.CoreMorph`，7/7 Success：AdaptiveMotion、EditorPlacement、FlightBatch、ReassemblyBatch、RollMotion、RouteReview、ScorpionBatch。
+- 覆盖当前已迁入飞行／三路线／双速翻滚、重组及风墙、八足／尾刺／雷爆、范围去重与遮挡、关节角度／节长、阶段与形态、取消／死亡／活动 GA 退出 PIE。尾链最大转角 15.413°，末端 14.362°，长度误差输出 0.000000cm。
+- 当前源码与最近已成功冷编译版本一致，本轮无代码／资产修改，不重复构建；编辑器自动退出。记录当前迁入内容回归通过，不代表尚未实施的第四批三枪／附着弹适配已经完成。

@@ -187,22 +187,54 @@ void UCoreMorphScorpionCombat::AdvanceTail(float Dt)
     else if(Action==ECoreMorphScorpionAction::Thrust)Goal=bStrikeResolved?ContactTip:FMath::Lerp(ActionStartTip,LockedTarget,Smooth(ActionTime/ThrustDuration));
     else if(Action==ECoreMorphScorpionAction::Recover)Goal=FMath::Lerp(ActionStartTip,RestGoal,Smooth(ActionTime/RecoverDuration));
     else Goal=FMath::VInterpTo(TipPosition,RestGoal,Dt,4.f);
-    const FVector RootShift=Root-TailNodes[0];for(auto& N:TailNodes)N+=RootShift;
-    if(Action!=ECoreMorphScorpionAction::Windup && Action!=ECoreMorphScorpionAction::Thrust)
-        for(int32 J=1;J<16;++J)TailNodes[J]=FMath::Lerp(TailNodes[J],Body.TransformPosition(TailRest[J]),FMath::Min(1.f,Dt*3.f));
-    // Warm-started FABRIK retains the continuous over-body arch and every rigid segment length.
-    for(int32 Pass=0;Pass<48;++Pass)
+    // A single curvature scale distributes the requested bend over the anatomical arc.
+    // Unlike an endpoint-only solve, no individual joint can consume the whole correction.
+    // Every link (including the rigid stinger) keeps its original length.
+    const FVector Up=Body.GetRotation().GetUpVector();
+    const FVector Delta=Goal-Root;
+    FVector Forward=FVector::VectorPlaneProject(Delta,Up).GetSafeNormal();
+    if(Forward.IsNearlyZero())Forward=Body.GetRotation().GetForwardVector();
+    double Angles[16];Angles[0]=0;
+    double MaxScale=1.5;
+    FVector PreviousRest=(TailRest[1]-TailRest[0]).GetSafeNormal();
+    for(int32 J=1;J<16;++J)
     {
-        TailNodes.Last()=Goal;
-        for(int32 J=15;J>=0;--J)TailNodes[J]=TailNodes[J+1]+(TailNodes[J]-TailNodes[J+1]).GetSafeNormal()*TailLengths[J];
-        TailNodes[0]=Root;
-        for(int32 J=0;J<16;++J)TailNodes[J+1]=TailNodes[J]+(TailNodes[J+1]-TailNodes[J]).GetSafeNormal()*TailLengths[J];
-        if(FVector::DistSquared(TailNodes.Last(),Goal)<.04f)break;
+        const FVector RestDirection=(TailRest[J+1]-TailRest[J]).GetSafeNormal();
+        const double Bend=FMath::Atan2(PreviousRest.X*RestDirection.Z-PreviousRest.Z*RestDirection.X,
+            FVector::DotProduct(PreviousRest,RestDirection));
+        Angles[J]=Angles[J-1]+Bend;
+        const double Limit=FMath::DegreesToRadians(J==15?16.0:20.0);
+        if(FMath::Abs(Bend)>UE_DOUBLE_SMALL_NUMBER)MaxScale=FMath::Min(MaxScale,Limit/FMath::Abs(Bend));
+        PreviousRest=RestDirection;
+    }
+    auto ArcEnd=[&](double Scale)
+    {
+        FVector2D End=FVector2D::ZeroVector;
+        for(int32 J=0;J<16;++J)End+=FVector2D(FMath::Cos(Angles[J]*Scale),FMath::Sin(Angles[J]*Scale))*TailLengths[J];
+        return End;
+    };
+    // The admissible arc has monotonically decreasing reach. Unreachable requests keep
+    // the nearest admissible shape instead of breaking a joint or stretching the stinger.
+    double Low=0,High=MaxScale;
+    for(int32 Pass=0;Pass<32;++Pass)
+    {
+        const double Scale=(Low+High)*.5;
+        if(ArcEnd(Scale).Size()>Delta.Size())Low=Scale;else High=Scale;
+    }
+    const double Scale=(Low+High)*.5;
+    const FVector2D End=ArcEnd(Scale);
+    const double Heading=FMath::Atan2(FVector::DotProduct(Delta,Up),FVector::DotProduct(Delta,Forward))-
+        FMath::Atan2(End.Y,End.X);
+    TailNodes[0]=Root;
+    for(int32 J=0;J<16;++J)
+    {
+        const double Angle=Heading+Angles[J]*Scale;
+        TailNodes[J+1]=TailNodes[J]+(Forward*FMath::Cos(Angle)+Up*FMath::Sin(Angle))*TailLengths[J];
     }
     TipPosition=TailNodes.Last();
     if(Action==ECoreMorphScorpionAction::Thrust && !bStrikeResolved)SweepTip(PreviousTip,TipPosition);
     PreviousTip=TipPosition;
-    const FVector Side=Body.GetRotation().GetRightVector();
+    const FVector Side=FVector::CrossProduct(Up,Forward).GetSafeNormal();
     for(int32 J=0;J<16;++J)
     {
         const FQuat RestFrame=FRotationMatrix::MakeFromXY(TailRest[J+1]-TailRest[J],FVector::RightVector).ToQuat();

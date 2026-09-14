@@ -1,6 +1,6 @@
 # 具体角色类
 
-- FEAT-081 第三批：同一 CoreMorphBoss 新增 `ScorpionMovement` 与 `ScorpionCombat` 组件，替代源隐藏 PhysicalScorpion Actor；复用 Reassembly 的 301 分件，移动根位置同步到唯一 Pawn。`DA_CoreMorphScorpionLayout` 仅含 75 组关节枢轴／64 足链节点，不引用源网格。运动组件负责接触／CCD，战斗组件负责尾链 FABRIK 和刺尖 Sweep，尾刺 GA 控制出招阶段。Reassembly 在运动接管后只更新固定落点 Cue，不再覆盖主体姿态。
+- FEAT-081 第三批：同一 CoreMorphBoss 新增 `ScorpionMovement` 与 `ScorpionCombat` 组件，替代源隐藏 PhysicalScorpion Actor；复用 Reassembly 的 301 分件，移动根位置同步到唯一 Pawn。`DA_CoreMorphScorpionLayout` 仅含 75 组关节枢轴／64 足链节点，不引用源网格。运动组件负责接触／CCD，战斗组件负责受关节角度限制的整链曲率求解和刺尖 Sweep，尾刺 GA 控制出招阶段。Reassembly 在运动接管后只更新固定落点 Cue，不再覆盖主体姿态。
 - 新检查入口 `/Game/Maps/CoreMorph/L_CoreMorphScorpion`：V 启用主 BT 完整飞行→重组→蝎子战斗，M 立即重组；1／2／3 移动测试目标、T 通过阶段技能集请求尾刺、C 取消尾刺，P 暂停、R 复位、F 相机。原地图不自动启动蝎子战斗；临时检查工具仍待最终总验收后清理。
 
 - FEAT-081 风墙反馈：Reassembly 的 SandWave Cue 实例池为 3 圈 × 3 层 × 128 扇区；接地墙身、顶部浪脊、后卷层等速径向扩散。M_CoreMorph_SandWave 的实例数据 0 是透明度、1 是组件提供的波龄，材质不用全局 Time，暂停时几何和流动一起冻结。源金属流／构建保持，沙尘方程与材质已按用户要求改造，不再要求此分支与源逐字／哈希一致。
@@ -69,3 +69,8 @@
 ### CoreMorph 尾刺专属雷爆（FEAT-081 第三批反馈）
 
 `ACoreMorphBoss` 新增常驻 `UCoreMorphTailEffects`，仅在 Cue 激活时创建瞬态渲染组件；无独立伤害 Actor、ASC 或碰撞。TailCharge Cue 控制尾尖光球／粒子／固定红色范围 Decal，TailBlast Cue 控制地面电弧／冲击圈／短时光照。材质全新位于 `Enemy/Boss/CoreMorph/Effects/Materials/M_CoreMorph_Tail*`。Reset、OnDeath、EndPlay 显式 Shutdown；暂停使用蝎子战斗暂停状态，无独立计时器。
+
+
+### CoreMorph 尾链折角修正（2026-09-13）
+
+ScorpionCombat.AdvanceTail 现根据实时尾根—目标距离，求解原解剖弧线的统一曲率倍率；每节角度共同缩放，节长和尾刺长度不变。普通关节上限 20°、尾刺连接上限 16°；弧线平面使用身体上方向与目标方向。不可达目标保持最近合法弧线，避免局部折返／拉长。蓄力、刺出、正常收回和取消收回共用同一求解，不再使用原无角度约束的端点 FABRIK。八足 CCD、GA／GE／Cue 与素材保持不变。源数学逐字一致的旧验收只适用于本反馈前。
