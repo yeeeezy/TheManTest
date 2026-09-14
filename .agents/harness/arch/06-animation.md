@@ -2,7 +2,7 @@
 
 ## 大厅持枪姿态（FEAT-082，2026-09-14）
 
-FEAT-082大厅：已移除自定义LobbyCharacterAnimInstance及左臂IK，恢复标准SingleNode播放。每把正式武器配置独立两条Relaxed与一条Rifle成品序列，Blender对照Phantom修正左前臂、手腕及拇指／四指前两节旋转，TMIIR生成最终序列；上臂与肘部位置、身体／右手保持。共九条按枪命名成品，目标不保留动画制作Rig或Retargeter。
+FEAT-082大厅：已移除旧LobbyCharacterAnimInstance及左臂IK；运行时由LobbyPoseBlendAnimInstance混合每枪成品。每把正式武器配置独立两条Relaxed与一条Rifle成品序列，Blender对照Phantom修正左前臂、手腕及拇指／四指前两节旋转，TMIIR生成最终序列；上臂与肘部位置、身体／右手保持。共九条按枪命名成品，目标不保留动画制作Rig或Retargeter。
 
 - 2026-09-05当前受击仅播放成品动画：EnemyHitReactionComponent仅按Actor局部入射方向选择，BP_Phantom直接配置前后左右4条AS_Humanoid_BlastRifle_{Front,Back,Left,Right}，来自Mixamo并在外部适配现役70骨。原始时长/30fps保留，握枪和腿长差异已调整。
 - 共享无骨架后处理位于Humanoid/_Shared/Animations/Logic/ABP_Humanoid_HitReaction。输入Pose缓存与动态SequenceEvaluator混合后输出；ReactionAnimation/Time/Alpha、UseFullBodyReaction由NativeUpdateAnimation提供。旧ControlRig节点、模式选择、RigUnit和Frame/旋转/包络参数已删除，不存在切回Rig的入口。
@@ -107,3 +107,6 @@ Aim → Idle：AIState != Aim，Blend 0.2s
 
 
 FEAT-082电击枪扳机补修：其三条大厅成品动画额外直接修index_01_r／index_02_r／index_03_r旋转，使食指进入上方独立扳机口。hand_r和其他右手骨骼、枪挂点及左手修复不变；因此此前“右手保持”的历史描述不再包含这三节食指。最新微调工程LobbyElectricTriggerFine：用户确认指尖仍低后，仅进一步抬高中/末节，近节与其他部分保持，无IK。
+
+
+2026-09-14：运行时新增ULobbyPoseBlendAnimInstance（继承UAnimSingleNodeInstance），从当前显示的局部骨骼姿势快照向继续播放的目标成品动画混合；ALobbyCharacterBase.PoseBlendDuration默认0.5秒，SmoothStep进度同步静态/骨骼枪挂点。反向切换重新捕获当前姿势，重复相同状态不重启。初次显示及换枪立即应用；编辑器静态预览保留OverrideAnimationData/PlayAnimation。没有IK，既有每枪独立成品不变。

@@ -12,14 +12,14 @@
             "created": "2026-09-13",
             "updated": "2026-09-14-lobby-button-pose-controls",
             "archive_file": "archive/FEAT-082-lobby-character-presentation.md",
-            "current_batch": "Implemented approved WEAPON->Rifle/near camera and CHARACTER->random per-weapon Relaxed/far camera. Button Normal/Pressed are neutral; only hover highlights. Editor build and actual PIE tests passed, three guns x64 random picks cover both variants, actual animation and pose verified, real cursor hover/leave checked. Character animation transitions remain hard cuts; user asked whether blending exists, proposed 0.3s pose+mount blending but not implemented. Checkpoint7a4ed42, latest code changes uncommitted/unpushed.",
+            "current_batch": "2026-09-14：运行时新增ULobbyPoseBlendAnimInstance（继承UAnimSingleNodeInstance），从当前显示的局部骨骼姿势快照向继续播放的目标成品动画混合；ALobbyCharacterBase.PoseBlendDuration默认0.5秒，SmoothStep进度同步静态/骨骼枪挂点。反向切换重新捕获当前姿势，重复相同状态不重启。初次显示及换枪立即应用；编辑器静态预览保留OverrideAnimationData/PlayAnimation。没有IK，既有每枪独立成品不变。 WEAPON=Rifle/近景，CHARACTER=随机Relax/远景，仅hover高亮。待用户视觉反馈，未最终提交/push。",
             "done_criteria": [
                 "Delete only the three confirmed old meshes.",
                 "TMIIR performs RTG; target receives only final lobby assets and required dependencies under MaintenanceWorker.",
                 "Provide reusable lobby display Actor base and Maintenance Worker subclass with all unarmed standing idle variants and optional rifle poses.",
                 "Compile, validate Blueprint and actual animation playback/rendering; clean migration paths and verify existing gameplay assets unchanged."
             ],
-            "verification_evidence": "Saved/Codex/lobby-pose-menu-build.log Succeeded; lobby-pose-menu-validation.json ok=true; lobby-pose-menu-pie.log POSE_MENU_OK; PoseMenu-Hover00000.png and PoseMenu-Neutral00000.png reviewed. No asset/map changes."
+            "verification_evidence": "Saved/Codex/lobby-pose-menu-build.log Succeeded; lobby-pose-menu-validation.json ok=true; lobby-pose-menu-pie.log POSE_MENU_OK; PoseMenu-Hover00000.png and PoseMenu-Neutral00000.png reviewed. No asset/map changes. 0.5s blending: lobby-pose-blend-build.log Succeeded; lobby-pose-blend-validation.json ok=true, 15 completed transitions, 525 samples, max local rotation error 0.033 degrees; reversals/repeated requests/weapon mounts/duration passed; map and Lobby asset hashes unchanged."
         },
         {
             "id": "FEAT-077",

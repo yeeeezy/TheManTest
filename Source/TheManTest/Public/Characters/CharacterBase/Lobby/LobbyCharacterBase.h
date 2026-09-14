@@ -50,6 +50,13 @@ public:
 	ALobbyCharacterBase();
 	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Animation", meta=(ClampMin="0"))
+	float PoseBlendDuration = 0.5f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient, Category="Lobby|Animation")
+	float PresentationBlendAlpha = 1.f;
 
 	UFUNCTION(BlueprintCallable, Category="Lobby|Presentation")
 	void SetDisplayPose(ELobbyCharacterPose NewPose);
@@ -121,4 +128,9 @@ public:
 
 private:
 	void ApplyPresentation();
+	float BlendElapsed = 0.f;
+	float ActiveBlendDuration = 0.f;
+	int32 LastPresentedWeaponIndex = INDEX_NONE;
+	FTransform StaticBlendStart, StaticBlendTarget;
+	FTransform SkeletalBlendStart, SkeletalBlendTarget;
 };

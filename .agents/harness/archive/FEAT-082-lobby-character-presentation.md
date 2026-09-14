@@ -208,3 +208,12 @@
 - 验证Saved/Codex/lobby-pose-menu-validation.json ok=true，lobby-pose-menu-build.log Succeeded，lobby-pose-menu-pie.log POSE_MENU_OK；PoseMenu-Hover00000.png/Neutral00000.png已查看。首轮测试所需SlateBlueprintLibrary未暴露，改为依据已知布局移动真实指针后通过。
 - 用户同时询问Rifle/Relax是否有过渡：当前OverrideAnimationData+PlayAnimation仍是硬切，只有相机0.7秒smoothstep。已建议约0.3秒姿势混合并同步枪挂点平滑；此轮仅回答并提出建议，尚未实现角色动画混合，等待用户决定。
 - 本轮只有Controller.cpp、LobbyPresentationWidgetBase.h/.cpp与harness变更；无地图/资产改动，未最终提交/push。后台验证编辑器已退出。
+
+
+## 2026-09-14 Rifle / Relax 0.5秒混合
+
+- 用户明确授权0.5秒混合；checkpoint2540972保存此前按钮联动与hover样式。
+- 2026-09-14：运行时新增ULobbyPoseBlendAnimInstance（继承UAnimSingleNodeInstance），从当前显示的局部骨骼姿势快照向继续播放的目标成品动画混合；ALobbyCharacterBase.PoseBlendDuration默认0.5秒，SmoothStep进度同步静态/骨骼枪挂点。反向切换重新捕获当前姿势，重复相同状态不重启。初次显示及换枪立即应用；编辑器静态预览保留OverrideAnimationData/PlayAnimation。没有IK，既有每枪独立成品不变。
+- Development Editor Win64构建Succeeded（lobby-pose-blend-build.log）。实际LobbyMap PIE三枪、两条Relax版本、双向切换及中途反向通过：15组完成记录、525帧样本，关键手臂/手指局部旋转与期望混合最大误差0.033度以内；切换瞬间姿势/挂点连续，挂点每帧同步，重复请求不重启，0.5秒完成后关闭Actor Tick。退出后地图与大厅资产哈希不变。证据Saved/Codex/lobby-pose-blend-validation.json ok=true。首轮验证脚本调用未暴露get_current_time，改用mesh.get_position后通过；非产品故障。
+- 本轮仅LobbyCharacterBase和新增LobbyPoseBlendAnimInstance及harness改动，没有修改成品动画、挂点配置、模型或地图；未最终提交/push。
+- 已查看三枪实际UE放松/中间帧/举枪共9张截图（Saved/Codex/PoseBlend-*.png），WEAPON按钮触发混合，过渡姿态可见。视觉脚本末尾仅JSON写入因包含DelegateHandle失败，截图均已完成；已修正脚本序列化，未将其冒充完整自动验证，数值验证使用独立通过的lobby-pose-blend-validation.json。后台编辑器均已退出。

@@ -1,4 +1,5 @@
 #include "Characters/CharacterBase/Lobby/LobbyCharacterBase.h"
+#include "Characters/CharacterBase/Lobby/LobbyPoseBlendAnimInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -7,7 +8,8 @@
 
 ALobbyCharacterBase::ALobbyCharacterBase()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
 	DisplayMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("DisplayMesh"));
 	SetRootComponent(DisplayMesh);
 	DisplayMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -32,7 +34,24 @@ void ALobbyCharacterBase::OnConstruction(const FTransform& Transform)
 void ALobbyCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+	DisplayMesh->AddTickPrerequisiteActor(this);
 	ApplyPresentation();
+}
+
+void ALobbyCharacterBase::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	BlendElapsed += DeltaSeconds;
+	const float LinearAlpha = ActiveBlendDuration > 0.f ? FMath::Clamp(BlendElapsed / ActiveBlendDuration, 0.f, 1.f) : 1.f;
+	PresentationBlendAlpha = FMath::SmoothStep(0.f, 1.f, LinearAlpha);
+	if (auto* Instance = Cast<ULobbyPoseBlendAnimInstance>(DisplayMesh->GetAnimInstance()))
+		Instance->SetPoseBlendAlpha(PresentationBlendAlpha);
+	FTransform Transform;
+	Transform.Blend(StaticBlendStart, StaticBlendTarget, PresentationBlendAlpha);
+	DisplayWeapon->SetRelativeTransform(Transform);
+	Transform.Blend(SkeletalBlendStart, SkeletalBlendTarget, PresentationBlendAlpha);
+	DisplaySkeletalWeapon->SetRelativeTransform(Transform);
+	if (LinearAlpha >= 1.f) SetActorTickEnabled(false);
 }
 
 void ALobbyCharacterBase::SetDisplayPose(ELobbyCharacterPose NewPose)
@@ -59,6 +78,7 @@ void ALobbyCharacterBase::SetWeaponReady(bool bReady)
 void ALobbyCharacterBase::SetDisplayWeaponIndex(int32 NewIndex)
 {
 	if (!WeaponPresentations.IsValidIndex(NewIndex)) return;
+	if (DisplayWeaponIndex == NewIndex) return;
 	DisplayWeaponIndex = NewIndex;
 	ApplyPresentation();
 }
@@ -67,6 +87,7 @@ void ALobbyCharacterBase::SetRelaxedIdleIndex(int32 NewIndex)
 {
 	if (!WeaponPresentations.IsValidIndex(DisplayWeaponIndex) ||
 		!WeaponPresentations[DisplayWeaponIndex].RelaxedAnimations.IsValidIndex(NewIndex)) return;
+	if (DisplayPose == ELobbyCharacterPose::Relaxed && RelaxedIdleIndex == NewIndex) return;
 	RelaxedIdleIndex = NewIndex;
 	DisplayPose = ELobbyCharacterPose::Relaxed;
 	ApplyPresentation();
@@ -88,8 +109,21 @@ void ALobbyCharacterBase::ApplyPresentation()
 		Animation = DisplayPose == ELobbyCharacterPose::Rifle ? Item.ReadyAnimation.Get() :
 			(Item.RelaxedAnimations.IsValidIndex(RelaxedIdleIndex) ? Item.RelaxedAnimations[RelaxedIdleIndex].Get() : nullptr);
 	}
-	DisplayMesh->OverrideAnimationData(Animation, true, true);
-	DisplayMesh->PlayAnimation(Animation, true);
+	const FTransform PreviousStatic = DisplayWeapon->GetRelativeTransform();
+	const FTransform PreviousSkeletal = DisplaySkeletalWeapon->GetRelativeTransform();
+	bool bBlending = false;
+	if (GetWorld() && GetWorld()->IsGameWorld())
+	{
+		if (!Cast<ULobbyPoseBlendAnimInstance>(DisplayMesh->GetAnimInstance()))
+			DisplayMesh->SetAnimInstanceClass(ULobbyPoseBlendAnimInstance::StaticClass());
+		if (auto* Instance = Cast<ULobbyPoseBlendAnimInstance>(DisplayMesh->GetAnimInstance()))
+			bBlending = Instance->PlayPose(Animation, PoseBlendDuration > 0.f && LastPresentedWeaponIndex == DisplayWeaponIndex);
+	}
+	else
+	{
+		DisplayMesh->OverrideAnimationData(Animation, true, true);
+		DisplayMesh->PlayAnimation(Animation, true);
+	}
 	if (DisplayMesh->IsRegistered())
 	{
 		DisplayMesh->TickAnimation(0.f, false);
@@ -130,5 +164,19 @@ void ALobbyCharacterBase::ApplyPresentation()
 			DisplayWeapon->SetRelativeTransform(StaticSource->GetRelativeTransform() * Mount);
 			DisplayWeapon->SetVisibility(bVisible);
 		}
+	}
+	LastPresentedWeaponIndex = DisplayWeaponIndex;
+	PresentationBlendAlpha = bBlending ? 0.f : 1.f;
+	SetActorTickEnabled(bBlending);
+	if (bBlending)
+	{
+		BlendElapsed = 0.f;
+		ActiveBlendDuration = PoseBlendDuration;
+		StaticBlendStart = PreviousStatic;
+		SkeletalBlendStart = PreviousSkeletal;
+		StaticBlendTarget = DisplayWeapon->GetRelativeTransform();
+		SkeletalBlendTarget = DisplaySkeletalWeapon->GetRelativeTransform();
+		DisplayWeapon->SetRelativeTransform(StaticBlendStart);
+		DisplaySkeletalWeapon->SetRelativeTransform(SkeletalBlendStart);
 	}
 }

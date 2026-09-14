@@ -13,7 +13,7 @@
 2026-09-14紧凑大厅副本：WeaponPresentations[1/2]现改读Lobby/Blueprint/BP_Lobby_ExplosionGunDisplay与BP_Lobby_ElectricGunDisplay（EquipmentBase子类，仅作CDO数据来源，不生成战斗Actor）。其静态模型是Lobby/Meshes/SM_MaintenanceWorker_Lobby_ExplosionGun与SM_MaintenanceWorker_Lobby_ElectricGun，所有LOD BuildScale为原值0.8倍；材质复用正式枪，组件平移与两种Attachment平移也各乘0.8，保持手部锚点。正式武器不变，索引0维修枪继续原CDO。六条对应动画重新直接修FK左前臂／手腕／手指，肩肘位置与右侧保持；没有IK。
 
 
-大厅已删除ULobbyCharacterAnimInstance及全部左手目标／IK逻辑，使用OverrideAnimationData／PlayAnimation直接播放每枪成品。RelaxedIdleIndex／SetRelaxedIdleIndex(0/1)选择并进入放松版本；换枪时索引钳制，无效运行时版本忽略。Blender外部对照Phantom进行FK握持制作，修正lowerarm_l、hand_l与五指前两节旋转，再由TMIIR生成成品；上臂与肘部位置、右手和身体动画保持。旧版手腕位置固定的做法已被用户截图否决。九条新增成品为AS_MaintenanceWorker_Lobby_{RepairGun,ExplosionGun,ElectricGun}_{RelaxedIdle,RelaxedIdle_02,RifleIdle}；原五条动画保留，Standing仍用原空手动画。
+大厅已删除ULobbyCharacterAnimInstance及全部左手目标／IK逻辑，编辑器静态预览使用OverrideAnimationData／PlayAnimation，运行时使用ULobbyPoseBlendAnimInstance混合每枪成品。RelaxedIdleIndex／SetRelaxedIdleIndex(0/1)选择并进入放松版本；换枪时索引钳制，无效运行时版本忽略。Blender外部对照Phantom进行FK握持制作，修正lowerarm_l、hand_l与五指前两节旋转，再由TMIIR生成成品；上臂与肘部位置、右手和身体动画保持。旧版手腕位置固定的做法已被用户截图否决。九条新增成品为AS_MaintenanceWorker_Lobby_{RepairGun,ExplosionGun,ElectricGun}_{RelaxedIdle,RelaxedIdle_02,RifleIdle}；原五条动画保留，Standing仍用原空手动画。
 
 > 当前清理状态（2026-09-13）：用户要求立即清理测试设施，取代下文旧批次“总验收后清理”的安排。5张CoreMorph检查地图、专属地面材质、5个Tests cpp与CoreMorphFlightReview h/cpp均已删除。Boss的StartFlightPreview／ResetFlightPreview及Flight的ResetPreview已删除；Reassembly内部ResetPreview改名ResetAssembly，仍用于正式变形初始化。ReviewTarget已删除，正式BT目标由LastThreat／玩家决定。保留FlightRoute、正式主BT、GA／GE／Cue及490个头领资产。以后只有TestMap作为测试地图，不能再照旧地图入口操作。
 
@@ -101,3 +101,6 @@ L_CoreMorphMantaCombat 使用闭合环线，V飞行、T当前阶段Far技能、C
 
 
 FEAT-082右手握柄后续校准：80%静态副本及源组件平移保持，WeaponPresentations[1/2]的RelaxedAttachment／ReadyAttachment已再次分别校准，不再仅等于初版平移乘0.8。最终以BP默认值为准；对应Blender记录为D:/Blender Projects/LobbyGripAnchors/mounts.json。仍统一挂hand_r，四组独立偏移加六条独立FK动画，不新增骨架Socket，不使用IK。
+
+
+2026-09-14：运行时新增ULobbyPoseBlendAnimInstance（继承UAnimSingleNodeInstance），从当前显示的局部骨骼姿势快照向继续播放的目标成品动画混合；ALobbyCharacterBase.PoseBlendDuration默认0.5秒，SmoothStep进度同步静态/骨骼枪挂点。反向切换重新捕获当前姿势，重复相同状态不重启。初次显示及换枪立即应用；编辑器静态预览保留OverrideAnimationData/PlayAnimation。没有IK，既有每枪独立成品不变。
