@@ -98,3 +98,15 @@
 - Details → Lobby → Presentation → Display Pose选Relaxed或Rifle；UI可调用SetDisplayPose。Relaxed是放松持枪待机，Rifle是举枪待机。两个循环都长3.2667秒，无根位移；本次只提供人物展示基础，不改既有Lobby UI或地图布局。
 - 源RTG留在TMIIR的LobbyPrep/MaintenanceWorker。外部脚本与证据在D:/Unreal Projects/CoreMorph57Prep/Scripts和Saved/Review的lobby-*文件，验证已完成，不必重新批量迁移或运行初次制备脚本。
 - FEAT-081与第4批武器适配暂停；此前导弹卸装仅修改原生默认并通过编译，若恢复头领工作应再核对BP实例的PhaseSkillSets实际配置，不把编译当作蓝图运行时已核对。
+
+## 2026-09-14 用户否决 IK，改为逐枪手腕动画
+
+- 用户明确要求三枪各用独立修正动画、保留原上臂／前臂位置，直接修手腕旋转，不使用IK。此前IK数值验证只说明到达指定目标，不能代表自然握持；上一批观感结论撤回。
+- 操作前checkpoint77b2434。已删除LobbyCharacterAnimInstance及大厅AnimationCore依赖，恢复OverrideAnimationData／PlayAnimation；每枪改为RelaxedAnimations两版本和ReadyAnimation。新增RelaxedIdleIndex／SetRelaxedIdleIndex。目标wrist-animation-build.log编译成功。
+- Phantom历史核实：FEAT-080的2026-09-05握持修复只恢复hand_r_wepSocket与枪相对scale1，未修改动画或启用IK。不能把那次描述成手腕烘焙。
+- TMIIR外部助手只修改hand_l局部旋转关键帧，对全部轨道逐帧核对位置／缩放完全保留，其他骨骼旋转不变。制作九条独立成品；不使用运行时或离线IK。本轮源助手编译通过，源动画创建和冷读验证通过；仅九条成品通过AssetTools迁入，依赖为既有大厅Skeleton／Mesh。首轮放松手掌过度遮挡，再在TMIIR调整六条放松序列的手腕朝向并迁入覆盖。
+- BP已编译保存三枪独立动画引用。原五条动画、正式武器BP／模型／材质／比例、右手挂点和地图均不修改。完整循环／输入验证见本节后续记录。
+
+- 最终验证：wrist-animation-validation.log／json为WRIST_ANIMATION_VALIDATION_OK，实际LobbyMap PIE共2806样本；三枪各两放松／一举枪完整循环、两个Standing、标准SingleNode类、正式模型／材质／缩放、原肩肘手腕位置、无效枪索引和One→Relaxed→Rifle通过。原身体位置相对Raw姿态最大0.007172cm，旋转差0.179115度属于运行时压缩范围。测试前后地图、正式武器和原动画哈希不变。
+- wrist-animation-cold-final.log／json：WRIST_ANIMATION_COLD_OK，50资产全部加载，九条引用独立且全部局部骨骼位置／非hand_l旋转相对原动画保持；hand_l旋转与TMIIR制作规格一致，只有既有大厅Mesh／Skeleton依赖，无IKRig／RTG／Redirector。初次额外要求迁移前后整包字节一致不成立（AssetTools迁移会重新序列化包），改用逐骨骼原始姿态和明确制作旋转验证，不能把包哈希差异误判为动画差异。
+- 已查看三枪最终普通／v2放松及举枪近景，肘部保持原弯曲，手掌改为按各枪形状包覆；图为外部LobbyWristFinal-*。本次遵从只改手腕旋转，没有把手臂拉向固定握点；最终主观观感仍待用户确认。全部后台编辑器退出，无最终提交／push。

@@ -24,12 +24,12 @@ struct FLobbyWeaponPresentation
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon")
 	FTransform ReadyAttachment;
 
-	/** Left wrist relative to the weapon Actor origin, including wrist orientation. */
+	/** Finished animation variants authored for this weapon. No runtime hand correction. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon")
-	FTransform RelaxedLeftGrip;
+	TArray<TObjectPtr<UAnimSequence>> RelaxedAnimations;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon")
-	FTransform ReadyLeftGrip;
+	TObjectPtr<UAnimSequence> ReadyAnimation;
 };
 
 UENUM(BlueprintType)
@@ -65,8 +65,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Lobby|Presentation")
 	void SetDisplayWeaponIndex(int32 NewIndex);
 
-	/** Returns the calibrated left wrist target in right-hand bone space. */
-	bool GetLeftHandTarget(FTransform& OutTarget) const;
+	UFUNCTION(BlueprintCallable, Category="Lobby|Presentation")
+	void SetRelaxedIdleIndex(int32 NewIndex);
 
 	UFUNCTION(BlueprintPure, Category="Lobby|Presentation")
 	bool IsWeaponReady() const { return DisplayPose == ELobbyCharacterPose::Rifle; }
@@ -89,8 +89,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon", meta=(ClampMin="0"))
 	int32 DisplayWeaponIndex = 0;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Lobby|Weapon")
-	FName LeftHandBone = TEXT("hand_l");
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Animation", meta=(ClampMin="0"))
+	int32 RelaxedIdleIndex = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Presentation")
 	ELobbyCharacterPose DisplayPose = ELobbyCharacterPose::Standing;

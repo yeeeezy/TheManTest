@@ -3,9 +3,7 @@
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Characters/CharacterBase/Lobby/LobbyCharacterAnimInstance.h"
 #include "Weapons/_Shared/EquipmentBase/EquipmentBase.h"
-#include "Engine/SkeletalMeshSocket.h"
 
 ALobbyCharacterBase::ALobbyCharacterBase()
 {
@@ -65,17 +63,13 @@ void ALobbyCharacterBase::SetDisplayWeaponIndex(int32 NewIndex)
 	ApplyPresentation();
 }
 
-bool ALobbyCharacterBase::GetLeftHandTarget(FTransform& OutTarget) const
+void ALobbyCharacterBase::SetRelaxedIdleIndex(int32 NewIndex)
 {
-	if (DisplayPose == ELobbyCharacterPose::Standing || !WeaponPresentations.IsValidIndex(DisplayWeaponIndex)) return false;
-	if (DisplayPose == ELobbyCharacterPose::Relaxed && !bShowWeaponWhenRelaxed) return false;
-	const FLobbyWeaponPresentation& Item = WeaponPresentations[DisplayWeaponIndex];
-	if (!Item.WeaponClass) return false;
-	const bool bReady = DisplayPose == ELobbyCharacterPose::Rifle;
-	OutTarget = (bReady ? Item.ReadyLeftGrip : Item.RelaxedLeftGrip) * (bReady ? Item.ReadyAttachment : Item.RelaxedAttachment);
-	if (const USkeletalMeshSocket* Socket = DisplayMesh->GetSocketByName(WeaponAttachSocket))
-		OutTarget = OutTarget * Socket->GetSocketLocalTransform();
-	return true;
+	if (!WeaponPresentations.IsValidIndex(DisplayWeaponIndex) ||
+		!WeaponPresentations[DisplayWeaponIndex].RelaxedAnimations.IsValidIndex(NewIndex)) return;
+	RelaxedIdleIndex = NewIndex;
+	DisplayPose = ELobbyCharacterPose::Relaxed;
+	ApplyPresentation();
 }
 
 void ALobbyCharacterBase::ApplyPresentation()
@@ -87,13 +81,15 @@ void ALobbyCharacterBase::ApplyPresentation()
 		StandingIdleIndex = StandingAnimations.IsEmpty() ? 0 : FMath::Clamp(StandingIdleIndex, 0, StandingAnimations.Num() - 1);
 		Animation = StandingAnimations.IsValidIndex(StandingIdleIndex) ? StandingAnimations[StandingIdleIndex].Get() : nullptr;
 	}
-	DisplayMesh->SetAnimInstanceClass(ULobbyCharacterAnimInstance::StaticClass());
-	if (UAnimSingleNodeInstance* Instance = DisplayMesh->GetSingleNodeInstance())
+	else if (WeaponPresentations.IsValidIndex(DisplayWeaponIndex))
 	{
-		Instance->SetAnimationAsset(Animation, true, 1.f);
-		Instance->SetPlaying(true);
-		Instance->SetPosition(0.f, false);
+		const FLobbyWeaponPresentation& Item = WeaponPresentations[DisplayWeaponIndex];
+		RelaxedIdleIndex = Item.RelaxedAnimations.IsEmpty() ? 0 : FMath::Clamp(RelaxedIdleIndex, 0, Item.RelaxedAnimations.Num() - 1);
+		Animation = DisplayPose == ELobbyCharacterPose::Rifle ? Item.ReadyAnimation.Get() :
+			(Item.RelaxedAnimations.IsValidIndex(RelaxedIdleIndex) ? Item.RelaxedAnimations[RelaxedIdleIndex].Get() : nullptr);
 	}
+	DisplayMesh->OverrideAnimationData(Animation, true, true);
+	DisplayMesh->PlayAnimation(Animation, true);
 	if (DisplayMesh->IsRegistered())
 	{
 		DisplayMesh->TickAnimation(0.f, false);

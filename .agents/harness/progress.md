@@ -1,17 +1,17 @@
 # 当前工作面板
 
-- Active feature：FEAT-082 大厅角色展示。三把正式武器与左手握持返修已完成编译、冷加载、实际PIE和两侧近景自查；等待用户前台观感确认。
-- FEAT-081／080暂停；详见对应archive。
+- Active feature：FEAT-082大厅角色展示。用户否决上一批IK握持；已改为每枪独立成品动画，只修左手腕旋转，等待前台观感确认。
+- FEAT-081／080暂停，详见对应archive。
 
-## 当前大厅配置
+## 当前配置
 
-- 正式场景仍为`/Game/Maps/LobbyMap`，唯一`MaintenanceWorker_LobbyDisplay`保持原位置和镜头配置，默认Relaxed。
-- Display Weapon Index：0维修枪、1爆破枪、2电击枪。大厅读取正式武器BP的实际显示模型、材质和组件变换；维修枪用SK_SCFRIFLE骨骼模型，另两把用各自静态模型，缩放保持1。不再用Rifle_01替代正式武器。
-- 新增大厅专用左手握点IK，放松／举枪分别标定，左手跟随当前帧枪身；右手和原身体动画保持，手臂不拉伸。两条空手Standing隐藏枪并不启用握持校正。
-- 复用IA_Test／上方数字1切换Relaxed与Rifle。换展示枪通过实例Display Weapon Index或SetDisplayWeaponIndex；没有新增按键、相机或测试地图。
+- 正式LobbyMap及人物位置／镜头不变。Display Weapon Index：0维修枪、1爆破枪、2电击枪；读取三枪正式BP的实际模型／材质／组件变换，缩放未改。
+- 每枪独立RelaxedAnimations[0/1]和ReadyAnimation，共九条按枪命名的AS_MaintenanceWorker_Lobby动画；RelaxedIdleIndex或SetRelaxedIdleIndex(0/1)选择放松版本，IA_Test／数字1仍切换放松与举枪。
+- 大厅自定义IK AnimInstance、左手目标和AnimationCore依赖已删除；标准SingleNode直接播放。TMIIR仅修改hand_l旋转关键帧，原肩／肘／手腕位置与其他局部轨道不变；没有离线IK或新RTG。原五条动画保留，空手Standing仍用原动画。
 
 ## 验证与交接
 
-- 最终Development Editor Win64构建通过（lobby-grip-final-build.log）；BP编译保存通过。最终冷加载实际LobbyMap PIE验证3244样本通过，三枪各普通Relaxed／Relaxed v2／Rifle完整循环、两条Standing、无效武器索引和One→Relaxed→Rifle按键链均通过。左手握点最大位置误差1.19e-13cm，右手相对原压缩动画误差小于0.006cm，手腕朝向和两段臂长断言通过。两张地图、全部正式武器和原Lobby动画退出前后哈希不变。
-- 爆破枪最终最小可达余量1.7936cm；三枪两种持枪状态的两侧近景已自查。外部证据：CoreMorph57Prep/Saved/Review/three-gun-*、LobbyGripFinal-*。
-- 本轮安全检查点f74d947；本轮大厅源码、展示BP和harness结果未最终提交／push。正式武器、原动画、地图和外部源项目未改。下一步用户打开LobbyMap，选展示人物设置枪索引，PIE按1检查观感。
+- 目标与TMIIR辅助模块Development Editor编译通过；BP三枪动画引用编译保存通过。wrist-animation-validation实际LobbyMap PIE通过2806样本，九条持枪循环、两条Standing、模型材质缩放、原手臂位置、无效武器索引和One按键链均通过。运行时位置相对原Raw姿态最大差0.007172cm，旋转差0.179115度包含压缩误差。
+- 三枪普通／v2放松和举枪近景已检查；截图为外部CoreMorph57Prep/Saved/Review/LobbyWristFinal-*。不以数值测试替代用户观感确认。wrist-animation-cold-final冷读50资产通过：九条成品均绑定本枪，所有骨骼局部位置和其他骨骼旋转保持，手腕旋转与外部制作规格一致，依赖只有既有大厅Mesh／Skeleton，无Rig／RTG／Redirector。全部后台验证编辑器已退出。
+- checkpoint77b2434；本轮九条成品、展示BP、基类源码和harness未最终提交／push。正式武器、原动画、地图未改。源助手在TMIIR，备份及脚本在CoreMorph57Prep，目标不接收制作资产。
+- Phantom当时只恢复hand_r_wepSocket和枪相对scale1；这次采用直接修动画是用户新要求，不是复用旧IK方案。
