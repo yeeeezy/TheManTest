@@ -176,3 +176,14 @@
 - 最终冷启动实际PIE通过2602样本，三枪九种持枪动画、两种站立、数字1切换均正常；新增断言确认实际枪组件变换等于Blender最终mounts.json组合源组件变换。全部骨骼／引用／材质／80%模型尺寸检查通过，验证退出后相关资产与地图哈希保持不变。
 - 已查看爆破／电击举枪与放松（含Relaxed02）的右手近景，及两侧托枪画面。右手握柄高度较旧版明显校正，左手重新贴合枪身下方／侧面。截图D:/Blender Projects/LobbyGripAnchors/LobbyAnchorGrip-{1,2}-{Relaxed,Relaxed02,Rifle}-{Left,Right,RightHand}.png；验证blender-grip-validation.json ok=true，日志Saved/Codex/grip-anchors-pie.log为BLENDER_GRIP_VALIDATION_OK。
 - 本轮只改大厅角色BP的四组挂点和六条成品动画；模型、展示数据BP、维修枪、正式武器、地图、骨架和C++未改。无IK。后台编辑器已退出。最终视觉仍可由用户近景复核，本轮未最终提交／push。
+
+
+## 2026-09-14 电击枪扳机食指返修
+
+- 用户15:46:12特写指出电击枪食指仍在下方大护圈，未进入上方小扳机口；上一轮右手握柄校准没有解决食指位置，不能以握柄对齐代替扳机验收。
+- checkpoint dad3466保存上轮挂点和左手修复。本轮只编辑电击枪三条独立动画的index_01_r／index_02_r／index_03_r局部旋转，保留挂点、枪模、hand_r、其余右手骨骼和左手修复，不使用IK。
+- Blender工程D:/Blender Projects/LobbyElectricTrigger/LobbyElectricTrigger_Animated.blend，明确抬起近节并调整中/末节方向，使指尖进入上方扳机口；已查看放松/举枪近景。对比上一轮baked-grips.json，既有左手旋转偏移逐项不变，仅新增右食指三节。三条动作完成烘焙，TMIIR成品和目标PIE验证已通过。
+
+- TMIIR冷回读三条动画全帧、全骨骼位置/旋转和依赖校验通过，仅迁移电击枪三条成品。目标正式LobbyMap PIE653样本通过，包含食指三个骨骼实际输出、原挂点矩阵、三种姿态与数字1切换；验证退出后包哈希不变。
+- 已逐张查看三种姿态的UE右手特写，指尖进入上方扳机口。证据D:/Blender Projects/LobbyElectricTrigger/source-grips-verified.json、blender-grip-validation.json(ok=true)、LobbyTriggerGrip-2-{Relaxed,Relaxed02,Rifle}-RightHand.png；日志Saved/Codex/electric-trigger-pie.log。旧LobbyGripAnchors特写仍是食指未修版，不作为本次结果。
+- git diff确认本轮产品只改三条ElectricGun动画，没有改BP、挂点、Mesh、地图、其他枪或C++。后台编辑器已退出；未最终提交/push。
