@@ -115,3 +115,7 @@ Phantom 的四个具体射击 Ability（Shoot1/Shoot2/Burst/Suppressive，FEAT-0
 `GA_CoreMorphTailStrike` 默认 2 秒蓄力，激活前投射 WorldStatic 地面并锁定落点／法线／BlastRadius；同一快照通过 GameplayCueParameters.Location／Normal／RawMagnitude 传递预警和雷爆。Tag 为 `GameplayCue.CoreMorph.TailCharge`、`GameplayCue.CoreMorph.TailBlast`，资产为对应完整名称 `GC_CoreMorph_TailCharge`／`GC_CoreMorph_TailBlast`；Native Static Cue 将生命周期交给拥有者 TailEffects 组件，不承载伤害。
 
 尾尖扫掠在锁定地面附近首次触地时，GA 移除 Charge、添加 Blast，并在锁定中心做一次 Pawn／WorldDynamic 球形重叠；按 ASC 去重、检查静态遮挡，调用既有 `GE_CoreMorphTailDamage`（负 Data.Damage）。墙面阻挡不引爆。恢复或取消移除 Charge；取消同时移除 Blast；正常 Blast 1.25 秒后移除自身 Cue。头领终止生命周期兜底清理。阶段技能集及技能授予方式不变。
+
+### 敌人强度伤害倍率：新增技能必接
+
+用户在 2026-09-13 要求后续记住：新增／迁入 Enemy 伤害技能必须使用 `基础伤害 × Enemy->GetDamageMultiplier()`，只乘一次；阶段仅选技能集，波次／回合负责倍率。规则已写入 harness AGENTS.md。已有 GA_EnemyShoot／GA_EnemyAreaBarrage 在弹体生成时计算；CoreMorph TailStrike 现在于击地时读取倍率并保存本次雷爆伤害，所有范围目标共用同一数值，继续按 ASC 去重。不可修改 StrikeDamage 基础值造成后续出招累乘；Cue 不参与伤害。

@@ -90,7 +90,7 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Enemy|Combat")
 	FORCEINLINE int32 GetCombatPhase() const { return CurrentPhase; }
 
-	// 当前伤害倍率（阶段1=1；阶段≥2=StrengthDamageMultiplier）。技能生成伤害时乘上它。
+	// 当前强度伤害倍率，按回合／增强波次累加并封顶，与战斗阶段无关。伤害生成或结算时只乘一次。
 	UFUNCTION(BlueprintPure, Category = "Enemy|Combat")
 	FORCEINLINE float GetDamageMultiplier() const { return CurrentDamageMultiplier; }
 

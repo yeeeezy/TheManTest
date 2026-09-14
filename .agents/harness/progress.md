@@ -8,7 +8,7 @@
 
 - 同一头领拥有 ScorpionMovement／ScorpionCombat／TailEffects，75 组关节／64 足链节点驱动原 301 蝎子分件。八足支撑与限角 CCD 保留；尾链改为基于目标距离的整链曲率求解；阶段与形态独立，仍为 Flight、Reassemble、第一阶段 Near TailStrike 三份唯一技能授予。
 - GA_CoreMorphTailStrike 默认 2 秒蓄力，锁定目标脚下落点及 1000cm 半径。TailCharge Cue 管尾尖凝聚光球／粒子与固定红色闪烁预警 Decal；击地添加 TailBlast Cue，生成电弧、冲击圈、膨胀闪光和短时光照。三个材质从零制作，不复用现有特效。无新增声音资产。
-- GA 使用同一锁定范围做一次球形查询，按 ASC 去重并检查静态遮挡，既有 GE_CoreMorphTailDamage 扣血；Cue 不做伤害。途中挡墙不引爆。取消、死亡、重置、EndPlay 清理 Cue／组件；正常雷爆 1.25 秒结束，无计时器。
+- GA 使用同一锁定范围做一次球形查询，按 ASC 去重并检查静态遮挡，既有 GE_CoreMorphTailDamage 扣血（击地时基础25 × 当前 GetDamageMultiplier()，每次雷爆只读取一份数值）；Cue 不做伤害。途中挡墙不引爆。取消、死亡、重置、EndPlay 清理 Cue／组件；正常雷爆 1.25 秒结束，无计时器。
 - thunder-final-build.log Development Editor Win64 Succeeded；thunder-final-pie.log ScorpionBatch Success：多分件一次伤害、圈外不伤、静态遮挡、暂停、蓄力／刺出／收回取消、各阶段及 GA 结束后死亡清理、完整主 BT、活动 GA 退出 PIE。thunder-pie.log ReassemblyBatch 及首轮 ScorpionBatch 均 Success。最终蓄力／雷爆截图已查看。
 - thunder-cold-audit.log/json：485 资产、两个新 Cue 的 Asset Registry GameplayCueName、CDO 材质引用／2 秒蓄力、单阶段技能、地图、源依赖和 Redirector 均通过。原 313 个迁入包未变；源 5195 文件哈希再次不变。
 - 主 BT 仍为飞行→重组→追近／转向／请求阶段技能；仅局部地面避障，无全局 NavMesh 路径。第四批三枪／附着／爆炸去重、完整 GAS 战斗与人形最终回归尚未开始。
@@ -19,6 +19,8 @@
 
 - 最新完整回归：coremorph-user-regression.log 中 TheManTest.Enemy.CoreMorph 全 7 项 Success，含三路线、完整重组及最新尾链雷爆；自动编辑器已退出。本轮无代码／资产修改。
 
+- 最新强度倍率接入：tail-strength-final-build.log Succeeded，tail-strength-pie.log ScorpionBatch Success；基础25、x1.2扣30、封顶x2扣50，多分件去重及原战斗清理回归通过。新增敌人伤害必须接倍率的长期规则已写入 harness AGENTS.md／arch10，并纠正 EnemyBase.h 的阶段相关旧注释。
+
 ## 用户校验入口
 
 - `/Game/Maps/CoreMorph/L_CoreMorphScorpion`：V 启用完整主 BT；M 立即重组后战斗；1／2／3 移动灰球，T 请求尾刺 GA，C 取消；P 暂停，R 复位，F 相机。
@@ -26,4 +28,4 @@
 
 ## 会话交接
 
-WIP `750d496` 保存尾链修正前的专属雷爆结果；本轮尾链修正未提交／push。全部后台编辑器已退出。用户已认可尾链修正；已完成替换特效遗留专项审查，没有可删资产；随后按用户要求执行完整 CoreMorph 回归，7/7 Success（coremorph-user-regression.log）。第四批三枪／附着／完整 GAS 接入尚未实施。当前尾链使用统一曲率求解，原源 AdvanceTail 数学一致审计仅为历史；八足、GA／GE／Cue、Content 及源项目均未修改。最新证据 `D:/Unreal Projects/CoreMorph57Prep/Saved/Review/tail-arc-{build,pie}.log`，截图 `Saved/CoreMorphMigration/TailArc-{Windup,Thrust}.png`。外部 implement_tail_arc.py 及此前实现／材质脚本均为已执行快照，不要重跑覆盖最终文件；需要冷审计原资产时用 audit_thunder.py。临时 Review 工具仍等总验收后清理。详见 [FEAT-081 archive](archive/FEAT-081-core-morph-boss-migration.md)。
+WIP `cba8842` 保存强度倍率接入前的尾链修正及全套回归。当前尾刺倍率接入结果未提交／push，后台编辑器已退出。用户认可尾链；闲置特效审查为0，无资产删除。尾刺现在击地时使用基础伤害 × 当前强度倍率，同一次雷爆统一数值并按 ASC 去重；阶段只切技能集，形态不重置倍率。AGENTS.md 已记录用户要求的长期敌人伤害接入规则，新增／迁入技能务必遵守。最新证据 `D:/Unreal Projects/CoreMorph57Prep/Saved/Review/tail-strength-{final-build,pie}.log`；ScorpionBatch Success，x1.2扣30／x2扣50。无 Content 或源工程改动；公共 EnemyBase.h 仅修正旧注释。外部 implement_tail_strength.py 及以前实现脚本均已执行，不要重跑。第四批三枪／附着弹适配仍待实施；临时 Review 工具保留至总验收后清理。详见 [FEAT-081 archive](archive/FEAT-081-core-morph-boss-migration.md)。

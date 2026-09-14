@@ -125,6 +125,24 @@ bool FCheckCoreMorphScorpion::Update()
  Test->TestFalse(TEXT("Recovery ends attack GE"),ASC->HasMatchingGameplayTag(TAG_State_CoreMorph_Attacking));
  Test->TestTrue(TEXT("Completed GA applies cooldown GE"),ASC->HasMatchingGameplayTag(TAG_State_CoreMorph_TailCooldown));
  Test->TestFalse(TEXT("Cooldown prevents immediate repeat"),B->UseRandomSkill(Victim,EEnemySkillRange::Near));
+ // Exercise the real strength-wave handler, not a test-only multiplier setter.
+ auto* ScaledVictim=SpawnVictim(M->GetGroundLocation()+B->GetActorForwardVector()*3300+FVector(0,550,90));
+ for(int32 I=0;I<3;++I){auto* Piece=NewObject<USphereComponent>(ScaledVictim);Piece->SetupAttachment(ScaledVictim->GetRootComponent());Piece->SetSphereRadius(100);Piece->SetRelativeLocation(FVector(I*80,0,0));Piece->SetCollisionProfileName(TEXT("Pawn"));Piece->RegisterComponent();}
+ auto StrengthWave=[&](){B->ProcessEvent(B->FindFunctionChecked(TEXT("HandleMidRoundStrengthIncrease")),nullptr);};
+ for(float ExpectedMultiplier:{1.2f,2.f})
+ {
+  if(ExpectedMultiplier<2)StrengthWave();else for(int32 I=0;I<20;++I)StrengthWave();
+  Test->TestTrue(TEXT("Strength waves increment and cap the inherited multiplier"),FMath::IsNearlyEqual(B->GetDamageMultiplier(),ExpectedMultiplier));
+  B->SetCombatPhase(2);Test->TestTrue(TEXT("Changing combat phase does not multiply damage again"),FMath::IsNearlyEqual(B->GetDamageMultiplier(),ExpectedMultiplier));B->SetCombatPhase(1);
+  const float Before=Victim->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute());SetHealth(ScaledVictim,1000);
+  ClearCooldown(B);Test->TestTrue(TEXT("Strength-scaled tail GA starts"),B->UseRandomSkill(Victim,EEnemySkillRange::Near));AdvanceScorpion(C,3.6f);
+  const float ExpectedDamage=25.f*ExpectedMultiplier;
+  Test->TestTrue(TEXT("Tail GE applies base damage times inherited strength exactly once"),FMath::IsNearlyEqual(Before-Victim->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),ExpectedDamage,.01f));
+  Test->TestTrue(TEXT("Strength-scaled AOE still deduplicates multiple pieces on one ASC"),FMath::IsNearlyEqual(1000.f-ScaledVictim->GetAbilitySystemComponent()->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),ExpectedDamage,.01f));
+  Test->TestEqual(TEXT("Scaling never mutates base damage for the next cast"),C->StrikeDamage,25.f);
+  Test->AddInfo(FString::Printf(TEXT("Tail strength: x%.2f -> %.2f damage; multi-piece victim checked"),ExpectedMultiplier,ExpectedDamage));
+ }
+ ScaledVictim->Destroy();
  for(float Time:{.3f,2.1f,2.5f})
  {
   ClearCooldown(B);Test->TestTrue(TEXT("Strike restarts after clearing test cooldown"),B->UseRandomSkill(Victim,EEnemySkillRange::Near));AdvanceScorpion(C,Time);

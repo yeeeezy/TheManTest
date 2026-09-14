@@ -47,6 +47,8 @@ void UGA_CoreMorphTailStrike::ApplyContact(const FHitResult& Hit)
  bDetonated=true;auto* Boss=Cast<ACoreMorphBoss>(GetAvatarActorFromActorInfo());auto* ASC=GetAbilitySystemComponentFromActorInfo();
  const FVector Center=Combat->LockedGroundHit.ImpactPoint,Normal=Combat->LockedGroundHit.ImpactNormal;
  const float Radius=Combat->LockedBlastRadius;
+ // Snapshot the current strength once at impact for every victim of this blast.
+ const float Damage=FMath::Max(0.f,Combat->StrikeDamage)*FMath::Max(0.f,Boss->GetDamageMultiplier());
  ASC->RemoveGameplayCue(TAG_GameplayCue_CoreMorph_TailCharge);
  FGameplayCueParameters P;P.SourceObject=Boss;P.Location=Center;P.Normal=Normal;P.RawMagnitude=Radius;ASC->AddGameplayCue(TAG_GameplayCue_CoreMorph_TailBlast,P);
  // The same locked center/radius drives the telegraph and this one-shot sphere query.
@@ -67,7 +69,7 @@ void UGA_CoreMorphTailStrike::ApplyContact(const FHitResult& Hit)
   if(Boss->GetWorld()->LineTraceSingleByObjectType(Cover,Center+Normal*60,Point+Normal*5,FCollisionObjectQueryParams(ECC_WorldStatic),Visibility))continue;
   auto Context=ASC->MakeEffectContext();FHitResult TargetHit(Victim,Surface,Point,(Point-Center).GetSafeNormal());Context.AddHitResult(TargetHit);Context.AddSourceObject(Boss);
   auto Spec=ASC->MakeOutgoingSpec(UGE_CoreMorphTailDamage::StaticClass(),1,Context);
-  if(Spec.IsValid()){Damaged.Add(TargetASC);Spec.Data->SetSetByCallerMagnitude(TAG_Data_Damage,-FMath::Max(0.f,Combat->StrikeDamage));ASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(),TargetASC);}
+  if(Spec.IsValid()){Damaged.Add(TargetASC);Spec.Data->SetSetByCallerMagnitude(TAG_Data_Damage,-Damage);ASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(),TargetASC);}
  }
 }
 

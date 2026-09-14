@@ -207,3 +207,14 @@
 - `coremorph-user-regression.log`：通过正式离屏编辑器执行 `TheManTest.Enemy.CoreMorph`，7/7 Success：AdaptiveMotion、EditorPlacement、FlightBatch、ReassemblyBatch、RollMotion、RouteReview、ScorpionBatch。
 - 覆盖当前已迁入飞行／三路线／双速翻滚、重组及风墙、八足／尾刺／雷爆、范围去重与遮挡、关节角度／节长、阶段与形态、取消／死亡／活动 GA 退出 PIE。尾链最大转角 15.413°，末端 14.362°，长度误差输出 0.000000cm。
 - 当前源码与最近已成功冷编译版本一致，本轮无代码／资产修改，不重复构建；编辑器自动退出。记录当前迁入内容回归通过，不代表尚未实施的第四批三枪／附着弹适配已经完成。
+
+### 接入强度伤害倍率（2026-09-13，验证中）
+
+- 用户要求尾刺接入现有敌人强度倍率，并明确“以后记住”。WIP `cba8842` 保留本轮前尾链修正与完整回归记录；无编辑器占用。
+- GA_CoreMorphTailStrike 在击地时计算一次 `max(0,StrikeDamage) × max(0,Boss->GetDamageMultiplier())`，用于本次所有有效目标的 TailDamage GE；原按 ASC 去重／静态遮挡／Cue 保持，基础伤害不被改写。
+- harness AGENTS.md 新增长期规则，arch10 同步；修正 EnemyBase.h 中仍把倍率关联阶段的过时注释，实际公共逻辑未变。
+- 扩展 ScorpionBatch，通过真实 HandleMidRoundStrengthIncrease 处理器验证 x1.2 扣30、增强封顶 x2 扣50，多分件目标也只扣一份；同时检查阶段切换不额外增伤、基础值仍25。正在冷构建／PIE 验证。
+
+- 最终 `tail-strength-final-build.log` Development Editor Win64 Succeeded；`tail-strength-pie.log` ScorpionBatch Success。实际日志确认 x1.20 → 30.00 伤害、x2.00 → 50.00，两个倍率下多分件目标都只扣一次；原基础25、范围遮挡／取消／死亡／尾链／完整 BT 及 PIE 退出回归通过。
+- 用户“以后记住”已落实到 `.agents/harness/AGENTS.md` 的“敌人伤害强度倍率”规则和 arch10：新增／迁入敌人伤害必须接倍率且只乘一次，区分技能阶段与强度波次，验证基础／增强／上限和范围去重。
+- 无 Content 或源工程改动，无新增依赖。全部后台编辑器退出；结果未提交／push。尾刺强度倍率现已接通，剩余第四批三枪／附着弹适配仍未实施。
