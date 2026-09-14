@@ -2,8 +2,10 @@
 #include "Enemy/Boss/CoreMorph/CoreMorphBoss.h"
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightComponent.h"
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightRoute.h"
+#include "Enemy/Boss/CoreMorph/Transformation/CoreMorphReassemblyComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/World.h"
 #include "Engine/Engine.h"
@@ -36,6 +38,7 @@ void ACoreMorphFlightReview::BeginPlay()
 		InputComponent->BindKey(EKeys::F, IE_Pressed, this, &ThisClass::ToggleCamera);
 		InputComponent->BindKey(EKeys::Q, IE_Pressed, this, &ThisClass::SlowRoll);
 		InputComponent->BindKey(EKeys::E, IE_Pressed, this, &ThisClass::FastRoll);
+		InputComponent->BindKey(EKeys::M, IE_Pressed, this, &ThisClass::Reassemble);
 		if (!Routes.IsEmpty())
 		{
 			InputComponent->BindKey(EKeys::One, IE_Pressed, this, &ThisClass::RouteOne);
@@ -51,6 +54,8 @@ void ACoreMorphFlightReview::Tick(float Dt)
 {
 	Super::Tick(Dt);
 	if (!IsValid(Boss)) return;
+	if(bPendingReassembly && !Boss->Flight->IsFlying() && Boss->Flight->GetFlightSeconds()>=Boss->Flight->GetReleaseSeconds())
+	{bPendingReassembly=false;Boss->StartReassembly();}
 	// Wait for the boss's BeginPlay to initialize and grant its GA, regardless
 	// of serialized actor order in the review map.
 	if (bStartFirstRoute && Boss->HasActorBegunPlay())
@@ -60,6 +65,13 @@ void ACoreMorphFlightReview::Tick(float Dt)
 	}
 	FVector Target, Extent;
 	Boss->GetActorBounds(false, Target, Extent);
+	if(Boss->Reassembly->IsMorphing() || Boss->CurrentForm==ECoreMorphForm::Scorpion)
+	{
+		FBox VisibleBounds(ForceInit);
+		for(const auto& Piece:Boss->Reassembly->GetPieces())if(Piece && Piece->IsVisible())VisibleBounds+=Piece->Bounds.GetBox();
+		if(Boss->Reassembly->IsMorphing() && Boss->Reassembly->GetStreamBounds().IsValid)VisibleBounds+=Boss->Reassembly->GetStreamBounds();
+		if(VisibleBounds.IsValid){Target=VisibleBounds.GetCenter();Extent=VisibleBounds.GetExtent();}
+	}
 	int32 Width = 16, Height = 9;
 	if (auto* PC = GetWorld()->GetFirstPlayerController()) PC->GetViewportSize(Width, Height);
 	const float Aspect = Height > 0 ? float(Width) / Height : 16.f / 9.f;
@@ -72,7 +84,7 @@ void ACoreMorphFlightReview::Tick(float Dt)
 		const FString RouteText = Routes.IsValidIndex(SelectedRoute)
 			? FString::Printf(TEXT("ROUTE %d: %s | 1/2/3: Switch & Play\n"), SelectedRoute + 1, *Routes[SelectedRoute].Label) : FString();
 		GEngine->AddOnScreenDebugMessage(uint64(GetUniqueID()), 0.f, FColor::White,
-			RouteText + FString::Printf(TEXT("Q: Slow roll | E: Fast roll\nFLIGHT REVIEW | V: Play | R: Reset | P: Pause | F: Camera | %.2f s"), Boss->Flight->GetFlightSeconds()));
+			RouteText + FString::Printf(TEXT("Q: Slow roll | E: Fast roll | M: Reassemble\nREVIEW | V: Play | R: Reset | P: Pause | F: Camera | Flight %.2f s | Morph %.2f s"), Boss->Flight->GetFlightSeconds(),Boss->Reassembly->GetSeconds()));
 	}
 }
 
@@ -96,9 +108,15 @@ void ACoreMorphFlightReview::EndPlay(const EEndPlayReason::Type Reason)
 	Super::EndPlay(Reason);
 }
 
-void ACoreMorphFlightReview::PlayFlight() { if (IsValid(Boss)) Boss->StartFlightPreview(); }
-void ACoreMorphFlightReview::ResetFlight() { if (IsValid(Boss)) Boss->ResetFlightPreview(); }
-void ACoreMorphFlightReview::PauseFlight() { if (IsValid(Boss)) Boss->Flight->SetPaused(!Boss->Flight->IsPaused()); }
+void ACoreMorphFlightReview::PlayFlight() { if (IsValid(Boss) && Boss->StartFlightPreview()) bPendingReassembly=bReassemblyReview; }
+void ACoreMorphFlightReview::ResetFlight() { bPendingReassembly=false;if (IsValid(Boss)) Boss->ResetFlightPreview(); }
+void ACoreMorphFlightReview::PauseFlight()
+{
+	if(!IsValid(Boss))return;
+	if(Boss->Reassembly->IsMorphing() || Boss->CurrentForm==ECoreMorphForm::Scorpion)Boss->Reassembly->SetPaused(!Boss->Reassembly->IsPaused());
+	else Boss->Flight->SetPaused(!Boss->Flight->IsPaused());
+}
+void ACoreMorphFlightReview::Reassemble() { bPendingReassembly=false;if(IsValid(Boss))Boss->StartReassembly(); }
 void ACoreMorphFlightReview::SlowRoll() { if (IsValid(Boss)) Boss->Flight->RequestRoll(false); }
 void ACoreMorphFlightReview::FastRoll() { if (IsValid(Boss)) Boss->Flight->RequestRoll(true); }
 void ACoreMorphFlightReview::ToggleCamera()

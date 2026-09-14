@@ -1,5 +1,7 @@
 # GAS 技能系统
 
+- FEAT-081 第二批：同 ASC 默认授予 Flight 和 Reassemble 各一次。`GA_CoreMorphReassemble` 用 `GE_CoreMorphTransforming` 持有 `State.CoreMorph.Transforming`，阻止重入和飞行；成功时具体头领 SetForm 更换 Manta/Scorpion 无限 GE，不更改战斗阶段、Health 或技能列表。`GC_CoreMorph_Reassembly` 注册在头领专属 GAS/GameplayCues，负责金属流／沙尘池和灯光生命周期；取消立即移除，成功保留至冲击后 8 秒。此处迁入的是源单向变形，R 仍为检查复位，不是逆向技能。第二批验证见 FEAT-081 archive。
+
 - FEAT-081 第一批：`Enemy/Boss/CoreMorph/GAS/Abilities/GA_CoreMorphFlight` 通过同头领 ASC 激活，结束／取消统一停飞；`GAS/Effects/GE_CoreMorphManta` 用具名 `UTargetTagsGameplayEffectComponent` 默认子对象授予 `State.CoreMorph.Form.Manta`。死亡移除形态 GE。预览复位不重授技能或回血，战斗阶段不改形态。当前只迁飞行，无攻击／重组 Cue；完整 GA／GE／Cue 战斗按后续批次接入。
 
 - 死亡布娃娃：Health回调仍负责首次OnDeath，但Actor延时销毁。ABulletBase施加伤害后在命中骨骼处施加物理冲量，致命一枪同样生效；已有尸体跳过GE扣血，通过显式Enemy Hit Cue保留肉体声/血迹，GCN_EnemyHit对死人不新触发PainSound。爆炸仍仅新击杀或Chaos新破碎请求子弹时间。

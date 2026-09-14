@@ -1,5 +1,7 @@
 # 具体角色类
 
+- FEAT-081 第二批进行中：ACoreMorphBoss 新增 Reassembly 组件，与 Flight 共用原 154 蝠鲼组件，运行时新增 301 蝎子组件；唯一 Actor／ASC／Health 不变。DA_CoreMorphReassembly 存两形态采样和必要 VFX 成品，原 DA_CoreMorphVisualLayout 保持飞行专用 154 条。GA_Reassemble 捕获实际姿态和速度后取消飞行；完整构建提交 Scorpion GE，取消回滚 Manta，死亡清理所有查询面。Cue 创建并销毁瞬态实例网格／灯光；成功后沙尘尾效有界存活。未接入八足移动、尾刺或新 BT。验证状态以 archive 为准。
+
 **何时读取：** 为某个具体角色新增专属 C++ 逻辑（专属能力、专属组件）时。
 
 **当前活跃（继承 AFPSCharacterBase）：**

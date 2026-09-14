@@ -27,6 +27,8 @@ AEnemyBase（Public/Enemy/）  ← 所有敌人基类，ASC+属性挂自身（�
 
 ### CoreMorph 头领（FEAT-081，第一批）
 
+- 第二批开始：用户已验收飞行观感，授权迁入变形重组。具体头领持有 ReassemblyComponent；飞行结束后的自动变形衔接只在新 L_CoreMorphReassembly Review 地图启用，正式决策仍等待第三批专属 BT。GA／GE／Cue 管理变形事务和表现，完成后停在静态蝎子，不启动源独立移动 Actor。
+
 - `Enemy/Boss/BossEnemyBase.h` 为公共语义层；`CoreMorph/CoreMorphBoss.h/.cpp` 持有具体形态和飞行组件，继承一份 ASC／Health。没有人形骨骼、击退、布娃娃或血肉受击 Cue。
 - `CoreMorph/Movement/CoreMorphFlightPath` 只保留源 FEAT058 参考路线的位置数学；`CoreMorphFlightComponent` 管理 154 个同 Owner 静态分件。Actor／Capsule 在编辑态直接位于身体主体，分件用相对变换跟随摆放；用逆起飞偏移乘 Actor Transform 推导参考路线坐标，BeginPlay 固定该坐标并将分件切为绝对世界姿态，实际 Pawn 根位置跟随飞行。CharacterMovement 在飞行预览中关闭。检查地图根位置为 (-16000,0,2500)，对应原路线原点 (0,0,900)，静态装配位置不变。
 - `CoreMorph/GAS/Abilities/GA_CoreMorphFlight` 管理飞行生命周期；`GAS/Effects/GE_CoreMorphManta` 持有形态 Tag。阶段仍走 EnemyBase 的 `PhaseSkillSets/SetCombatPhase`，预览复位不重置阶段、Health 或技能授予。

@@ -8,6 +8,7 @@ UGA_CoreMorphFlight::UGA_CoreMorphFlight()
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerOnly;
 	ActivationRequiredTags.AddTag(TAG_State_CoreMorph_Form_Manta);
+	ActivationBlockedTags.AddTag(TAG_State_CoreMorph_Transforming);
 }
 
 bool UGA_CoreMorphFlight::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* Info,

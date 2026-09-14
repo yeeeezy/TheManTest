@@ -24,6 +24,20 @@
 3. 蝎子移动与攻击：保留八足和尾刺，隐藏源移动 Actor 改成同头领的运动组件；专属主 BT 与攻击 GA。
 4. GAS 闭环：正式伤害／状态 GE、Cue 声画、三枪及附着面适配、阶段与形态独立、爆炸去重、所有取消／死亡／退出清理和人形回归。
 
+## 第二批：变形重组（自审通过，待用户校验）
+
+- 用户明确“可以挺好的，接着导入吧”，第一批飞行／路线／双速侧滚已接受，授权按原批次继续。写入前 WIP `cc72c0f` 保存已验收飞行；无用户编辑器进程，不需要再次询问。
+- 本批迁入 301 蝎子成品分件、采样、六种蝎子材质和源金属流／火花／沙尘／碎土依赖。保持源只读、目标 UE 5.7.4；外部 prepare_scorpion.py 已完成 301 网格和 6 材质，包围盒误差最大 0.0001431 cm。
+- 新增具体头领 ReassemblyComponent，复用原 154 蝠鲼分件并捕获实际姿态／速度；金属流、构建引导和沙尘方程沿用源。GA_CoreMorphReassemble 负责事务；GE_CoreMorphTransforming、GE_CoreMorphScorpion 管理 Tag；GC_CoreMorph_Reassembly 创建／移除瞬态 ISM 和灯光，成功后保留有界沙尘尾效，取消／死亡立即清理。源码无原头领独立音频依赖，本批不虚构音效。
+- 初次编译发现 TObjectPtr 的 auto* 推导错误，已显式 Get()/const auto& 修正；reassembly-build-02.log 编译成功。资产准备／迁移、Cue 冷回读和实际 PIE 尚待完成，不能宣称本批已验收。
+- 完成后停在蝎子静态装配；八足移动、尾刺、专属 BT 和武器闭环仍属于后续批次。复位为检查工具，不作为逆向变形技能。
+- 314 包 AssetTools 迁移完成，reassembly-migration-result.json／audit.json 校验一致。新增 DA_CoreMorphReassembly、GC_CoreMorph_Reassembly 和 L_CoreMorphReassembly；原飞行布局与地图不变。Blueprint 默认新增变形技能和组件数据引用，保存并重开通过。Python 的 EditAnywhere 属性必须用 get_editor_property 读取，初次脚本只在回读失败，第二次 reassembly-author-02.log 全部通过。
+- reassembly-tests-build-02.log／reassembly-final-build.log 成功。reassembly-validation.log 六项 CoreMorph 测试全部 Success：真实 PIE 完整飞行→重组→有界沙尘、四个取消时点（.2／.8／2.2／4.8 秒）、三个死亡时点（.3／2.5／5.5 秒）、暂停、单 ASC／Health、阶段独立、两种 GA 各授予一次、活动变形退出及旧飞行／侧滚／编辑器摆放／三路线回归。
+- reassembly-cold-audit.log/json：477 项头领资产冷加载，455 布局条目及采样、314 迁移包哈希、Cue AssetRegistry GameplayCueName=GameplayCue.CoreMorph.Reassembly、源模块依赖为零、Redirector 为零全部通过。新资产直接进入正式语义目录，未生成供应商或迁移暂存目录。
+- Source 审计：5195 文件未变；reassembly-math-audit.json 中 Schedule、PeelStart、BuildStart、BuildSpan、PrepareBuildGuides、StreamFor、PrepareStreams、CoilOffset、FlowPoint、GroundFlowPoint、ParticlePoint、UpdateImpact 共 12 函数仅类型名适配后逐项一致。源 SourcePose 被实际飞行姿态／速度捕获替代，未恢复旧翼部时间表；地面查询改用固定世界参考并忽略同一头领。
+- 已查看真实 Reassembly 截图的构建和成型阶段；发现金属流阶段检查相机过近，已加入实际可见粒子包围盒进行取景，冷编译通过。reassembly-final-pie.log 再次 ReassemblyBatch Success、退出码 0；复查 1280×720 的完整金属流、落地构建和无残留蝎子成型图通过。自动编辑器已退出，第二批等待用户观感验收，不进入第三批。
+- 用户入口：L_CoreMorphReassembly，Play 后 V 完整飞行并自动重组，M 直接从当前姿态重组，P 暂停，R 复位，F 相机。完成约 5.2 秒后提交蝎子形态，沙尘尾效在变形开始后约 9.2 秒清理。没有新增声音、攻击或逆向变形。
+
 ## 第一批实现与审查
 
 - 新增公共 `ABossEnemyBase`，专属 `ACoreMorphBoss`、`UCoreMorphVisualLayout`、`UCoreMorphFlightComponent`、`FCoreMorphFlightPath`、`UGA_CoreMorphFlight`、`UGE_CoreMorphManta`。

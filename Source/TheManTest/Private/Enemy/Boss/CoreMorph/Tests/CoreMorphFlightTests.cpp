@@ -146,7 +146,7 @@ bool FCoreMorphValidate::Update()
 	auto* ASC = Boss->GetAbilitySystemComponent();
 	Test->TestEqual(TEXT("One ASC on one boss"), TInlineComponentArray<UAbilitySystemComponent*>(Boss).Num(), 1);
 	Test->TestEqual(TEXT("One attribute set"), ASC->GetSpawnedAttributes().Num(), 1);
-	Test->TestEqual(TEXT("One flight ability grant"), ASC->GetActivatableAbilities().Num(), 1);
+	Test->TestEqual(TEXT("One flight and one reassembly ability grant"), ASC->GetActivatableAbilities().Num(), 2);
 	Test->TestEqual(TEXT("All 154 final manta pieces"), Boss->Flight->GetPieces().Num(), 154);
 	Test->TestEqual(TEXT("No serialized component duplication in PIE"), TInlineComponentArray<UStaticMeshComponent*>(Boss).Num(), 154);
 	for (const auto& Piece : Boss->Flight->GetPieces())
@@ -201,7 +201,7 @@ bool FCoreMorphValidate::Update()
 	Boss->SetCombatPhase(2);
 	Test->TestEqual(TEXT("Combat phase changes independently"), Boss->GetCombatPhase(), 2);
 	Test->TestTrue(TEXT("Phase leaves manta form intact"), Boss->CurrentForm == ECoreMorphForm::Manta && ASC->HasMatchingGameplayTag(TAG_State_CoreMorph_Form_Manta));
-	Test->TestEqual(TEXT("Phase does not grant flight twice"), ASC->GetActivatableAbilities().Num(), 1);
+	Test->TestEqual(TEXT("Phase does not grant flight twice"), ASC->GetActivatableAbilities().Num(), 2);
 	ASC->CancelAllAbilities();
 	const FVector Cancelled = Boss->GetActorLocation();
 	const float CancelledPhase = Boss->Flight->GetMotionState().Phase;
@@ -488,7 +488,7 @@ public:
 				Test->TestTrue(TEXT("Switching an active flight cancels and restarts safely"), Review->SelectRoute(2));
 			}
 			if (!Test->TestTrue(TEXT("Route selection starts its saved flight"), Review->SelectRoute(Index))) return true;
-			Test->TestEqual(TEXT("Switching routes keeps one granted ability"), Boss->GetAbilitySystemComponent()->GetActivatableAbilities().Num(), 1);
+			Test->TestEqual(TEXT("Switching routes preserves the two distinct grants"), Boss->GetAbilitySystemComponent()->GetActivatableAbilities().Num(), 2);
 			Test->TestEqual(TEXT("Switching routes keeps 154 owned pieces"), Boss->Flight->GetPieces().Num(), 154);
 			Started = FPlatformTime::Seconds();
 			bCaptured = false;

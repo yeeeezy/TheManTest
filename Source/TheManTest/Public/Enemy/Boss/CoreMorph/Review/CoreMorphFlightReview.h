@@ -28,6 +28,7 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 	UPROPERTY(EditInstanceOnly, Category="Review") TObjectPtr<ACoreMorphBoss> Boss;
 	UPROPERTY(EditInstanceOnly, Category="Review") TArray<FCoreMorphReviewRoute> Routes;
+	UPROPERTY(EditInstanceOnly, Category="Review") bool bReassemblyReview = false;
 	bool SelectRoute(int32 Index);
 	void PlayFlight();
 	void ResetFlight();
@@ -35,9 +36,11 @@ public:
 	void ToggleCamera();
 	void SlowRoll();
 	void FastRoll();
+	void Reassemble();
 private:
 	bool bFollow = true;
 	bool bStartFirstRoute = false;
+	bool bPendingReassembly = false;
 	int32 SelectedRoute = INDEX_NONE;
 	void RouteOne() { SelectRoute(0); }
 	void RouteTwo() { SelectRoute(1); }

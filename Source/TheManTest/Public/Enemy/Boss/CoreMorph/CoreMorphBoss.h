@@ -6,6 +6,7 @@
 
 class UCoreMorphVisualLayout;
 class UCoreMorphFlightComponent;
+class UCoreMorphReassemblyComponent;
 
 UENUM(BlueprintType)
 enum class ECoreMorphForm : uint8 { Manta, Scorpion };
@@ -23,6 +24,9 @@ public:
 	virtual void ReactToProjectileHit(AActor* HitInstigator) override;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="CoreMorph") TObjectPtr<UCoreMorphVisualLayout> VisualLayout;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CoreMorph") TObjectPtr<UCoreMorphFlightComponent> Flight;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CoreMorph") TObjectPtr<UCoreMorphReassemblyComponent> Reassembly;
+	UFUNCTION(BlueprintCallable, Category="CoreMorph") bool StartReassembly();
+	void SetForm(ECoreMorphForm Form);
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CoreMorph") ECoreMorphForm CurrentForm = ECoreMorphForm::Manta;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CoreMorph") TObjectPtr<AActor> LastThreat;
 	UFUNCTION(BlueprintCallable, Category="CoreMorph|Review") bool StartFlightPreview();

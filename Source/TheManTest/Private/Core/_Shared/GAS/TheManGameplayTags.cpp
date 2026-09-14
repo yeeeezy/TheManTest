@@ -16,3 +16,9 @@ UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_Weapon_ExplosionGun_Explosion, "GameplayC
 UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_Character_Enemy_Hit,     "GameplayCue.Character.Enemy.Hit")
 
 UE_DEFINE_GAMEPLAY_TAG(TAG_State_CoreMorph_Form_Manta, "State.CoreMorph.Form.Manta")
+
+UE_DEFINE_GAMEPLAY_TAG(TAG_State_CoreMorph_Form_Scorpion, "State.CoreMorph.Form.Scorpion")
+
+UE_DEFINE_GAMEPLAY_TAG(TAG_State_CoreMorph_Transforming, "State.CoreMorph.Transforming")
+
+UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_CoreMorph_Reassembly, "GameplayCue.CoreMorph.Reassembly")
