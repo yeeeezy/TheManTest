@@ -82,7 +82,7 @@ void UCoreMorphFlightComponent::ResetMotion(const FTransform& Body)
 	float TailLength = 100.f;
 	if (Layout) for (const auto& Piece : Layout->Pieces)
 		if (Piece.Kind == TEXT("Tail")) TailLength = FMath::Max(TailLength, float(-Piece.Position.X * Path.MantaScale * ChoreographyFrame.GetScale3D().X));
-	Motion.Reset(Body, MotionSeed ? MotionSeed : FMath::Rand(), MotionRandomness, TailLength);
+	Motion.Reset(Body, MotionSeed ? MotionSeed : FMath::Rand(), MotionRandomness, TailLength, RandomRollSpacing);
 }
 
 bool UCoreMorphFlightComponent::CanStartFlight() const
@@ -111,6 +111,11 @@ bool UCoreMorphFlightComponent::StartFlight()
 	SetComponentTickEnabled(true);
 	UpdatePose();
 	return true;
+}
+
+bool UCoreMorphFlightComponent::RequestRoll(bool bFast, int32 Direction)
+{
+	return bFlying && !bPaused && Boss() && !Boss()->IsDead() && Motion.RequestRoll(bFast, Direction);
 }
 
 void UCoreMorphFlightComponent::StopFlight()
@@ -154,6 +159,7 @@ void UCoreMorphFlightComponent::TickComponent(float Dt, ELevelTick Tick, FActorC
 		FVector Position = Motion.GetBody().GetLocation();
 		bool bFinished = false;
 		Motion.AccelerationIntent = 0;
+		Motion.bAllowRandomRolls = bFlying && bRandomRolls;
 		if (bFlying && bUsingRoute)
 		{
 			const auto* Spline = ActiveRoute.IsValid() ? ActiveRoute->Spline.Get() : nullptr;

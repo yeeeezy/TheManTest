@@ -34,6 +34,8 @@ void ACoreMorphFlightReview::BeginPlay()
 		InputComponent->BindKey(EKeys::R, IE_Pressed, this, &ThisClass::ResetFlight);
 		InputComponent->BindKey(EKeys::P, IE_Pressed, this, &ThisClass::PauseFlight);
 		InputComponent->BindKey(EKeys::F, IE_Pressed, this, &ThisClass::ToggleCamera);
+		InputComponent->BindKey(EKeys::Q, IE_Pressed, this, &ThisClass::SlowRoll);
+		InputComponent->BindKey(EKeys::E, IE_Pressed, this, &ThisClass::FastRoll);
 		if (!Routes.IsEmpty())
 		{
 			InputComponent->BindKey(EKeys::One, IE_Pressed, this, &ThisClass::RouteOne);
@@ -70,7 +72,7 @@ void ACoreMorphFlightReview::Tick(float Dt)
 		const FString RouteText = Routes.IsValidIndex(SelectedRoute)
 			? FString::Printf(TEXT("ROUTE %d: %s | 1/2/3: Switch & Play\n"), SelectedRoute + 1, *Routes[SelectedRoute].Label) : FString();
 		GEngine->AddOnScreenDebugMessage(uint64(GetUniqueID()), 0.f, FColor::White,
-			RouteText + FString::Printf(TEXT("FLIGHT REVIEW | V: Play | R: Reset | P: Pause | F: Camera | %.2f s"), Boss->Flight->GetFlightSeconds()));
+			RouteText + FString::Printf(TEXT("Q: Slow roll | E: Fast roll\nFLIGHT REVIEW | V: Play | R: Reset | P: Pause | F: Camera | %.2f s"), Boss->Flight->GetFlightSeconds()));
 	}
 }
 
@@ -97,6 +99,8 @@ void ACoreMorphFlightReview::EndPlay(const EEndPlayReason::Type Reason)
 void ACoreMorphFlightReview::PlayFlight() { if (IsValid(Boss)) Boss->StartFlightPreview(); }
 void ACoreMorphFlightReview::ResetFlight() { if (IsValid(Boss)) Boss->ResetFlightPreview(); }
 void ACoreMorphFlightReview::PauseFlight() { if (IsValid(Boss)) Boss->Flight->SetPaused(!Boss->Flight->IsPaused()); }
+void ACoreMorphFlightReview::SlowRoll() { if (IsValid(Boss)) Boss->Flight->RequestRoll(false); }
+void ACoreMorphFlightReview::FastRoll() { if (IsValid(Boss)) Boss->Flight->RequestRoll(true); }
 void ACoreMorphFlightReview::ToggleCamera()
 {
 	if (auto* PC = GetWorld()->GetFirstPlayerController())

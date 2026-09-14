@@ -8,6 +8,7 @@
 #include "EngineUtils.h"
 #include "Engine/World.h"
 #include "Engine/GameViewportClient.h"
+#include "Slate/SceneViewport.h"
 #include "Misc/Paths.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
@@ -55,6 +56,7 @@ public:
 		Test->TestNearlyEqual(TEXT("Real-time flight clamps at release"), Boss->Flight->GetFlightSeconds(), 13.4f, .002f);
 		Boss->ResetFlightPreview();
 		Boss->StartFlightPreview();
+		Test->TestTrue(TEXT("Exit PIE while a fast roll is active"), Boss->Flight->RequestRoll(true));
 		EndingBoss = Boss;
 		return true; // Exit PIE with the GA still active.
 	}
@@ -157,6 +159,25 @@ bool FCoreMorphValidate::Update()
 	Test->TestNull(TEXT("Boss has no humanoid skeletal asset"), Boss->GetMesh()->GetSkeletalMeshAsset());
 	Test->TestFalse(TEXT("Boss has no humanoid blood cue"), Boss->GetHitReactionCueTag().IsValid());
 	ValidateSpline(Boss, Test);
+	Boss->Flight->bRandomRolls = false;
+	for (bool bFast : {false, true})
+	{
+		Boss->ResetFlightPreview(); Boss->StartFlightPreview(); Boss->Flight->SetComponentTickEnabled(false);
+		Test->TestTrue(TEXT("PIE roll is admitted through active flight"), Boss->Flight->RequestRoll(bFast));
+		Step(Boss, .4f);
+		const auto Frozen = Boss->Flight->GetMotionState();
+		Boss->Flight->TickComponent(.5f, LEVELTICK_All, nullptr);
+		Test->TestEqual(TEXT("Pause freezes axial roll"), Boss->Flight->GetMotionState().GetRollAngle(), Frozen.GetRollAngle());
+		Test->TestFalse(TEXT("Paused flight rejects new roll requests"), Boss->Flight->RequestRoll(!bFast));
+		ASC->CancelAllAbilities();
+		Step(Boss, .5f);
+		Test->TestEqual(TEXT("Cancellation freezes wing inertia"), Boss->Flight->GetMotionState().GetWingLag(), Frozen.GetWingLag());
+		Test->TestEqual(TEXT("Cancellation freezes roll angle"), Boss->Flight->GetMotionState().GetRollAngle(), Frozen.GetRollAngle());
+		Test->TestFalse(TEXT("Inactive GA cannot roll"), Boss->Flight->RequestRoll(bFast));
+		Boss->ResetFlightPreview();
+		Test->TestTrue(TEXT("Replay clears roll and elastic history"), !Boss->Flight->GetMotionState().IsRolling() && Boss->Flight->GetMotionState().GetWingLag() == 0);
+	}
+	Boss->Flight->bRandomRolls = true;
 	Boss->ResetFlightPreview();
 	const FVector Initial = Boss->GetActorLocation();
 	Test->TestTrue(TEXT("Review map body stays at its pre-fix world placement"), Initial.Equals(FVector(-16000, 0, 2500), .01));
@@ -207,10 +228,16 @@ bool FCoreMorphValidate::Update()
 	Boss->StartFlightPreview();
 	Boss->Flight->SetComponentTickEnabled(false);
 	Step(Boss, 2.f);
+	Boss->Flight->SetPaused(false);
+	Test->TestTrue(TEXT("Lethal damage test starts during fast roll"), Boss->Flight->RequestRoll(true));
+	Step(Boss, .4f);
+	const float BeforeDeathRoll = Boss->Flight->GetMotionState().GetRollAngle();
 	const float BeforeDeathPhase = Boss->Flight->GetMotionState().Phase;
 	Damage(Boss, 1000);
 	Boss->Flight->TickComponent(.5f, LEVELTICK_All, nullptr);
 	Test->TestEqual(TEXT("Death cannot advance tail motion"), Boss->Flight->GetMotionState().Phase, BeforeDeathPhase);
+	Test->TestEqual(TEXT("Death freezes axial roll"), Boss->Flight->GetMotionState().GetRollAngle(), BeforeDeathRoll);
+	Test->TestFalse(TEXT("Dead boss cannot roll"), Boss->Flight->RequestRoll(false));
 	Test->TestTrue(TEXT("GE lethal damage enters EnemyBase death lifecycle"), Boss->IsDead());
 	Test->TestFalse(TEXT("Death cancels flight"), Boss->Flight->IsFlying());
 	Test->TestFalse(TEXT("Death stops flight ticking"), Boss->Flight->IsComponentTickEnabled());
@@ -327,6 +354,65 @@ bool FCoreMorphAdaptiveMotion::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCoreMorphRollMotion, "TheManTest.Enemy.CoreMorph.RollMotion", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FCoreMorphRollMotion::RunTest(const FString& Parameters)
+{
+	float SlowLag = 0, FastLag = 0;
+	for (bool bFast : {false, true}) for (int32 Direction : {-1, 1})
+	{
+		FCoreMorphFlightMotion State;
+		State.Reset(FTransform::Identity, 42, 0, 20000);
+		TestTrue(TEXT("A single axial roll starts"), State.RequestRoll(bFast, Direction));
+		TestFalse(TEXT("Rolls cannot overlap"), State.RequestRoll(!bFast));
+		FCoreMorphVisualPiece Root, Tip;
+		Root.Kind = Tip.Kind = TEXT("Wing");
+		Root.Position = FVector(0, 50, 0); Tip.Position = FVector(0, 2540, 0);
+		float Elapsed = 0, PeakLag = 0;
+		while (State.IsRolling() && Elapsed < 6.f)
+		{
+			State.Update(State.GetBody().GetLocation() + FVector(11000.f / 120.f, 0, 0), 1.f / 120.f);
+			Elapsed += 1.f / 120.f;
+			PeakLag = FMath::Max(PeakLag, FMath::Abs(State.GetWingLag()));
+			TestTrue(TEXT("Rolling preserves forward travel axis"), State.GetBody().GetUnitAxis(EAxis::X).Equals(FVector::ForwardVector, .001));
+			TestFalse(TEXT("Curved wing remains finite"), State.PiecePose(Tip, FVector::OneVector).ContainsNaN());
+			TestTrue(TEXT("Wing root stays close to rotating body"), State.PiecePose(Root, FVector::OneVector).GetRotation().AngularDistance(State.GetBody().GetRotation()) < .06);
+		}
+		TestFalse(TEXT("Roll completes without a route timestamp"), State.IsRolling());
+		TestNearlyEqual(TEXT("Both directions complete exactly one full turn"), State.GetRollAngle(), Direction * 360.f, .001f);
+		TestTrue(TEXT("Roll returns the rigid body to its travel frame"), State.GetBody().GetRotation().Equals(FQuat::Identity, .001));
+		TestTrue(TEXT("Slow and fast rolls have distinct speeds"), bFast ? Elapsed < 1.5f : Elapsed > 3.5f && Elapsed < 5.f);
+		TestTrue(TEXT("Wing retains elastic response after the body stops"), FMath::Abs(State.GetWingLag()) > 1.f);
+		if (bFast) FastLag = PeakLag; else SlowLag = PeakLag;
+		const FTransform Frozen = State.PiecePose(Tip, FVector::OneVector);
+		State.Update(FVector::ZeroVector, 0);
+		TestTrue(TEXT("Zero delta freezes elastic settling"), State.PiecePose(Tip, FVector::OneVector).Equals(Frozen));
+		for (int32 I = 0; I < 360; ++I) State.Update(State.GetBody().GetLocation() + FVector(11000.f / 120.f, 0, 0), 1.f / 120.f);
+		TestTrue(TEXT("Wing lag settles after roll"), FMath::Abs(State.GetWingLag()) < .05f);
+		State.RequestRoll(true);
+		State.Update(State.GetBody().GetLocation() + FVector(100, 0, 0), .1f);
+		State.Reset(State.GetBody(), 42, 0, 20000);
+		TestTrue(TEXT("Reset clears roll and all wing inertia even with aliased body input"), !State.IsRolling() && State.GetRollAngle() == 0 && State.GetWingLag() == 0);
+	}
+	TestTrue(TEXT("Fast roll generates substantially stronger wing inertia"), FastLag > SlowLag * 2.f && FastLag > 30.f);
+	FCoreMorphFlightMotion A, B, At30, At120;
+	for (auto* State : {&A, &B, &At30, &At120}) State->Reset(FTransform::Identity, 73, .18f, 20000);
+	A.bAllowRandomRolls = B.bAllowRandomRolls = true;
+	bool bSawRandomRoll = false;
+	for (int32 I = 0; I < 2400; ++I)
+	{
+		for (auto* State : {&A, &B}) State->Update(State->GetBody().GetLocation() + FVector(11000.f / 120.f, 0, 0), 1.f / 120.f);
+		bSawRandomRoll |= A.IsRolling();
+		TestNearlyEqual(TEXT("Seed reproduces roll choice and progress"), A.GetRollAngle(), B.GetRollAngle(), .001f);
+	}
+	TestTrue(TEXT("Eligible travelled distance triggers random rolls"), bSawRandomRoll);
+	At30.RequestRoll(true); At120.RequestRoll(true);
+	for (int32 I = 0; I < 24; ++I) At30.Update(At30.GetBody().GetLocation() + FVector(11000.f / 30.f, 0, 0), 1.f / 30.f);
+	for (int32 I = 0; I < 96; ++I) At120.Update(At120.GetBody().GetLocation() + FVector(11000.f / 120.f, 0, 0), 1.f / 120.f);
+	TestNearlyEqual(TEXT("Roll progress is stable at 30 and 120 FPS"), At30.GetRollAngle(), At120.GetRollAngle(), .02f);
+	TestNearlyEqual(TEXT("Wing inertia is stable at 30 and 120 FPS"), At30.GetWingLag(), At120.GetWingLag(), .02f);
+	return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCoreMorphPlacement, "TheManTest.Enemy.CoreMorph.EditorPlacement", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FCoreMorphPlacement::RunTest(const FString& Parameters)
 {
@@ -379,6 +465,7 @@ class FCoreMorphReviewRoutes : public IAutomationLatentCommand
 	int32 Index = 0;
 	double Started = 0;
 	bool bCaptured = false;
+	bool bRollRequested = false;
 public:
 	explicit FCoreMorphReviewRoutes(FAutomationTestBase* In) : Test(In) {}
 	bool Update() override
@@ -392,6 +479,9 @@ public:
 		{
 			if (Index == 0)
 			{
+				// The unattended editor can restore a very shallow docked viewport.
+				// Fix only this transient PIE render surface for readable review shots.
+				if (auto* Viewport = GEngine->GameViewport->GetGameViewport()) Viewport->SetFixedViewportSize(1280, 720);
 				Test->TestTrue(TEXT("First route starts automatically after PIE initialization"), Boss->Flight->IsFlying());
 				Test->TestTrue(TEXT("Review camera references the same boss"), Review->Boss == Boss);
 				// Switch while the GA is active, then replay the first route.
@@ -402,9 +492,18 @@ public:
 			Test->TestEqual(TEXT("Switching routes keeps 154 owned pieces"), Boss->Flight->GetPieces().Num(), 154);
 			Started = FPlatformTime::Seconds();
 			bCaptured = false;
+			bRollRequested = false;
 			return false;
 		}
-		if (!bCaptured && Boss->Flight->GetFlightSeconds() > 7)
+		if (!bRollRequested && Boss->Flight->GetFlightSeconds() > 3)
+		{
+			if (Index == 0) Review->SlowRoll();
+			else if (Index == 1) Review->FastRoll();
+			else Boss->Flight->RequestRoll(true, -1);
+			Test->TestTrue(TEXT("Review controls start the roll in real-time PIE"), Boss->Flight->GetMotionState().IsRolling());
+			bRollRequested = true;
+		}
+		if (!bCaptured && bRollRequested && FMath::Abs(Boss->Flight->GetMotionState().GetRollAngle()) > 100)
 		{
 			FScreenshotRequest::RequestScreenshot(FPaths::ConvertRelativePathToFull(FPaths::ProjectSavedDir() / TEXT("CoreMorphMigration") /
 				FString::Printf(TEXT("RouteReview-%d.png"), Index + 1)), false, false);
@@ -422,6 +521,7 @@ public:
 		Started = 0;
 		if (Index < 3) return false;
 		Test->TestTrue(TEXT("Review can restart after all three routes"), Review->SelectRoute(0));
+		if (auto* Viewport = GEngine->GameViewport->GetGameViewport()) Viewport->SetFixedViewportSize(0, 0);
 		EndingBoss = Boss;
 		return true;
 	}

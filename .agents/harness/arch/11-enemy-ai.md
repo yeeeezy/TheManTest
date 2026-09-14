@@ -36,7 +36,7 @@ AEnemyBase（Public/Enemy/）  ← 所有敌人基类，ASC+属性挂自身（�
 - 本批尚未接战斗 BT，检查地图直接请求飞行 GA；默认源参考路线在 13.4 秒粒子释放前冻结，自定义 Spline 按实际末端／循环条件结束。主 BT／形态子树、变形、蝎子运动和攻击按后续批次接入；不得将当前预览误认为完整战斗。
 - 检查入口 `/Game/Maps/CoreMorph/L_CoreMorphFlight`，V 播放、R 复位、P 暂停、F 切换相机；控件只属于地图专属 `CoreMorph/Review/CoreMorphFlightReview`。
 - 多路线入口 `/Game/Maps/CoreMorph/L_CoreMorphRoutes`，同一 Boss／ASC／GA 配三个 Spline；Review.Routes 保存路线引用、英文 Label 与速度。PIE 自动开始 Gentle Climb（约 20 秒），1／2／3 分别重播 Gentle Climb／S-Turns（约 22 秒）／Orbit and Dive（约 27 秒）。切换先取消旧 GA，再复位并启动新路线；原地图 Routes 为空，不新增键绑定或自动播放。
-- 进行中、未编译：Motion 增加提前加速意图与 PowerStroke；Spline 先挥翼再逐步提速，旧路线长度／速度直接推算的时长不再包含起步发力与加速耗时。正式验证待编辑器关闭后执行；随机翻转／卷翼尚未实现。
+- Motion 接收提前加速意图和 PowerStroke；Spline 先挥翼再逐步提速，因此实际时长增加起步发力与加速耗时。慢／快轴向侧滚属于当前飞行 GA 内的表现机动，组件拒绝非飞行／暂停／死亡时请求，随机触发由距离和实时状态决定。阶段、形态及技能授予逻辑不变；编译与实际 PIE 侧滚、取消／死亡／退出检查通过。
 
 ### 基类 / 属性 / 技能集
 

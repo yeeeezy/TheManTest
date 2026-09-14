@@ -33,6 +33,8 @@ public:
 	void ResetFlight();
 	void PauseFlight();
 	void ToggleCamera();
+	void SlowRoll();
+	void FastRoll();
 private:
 	bool bFollow = true;
 	bool bStartFirstRoute = false;

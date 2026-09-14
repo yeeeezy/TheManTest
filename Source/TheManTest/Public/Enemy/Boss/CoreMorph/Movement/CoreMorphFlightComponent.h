@@ -25,12 +25,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CoreMorph|Motion", meta=(ClampMin="0", ClampMax="1")) float MotionRandomness = .18f;
 	// Zero picks a new seed on reset. Nonzero gives repeatable motion for review.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CoreMorph|Motion") int32 MotionSeed = 0;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CoreMorph|Motion") bool bRandomRolls = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CoreMorph|Motion", meta=(ClampMin="1000", Units="cm")) float RandomRollSpacing = 65000.f;
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* Function) override;
 	void RebuildAssembly();
 	bool StartFlight();
 	bool CanStartFlight() const;
+	// Presentation maneuver inside the active flight GA; no dodge or damage state.
+	bool RequestRoll(bool bFast, int32 Direction = 1);
 	void StopFlight();
 	void ResetPreview();
 	void Shutdown();

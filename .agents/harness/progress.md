@@ -6,9 +6,9 @@
 
 ## 当前完成与待办
 
-- 当前进行中：用户要求加速前大力挥翼与随机轻柔／快速翻转卷翼。加速意图与先发力再提速代码、测试已准备，尚未编译／PIE；“翻转”是侧滚还是水平掉头待用户说明，翻转未实现。用户前台编辑器 PID 33624 仍开着，已请求保存关闭，未自行关闭。
+- 本轮已实现：加速前大力挥翼、慢／快两种沿飞行方向侧滚一圈；翼根／翼尖由实际旋转驱动弹性滞后、卷曲与回摆。随机侧滚基于种子、飞行距离和状态；Q 慢滚／E 快滚可直接对比。冷编译及 AdaptiveMotion／RollMotion／EditorPlacement／FlightBatch／RouteReview 五项全通过；1280×720 离屏三路线复查也通过，自动编辑器已退出，等用户校验观感。
 
-- 新增三路线检查地图 `/Game/Maps/CoreMorph/L_CoreMorphRoutes`：Play 自动起飞，1 缓弯爬升（20 秒）／2 左右 S 弯（22 秒）／3 盘旋俯冲（27 秒），数字键切换重播；P 暂停、R 复位、V 播放、F 相机。编译、保存重开、RouteReview 实际 PIE 三条完整播放和原 FlightBatch 回归均通过，等待用户评价自然程度。
+- 三路线检查地图 `/Game/Maps/CoreMorph/L_CoreMorphRoutes`：Play 自动起飞，1 缓弯爬升／2 左右 S 弯／3 盘旋俯冲，数字键切换重播；Q 慢滚、E 快滚、P 暂停、R 复位、V 播放、F 相机。原标称约 20／22／27 秒之外，现在还包含起步发力与加速耗时。编译、保存重开、实际 PIE 完整路线和原飞行回归均通过，等待用户评价自然程度。
 
 - 已完成源项目外部快照、5.7 准备工程、154 蝠鲼网格与 5 材质重建及 AssetTools 迁入。
 - 第一批外观与飞行已完成自验和审查，等待用户校验。单头领、单 ASC／Health、飞行 GA、形态 GE、Blueprint 和检查地图已就位。
@@ -21,4 +21,4 @@
 
 ## 会话交接
 
-最新请求是加速前发力、随机轻柔／快速翻转且翅膀卷起。三路线成果已先保存为 WIP `3938497`；当前 FlightMotion／FlightComponent／测试的加速意图修改未编译、未提交／push，不能宣称已生效。Motion.AccelerationIntent 驱动 PowerStroke，Spline 先显现挥翼再按推力累积速度，源位置路线保留并前瞻 .4 秒驱动发力。翻转方向待用户回复（侧滚／水平掉头），翻转尚未实现。用户启动的前台 TheManTest 编辑器 PID 33624 未关闭，已异步请求保存关闭以冷编译，不能擅自终止。后续完成机动卷翼后跑 AdaptiveMotion／FlightBatch／RouteReview，并更新验证证据。上一轮三路线实际 PIE 验证见 routes-validation.log；新地图 L_CoreMorphRoutes 的 1／2／3 自动切换入口继续保留。源和目标引擎不变，不进入第二批。
+用户已明确侧滚含义及保存关闭编辑器；无需再次追问。WIP `6add0f3` 保存上轮未编译发力代码；本轮实现双速侧滚、耦合翼部惯性与 Q／E 预览。roll-build.log 编译成功，roll-validation.log 五项全部 Success，含实际 PIE 两种侧滚取消、死亡、三路线机动和退出清理。源 5195 文件校验不变，五个参考位置函数仍一致。针对旧截图过窄，只在 RouteReview 自动测试临时固定渲染表面为 1280×720，结束恢复；roll-review-build.log 编译成功、roll-review-visual.log 再次 Success／退出码 0。已查看慢／快滚截图；快速图存在运动模糊，动态自然程度等用户评价。自动编辑器已退出，当前改动未提交／push；源和目标引擎不变，未修改 Content 资产，不进入第二批。下一步等待用户在 L_CoreMorphRoutes 观感校验；最终验收后再清理临时 Review 工具。
