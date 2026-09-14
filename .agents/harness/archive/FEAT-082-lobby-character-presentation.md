@@ -1,5 +1,18 @@
 # FEAT-082 大厅角色展示
 
+## 2026-09-14 三把正式武器与双手握持返修（实现与验证完成）
+
+- 用户截图再次指出左手穿入护木，明确要求使用维修枪、爆破枪、电击枪，并授权自行调查尺寸和修复。checkpoint f74d947 保存此前大厅返修结果。之前“原配Rifle_01握持通过”的视觉结论被用户截图推翻。
+- 实测正式 BP_RepairGun 的 StaticMesh 是95.29cm旧合并模型，但正式 Equip 优先使用 SkeletalMesh SK_SCFRIFLE，参考包围盒枪长76.80cm，三槽材质 MI_SCFR/MI_SCFR2/MI_SCFR1。三枪根和组件缩放均1；爆破/电击静态组件分别有Y=-16.757669/-27.277509偏移。不能用旧静态代理模型大小代表正式维修枪。
+- 正在添加大厅专属武器展示配置：从正式武器CDO读取实际静态/骨骼模型、材质和组件变换；按武器校准右手挂点与左手握点。原生SingleNode动画代理在同帧右手骨骼空间求解左臂TwoBoneIK及手腕朝向，Standing不校正，不拉伸手臂。这是运行时握持IK，不是重定向；未向TheManTest导入源骨架/IKRig/Retargeter。
+- 首次Development Editor Win64构建已通过，最终资产校准、完整循环和近景视觉验证尚未完成。证据目录沿用外部CoreMorph57Prep/Saved/Review的three-gun-*、fp-grip-inspection和GunGeometry-*。
+- 中间问题与验证：Mesh索引误作SkeletonPose索引导致原生IK未作用，改用FBoneReference后3228样本验证通过。随后爆破枪厚护木握点向下校正，最终PIE发现Relaxed超出自然臂长2.018cm；不能放宽误差或拉伸手臂，正在单独后移Relaxed握点并增加三枪所有持枪动画逐帧可达裕量检查。此中间失败记录不得当作最终验收通过。
+
+- 最终结果：最终Development Editor Win64构建通过（lobby-grip-final-build.log）；BP编译保存通过。最终冷加载实际LobbyMap PIE验证3244样本通过，三枪各普通Relaxed／Relaxed v2／Rifle完整循环、两条Standing、无效武器索引和One→Relaxed→Rifle按键链均通过。左手握点最大位置误差1.19e-13cm，右手相对原压缩动画误差小于0.006cm，手腕朝向和两段臂长断言通过。两张地图、全部正式武器和原Lobby动画退出前后哈希不变。
+- 爆破枪厚护木的左手握点Z相对源参考下移5.5cm，沿枪身分别标定Relaxed与Rifle，所有九种持枪组合采样101个相位检查可达性；最小臂长余量1.7936cm，未拉伸手臂。原始约束失败已修复。
+- 最终两侧近景：LobbyGripFinal-{0,1,2}-{0,1}-{-1,1}.png；爆破枪最新可达配置另见three-gun-reach-visual.log，其余两枪图来自three-gun-final-visual.log。冷编辑器打开LobbyMap已是Relaxed、索引0、原生LobbyCharacterAnimInstance和可见SK_SCFRIFLE，旧静态显示组件为空且隐藏（three-gun-lobby-cold-audit.json）。
+- 本轮仅大厅C++、BP和harness改动，AnimationCore为唯一新增私有依赖；地图、三枪BP/模型/材质、原动画及外部资源项目未改。未提交最终结果或push。用户选择大厅人物实例的Display Weapon Index：0维修枪、1爆破枪、2电击枪；PIE上方1继续只切放松／举枪。
+
 ## 2026-09-14 最终持枪视觉返修与关机交接
 
 - 用户指出枪过大、白膜和握持错位，要求自行验收后关机。之前仅有按键／状态通过不能代表视觉通过。操作检查点见Git最新WIP checkpoint before final lobby grip review。

@@ -1,5 +1,9 @@
 # 动画实例
 
+## 大厅持枪姿态（FEAT-082，2026-09-14）
+
+`ULobbyCharacterAnimInstance : UAnimSingleNodeInstance`位于`Characters/CharacterBase/Lobby`。ALobbyCharacterBase通过SetAnimInstanceClass和SingleNodeInstance::SetAnimationAsset播放五条原成品待机，不再用PlayAnimation替换该实例。代理从Actor在游戏线程复制当前武器左手握点，评估原动画后以同帧右手为基准求解左臂TwoBoneIK及手腕旋转，不拉伸手臂、不改变右手和身体。Standing不校正。各枪挂点／握点在WeaponPresentations配置；模型和材质读取正式武器BP，详见07。原动画资源不变，未在目标项目执行重定向。
+
 - 2026-09-05当前受击仅播放成品动画：EnemyHitReactionComponent仅按Actor局部入射方向选择，BP_Phantom直接配置前后左右4条AS_Humanoid_BlastRifle_{Front,Back,Left,Right}，来自Mixamo并在外部适配现役70骨。原始时长/30fps保留，握枪和腿长差异已调整。
 - 共享无骨架后处理位于Humanoid/_Shared/Animations/Logic/ABP_Humanoid_HitReaction。输入Pose缓存与动态SequenceEvaluator混合后输出；ReactionAnimation/Time/Alpha、UseFullBodyReaction由NativeUpdateAnimation提供。旧ControlRig节点、模式选择、RigUnit和Frame/旋转/包络参数已删除，不存在切回Rig的入口。
 - ApplyAnimationRootMotion默认开启：非下落时临时暂停CharacterMovement模式，按游戏时间提取Root水平位移，经Mesh方向/缩放转换，用SafeMoveUpdatedComponent移动胶囊；结束或关闭恢复，死亡不恢复。动画force_root_lock避免重复位移。下落不消费Root且仅上半身；关闭参数时沿用静止全身/移动上半身的混合规则，没有部位例外。碰墙可截短步长，不进行落脚重规划。

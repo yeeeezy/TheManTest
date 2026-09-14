@@ -1,20 +1,17 @@
 # 当前工作面板
 
-- Active feature：FEAT-082 大厅角色展示。正式LobbyMap、维修工摆放和预留测试键已完成自动验证，等待用户前台主观校验。
+- Active feature：FEAT-082 大厅角色展示。三把正式武器与左手握持返修已完成编译、冷加载、实际PIE和两侧近景自查；等待用户前台观感确认。
 - FEAT-081／080暂停；详见对应archive。
 
-## 正式大厅与展示
+## 当前大厅配置
 
-- `/Game/Maps/LobbyMap`现在是恢复的FEAT-045选角场景；旧同名空地图已删除。场景依赖保留在SciFiIndustrialBase目录，BuiltData位于`/Game/Maps/LobbyMap_BuiltData`。
-- GameInstance原有`LobbyMapName=LobbyMap`已直接接入正式场景；World Settings仍为BP_CharacterSelectGameMode。
-- `MaintenanceWorker_LobbyDisplay`唯一实例位于角色焦点原点，初始Relaxed持枪。维修工Lobby目录包含两种Standing、两种Relax和一种Rifle动画。
-- 大厅`IMC_CharacterSelect`复用IA_Test／One；按键上方数字1在Relaxed与Rifle间切换。战斗地图的同名测试入口保持原逻辑。
-- Development Editor构建成功；实际LobbyMap PIE两次按1切换、Controller、唯一实例和退出哈希检查通过，证据为`lobby-display-input-pie.json`及日志`LOBBY_DISPLAY_INPUT_PIE_OK`。
+- 正式场景仍为`/Game/Maps/LobbyMap`，唯一`MaintenanceWorker_LobbyDisplay`保持原位置和镜头配置，默认Relaxed。
+- Display Weapon Index：0维修枪、1爆破枪、2电击枪。大厅读取正式武器BP的实际显示模型、材质和组件变换；维修枪用SK_SCFRIFLE骨骼模型，另两把用各自静态模型，缩放保持1。不再用Rifle_01替代正式武器。
+- 新增大厅专用左手握点IK，放松／举枪分别标定，左手跟随当前帧枪身；右手和原身体动画保持，手臂不拉伸。两条空手Standing隐藏枪并不启用握持校正。
+- 复用IA_Test／上方数字1切换Relaxed与Rifle。换展示枪通过实例Display Weapon Index或SetDisplayWeaponIndex；没有新增按键、相机或测试地图。
 
-## 会话交接
+## 验证与交接
 
-操作前checkpoint为`7439d2a`。本轮地图、BuiltData、输入资产、PlayerController C++与harness改动未提交／push。用户接下来可直接打开`/Game/Maps/LobbyMap`并PIE，按键盘上方数字1检查Relax／举枪观感。
-
-## 最新视觉返修
-
-原配黑色Rifle_01展示枪和源动画握持偏移已恢复，挂hand_r（不是weapon），不再使用RepairGun白色合并网格。人物朝向与远近镜头对焦已校正。最终远近景四张截图已自查；lobby-grip-cold-pie.json ok=true，360样本，完整待机循环、One切换、冷加载与退出地图哈希通过。证据与具体差异见FEAT-082最新段落。编辑器已退出；按用户要求完成记录后关机。明日打开LobbyMap按1验收。本轮结果未最终提交／push。
+- 最终Development Editor Win64构建通过（lobby-grip-final-build.log）；BP编译保存通过。最终冷加载实际LobbyMap PIE验证3244样本通过，三枪各普通Relaxed／Relaxed v2／Rifle完整循环、两条Standing、无效武器索引和One→Relaxed→Rifle按键链均通过。左手握点最大位置误差1.19e-13cm，右手相对原压缩动画误差小于0.006cm，手腕朝向和两段臂长断言通过。两张地图、全部正式武器和原Lobby动画退出前后哈希不变。
+- 爆破枪最终最小可达余量1.7936cm；三枪两种持枪状态的两侧近景已自查。外部证据：CoreMorph57Prep/Saved/Review/three-gun-*、LobbyGripFinal-*。
+- 本轮安全检查点f74d947；本轮大厅源码、展示BP和harness结果未最终提交／push。正式武器、原动画、地图和外部源项目未改。下一步用户打开LobbyMap，选展示人物设置枪索引，PIE按1检查观感。

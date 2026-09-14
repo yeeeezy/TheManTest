@@ -7,6 +7,30 @@
 class UAnimSequence;
 class USkeletalMeshComponent;
 class UStaticMeshComponent;
+class AEquipmentBase;
+
+USTRUCT(BlueprintType)
+struct FLobbyWeaponPresentation
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon")
+	TSubclassOf<AEquipmentBase> WeaponClass;
+
+	/** Weapon Actor origin relative to the character's right hand. Mesh offsets come from the weapon BP. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon")
+	FTransform RelaxedAttachment;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon")
+	FTransform ReadyAttachment;
+
+	/** Left wrist relative to the weapon Actor origin, including wrist orientation. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon")
+	FTransform RelaxedLeftGrip;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon")
+	FTransform ReadyLeftGrip;
+};
 
 UENUM(BlueprintType)
 enum class ELobbyCharacterPose : uint8
@@ -38,6 +62,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Lobby|Presentation")
 	void SetWeaponReady(bool bReady);
 
+	UFUNCTION(BlueprintCallable, Category="Lobby|Presentation")
+	void SetDisplayWeaponIndex(int32 NewIndex);
+
+	/** Returns the calibrated left wrist target in right-hand bone space. */
+	bool GetLeftHandTarget(FTransform& OutTarget) const;
+
 	UFUNCTION(BlueprintPure, Category="Lobby|Presentation")
 	bool IsWeaponReady() const { return DisplayPose == ELobbyCharacterPose::Rifle; }
 
@@ -49,6 +79,18 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Lobby|Presentation")
 	TObjectPtr<UStaticMeshComponent> DisplayWeapon;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Lobby|Presentation")
+	TObjectPtr<USkeletalMeshComponent> DisplaySkeletalWeapon;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Lobby|Weapon")
+	TArray<FLobbyWeaponPresentation> WeaponPresentations;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon", meta=(ClampMin="0"))
+	int32 DisplayWeaponIndex = 0;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Lobby|Weapon")
+	FName LeftHandBone = TEXT("hand_l");
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Presentation")
 	ELobbyCharacterPose DisplayPose = ELobbyCharacterPose::Standing;

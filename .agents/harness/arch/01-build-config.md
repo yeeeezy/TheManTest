@@ -1,5 +1,7 @@
 # 构建配置
 
+- FEAT-082大厅三枪握持：Private运行时依赖增加AnimationCore，用于原生LobbyCharacterAnimInstance代理调用引擎TwoBoneIK；不新增插件或重定向模块。
+
 - FEAT-081 第三批：仅 Editor 增加 BehaviorTreeEditor 与 AIGraph，供显式 `TheManTest.Authoring.CoreMorphAI` 创建／保存可编辑主 BT 图；运行时仅使用既有 AIModule。无引擎升级或新插件。
 
 - 2026-09-05 EnemyEffectScale：Editor-only增加NiagaraEditor，供ExplosionScaleAudit检查/显式安装本枪Niagara缩放模块；运行时与Game目标不引入编辑器模块。
