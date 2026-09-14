@@ -4,6 +4,7 @@
 #include "GameplayEffectTypes.h"
 #include "CoreMorphBoss.generated.h"
 
+class UCoreMorphTailEffects;
 class UCoreMorphVisualLayout;
 class UCoreMorphFlightComponent;
 class UCoreMorphReassemblyComponent;
@@ -29,6 +30,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CoreMorph") TObjectPtr<UCoreMorphReassemblyComponent> Reassembly;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="CoreMorph") TObjectPtr<UCoreMorphScorpionMovement> ScorpionMovement;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="CoreMorph") TObjectPtr<UCoreMorphScorpionCombat> ScorpionCombat;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="CoreMorph") TObjectPtr<UCoreMorphTailEffects> TailEffects;
 	virtual void AimAtTarget(AActor* Target) override;
 	UFUNCTION(BlueprintCallable, Category="CoreMorph") bool StartReassembly();
 	void SetForm(ECoreMorphForm Form);

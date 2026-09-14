@@ -21,12 +21,15 @@ public:
     UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Combat") TObjectPtr<UBehaviorTree> BehaviorTree;
 
     UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Combat") float WakeDelay=2.5f;
-    UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Combat",meta=(ClampMin="0.05")) float WindupDuration=.95f;
+    UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Combat",meta=(ClampMin="0.05")) float WindupDuration=2.f;
     UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Combat",meta=(ClampMin="0.05")) float ThrustDuration=.28f;
     UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Combat",meta=(ClampMin="0.05")) float RecoverDuration=1.1f;
     UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Combat",meta=(ClampMin="0.05")) float CooldownDuration=2.1f;
     UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Combat") float StrikeDamage=25.f;
     UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Combat") float TipRadius=65.f;
+    UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Combat",meta=(ClampMin="100")) float BlastRadius=1000.f;
+    float LockedBlastRadius=1000.f;
+    FHitResult LockedGroundHit;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Combat") ECoreMorphScorpionAction Action=ECoreMorphScorpionAction::Idle;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Combat") FVector LockedTarget=FVector::ZeroVector;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Combat") FVector TipPosition=FVector::ZeroVector;

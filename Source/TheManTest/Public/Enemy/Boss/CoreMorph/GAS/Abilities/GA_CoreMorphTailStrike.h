@@ -21,6 +21,7 @@ private:
 	TWeakObjectPtr<UCoreMorphScorpionCombat> Combat;
 	FDelegateHandle StageHandle,InvalidHandle,ContactHandle;
 	FActiveGameplayEffectHandle AttackEffect;
+ bool bDetonated=false;
 	void AdvanceStage();
  void CancelStrike();
  void ApplyContact(const FHitResult& Hit);

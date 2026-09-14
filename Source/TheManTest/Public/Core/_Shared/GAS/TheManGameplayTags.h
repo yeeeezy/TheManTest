@@ -29,3 +29,7 @@ UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_GameplayCue_CoreMorph_Reassembly);
 UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_State_CoreMorph_Attacking);
 
 UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_State_CoreMorph_TailCooldown);
+
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_GameplayCue_CoreMorph_TailCharge);
+
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_GameplayCue_CoreMorph_TailBlast);

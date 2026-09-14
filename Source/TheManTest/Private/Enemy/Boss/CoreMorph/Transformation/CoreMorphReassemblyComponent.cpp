@@ -16,7 +16,7 @@ constexpr int32 MetalCount=11264, SparkCount=1024;
 constexpr int32 SandAngles=128, SandRadialSamples=41;
 constexpr int32 WindRings=3, WindLayers=3, WindCount=SandAngles*WindRings*WindLayers;
 constexpr float SandSampleSpacing=250.f, PeelDuration=.065f;
-float Ease(float X){X=FMath::Clamp(X,0.f,1.f);return X*X*X*(X*(X*6-15)+10);}
+float ReassemblyEase(float X){X=FMath::Clamp(X,0.f,1.f);return X*X*X*(X*(X*6-15)+10);}
 float Hash(int32 I){const float V=FMath::Sin(I*12.9898f+78.233f)*43758.5453f;return V-FMath::FloorToFloat(V);}
 }
 
@@ -305,8 +305,8 @@ FVector UCoreMorphReassemblyComponent::FlowPoint(const FFlowParticle& P,float U,
  FVector N=FVector::CrossProduct(Axis,FVector(0,1,0)).GetSafeNormal();if(N.IsNearlyZero())N=FVector::UpVector;
  const FVector M=FVector::CrossProduct(Axis,N).GetSafeNormal();const int32 S=P.Strand;
  // Use a shared spatial phase within each strand so coils remain legible as a shape.
- const float Envelope=Ease(U/.12f)*(1-Ease((U-.96f)/.04f));
- const float Gather=Ease(U/.20f)*(1-Ease((U-.96f)/.04f));
+ const float Envelope=ReassemblyEase(U/.12f)*(1-ReassemblyEase((U-.96f)/.04f));
+ const float Gather=ReassemblyEase(U/.20f)*(1-ReassemblyEase((U-.96f)/.04f));
  const FVector Lane=FMath::Lerp(P.LaneStart,P.LaneEnd,Travel)*Gather;
  const FVector StreamAxis=(P.StreamEnd-P.StreamStart).GetSafeNormal();
  const float StreamTravel=FVector::DotProduct(Center+Lane-P.StreamStart,StreamAxis)/FMath::Max(1.,FVector::Dist(P.StreamStart,P.StreamEnd));
@@ -318,7 +318,7 @@ FVector UCoreMorphReassemblyComponent::FlowPoint(const FFlowParticle& P,float U,
  const float Fringe=Hash(Seed+75)>.90f?1.8f:1.f;
  const float Width=(Hash(Seed+21)-.5f)*650*Bulge*Envelope*Fringe,Thickness=(Hash(Seed+43)-.5f)*170*Bulge*Envelope*Fringe;
  const FVector Coil=FVector::VectorPlaneProject(CoilOffset(P,StreamTravel),Axis)*Envelope;
- const FVector Momentum=P.ReleaseTangent*U*(1-Ease(U/.22f));
+ const FVector Momentum=P.ReleaseTangent*U*(1-ReassemblyEase(U/.22f));
  return Center+Lane+Momentum+Radial*(Radius+Thickness)+Across*Width+Coil;
 
 }
@@ -361,7 +361,7 @@ void UCoreMorphReassemblyComponent::UpdateImpact()
   const float Distance=LaunchRadius+RadialSpeed*T+RadialSpeed*.16f*(1-FMath::Exp(-GroundAge*3));
   FVector P=GroundPoint+FVector(FMath::Cos(Angle),FMath::Sin(Angle),0)*Distance;
   P.Z+=20+RockSize*27.5f+FMath::Max(0.f,Up*T-490*T*T);
-  const float Size=RockSize*Ease(Seconds/.08f)*(1-Ease((Seconds-3.f)/.8f));
+  const float Size=RockSize*ReassemblyEase(Seconds/.08f)*(1-ReassemblyEase((Seconds-3.f)/.8f));
   Debris.Add(FTransform(FRotator(I+T*140,T*170,I*17).Quaternion(),P,FVector(Size,Size*(.78f+.22f*Hash(I+77)),Size*(.72f+.24f*Hash(I+81)))+FVector(.0001)));
  }
  // Three equal-speed fronts preserve the empty space between concentric walls.
@@ -370,9 +370,9 @@ void UCoreMorphReassemblyComponent::UpdateImpact()
  {
   const int32 Sector=I%SandAngles,Layer=(I/SandAngles)%WindLayers,Ring=I/(SandAngles*WindLayers);
   const float Angle=2*PI*Sector/SandAngles,Age=Seconds-Ring*.65f;
-  const float Travel=FMath::Clamp(Age,0.f,3.2f),Grow=Ease(Travel/.20f);
+  const float Travel=FMath::Clamp(Age,0.f,3.2f),Grow=ReassemblyEase(Travel/.20f);
   const float Radius=650+2450*Travel;
-  const float Fade=Age>=0?Grow*(1-Ease((Travel-2.0f)/1.2f)):0;
+  const float Fade=Age>=0?Grow*(1-ReassemblyEase((Travel-2.0f)/1.2f)):0;
   // Coherent angular billows close the seam without turning the wall into separate pillars.
   const float Billow=1+.10f*FMath::Sin(Angle*7-Travel*2.4f+Ring)+.055f*FMath::Sin(Angle*13+Travel*3);
   const float Height=2000*Billow*Grow;
@@ -398,7 +398,7 @@ void UCoreMorphReassemblyComponent::UpdateImpact()
   const bool Inner=I<144;
   const float H=Hash(I+320),Angle=2*PI*Hash(I+981),Delay=(Inner?.26f:.55f)*Hash(I+419),Age=FMath::Max(0.f,Seconds-Delay);
   const float Radius=Inner?FMath::Sqrt(H)*(650+1500*(1-FMath::Exp(-Age*1.3f))):850+(1600+1800*H)*(1-FMath::Exp(-Age*1.4f));
-  const float Grow=Ease(Age/.28f),Fade=Inner && Seconds>=Delay?Grow*(1-Ease((Age-2.6f)/4.6f))*(.45f+.55f*Ease((Seconds-1.4f)/1.4f)):0;
+  const float Grow=ReassemblyEase(Age/.28f),Fade=Inner && Seconds>=Delay?Grow*(1-ReassemblyEase((Age-2.6f)/4.6f))*(.45f+.55f*ReassemblyEase((Seconds-1.4f)/1.4f)):0;
   const float Size=(7.f+8*Hash(I+783))*(1+.16f*Age)*Grow;
   const float Height=Inner?200+(350+950*Hash(I+61))*(1-FMath::Exp(-Age*2.f))+95*Age:90+100*Age;
   FVector P=GroundPoint+FVector(FMath::Cos(Angle)*Radius+80*Age,FMath::Sin(Angle)*Radius,Height);
@@ -430,7 +430,7 @@ void UCoreMorphReassemblyComponent::UpdatePose()
   Components[I]->SetVisibility(Reveal>0);
   Components[I]->SetCustomPrimitiveDataFloat(0,Reveal>=1?1.05f:Reveal<=0?-.05f:Reveal);
  }
- const float Handoff=Ease((Progress-ParticleReleaseTime())/FMath::Max(.001f,ImpactTime()-ParticleReleaseTime()));
+ const float Handoff=ReassemblyEase((Progress-ParticleReleaseTime())/FMath::Max(.001f,ImpactTime()-ParticleReleaseTime()));
  Boss()->SetActorLocation(FMath::Lerp(CapturedRoot.GetLocation(),FixedTransform.TransformPosition(GetFormOffset(1)),Handoff),false,nullptr,ETeleportType::TeleportPhysics);
  UpdateImpact();if(!Fragments || !Sparks)return;
  const bool Released=bMorphing && Progress>=ParticleReleaseTime();
@@ -441,7 +441,7 @@ void UCoreMorphReassemblyComponent::UpdatePose()
  {
   const auto& P=FlowParticles[I];const float U=FMath::Clamp((Progress-P.Birth)/FMath::Max(.01f,P.Arrival-P.Birth),0.f,1.f);
   const FVector Pos=ParticlePoint(P,Progress,I);const FVector Direction=(ParticlePoint(P,Progress+.0002f,I)-ParticlePoint(P,Progress-.0002f,I)).GetSafeNormal();
-  const float H=Hash(I+100),Visible=Ease(U/.035f)*(1-Ease((U-.99f)/.01f));const bool Spark=I>=MetalCount;
+  const float H=Hash(I+100),Visible=ReassemblyEase(U/.035f)*(1-ReassemblyEase((U-.99f)/.01f));const bool Spark=I>=MetalCount;
   WeightedFocus+=Pos*Visible;FocusWeight+=Visible;
   if(Visible>.01f)StreamBounds+=FBox(Pos-FVector(100),Pos+FVector(100));
   const FVector Scale=(Spark?FVector(.50+.55*H,.025,.025):FVector(.85+.90*H,.50+.58*Hash(I+17),.06+.10*Hash(I+29)))*Visible+FVector(.0001);

@@ -116,12 +116,19 @@ void UCoreMorphScorpionCombat::TickComponent(float Dt,ELevelTick Tick,FActorComp
 bool UCoreMorphScorpionCombat::StartAction(ECoreMorphScorpionAction Next)
 {
     if(!Motor || (Next!=ECoreMorphScorpionAction::Idle && !IsReady()))return false;
+    if(Next==ECoreMorphScorpionAction::Windup)
+    {
+        FCollisionQueryParams Q(SCENE_QUERY_STAT(CoreMorphStrikeGround),false,Boss);Q.AddIgnoredActor(Target);
+        const FVector At=Target->GetActorLocation();
+        if(!GetWorld()->LineTraceSingleByObjectType(LockedGroundHit,At+FVector(0,0,300),At-FVector(0,0,4000),FCollisionObjectQueryParams(ECC_WorldStatic),Q) || LockedGroundHit.ImpactNormal.Z<.55f)return false;
+        LockedBlastRadius=FMath::Max(100.f,BlastRadius);
+    }
     Action=Next;ActionTime=BlockedTime=0;bStageNotified=false;ActionStartTip=TipPosition;
     Motor->SetExternalDrive(Motor->GetGroundLocation(),false,false);
     if(Next==ECoreMorphScorpionAction::Windup)
     {
         if(FVector::Dist2D(BodyPosition(),Target->GetActorLocation())>4100)return false;
-        LockedTarget=Target->GetActorLocation()-FVector(0,0,15);
+        LockedTarget=LockedGroundHit.ImpactPoint+LockedGroundHit.ImpactNormal*FMath::Max(0.f,TipRadius-1);
         WindupTip=Motor->GetBodyPose().TransformPosition(RestTip+FVector(-750,0,500));
         bStrikeResolved=false;
     }
@@ -205,13 +212,13 @@ void UCoreMorphScorpionCombat::AdvanceTail(float Dt)
 }
 void UCoreMorphScorpionCombat::SweepTip(const FVector& From,const FVector& To)
 {
-    FCollisionQueryParams Q(SCENE_QUERY_STAT(ScorpionTailStrike),false,Boss);
-    FCollisionObjectQueryParams Objects;Objects.AddObjectTypesToQuery(ECC_WorldStatic);Objects.AddObjectTypesToQuery(ECC_WorldDynamic);Objects.AddObjectTypesToQuery(ECC_Pawn);
+    FCollisionQueryParams Q(SCENE_QUERY_STAT(ScorpionTailStrike),false,Boss);Q.AddIgnoredActor(Target);
+    FCollisionObjectQueryParams Objects;Objects.AddObjectTypesToQuery(ECC_WorldStatic);Objects.AddObjectTypesToQuery(ECC_WorldDynamic);
     FHitResult Hit;
     if(GetWorld()->SweepSingleByObjectType(Hit,From,To,FQuat::Identity,Objects,FCollisionShape::MakeSphere(TipRadius),Q))
     {
         bStrikeResolved=true;
-        if(Hit.GetActor()==Target)
+        if(Hit.ImpactNormal.Z>.55f && FVector::Dist(Hit.ImpactPoint,LockedGroundHit.ImpactPoint)<TipRadius*2)
         {OnStrikeContact.Broadcast(Hit);++HitCount;}
         else ++BlockedStrikes;
         // Contact halts the strike at the actual obstacle, including a wall in front of the player.

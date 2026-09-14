@@ -65,3 +65,7 @@
 - FEAT-076 经骨骼层级与参考姿势全局高度复核，FlyingBug2 是六条接地腿的生物；`tent_low*` 位于头部，禁止作为 Feet。Locomotor 使用两组交叉三足支撑：左前+右中+左后 Phase `0`，右前+左中+右后 Phase `0.5`。禁止恢复前三排左右腿同相的 `0/0.333/0.667` 配置，该配置会产生机械式横排摇摆。六个 FeetTransform 逐项进入六个 FullBodyIK Effector。
 - FlyingBug2 运行时动画链为 `Anim_Nightmare_bug2_walk1 -> AnimGraph Control Rig -> Output Pose`。原 Walk 是完整 Source Pose，保留头、触须、躯干与尾部动作并向 FBIK 提供自然关节弯曲初值；禁止恢复外置 `UControlRigComponent` 完整骨架 Output 覆盖。
 - 具体蓝图 `/Game/Enemy/Nightmare/FlyingBug2/Blueprint/BP_NightmareFlyingBug2` 配置最终 Mesh 与 `RoamAnimation`；C++ BeginPlay 显式循环播放动画。
+
+### CoreMorph 尾刺专属雷爆（FEAT-081 第三批反馈）
+
+`ACoreMorphBoss` 新增常驻 `UCoreMorphTailEffects`，仅在 Cue 激活时创建瞬态渲染组件；无独立伤害 Actor、ASC 或碰撞。TailCharge Cue 控制尾尖光球／粒子／固定红色范围 Decal，TailBlast Cue 控制地面电弧／冲击圈／短时光照。材质全新位于 `Enemy/Boss/CoreMorph/Effects/Materials/M_CoreMorph_Tail*`。Reset、OnDeath、EndPlay 显式 Shutdown；暂停使用蝎子战斗暂停状态，无独立计时器。

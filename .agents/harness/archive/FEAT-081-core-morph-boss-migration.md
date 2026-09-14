@@ -163,3 +163,23 @@
 - `scorpion-math-audit.json` 四个关键求解函数在类型／所有权适配后与源一致；`adaptive-source-audit.json` 源 5195 文件不变。最终资产冷审计进行中，之后交用户第三批观感校验。
 - `scorpion-cold-audit.log/json` 最终通过：480 项头领资产，75 关节分组／64 足链节点与源数值逐项一致，专属 Controller／主 BT／第一阶段近距尾刺配置正确；一个阶段技能加两个常驻技能，无源模块依赖或 Redirector。原 313 个分件／特效包继续匹配迁入哈希，SandWave 为此前已验收的有意改造。
 - 第三批自审完成，所有自动编辑器退出。源码、Blueprint、主 BT、数值数据和新检查地图的改动未提交／push；源工程保持不变。用户校验入口 L_CoreMorphScorpion（V/M，1/2/3，T/C，P/R/F），当前仅局部避障，完整武器适配／复杂寻路不是本轮验收结果。等待用户反馈，不进入第四批。
+
+### 2026-09-13：第三批反馈——专属蓄力雷爆（进行中）
+
+- 用户明确确认“好的动手”：尾刺蓄力光球、红色闪烁范围圈、击地雷爆范围伤害；不复用现有特效，表现拆为 Gameplay Cue。
+- 写入前保存本地检查点 `4c1e26e`，源 UE58Blank 保持只读；本轮属于第三批反馈，不开始第四批武器闭环。
+- GA 锁定地面落点与半径，默认蓄力 2 秒；地面碰撞触发一次球形查询，按目标 ASC 去重、静态遮挡检测，现有 TailDamage GE 扣血。Cue 不做伤害。
+- 新增 TailEffects 组件和 TailCharge/TailBlast 两个 Cue，分别管理尾尖凝聚、固定地面预警及雷爆电弧；材质从零创建。取消、死亡、重置和 EndPlay 清理。
+- 首次冷构建发现 Unity 分组变化令已有两个匿名 `Ease(float)` 重名；将重组文件局部函数改名 `ReassemblyEase`，算法未变，正在重编译。尚未声明通过或交付。
+
+- 第一轮 `thunder-pie.log`：ScorpionBatch 与 ReassemblyBatch 均 Success，包含单 ASC 多分件去重、圈外不伤、锁定落点／半径、取消／死亡／退出 PIE，完整主 BT 运行并截图。
+- 编辑器脚本首次给关卡实例写 EditDefaultsOnly 材质被拒绝；材质已在 Blueprint CDO 正确保存，改为冷读实例继承值，并只更新实例可编辑蓄力时长，`thunder-assets-02.log` 保存成功。
+- 查看实际截图后，预警圈降低发光以避免偏橙，光球增强并加入击地短时膨胀闪光。`thunder-final-build.log` 冷构建 Succeeded；正在最终 ScorpionBatch 复验，追加静态遮挡保护及 GA 结束后死亡清理检查。
+
+### 本轮交付证据
+
+- `thunder-final-build.log`：Development Editor Win64 Succeeded，无新增 C++ warning/error。
+- `thunder-final-pie.log`：ScorpionBatch Success，追加的范围内静态掩体保护、技能结束后死亡清理也通过。`thunder-pie.log` 中 ReassemblyBatch 与首轮 ScorpionBatch 均 Success；最终 Scorpion-Windup／Scorpion-Thunder 截图已查看。
+- `thunder-cold-audit.log/json`：485 个头领资产；两个新 Cue Asset Registry 名称完整匹配；三个新材质引用、2 秒蓄力、唯一技能授予、关卡回读通过。0 Redirector、0 源依赖，原 313 包不变。`adaptive-source-audit.json` 确认源 5195 文件 SHA-256 全不变。
+- 新增三个专属材质、两个 Cue 蓝图、TailEffects 组件及两个 Native Cue；既有 TailDamage GE 被 GA 用作一次范围伤害。没有新增／复用声音资产，没有改武器或人形逻辑。
+- 已关闭本轮全部后台编辑器。结果未提交／push，等待用户在 L_CoreMorphScorpion 校验观感；仍不进入第四批。旧全项目启动材质／缺资源提示及无 NavMesh 的检查地图提示未在本轮扩展修复，不声称全项目日志零警告。

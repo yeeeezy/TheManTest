@@ -1,3 +1,4 @@
+#include "Enemy/Boss/CoreMorph/Effects/CoreMorphTailEffects.h"
 #include "Enemy/Boss/CoreMorph/CoreMorphBoss.h"
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphScorpionMovement.h"
 #include "Enemy/Boss/CoreMorph/Combat/CoreMorphScorpionCombat.h"
@@ -19,6 +20,7 @@
 
 ACoreMorphBoss::ACoreMorphBoss()
 {
+	TailEffects=CreateDefaultSubobject<UCoreMorphTailEffects>(TEXT("TailEffects"));
 	Flight = CreateDefaultSubobject<UCoreMorphFlightComponent>(TEXT("CoreMorphFlight"));
 	Reassembly = CreateDefaultSubobject<UCoreMorphReassemblyComponent>(TEXT("CoreMorphReassembly"));
 	DefaultAbilities.Add(UGA_CoreMorphFlight::StaticClass());
@@ -59,6 +61,7 @@ void ACoreMorphBoss::EndPlay(const EEndPlayReason::Type Reason)
 {
 	AbilitySystemComponent->CancelAllAbilities();
 	ScorpionCombat->ResetCombat();
+	TailEffects->Shutdown();
 	Reassembly->Shutdown();
 	Flight->Shutdown();
 	AbilitySystemComponent->RemoveActiveGameplayEffect(FormEffect);
@@ -71,6 +74,7 @@ void ACoreMorphBoss::OnDeath()
 	// No skeletal asset/PhysicsAsset is assigned. Base supplies the shared terminal lifecycle.
 	Super::OnDeath();
 	ScorpionCombat->ResetCombat();
+	TailEffects->Shutdown();
 	ScorpionCombat->SetComponentTickEnabled(false);
 	Reassembly->Shutdown();
 	Flight->Shutdown();
@@ -96,6 +100,7 @@ void ACoreMorphBoss::ResetFlightPreview()
 	if (IsDead()) return;
 	ScorpionCombat->bEnabled=false;
 	ScorpionCombat->ResetCombat();
+	TailEffects->Shutdown();
 	AbilitySystemComponent->CancelAbilities(nullptr, nullptr);
 	AbilitySystemComponent->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(TAG_State_CoreMorph_TailCooldown));
 	Reassembly->ResetPreview();

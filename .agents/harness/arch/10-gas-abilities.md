@@ -109,3 +109,9 @@ Phantom 的四个具体射击 Ability（Shoot1/Shoot2/Burst/Suppressive，FEAT-0
 > **新增 GAS 技能的标准流程：**
 > - 玩家技能：声明触发 Tag（`Input.角色.技能名`）→ 继承 `UGameplayAbility` 用 `AbilityTriggers` 监听 → 角色 `DefaultAbilityClasses` 或武器 `PrimaryFireAbilityClass` 引用 → 编辑器建蓝图子类赋值。
 > - 敌人射击技能：继承 `UGA_EnemyShoot`（仅数据不同建蓝图子类；逻辑不同重写 `SpawnProjectiles`）→ 放进敌人 `PhaseSkillSets` 的某距离档 → BT 用 `BTTask_UseCombatSkill`(Range 对应)触发。**不需要触发 Tag**（按类激活）。
+
+### CoreMorph TailCharge／TailBlast Cue
+
+`GA_CoreMorphTailStrike` 默认 2 秒蓄力，激活前投射 WorldStatic 地面并锁定落点／法线／BlastRadius；同一快照通过 GameplayCueParameters.Location／Normal／RawMagnitude 传递预警和雷爆。Tag 为 `GameplayCue.CoreMorph.TailCharge`、`GameplayCue.CoreMorph.TailBlast`，资产为对应完整名称 `GC_CoreMorph_TailCharge`／`GC_CoreMorph_TailBlast`；Native Static Cue 将生命周期交给拥有者 TailEffects 组件，不承载伤害。
+
+尾尖扫掠在锁定地面附近首次触地时，GA 移除 Charge、添加 Blast，并在锁定中心做一次 Pawn／WorldDynamic 球形重叠；按 ASC 去重、检查静态遮挡，调用既有 `GE_CoreMorphTailDamage`（负 Data.Damage）。墙面阻挡不引爆。恢复或取消移除 Charge；取消同时移除 Blast；正常 Blast 1.25 秒后移除自身 Cue。头领终止生命周期兜底清理。阶段技能集及技能授予方式不变。

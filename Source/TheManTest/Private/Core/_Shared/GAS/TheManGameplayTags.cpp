@@ -26,3 +26,7 @@ UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_CoreMorph_Reassembly, "GameplayCue.CoreMo
 UE_DEFINE_GAMEPLAY_TAG(TAG_State_CoreMorph_Attacking, "State.CoreMorph.Attacking");
 
 UE_DEFINE_GAMEPLAY_TAG(TAG_State_CoreMorph_TailCooldown, "State.CoreMorph.TailCooldown");
+
+UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_CoreMorph_TailCharge, "GameplayCue.CoreMorph.TailCharge");
+
+UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_CoreMorph_TailBlast, "GameplayCue.CoreMorph.TailBlast");
