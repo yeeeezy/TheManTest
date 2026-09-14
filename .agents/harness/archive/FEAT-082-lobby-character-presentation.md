@@ -151,3 +151,15 @@
 - 已查看CameraParity-Rig00000.png与CameraParity-PlacedCamera00000.png，同一视口分别通过运行时Rig和直接场景相机渲染，构图一致。测试首轮Python Rotator.equals不存在，改成轴角数值比较后通过；没有以脚本错误宣称产品失败。测试仅瞬态关闭视差和暂停角色用于对照，退出后LobbyMap SHA256不变，后台编辑器全部退出。无最终提交／push。
 
 - 用户随后授权提交到远端；fetch确认origin/main相对本地为0落后／28领先。本次正常提交并推送当前main全部待发布历史、相机一致性修复和LFS资源，不squash／force push。产品验证沿用已通过的编译及四组PIE，不在发布过程中改代码或资产。
+
+
+## 2026-09-14 两把大厅专用紧凑枪与握持返修
+
+- 用户明确要求将第二／第三把枪复制为大厅专用并缩小，同时返修爆破／电击握持。写入前checkpoint bf5da75保留用户LobbyMap改动；本轮不再保存地图。
+- Lobby/Meshes新增SM_MaintenanceWorker_Lobby_ExplosionGun、SM_MaintenanceWorker_Lobby_ElectricGun，复制原静态模型并将所有LOD BuildScale乘0.8。长度分别从95.2903→76.2323cm、92.8979→74.3183cm；材质继续引用原资源。正式武器和维修枪资源不变。
+- Lobby/Blueprint新增BP_Lobby_ExplosionGunDisplay、BP_Lobby_ElectricGunDisplay，父类EquipmentBase，仅作为展示数据CDO使用，不生成战斗Actor。配置专用StaticMesh、原材质和0.8倍组件平移；BP_MaintenanceWorker_Lobby的WeaponPresentations[1/2]引用它们，两种Attachment平移同乘0.8，组件与Attachment缩放仍1。相对hand_r整体缩小，避免枪围绕原模型远端原点漂移。索引0仍直接读取正式RepairGun。
+- Blender源工程D:/Blender Projects/LobbyCompactWeapons/LobbyCompactWeapons_Animated.blend，六条独立Action覆盖两枪各RelaxedIdle／RelaxedIdle_02／RifleIdle。保留原上臂、肘部枢轴、右臂和全身动画，仅直接编辑左前臂／手腕／手指局部旋转；爆破枪放松托手避开厚枪身，电击枪第二指节收拢32度。没有IK约束或运行时IK。
+- 使用TMIIR已有ApplyLocalRotationOffsets工具烘焙六条成品，在TMIIR冷启动逐帧验证所有骨骼位置／旋转及依赖，再仅迁移六条最终AnimSequence到目标。原九条每枪独立动画关系保留；维修枪三条不改。未迁入源骨架、源Mesh、Rig或Retargeter。
+- 三个蓝图在编辑器编译保存；冷启动正式LobbyMap PIE完成2693样本，三枪九种持枪动画、两种空手站立、数字1双向切换通过。实际模型路径、材质、0.8倍bounds、单节点动画类、关键骨骼输出验证通过；肩肘／右手位置误差最大约0.007cm，验证退出后地图／正式武器／动画包哈希不变。未改C++，无需构建。
+- 证据：D:/Blender Projects/LobbyCompactWeapons/source-grips-verified.json、blender-grip-validation.json(ok=true)，Saved/Codex/compact-pie.log(BLENDER_GRIP_VALIDATION_OK)。已查看Blender双侧预览和UE实际双侧握持截图，实机截图前缀LobbyCompactGrip-。仅实现和客观检查完成，最终观感待用户反馈。
+- 早期脚本对只读struct属性直接赋值失败，改用set_editor_property后编译保存成功；未把脚本失败当作完成。产品改动未最终提交／push。此前相机菜单已通过6151620推送到origin/main；旧归档中的待推送文字属历史。
