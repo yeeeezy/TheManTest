@@ -1,6 +1,7 @@
 #include "Core/CharacterSelectPlayerController.h"
 
 #include "Core/CharacterSelectCameraSwitcher.h"
+#include "Characters/CharacterBase/Lobby/LobbyCharacterBase.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "EngineUtils.h"
@@ -41,6 +42,13 @@ void ACharacterSelectPlayerController::SetupInputComponent()
 			EIC->BindAction(ClickAction, ETriggerEvent::Started,
 				this, &ACharacterSelectPlayerController::HandleClick);
 		}
+#if WITH_EDITOR
+		if (TestAction)
+		{
+			EIC->BindAction(TestAction, ETriggerEvent::Started,
+				this, &ACharacterSelectPlayerController::HandleTestInput);
+		}
+#endif
 	}
 }
 
@@ -61,6 +69,28 @@ void ACharacterSelectPlayerController::HandleClick()
 		Switcher->ToggleCameraView();
 	}
 }
+
+#if WITH_EDITOR
+void ACharacterSelectPlayerController::HandleTestInput()
+{
+	UWorld* World = GetWorld();
+	if (!World || World->WorldType != EWorldType::PIE)
+	{
+		return;
+	}
+
+	for (TActorIterator<ALobbyCharacterBase> It(World); It; ++It)
+	{
+		ALobbyCharacterBase* LobbyCharacter = *It;
+		LobbyCharacter->SetWeaponReady(!LobbyCharacter->IsWeaponReady());
+		UE_LOG(LogTemp, Display, TEXT("[LobbyTest] %s weapon ready: %s"),
+			*LobbyCharacter->GetName(), LobbyCharacter->IsWeaponReady() ? TEXT("true") : TEXT("false"));
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[LobbyTest] No LobbyCharacterBase actor found in the current PIE world."));
+}
+#endif
 
 ACharacterSelectCameraSwitcher* ACharacterSelectPlayerController::GetCameraSwitcher()
 {

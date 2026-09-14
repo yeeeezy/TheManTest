@@ -1,10 +1,12 @@
 # 游戏流程（回合 + 死亡 → 大厅选角色 → 重开）
 
-> 地图现状（2026-09-14）：`/Game/Maps/LobbyMap`是弃用的旧空地图。FEAT-045用户制作的新版选角场景已从删除前Git记录恢复到`/Game/Maps/SciFiIndustrialBase/Maps/SciFiIndustrialBase`，含CharacterSelectCameraSwitcher和4个CineCameraActor，共328个地图／依赖资产。恢复未改`UTheManGameInstance::LobbyMapName`，因此下方旧死亡流程仍描述当前旧配置；正式切换到新版地图必须单独更新流程配置并验证。
+> 地图现状（2026-09-14）：FEAT-045选角场景已恢复并正式保存为`/Game/Maps/LobbyMap`，原同名弃用空地图已删除。场景依赖继续位于`/Game/Maps/SciFiIndustrialBase`，预计算数据为`/Game/Maps/LobbyMap_BuiltData`。`UTheManGameInstance::LobbyMapName`原本就是`LobbyMap`，因此死亡返回大厅流程现在直接进入正式选角场景。
 
 ## 大厅人物展示资源（FEAT-082）
 
-用户新增大厅摆放用`/Game/Characters/MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby`，继承AMaintenanceWorkerLobbyCharacter→ALobbyCharacterBase→AActor。默认DisplayPose=Standing空手站立，StandingIdleIndex=0；UI用SetStandingIdleIndex(0/1)选择两种站立待机，也可用SetDisplayPose选择Standing／Relaxed／Rifle。大厅按钮的标准持枪接口是`SetWeaponReady(false/true)`：false进入Relaxed放松持枪，true进入Rifle举枪，`IsWeaponReady`读取状态。Standing隐藏武器。它只负责人物和展示武器，不创建Pawn／ASC／游戏装备；模型与五条动画在TMIIR完成适配，成品归MaintenanceWorker/Lobby。Relaxed Animation可配普通RelaxedIdle或v2 RelaxedIdle_02。维修工展示武器复用正式RepairGun模型和材质，两种持枪姿态同步使用独立挂点偏移。此次未改LobbyMap布局和既有选角UI／GameMode流程，用户自行摆放。
+用户新增大厅摆放用`/Game/Characters/MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby`，继承AMaintenanceWorkerLobbyCharacter→ALobbyCharacterBase→AActor。默认DisplayPose=Standing空手站立，StandingIdleIndex=0；UI用SetStandingIdleIndex(0/1)选择两种站立待机，也可用SetDisplayPose选择Standing／Relaxed／Rifle。大厅按钮的标准持枪接口是`SetWeaponReady(false/true)`：false进入Relaxed放松持枪，true进入Rifle举枪，`IsWeaponReady`读取状态。Standing隐藏武器。它只负责人物和展示武器，不创建Pawn／ASC／游戏装备；模型与五条动画在TMIIR完成适配，成品归MaintenanceWorker/Lobby。Relaxed Animation可配普通RelaxedIdle或v2 RelaxedIdle_02。维修工展示武器复用正式RepairGun模型和材质，两种持枪姿态同步使用独立挂点偏移。正式LobbyMap在角色焦点原点放置一个`MaintenanceWorker_LobbyDisplay`实例，初始为Relaxed。
+
+大厅手动展示验证复用`IA_Test`和键盘上方`1`。`IMC_CharacterSelect`将One映射到IA_Test，`BP_CharacterSelectPlayerController.TestAction`引用该Action；仅WITH_EDITOR PIE中，`ACharacterSelectPlayerController::HandleTestInput`查找场景中的ALobbyCharacterBase并在Relaxed／Rifle之间切换。战斗地图的`ATheManPlayerController::HandleTestInput`保持独立，不受大厅接线影响。
 
 - Enemy死亡与玩家流程独立：EnemyBase.OnDeath现在启动布娃娃并停止AI/技能，CorpseLifetime默认5游戏秒后销毁，详情见arch07/09/11；不会触发玩家回大厅。Enemy在死亡瞬间解除GameState波次/阶段订阅，尸体不继续升级。
 

@@ -1,5 +1,12 @@
 # FEAT-082 大厅角色展示
 
+## 2026-09-14 正式大厅接线与测试入口
+
+- checkpoint `7439d2a`保存恢复的328个场景资产与此前harness状态。用户确认将正式选角场景改名为`/Game/Maps/LobbyMap`并删除旧同名空地图；场景依赖保留在`/Game/Maps/SciFiIndustrialBase`，1.4GB预计算数据改为`/Game/Maps/LobbyMap_BuiltData`。旧嵌套地图和BuiltData路径均删除；GameInstance原有`LobbyMapName=LobbyMap`无需改代码即可进入正式大厅。
+- 正式大厅在原角色焦点`(0,0,0)`放置唯一`MaintenanceWorker_LobbyDisplay`（BP_MaintenanceWorker_Lobby），实例初始Relaxed持枪。地图保持BP_CharacterSelectGameMode、CharacterSelectCameraSwitcher与原四个CineCameraActor，总Actor数1977。
+- CharacterSelectPlayerController新增TestAction并仅在WITH_EDITOR绑定HandleTestInput；BP配置IA_Test，IMC_CharacterSelect配置One。每次按键查找ALobbyCharacterBase并切换SetWeaponReady，战斗PlayerController的CoreMorph测试入口未改。
+- Development Editor Win64冷编译Succeeded。`lobby-display-input-pie.json`为ok=true：实际LobbyMap PIE使用BP_CharacterSelectPlayerController，第一次One从Relaxed进入Rifle，第二次返回Relaxed；唯一展示Actor保持，退出PIE后LobbyMap哈希不变。日志包含两次`[LobbyTest]`状态和`LOBBY_DISPLAY_INPUT_PIE_OK`。
+
 ## 2026-09-14 新版选角大厅恢复
 
 - 用户指出当前`/Game/Maps/LobbyMap`是弃用的旧空地图，新版大厅已被删除。审计确认LobbyMap从初始提交到全部可达／悬空Git提交始终只有同一48,850字节旧版本，Autosaves、Backups和回收站没有新版LobbyMap；本轮大厅角色验证脚本也始终只加载TestMap且验证哈希，不曾保存LobbyMap。

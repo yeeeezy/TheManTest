@@ -27,6 +27,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character Select|Input")
 	TObjectPtr<UInputAction> ClickAction;
 
+	/** Reuses the project's reserved IA_Test slot for lobby presentation checks in PIE. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character Select|Input")
+	TObjectPtr<UInputAction> TestAction;
+
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Character Select|Camera")
 	TObjectPtr<ACharacterSelectCameraSwitcher> CameraSwitcherOverride;
 
@@ -40,5 +44,8 @@ private:
 	bool bPointerOverUI = false;
 
 	void HandleClick();
+#if WITH_EDITOR
+	void HandleTestInput();
+#endif
 	ACharacterSelectCameraSwitcher* GetCameraSwitcher();
 };
