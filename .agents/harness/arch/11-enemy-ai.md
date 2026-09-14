@@ -175,5 +175,5 @@ Root → Selector
 
 ### CoreMorph 空中远程决策（2026-09-13）
 
-正式 BT_CoreMorphBoss 的 Manta 分支改为 SimpleParallel：主任务 Flight GA，背景 Selector 按 CanBombard 请求当前阶段 FarPhaseSkill，否则短暂 Wait；WaitForBackground 使飞行结束后等待当前背景技能，再 Reassemble。CanBombard 由原 Target Service 检查具体组件、Attacking／MissileCooldown Tag；远程分支使用 LowerPriority 中止，避免攻击 Tag 中止自身。手动 M 明确取消剩余导弹。
-Near／FarPhaseSkill 任务比较启动前后的 Active Spec，保存自己新启动的技能句柄；任务中止仅取消自身技能，避免误取消并发飞行。Scorpion 分支保留。第一阶段 Near=TailStrike、Far=MissileBarrage；默认 Flight／Reassemble，共4唯一技能。闭合路线持续飞行；MantaCombat 地图手动T施放，Scorpion地图V走正式BT自动远程→变形→近战。
+正式 BT_CoreMorphBoss 的 Manta 分支改为 SimpleParallel：主任务 Flight GA，背景 Selector 按 CanBombard 请求当前阶段 FarPhaseSkill，否则短暂 Wait；WaitForBackground 使飞行结束后等待当前背景技能，再 Reassemble。当前导弹 GA 已按用户要求从 PhaseSkillSets 装配移除，因此远程分支没有可激活的导弹能力；相关 BT／CanBombard 结构保留，待技能重新设计后复用。CanBombard 由原 Target Service 检查具体组件、Attacking／MissileCooldown Tag；远程分支使用 LowerPriority 中止，避免攻击 Tag 中止自身。
+Near／FarPhaseSkill 任务比较启动前后的 Active Spec，保存自己新启动的技能句柄；任务中止仅取消自身技能，避免误取消并发飞行。Scorpion 分支保留。当前阶段为 Near=TailStrike、Far 暂空；默认 Flight／Reassemble。闭合路线持续飞行；后续重新设计远程技能时继续沿用正式 BT 入口。

@@ -1,7 +1,6 @@
 #include "Enemy/Boss/CoreMorph/CoreMorphBoss.h"
 #include "Enemy/Boss/CoreMorph/Combat/CoreMorphMissileCombat.h"
 #include "Enemy/Boss/CoreMorph/Effects/CoreMorphMissileEffects.h"
-#include "Enemy/Boss/CoreMorph/GAS/Abilities/GA_CoreMorphMissileBarrage.h"
 #include "Enemy/Boss/CoreMorph/Effects/CoreMorphTailEffects.h"
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphScorpionMovement.h"
 #include "Enemy/Boss/CoreMorph/Combat/CoreMorphScorpionCombat.h"
@@ -32,7 +31,9 @@ ACoreMorphBoss::ACoreMorphBoss()
 	ScorpionCombat=CreateDefaultSubobject<UCoreMorphScorpionCombat>(TEXT("ScorpionCombat"));
 	MissileCombat=CreateDefaultSubobject<UCoreMorphMissileCombat>(TEXT("MissileCombat"));
 	MissileEffects=CreateDefaultSubobject<UCoreMorphMissileEffects>(TEXT("MissileEffects"));
-	auto& Phase=PhaseSkillSets.AddDefaulted_GetRef();Phase.NearAbilities.Add(UGA_CoreMorphTailStrike::StaticClass());Phase.FarAbilities.Add(UGA_CoreMorphMissileBarrage::StaticClass());
+	// The missile GA and its effects remain available as retained assets, but are
+	// currently unequipped from the boss skill set while LobbyMap work proceeds.
+	auto& Phase=PhaseSkillSets.AddDefaulted_GetRef();Phase.NearAbilities.Add(UGA_CoreMorphTailStrike::StaticClass());
 	AIControllerClass = ACoreMorphAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	bUseControllerRotationYaw = false;

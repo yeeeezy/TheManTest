@@ -259,3 +259,8 @@
 - 最终 `reserved-input-key-verified.log` 输出 RESERVED_INPUT_PIE_OK；`reserved-input-pie.json` 为 ok=true，warning／missile／blast均true。采用引擎内置 Input.+key One／Input.-key One，经过实际按键映射和Started回调，确认4个预警贴花、导弹及爆炸渲染实例，预警和爆炸时重按均清理Boss／AIController／路线且可以重新启动，活动导弹期间退出PIE正常；玩家Pawn未切换，TestMap磁盘哈希不变，编辑世界没有残留Boss／路线。
 - 外部验证脚本前期遇到Python未暴露的Subsystem辅助API及受保护Effects字段；最终改为引擎内置按键模拟、公开组件枚举和材质识别。ExecutePythonScript需显式set_keep_python_script_alive(True)保留异步PIE回调。这些是验证脚本兼容问题，最终运行没有Error／断言／Ensure，不涉及新增项目测试源码。
 - 最终仅既有Controller h/cpp及harness改动；Controller蓝图编译保存没有磁盘差异，输入资产和地图未改，仍仅TestMap／正式LobbyMap。Development Editor Win64编译已通过，后台编辑器全部退出。本轮结果未提交／push；未来复用1键入口，第四批武器适配仍待实施。
+
+### 暂停当前导弹装配（2026-09-14）
+
+- 用户决定先做LobbyMap，要求当前Manta导弹技能不装配但不要删除。已从`ACoreMorphBoss`构造函数的`PhaseSkillSets[0].FarAbilities`移除`UGA_CoreMorphMissileBarrage`及其include；保留导弹GA、GE、Cue、Combat／Effects组件、专属材质与逻辑源码。
+- `manta-missile-unequip-build.log` Development Editor Win64冷编译通过。未修改Content、TestMap、LobbyMap或源项目；此前导弹资产仍可供后续重新设计后再装配。预留1键入口记录保留，但当前正式技能集不再授予导弹。

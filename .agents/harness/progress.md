@@ -18,8 +18,8 @@
 
 ## 当前正式技能
 
-- 默认Flight／Reassemble，第一阶段Near=TailStrike、Far=MissileBarrage，共4份唯一授予。阶段选择技能集，形态决定激活条件，强度波次提供伤害倍率。
-- 导弹基础20在逐枚发射时快照倍率；尾刺基础25在击地时读取倍率，各自GE范围伤害按ASC去重。主BT支持边飞边轰炸，再变形近战。专属Cue控制表现及清理。
+- 默认Flight／Reassemble，第一阶段当前只装配Near=TailStrike；MissileBarrage已从阶段技能集移除但其GA／GE／Cue／材质／逻辑全部保留，等待后续重新设计。阶段选择技能集，形态决定激活条件，强度波次提供伤害倍率。
+- 尾刺基础25在击地时读取倍率，范围伤害按ASC去重。主BT仍保留远程分支结构，但当前没有导弹技能可供激活。
 - 已删除原V／T／M／R检查入口和专属地图；以后不能再按旧记录要求用户打开它们。正式Boss行为可通过其战斗组件bEnabled配置，测试Map保持基础环境。
 
 ## 验证
@@ -29,7 +29,8 @@
 - map-cleanup-cold-final.log/json：仅TestMap／LobbyMap、77保留Actor的Transform不变、141描述符、490头领资产、4唯一技能及Cue注册通过；BP_CoreMorphBoss冷编译保存。
 - Registry和磁盘清场完成；源码／配置没有旧地图／CoreMorph临时入口引用。全部后台编辑器退出。
 - reserved-input-final-build.log：Development Editor Win64 Succeeded。reserved-input-key-verified.log／reserved-input-pie.json：RESERVED_INPUT_PIE_OK，经过引擎One按键模拟→IMC_Default→IA_Test→Controller，确认4个预警圈、导弹／爆炸实例、重按清理及再次启动、活动导弹退出PIE；玩家Pawn未切换，TestMap文件哈希不变。
+- manta-missile-unequip-build.log：移除当前技能集装配后的 Development Editor Win64 冷编译 Succeeded；未删除任何导弹资产。
 
 ## 会话交接
 
-WIP `38a495d` 保存已完成的地图／测试代码清理；更早的 `f719242` 保存清理前完整Manta技能／检查设施。本轮预留1键修改未提交／push，无Content改动，后台编辑器已退出。用户现在可在TestMap的PIE按1校验导弹观感；以后统一复用该入口。外部脚本 `cleanup_maps.py` 已执行，不要重跑；按键验证脚本为 `D:/Unreal Projects/CoreMorph57Prep/Scripts/verify_reserved_input.py`，证据在同工程 `Saved/Review/reserved-input-*`。第四批三枪／附着弹适配仍未实施，本轮不宣称该批完成。详情见 [FEAT-081 archive](archive/FEAT-081-core-morph-boss-migration.md)。
+WIP `f8aaa69` 保存预留1键接入及此前清理结果；本轮将Manta导弹从当前PhaseSkillSets装配中移除，改动尚未提交／push，导弹资产仍保留。LobbyMap后续工作可继续；TestMap不变。以后若重新启用导弹，需先重新设计并重新验证，不使用当前旧装配。详情见 [FEAT-081 archive](archive/FEAT-081-core-morph-boss-migration.md)。
