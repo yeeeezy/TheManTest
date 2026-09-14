@@ -13,6 +13,7 @@ namespace
 {
 constexpr int32 MetalCount=11264, SparkCount=1024;
 constexpr int32 SandAngles=128, SandRadialSamples=41;
+constexpr int32 WindRings=3, WindLayers=3, WindCount=SandAngles*WindRings*WindLayers;
 constexpr float SandSampleSpacing=250.f, PeelDuration=.065f;
 float Ease(float X){X=FMath::Clamp(X,0.f,1.f);return X*X*X*(X*(X*6-15)+10);}
 float Hash(int32 I){const float V=FMath::Sin(I*12.9898f+78.233f)*43758.5453f;return V-FMath::FloorToFloat(V);}
@@ -83,7 +84,7 @@ void UCoreMorphReassemblyComponent::BeginCue()
     auto* Sphere=LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Sphere.Sphere"));
     Fragments=Pool(MetalCount,Layout->FragmentMaterial,Cube);Sparks=Pool(SparkCount,Layout->SparkMaterial,Cube);
     ImpactDebris=Pool(160,Layout->EarthMaterial,Layout->EarthMesh?Layout->EarthMesh.Get():Sphere);
-    ImpactGlow=Pool(384,Layout->SandWaveMaterial,Sphere);ImpactGlow->SetNumCustomDataFloats(1);
+    ImpactGlow=Pool(WindCount,Layout->SandWaveMaterial,Sphere);ImpactGlow->SetNumCustomDataFloats(2);
     ImpactDust=Pool(256,Layout->DustMaterial,Sphere);ImpactDust->SetNumCustomDataFloats(1);
     ImpactFlash=NewObject<UStaticMeshComponent>(Boss());ImpactFlash->SetupAttachment(EffectRoot);ImpactFlash->SetMobility(EComponentMobility::Movable);
     ImpactFlash->SetStaticMesh(Sphere);ImpactFlash->SetMaterial(0,Layout->ImpactMaterial);ImpactFlash->SetCollisionEnabled(ECollisionEnabled::NoCollision);ImpactFlash->SetCastShadow(false);ImpactFlash->RegisterComponent();
@@ -143,8 +144,8 @@ void UCoreMorphReassemblyComponent::TickComponent(float Dt,ELevelTick Tick,FActo
 }
 FVector UCoreMorphReassemblyComponent::GetFocus() const {return FixedTransform.TransformPosition(FlowFocus);}
 
-// Stream, construction front and sand-wave equations below are ported from
-// the accepted UE58Blank implementation; only ownership/world-frame access changes.
+// Stream and construction equations retain the accepted UE58Blank implementation.
+// Impact sand fronts are revised into concentric wind walls for the target project.
 float UCoreMorphReassemblyComponent::Schedule(float C) const
 {
  return (FMath::Max(ConstructionExtension,0.f)*FMath::Clamp((C-.70f)/.30f,0.f,1.f)+C*FMath::Max(Duration,3.f)+FMath::Max(AscentExtension,0.f)*FMath::Clamp(C/.36f,0.f,1.f)+(C>=.70f?FMath::Max(AirflowDuration,0.f)+FMath::Max(CrashDuration,.2f)+FMath::Max(FeedDuration,0.f):0))/GetMorphDuration();
@@ -343,11 +344,11 @@ void UCoreMorphReassemblyComponent::UpdateImpact()
  const float Seconds=(Progress-ImpactTime())*GetMorphDuration()+(CurrentForm==1?IdleTime:0);
  const bool Active=(bMorphing || CurrentForm==1) && Seconds>=0 && Seconds<8.f;
  ImpactFlash->SetVisibility(Active && Seconds<.25f);ImpactLight->SetVisibility(Active && Seconds<.35f);
- ImpactDebris->SetVisibility(Active && Seconds<3.8f);ImpactGlow->SetVisibility(Active && Seconds<4.4f);ImpactDust->SetVisibility(Active);
+ ImpactDebris->SetVisibility(Active && Seconds<3.8f);ImpactGlow->SetVisibility(Active && Seconds<4.6f);ImpactDust->SetVisibility(Active);
  if(!Active)return;
  ImpactFlash->SetRelativeLocation(GroundPoint+FVector(0,0,15));ImpactFlash->SetRelativeScale3D(FVector(18+Seconds*20,18+Seconds*20,.12));
  ImpactLight->SetRelativeLocation(GroundPoint+FVector(0,0,150));ImpactLight->SetIntensity(180000*FMath::Square(FMath::Max(0.f,1-Seconds/.35f)));
- TArray<FTransform> Debris,Glow,Dust;Debris.Reserve(160);Glow.Reserve(384);Dust.Reserve(256);
+ TArray<FTransform> Debris,Glow,Dust;Debris.Reserve(160);Glow.Reserve(WindCount);Dust.Reserve(256);
  for(int32 I=0;I<160;++I)
  {
   const float H=Hash(I+1401),Angle=2*PI*(I+.8f*Hash(I+771))/160.f,Age=FMath::Max(0.f,Seconds-.35f*Hash(I+141));
@@ -362,20 +363,34 @@ void UCoreMorphReassemblyComponent::UpdateImpact()
   const float Size=RockSize*Ease(Seconds/.08f)*(1-Ease((Seconds-3.f)/.8f));
   Debris.Add(FTransform(FRotator(I+T*140,T*170,I*17).Quaternion(),P,FVector(Size,Size*(.78f+.22f*Hash(I+77)),Size*(.72f+.24f*Hash(I+81)))+FVector(.0001)));
  }
- for(int32 I=0;I<384;++I)
+ // Three equal-speed fronts preserve the empty space between concentric walls.
+ // Each sector has a grounded body, rolling crest and trailing curl (sphere diameter: 100 cm).
+ for(int32 I=0;I<WindCount;++I)
  {
-  const float Angle=2*PI*(I%128)/128.f,Age=Seconds-(I/128)*.38f;
-  const float Travel=FMath::Max(0.f,Age),Grow=Ease(Travel/.10f);
-  const float Radius=500+8500*(1-FMath::Exp(-Travel/1.25f));
-  const float Fade=Age>=0?Grow*(1-Ease((Travel-1.45f)/2.1f)):0;
-  // Thin radial fronts with overlapping tangential billows leave readable gaps between rings.
-  const float Billow=.85f+.30f*Hash(I+2187);
-  const float RadialSample=Radius/SandSampleSpacing;const int32 GroundIndex=FMath::Min(SandRadialSamples-2,FMath::FloorToInt(RadialSample));
-  const int32 SampleIndex=(I%SandAngles)*SandRadialSamples+GroundIndex;
+  const int32 Sector=I%SandAngles,Layer=(I/SandAngles)%WindLayers,Ring=I/(SandAngles*WindLayers);
+  const float Angle=2*PI*Sector/SandAngles,Age=Seconds-Ring*.65f;
+  const float Travel=FMath::Clamp(Age,0.f,3.2f),Grow=Ease(Travel/.20f);
+  const float Radius=650+2450*Travel;
+  const float Fade=Age>=0?Grow*(1-Ease((Travel-2.0f)/1.2f)):0;
+  // Coherent angular billows close the seam without turning the wall into separate pillars.
+  const float Billow=1+.10f*FMath::Sin(Angle*7-Travel*2.4f+Ring)+.055f*FMath::Sin(Angle*13+Travel*3);
+  const float Height=2000*Billow*Grow;
+  const float Curl=FMath::Sin(Angle*9-Travel*3+Ring);
+  const float Offset=Layer==0?0:Layer==1?-120-45*Curl:-330-65*Curl;
+  const float WallRadius=FMath::Max(0.f,Radius+Offset*Grow);
+  const float RadialSample=FMath::Clamp(WallRadius/SandSampleSpacing,0.f,float(SandRadialSamples-1));
+  const int32 GroundIndex=FMath::Min(SandRadialSamples-2,FMath::FloorToInt(RadialSample));
+  const int32 SampleIndex=Sector*SandRadialSamples+GroundIndex;
   const float GroundZ=SandGroundHeights.Num()==SandAngles*SandRadialSamples?FMath::Lerp(SandGroundHeights[SampleIndex],SandGroundHeights[SampleIndex+1],RadialSample-GroundIndex):float(GroundPoint.Z);
-  FVector P=GroundPoint+FVector(FMath::Cos(Angle)*Radius,FMath::Sin(Angle)*Radius,0);P.Z=GroundZ+35+50*Billow*Grow;
-  Glow.Add(FTransform(FRotator(0,FMath::RadiansToDegrees(Angle),0).Quaternion(),P,FVector((4.5f+1.2f*Travel)*Billow,FMath::Max(4.f,Radius*.0035f),Billow)*Grow+FVector(.0001)));
-  ImpactGlow->SetCustomDataValue(I,0,Fade,false);
+  FVector P=GroundPoint+FVector(FMath::Cos(Angle),FMath::Sin(Angle),0)*WallRadius;
+  P.Z=GroundZ+Height*(Layer==0?.39f:Layer==1?.85f:.69f);
+  const float Width=(Layer==0?300+70*Travel:Layer==1?520:380)*Grow;
+  const float Tangent=FMath::Max(100.f,2*PI*WallRadius/SandAngles*1.8f)*Grow;
+  const float Vertical=Height*(Layer==0?.82f:Layer==1?.34f:.44f);
+  Glow.Add(FTransform(FRotator(0,FMath::RadiansToDegrees(Angle),0).Quaternion(),P,FVector(Width,Tangent,Vertical)/100+FVector(.0001)));
+  ImpactGlow->SetCustomDataValue(I,0,Fade*(Layer==2?.65f:1.f),false);
+  // Component time also drives shader advection, so review pause freezes the entire wall.
+  ImpactGlow->SetCustomDataValue(I,1,Travel,false);
  }
  for(int32 I=0;I<256;++I)
  {

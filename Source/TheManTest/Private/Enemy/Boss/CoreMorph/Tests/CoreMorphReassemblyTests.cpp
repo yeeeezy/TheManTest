@@ -69,7 +69,26 @@ bool FCheckReassembly::Update()
         Test->TestTrue(TEXT("Cancellation rolls back source form and exact pose"),Boss->CurrentForm==ECoreMorphForm::Manta && Boss->Flight->GetPieces()[0]->GetComponentTransform().Equals(Before,.01));
         for(int32 I=154;I<R->GetPieces().Num();++I)Test->TestTrue(TEXT("Cancelled destination is hidden and cannot be hit"),!R->GetPieces()[I]->IsVisible() && R->GetPieces()[I]->GetCollisionEnabled()==ECollisionEnabled::NoCollision);
     }
-    Boss->ResetFlightPreview();Boss->StartReassembly();Advance(R,5.3f);
+    Boss->ResetFlightPreview();Boss->StartReassembly();Advance(R,3.f);
+    UInstancedStaticMeshComponent* Wind=nullptr;
+    for(auto* Pool:TInlineComponentArray<UInstancedStaticMeshComponent*>(Boss))
+        if(Pool->GetMaterial(0)==R->Layout->SandWaveMaterial)Wind=Pool;
+    if(Test->TestNotNull(TEXT("Cue owns the concentric wind walls"),Wind))
+    {
+        Test->TestEqual(TEXT("Three complete walls with body, crest and curl"),Wind->GetInstanceCount(),1152);
+        Test->TestTrue(TEXT("Wind walls cannot intercept weapons"),Wind->GetCollisionEnabled()==ECollisionEnabled::NoCollision);
+        FTransform Front[3];
+        for(int32 Ring=0;Ring<3;++Ring)
+        {
+            Wind->GetInstanceTransform(Ring*384,Front[Ring]);
+            Test->TestTrue(TEXT("Every ring is a tall vertical wall"),Front[Ring].GetScale3D().Z*100>1400);
+            if(Ring>0)Test->TestTrue(TEXT("Concentric fronts stay separated"),FVector::Dist2D(Front[Ring-1].GetLocation(),Front[Ring].GetLocation())>1100);
+        }
+        R->SetPaused(true);R->TickComponent(.5f,LEVELTICK_All,nullptr);
+        FTransform Paused;Wind->GetInstanceTransform(0,Paused);
+        Test->TestTrue(TEXT("Pause freezes wind wall geometry"),Paused.Equals(Front[0]));
+    }
+    Advance(R,2.3f);
     Test->TestTrue(TEXT("Complete assembly commits Scorpion form"),Boss->CurrentForm==ECoreMorphForm::Scorpion && ASC->HasMatchingGameplayTag(TAG_State_CoreMorph_Form_Scorpion));
     Test->TestFalse(TEXT("Manta GE is removed at commit"),ASC->HasMatchingGameplayTag(TAG_State_CoreMorph_Form_Manta));
     Test->TestFalse(TEXT("Complete assembly releases transforming GE"),ASC->HasMatchingGameplayTag(TAG_State_CoreMorph_Transforming));
