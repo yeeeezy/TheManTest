@@ -2,7 +2,7 @@
 
 ## 大厅人物展示资源（FEAT-082）
 
-用户新增大厅摆放用`/Game/Characters/MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby`，继承AMaintenanceWorkerLobbyCharacter→ALobbyCharacterBase→AActor。默认DisplayPose=Standing空手站立，StandingIdleIndex=0；UI用SetStandingIdleIndex(0/1)选择两种站立待机，用SetDisplayPose选择Standing／Relaxed放松持枪／Rifle举枪。Standing隐藏武器。它只负责人物和展示武器，不创建Pawn／ASC／游戏装备；模型与五条动画在TMIIR完成适配，成品归MaintenanceWorker/Lobby。Relaxed Animation可配普通RelaxedIdle或v2 RelaxedIdle_02。此次未改LobbyMap布局和既有选角UI／GameMode流程，用户自行摆放。
+用户新增大厅摆放用`/Game/Characters/MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby`，继承AMaintenanceWorkerLobbyCharacter→ALobbyCharacterBase→AActor。默认DisplayPose=Standing空手站立，StandingIdleIndex=0；UI用SetStandingIdleIndex(0/1)选择两种站立待机，也可用SetDisplayPose选择Standing／Relaxed／Rifle。大厅按钮的标准持枪接口是`SetWeaponReady(false/true)`：false进入Relaxed放松持枪，true进入Rifle举枪，`IsWeaponReady`读取状态。Standing隐藏武器。它只负责人物和展示武器，不创建Pawn／ASC／游戏装备；模型与五条动画在TMIIR完成适配，成品归MaintenanceWorker/Lobby。Relaxed Animation可配普通RelaxedIdle或v2 RelaxedIdle_02。维修工展示武器复用正式RepairGun模型和材质，两种持枪姿态同步使用独立挂点偏移。此次未改LobbyMap布局和既有选角UI／GameMode流程，用户自行摆放。
 
 - Enemy死亡与玩家流程独立：EnemyBase.OnDeath现在启动布娃娃并停止AI/技能，CorpseLifetime默认5游戏秒后销毁，详情见arch07/09/11；不会触发玩家回大厅。Enemy在死亡瞬间解除GameState波次/阶段订阅，尸体不继续升级。
 

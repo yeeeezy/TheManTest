@@ -46,6 +46,11 @@ void ALobbyCharacterBase::SetStandingIdleIndex(int32 NewIndex)
 	ApplyPresentation();
 }
 
+void ALobbyCharacterBase::SetWeaponReady(bool bReady)
+{
+	SetDisplayPose(bReady ? ELobbyCharacterPose::Rifle : ELobbyCharacterPose::Relaxed);
+}
+
 void ALobbyCharacterBase::ApplyPresentation()
 {
 	UAnimSequence* Animation = DisplayPose == ELobbyCharacterPose::Rifle ? RifleAnimation : RelaxedAnimation;

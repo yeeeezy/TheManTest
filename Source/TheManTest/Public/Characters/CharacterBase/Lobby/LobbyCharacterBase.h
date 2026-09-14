@@ -34,6 +34,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Lobby|Presentation")
 	void SetStandingIdleIndex(int32 NewIndex);
 
+	/** Switch between the relaxed carry and ready-to-fire lobby poses. */
+	UFUNCTION(BlueprintCallable, Category="Lobby|Presentation")
+	void SetWeaponReady(bool bReady);
+
+	UFUNCTION(BlueprintPure, Category="Lobby|Presentation")
+	bool IsWeaponReady() const { return DisplayPose == ELobbyCharacterPose::Rifle; }
+
 	UFUNCTION(BlueprintPure, Category="Lobby|Presentation")
 	ELobbyCharacterPose GetDisplayPose() const { return DisplayPose; }
 

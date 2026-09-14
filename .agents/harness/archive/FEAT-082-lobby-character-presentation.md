@@ -1,5 +1,15 @@
 # FEAT-082 大厅角色展示
 
+## 2026-09-14 可复用举枪接口与维修枪展示（进行中）
+
+- 用户确认在ALobbyCharacterBase新增所有大厅人物可复用的SetWeaponReady(bool)，true进入Rifle举枪，false进入Relaxed持枪；IsWeaponReady供UI读取。空手Standing与SetDisplayPose保持。
+- 操作前checkpoint832fa14。BP_MaintenanceWorker_Lobby的DisplayWeapon已改用既有`/Game/Weapons/RepairGun/Meshes/SM_RepairGun_Rifle`，不复制武器资产。仍附着hand_r；根据源动画hand_r_wepSocket相对hand_r的两套现有变换，再组合维修枪BP静态模型自身(-0.000656,-5.097503,3.554176)偏移，得到Relaxed／Rifle专属Transform，切换时同步应用。
+- MCP在用户当前编辑器内完成BP编译保存；代码已写入LobbyCharacterBase.h/.cpp。用户关闭编辑器后，`lobby-weapon-ready-build.log` Development Editor Win64编译成功。
+- 初次PIE确认接口、动画和偏移均正确，但维修枪显示为白色；检查发现正式BP_RepairGun在组件层覆盖`MI_RepairGun_Rifle`，随后同步该材质到DisplayWeapon并保存BP。最终截图仍呈亮白／浅灰，这是正式材质自身外观，不是缺失材质；冷回读确认材质引用存在。
+- `lobby-weapon-ready-final.log`／json：LOBBY_WEAPON_READY_PIE_OK。默认Standing后调用SetWeaponReady(false)进入Relaxed且枪可见，再true进入Rifle且位置变化17cm以上；连续false／true／false均正确，动画持续播放、根位置不动、退出PIE且TestMap哈希不变。LobbyWeapon-Relaxed／Ready截图已检查。
+- `lobby-weapon-ready-cold.log`：LOBBY_WEAPON_READY_COLD_OK，40个大厅资产可加载，无IKRig／RTG／Redirector；BP冷回读含SetWeaponReady／IsWeaponReady、正式RepairGun Mesh和MI_RepairGun_Rifle。允许的外部依赖仅归正式RepairGun所有者；未复制武器资产。
+- Git范围：LobbyCharacterBase.h/.cpp、BP_MaintenanceWorker_Lobby及harness；地图、UI、玩法维修枪资产未修改。全部后台编辑器已退出，本轮未提交／push。
+
 ## 2026-09-14 补齐持枪Relax待机
 
 - 用户要求持枪Relax的所有版本也重定向导入。Rifle_01有W2_Stand_Relaxed_Idle_IP与W2_Stand_Relaxed_Idle_v2_IP两个版本；普通版已迁入，本次只补v2，Root_Motion对应版本不重复迁入。

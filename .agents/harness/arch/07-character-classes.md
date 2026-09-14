@@ -2,11 +2,13 @@
 
 ## 大厅展示角色（FEAT-082）
 
-`ALobbyCharacterBase : AActor` 位于 `Characters/CharacterBase/Lobby`，拥有DisplayMesh和无碰撞的DisplayWeapon；默认Standing空手站立，StandingAnimations配置所有站立待机，StandingIdleIndex选择版本。`SetStandingIdleIndex(0/1)`选择并进入Standing；无效索引忽略，编辑器超出范围的索引钳制。`SetDisplayPose`还可选择保留的Relaxed放松持枪／Rifle举枪姿态；Standing始终隐藏展示武器。它不创建ASC、装备或角色移动组件。`AMaintenanceWorkerLobbyCharacter` 位于 `Characters/MaintenanceWorker/Lobby`，具体资产配置在 `MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby`。两种持枪姿态的武器局部挂点变换分别可配。
+`ALobbyCharacterBase : AActor` 位于 `Characters/CharacterBase/Lobby`，拥有DisplayMesh和无碰撞的DisplayWeapon；默认Standing空手站立，StandingAnimations配置所有站立待机，StandingIdleIndex选择版本。`SetStandingIdleIndex(0/1)`选择并进入Standing；无效索引忽略，编辑器超出范围的索引钳制。`SetDisplayPose`还可选择Relaxed放松持枪／Rifle举枪；`SetWeaponReady(false/true)`是大厅按钮使用的便捷接口，分别进入Relaxed／Rifle，`IsWeaponReady`供UI读取。Standing始终隐藏展示武器。它不创建ASC、装备或角色移动组件。`AMaintenanceWorkerLobbyCharacter` 位于 `Characters/MaintenanceWorker/Lobby`，具体资产配置在 `MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby`。两种持枪姿态的武器局部挂点变换分别可配。
 
 模型、目标骨架、动画和展示步枪所需材质纹理归 `MaintenanceWorker/Lobby/{Meshes,Animations,Materials,Textures}`。只在TMIIR制作RTG，目标不接收Rifle_01源骨架／IKRig／IKRetargeter。既有可玩角色Body和FirstPerson资产不被替换。
 
 持枪Relax有两个成品：RelaxedIdle（普通版3.2667秒）和RelaxedIdle_02（v2，4.7秒），均在专属Animations下。在展示BP的Relaxed Animation属性中选择其一，Display Pose=Relaxed。空手仍用StandingAnimations两版本，Rifle为举枪动画，合计五条动画。
+
+维修工大厅展示复用正式`/Game/Weapons/RepairGun/Meshes/SM_RepairGun_Rifle`和组件覆盖材质`MI_RepairGun_Rifle`，不复制武器成品。DisplayWeapon附着hand_r；Relaxed／Rifle各有一份由动画hand_r_wepSocket相对hand_r变换与维修枪模型自身偏移组合出的相对Transform。切换时动画与对应Transform同步更新，不能恢复单一固定枪偏移。
 
 > 当前清理状态（2026-09-13）：用户要求立即清理测试设施，取代下文旧批次“总验收后清理”的安排。5张CoreMorph检查地图、专属地面材质、5个Tests cpp与CoreMorphFlightReview h/cpp均已删除。Boss的StartFlightPreview／ResetFlightPreview及Flight的ResetPreview已删除；Reassembly内部ResetPreview改名ResetAssembly，仍用于正式变形初始化。ReviewTarget已删除，正式BT目标由LastThreat／玩家决定。保留FlightRoute、正式主BT、GA／GE／Cue及490个头领资产。以后只有TestMap作为测试地图，不能再照旧地图入口操作。
 
