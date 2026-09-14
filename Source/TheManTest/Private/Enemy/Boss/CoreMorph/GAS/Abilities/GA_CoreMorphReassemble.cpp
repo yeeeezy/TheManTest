@@ -1,4 +1,5 @@
 #include "Enemy/Boss/CoreMorph/GAS/Abilities/GA_CoreMorphReassemble.h"
+#include "Enemy/Boss/CoreMorph/GAS/Abilities/GA_CoreMorphMissileBarrage.h"
 #include "Enemy/Boss/CoreMorph/GAS/Abilities/GA_CoreMorphFlight.h"
 #include "Enemy/Boss/CoreMorph/GAS/Effects/GE_CoreMorphTransforming.h"
 #include "Enemy/Boss/CoreMorph/Transformation/CoreMorphReassemblyComponent.h"
@@ -28,6 +29,7 @@ void UGA_CoreMorphReassemble::ActivateAbility(const FGameplayAbilitySpecHandle H
     {EndAbility(Handle,Info,ActivationInfo,true,true);return;}
     auto* ASC=Boss->GetAbilitySystemComponent();
     if(auto* Flight=ASC->FindAbilitySpecFromClass(UGA_CoreMorphFlight::StaticClass()))ASC->CancelAbilityHandle(Flight->Handle);
+    if(auto* Missile=ASC->FindAbilitySpecFromClass(UGA_CoreMorphMissileBarrage::StaticClass()))ASC->CancelAbilityHandle(Missile->Handle);
     TransformEffect=ASC->ApplyGameplayEffectToSelf(GetDefault<UGE_CoreMorphTransforming>(),1.f,ASC->MakeEffectContext());
     FinishedHandle=Reassembly->OnReassembled.AddUObject(this,&ThisClass::FinishReassembly);
     FGameplayCueParameters Params;Params.SourceObject=Boss;Params.Location=Boss->GetActorLocation();

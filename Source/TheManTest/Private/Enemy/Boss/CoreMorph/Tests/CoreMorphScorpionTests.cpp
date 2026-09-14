@@ -1,5 +1,6 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 #include "Misc/AutomationTest.h"
+#include "Enemy/Boss/CoreMorph/Combat/CoreMorphMissileCombat.h"
 #include "Tests/AutomationCommon.h"
 #include "Tests/AutomationEditorCommon.h"
 #include "FileHelpers.h"
@@ -73,7 +74,7 @@ bool FCheckCoreMorphScorpion::Update()
  auto* C=B->ScorpionCombat.Get();auto* M=B->ScorpionMovement.Get();auto* ASC=B->GetAbilitySystemComponent();
  Test->TestTrue(TEXT("AI possesses the single boss Pawn"),Cast<ACoreMorphAIController>(B->GetController())!=nullptr);
  Test->TestEqual(TEXT("One owner ASC"),TInlineComponentArray<UAbilitySystemComponent*>(B).Num(),1);
- Test->TestEqual(TEXT("Flight, morph and phase strike each granted once"),ASC->GetActivatableAbilities().Num(),3);
+ Test->TestEqual(TEXT("Flight, morph and phase strike each granted once"),ASC->GetActivatableAbilities().Num(),4);
  Test->TestEqual(TEXT("Eight articulated feet"),M->GetFeet().Num(),8);
  Test->TestEqual(TEXT("Final armor is reused"),B->Reassembly->GetPieces().Num(),455);
  const FVector Start=B->GetActorLocation();M->SetExternalDrive(M->GetGroundLocation()+FVector(8000,0,0),true,true);
@@ -170,7 +171,7 @@ bool FCheckCoreMorphScorpion::Update()
   Test->TestEqual(TEXT("Death removes all Cue pools"),TInlineComponentArray<UInstancedStaticMeshComponent*>(D).Num(),0);
   D->Destroy();
  }
- B->SetCombatPhase(2);Test->TestTrue(TEXT("Phase switching preserves scorpion identity and grants"),B->CurrentForm==ECoreMorphForm::Scorpion && ASC->GetActivatableAbilities().Num()==3);B->SetCombatPhase(1);
+ B->SetCombatPhase(2);Test->TestTrue(TEXT("Phase switching preserves scorpion identity and grants"),B->CurrentForm==ECoreMorphForm::Scorpion && ASC->GetActivatableAbilities().Num()==4);B->SetCombatPhase(1);
  Victim->SetActorLocation(M->GetGroundLocation()+B->GetActorForwardVector()*3300+FVector(0,0,90));ClearCooldown(B);C->Target=Victim;
  Test->TestTrue(TEXT("Target-loss check starts GA"),B->UseRandomSkill(Victim,EEnemySkillRange::Near));AdvanceScorpion(C,.2f);Victim->Destroy();AdvanceScorpion(C,.1f);
  Test->TestFalse(TEXT("Target destruction cancels attack state"),C->IsAttacking());
@@ -184,7 +185,7 @@ bool FCheckCoreMorphScorpion::Update()
 }
 class FScorpionRealtime : public IAutomationLatentCommand
 {
- FAutomationTestBase* Test;double Started=0;bool WalkShot=false,WindShot=false,ThrustShot=false,BlastShot=false;
+ FAutomationTestBase* Test;double Started=0;bool WalkShot=false,WindShot=false,ThrustShot=false,BlastShot=false,MantaBarrage=false;
 public:
  explicit FScorpionRealtime(FAutomationTestBase* T):Test(T){}
  bool Update() override
@@ -192,6 +193,7 @@ public:
   auto* B=ScorpionBoss();if(!B)return true;auto* C=B->ScorpionCombat.Get();
   if(!Started){Started=FPlatformTime::Seconds();B->ResetFlightPreview();for(TActorIterator<ACoreMorphFlightReview> I(B->GetWorld());I;++I){I->PlayFlight();break;}if(auto* V=GEngine->GameViewport->GetGameViewport())V->SetFixedViewportSize(1280,720);return false;}
   auto Shot=[&](const TCHAR* Name){FScreenshotRequest::RequestScreenshot(FPaths::ConvertRelativePathToFull(FPaths::ProjectSavedDir()/TEXT("CoreMorphMigration")/Name),false,false);};
+  MantaBarrage |= B->MissileCombat->IsActive();
   if(!WalkShot && B->ScorpionMovement->DistanceTravelled>700){WalkShot=true;Shot(TEXT("Scorpion-Walk.png"));}
   if(!WindShot && C->Action==ECoreMorphScorpionAction::Windup && C->ActionTime>1.6f){WindShot=true;Shot(TEXT("Scorpion-Windup.png"));}
   if(!ThrustShot && C->Action==ECoreMorphScorpionAction::Thrust && C->ActionTime>.15f){ThrustShot=true;Shot(TEXT("Scorpion-Thrust.png"));}
@@ -199,8 +201,9 @@ public:
   if((C->StrikeCount<1 || C->IsAttacking()) && FPlatformTime::Seconds()-Started<100)return false;
   Test->TestTrue(TEXT("Saved main BT runs complete flight, morph, approach and GA strike"),C->StrikeCount>=1 && WalkShot && WindShot && ThrustShot && BlastShot);
   Test->TestTrue(TEXT("Realtime GA makes actual contact with the review target"),C->HitCount>=1);
+  Test->TestTrue(TEXT("Main BT requests far barrage concurrently with flight"),MantaBarrage);
   Test->TestTrue(TEXT("Runtime BT remains active on the possessed boss"),Cast<UBehaviorTreeComponent>(Cast<AAIController>(B->GetController())->GetBrainComponent())->IsRunning());
-  Test->TestEqual(TEXT("No repeated grants after realtime form change"),B->GetAbilitySystemComponent()->GetActivatableAbilities().Num(),3);
+  Test->TestEqual(TEXT("No repeated grants after realtime form change"),B->GetAbilitySystemComponent()->GetActivatableAbilities().Num(),4);
   ClearCooldown(B);Test->TestTrue(TEXT("PIE exits with a new active strike"),B->UseRandomSkill(C->Target,EEnemySkillRange::Near) && C->IsAttacking());
   ExitOwner=B;if(auto* V=GEngine->GameViewport->GetGameViewport())V->SetFixedViewportSize(0,0);return true;
  }

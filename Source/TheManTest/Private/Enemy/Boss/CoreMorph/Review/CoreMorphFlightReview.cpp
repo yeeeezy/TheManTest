@@ -1,4 +1,6 @@
 #include "Enemy/Boss/CoreMorph/Review/CoreMorphFlightReview.h"
+#include "Enemy/Boss/CoreMorph/Combat/CoreMorphMissileCombat.h"
+#include "Enemy/Boss/CoreMorph/GAS/Abilities/GA_CoreMorphMissileBarrage.h"
 #include "Enemy/Boss/CoreMorph/CoreMorphBoss.h"
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightComponent.h"
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightRoute.h"
@@ -49,7 +51,7 @@ void ACoreMorphFlightReview::BeginPlay()
 			InputComponent->BindKey(EKeys::Three, IE_Pressed, this, &ThisClass::RouteThree);
 			bStartFirstRoute = !bScorpionReview;
 		}
-		if(bScorpionReview){InputComponent->BindKey(EKeys::C,IE_Pressed,this,&ThisClass::CancelCombatStrike);InputComponent->BindKey(EKeys::T,IE_Pressed,this,&ThisClass::Strike);}
+		if(bScorpionReview || bMantaReview){InputComponent->BindKey(EKeys::C,IE_Pressed,this,&ThisClass::CancelCombatStrike);InputComponent->BindKey(EKeys::T,IE_Pressed,this,&ThisClass::Strike);}
 		PC->SetViewTarget(this);
 	}
 }
@@ -85,6 +87,7 @@ void ACoreMorphFlightReview::Tick(float Dt)
 	SetActorRotation((Target - GetActorLocation()).Rotation());
 	if (GEngine)
 	{
+		if(bMantaReview)GEngine->AddOnScreenDebugMessage(uint64(GetUniqueID())+1,0.f,FColor::Yellow,TEXT("MANTA BARRAGE | V: Fly | T: Ranged GA | C: Cancel barrage | M: Morph | P: Pause | R: Reset"));
 		if(bScorpionReview)GEngine->AddOnScreenDebugMessage(uint64(GetUniqueID())+1,0.f,FColor::Yellow,TEXT("SCORPION REVIEW | V: AI flight + morph | M: Morph now | 1/2/3: Move target | T: Strike GA | C: Cancel strike"));
 		const FString RouteText = Routes.IsValidIndex(SelectedRoute)
 			? FString::Printf(TEXT("ROUTE %d: %s | 1/2/3: Switch & Play\n"), SelectedRoute + 1, *Routes[SelectedRoute].Label) : FString();
@@ -143,6 +146,6 @@ void ACoreMorphFlightReview::MoveCombatTarget(int32 Side)
 }
 void ACoreMorphFlightReview::CancelCombatStrike()
 {
- if(IsValid(Boss))if(auto* S=Boss->GetAbilitySystemComponent()->FindAbilitySpecFromClass(UGA_CoreMorphTailStrike::StaticClass()))Boss->GetAbilitySystemComponent()->CancelAbilityHandle(S->Handle);
+ if(IsValid(Boss))if(auto* S=Boss->GetAbilitySystemComponent()->FindAbilitySpecFromClass(Boss->CurrentForm==ECoreMorphForm::Manta?UGA_CoreMorphMissileBarrage::StaticClass():UGA_CoreMorphTailStrike::StaticClass()))Boss->GetAbilitySystemComponent()->CancelAbilityHandle(S->Handle);
 }
-void ACoreMorphFlightReview::Strike(){if(IsValid(Boss))Boss->UseRandomSkill(Boss->ScorpionCombat->Target,EEnemySkillRange::Near);}
+void ACoreMorphFlightReview::Strike(){if(IsValid(Boss))Boss->UseRandomSkill(IsValid(Boss->ScorpionCombat->ReviewTarget)?Boss->ScorpionCombat->ReviewTarget.Get():Boss->ScorpionCombat->Target.Get(),Boss->CurrentForm==ECoreMorphForm::Manta?EEnemySkillRange::Far:EEnemySkillRange::Near);}

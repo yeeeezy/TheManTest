@@ -134,6 +134,13 @@ void UCoreMorphFlightComponent::ResetPreview()
 	RouteDistance = 0;
 	CurrentRouteSpeed = 0;
 	ResetMotion(RestBody());
+	// A completed morph hides/dissolves the original pieces. Review reset restores them.
+	for (const auto& Piece : Pieces) if (IsValid(Piece))
+	{
+		Piece->SetVisibility(true);
+		Piece->SetCustomPrimitiveDataFloat(0, 1.05f);
+		Piece->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	}
 	SetComponentTickEnabled(true);
 	UpdatePose();
 }

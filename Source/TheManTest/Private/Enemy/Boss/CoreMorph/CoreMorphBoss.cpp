@@ -1,5 +1,8 @@
-#include "Enemy/Boss/CoreMorph/Effects/CoreMorphTailEffects.h"
 #include "Enemy/Boss/CoreMorph/CoreMorphBoss.h"
+#include "Enemy/Boss/CoreMorph/Combat/CoreMorphMissileCombat.h"
+#include "Enemy/Boss/CoreMorph/Effects/CoreMorphMissileEffects.h"
+#include "Enemy/Boss/CoreMorph/GAS/Abilities/GA_CoreMorphMissileBarrage.h"
+#include "Enemy/Boss/CoreMorph/Effects/CoreMorphTailEffects.h"
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphScorpionMovement.h"
 #include "Enemy/Boss/CoreMorph/Combat/CoreMorphScorpionCombat.h"
 #include "Enemy/Boss/CoreMorph/AI/CoreMorphAIController.h"
@@ -27,7 +30,9 @@ ACoreMorphBoss::ACoreMorphBoss()
 	DefaultAbilities.Add(UGA_CoreMorphReassemble::StaticClass());
 	ScorpionMovement=CreateDefaultSubobject<UCoreMorphScorpionMovement>(TEXT("ScorpionMovement"));
 	ScorpionCombat=CreateDefaultSubobject<UCoreMorphScorpionCombat>(TEXT("ScorpionCombat"));
-	PhaseSkillSets.AddDefaulted_GetRef().NearAbilities.Add(UGA_CoreMorphTailStrike::StaticClass());
+	MissileCombat=CreateDefaultSubobject<UCoreMorphMissileCombat>(TEXT("MissileCombat"));
+	MissileEffects=CreateDefaultSubobject<UCoreMorphMissileEffects>(TEXT("MissileEffects"));
+	auto& Phase=PhaseSkillSets.AddDefaulted_GetRef();Phase.NearAbilities.Add(UGA_CoreMorphTailStrike::StaticClass());Phase.FarAbilities.Add(UGA_CoreMorphMissileBarrage::StaticClass());
 	AIControllerClass = ACoreMorphAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	bUseControllerRotationYaw = false;
@@ -62,6 +67,7 @@ void ACoreMorphBoss::EndPlay(const EEndPlayReason::Type Reason)
 	AbilitySystemComponent->CancelAllAbilities();
 	ScorpionCombat->ResetCombat();
 	TailEffects->Shutdown();
+	MissileCombat->StopSalvo();MissileEffects->EndCue();
 	Reassembly->Shutdown();
 	Flight->Shutdown();
 	AbilitySystemComponent->RemoveActiveGameplayEffect(FormEffect);
@@ -75,10 +81,12 @@ void ACoreMorphBoss::OnDeath()
 	Super::OnDeath();
 	ScorpionCombat->ResetCombat();
 	TailEffects->Shutdown();
+	MissileCombat->StopSalvo();MissileEffects->EndCue();
 	ScorpionCombat->SetComponentTickEnabled(false);
 	Reassembly->Shutdown();
 	Flight->Shutdown();
 	AbilitySystemComponent->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(TAG_State_CoreMorph_TailCooldown));
+	AbilitySystemComponent->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(TAG_State_CoreMorph_MissileCooldown));
 	LastThreat = nullptr;
 	AbilitySystemComponent->RemoveActiveGameplayEffect(FormEffect);
 }
@@ -101,8 +109,10 @@ void ACoreMorphBoss::ResetFlightPreview()
 	ScorpionCombat->bEnabled=false;
 	ScorpionCombat->ResetCombat();
 	TailEffects->Shutdown();
+	MissileCombat->StopSalvo();MissileEffects->EndCue();
 	AbilitySystemComponent->CancelAbilities(nullptr, nullptr);
 	AbilitySystemComponent->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(TAG_State_CoreMorph_TailCooldown));
+	AbilitySystemComponent->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(TAG_State_CoreMorph_MissileCooldown));
 	Reassembly->ResetPreview();
 	SetForm(ECoreMorphForm::Manta);
 	Flight->ResetPreview();
@@ -123,4 +133,4 @@ void ACoreMorphBoss::SetForm(ECoreMorphForm Form)
 	FormEffect=AbilitySystemComponent->ApplyGameplayEffectToSelf(Effect,1.f,AbilitySystemComponent->MakeEffectContext());
 }
 
-void ACoreMorphBoss::AimAtTarget(AActor* Target){if(!IsDead() && IsValid(Target))ScorpionCombat->Target=Target;}
+void ACoreMorphBoss::AimAtTarget(AActor* Target){if(!IsDead() && IsValid(Target)){ScorpionCombat->Target=Target;MissileCombat->Target=Target;}}

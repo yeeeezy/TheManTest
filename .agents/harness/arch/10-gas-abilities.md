@@ -119,3 +119,9 @@ Phantom 的四个具体射击 Ability（Shoot1/Shoot2/Burst/Suppressive，FEAT-0
 ### 敌人强度伤害倍率：新增技能必接
 
 用户在 2026-09-13 要求后续记住：新增／迁入 Enemy 伤害技能必须使用 `基础伤害 × Enemy->GetDamageMultiplier()`，只乘一次；阶段仅选技能集，波次／回合负责倍率。规则已写入 harness AGENTS.md。已有 GA_EnemyShoot／GA_EnemyAreaBarrage 在弹体生成时计算；CoreMorph TailStrike 现在于击地时读取倍率并保存本次雷爆伤害，所有范围目标共用同一数值，继续按 ASC 去重。不可修改 StrikeDamage 基础值造成后续出招累乘；Cue 不参与伤害。
+
+### CoreMorph Manta MissileBarrage（2026-09-13）
+
+第一阶段 FarAbilities 新增 GA_CoreMorphMissileBarrage；Near 保持 TailStrike，DefaultAbilities 保持 Flight／Reassemble，当前共4份唯一授予。GA 要求 Manta、飞行中且非变形／攻击／导弹冷却，可与 Flight GA 同时运行。落点与半径施放时锁定，红圈不追踪目标；逐枚发射时快照 BaseDamage20 × GetDamageMultiplier，只乘一次。
+GE_CoreMorphMissileDamage 通过负 Data.Damage 扣共享 Health，每次落地按 ASC 去重并检查静态遮挡。撞墙偏离预警区则消散，不在未预警位置引爆。复用 GE_CoreMorphAttacking；专属 MissileCooldown GE 授予 State.CoreMorph.MissileCooldown。
+GameplayCue.CoreMorph.MissileBarrage 对应正式 GC_CoreMorph_MissileBarrage，仅管理专属视觉生命周期。取消／结束清理 Cue 和组件；手动变形先取消轰炸，死亡不再添加冷却。阶段、形态、强度继续独立，无新增声音／计时器。此节取代旧批次“共三个能力”的当前配置描述。

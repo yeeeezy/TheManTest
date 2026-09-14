@@ -3,7 +3,7 @@
 #include "GameplayAbilitySpecHandle.h"
 #include "BTTask_CoreMorphAction.generated.h"
 UENUM()
-enum class ECoreMorphTreeAction : uint8 {Idle,Approach,Face,Flight,Reassemble,PhaseSkill};
+enum class ECoreMorphTreeAction : uint8 {Idle,Approach,Face,Flight,Reassemble,PhaseSkill,FarPhaseSkill};
 UCLASS()
 class THEMANTEST_API UBTTask_CoreMorphAction : public UBTTaskNode
 {

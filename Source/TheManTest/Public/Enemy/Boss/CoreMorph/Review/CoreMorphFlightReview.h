@@ -30,6 +30,7 @@ public:
 	UPROPERTY(EditInstanceOnly, Category="Review") TArray<FCoreMorphReviewRoute> Routes;
 	UPROPERTY(EditInstanceOnly, Category="Review") bool bReassemblyReview = false;
 	UPROPERTY(EditInstanceOnly,Category="Review") bool bScorpionReview=false;
+	UPROPERTY(EditInstanceOnly,Category="Review") bool bMantaReview=false;
 	void MoveCombatTarget(int32 Side);
 	void CancelCombatStrike();
 	void Strike();

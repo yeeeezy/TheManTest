@@ -169,3 +169,8 @@ Root → Selector
 ### CoreMorph 蓄力地面雷爆更新
 
 尾刺仍由主 BT 请求当前阶段 NearAbilities 中的 `GA_CoreMorphTailStrike`，战斗阶段与形态不耦合。此技能现在锁定目标脚下可用静态地面：2 秒蓄力红圈预警 → 尾尖击地 → GA 结算一次球形 GE 范围伤害 → 收回。目标移动不会拖动本次红圈／伤害中心；刺出途中墙体阻挡不产生雷爆。视效由两个独立 Gameplay Cue 管理，不参与命中判定。全部求解仍位于这只具体头领的 ScorpionCombat／Movement，公共 Boss 层未增加专属逻辑。
+
+### CoreMorph 空中远程决策（2026-09-13）
+
+正式 BT_CoreMorphBoss 的 Manta 分支改为 SimpleParallel：主任务 Flight GA，背景 Selector 按 CanBombard 请求当前阶段 FarPhaseSkill，否则短暂 Wait；WaitForBackground 使飞行结束后等待当前背景技能，再 Reassemble。CanBombard 由原 Target Service 检查具体组件、Attacking／MissileCooldown Tag；远程分支使用 LowerPriority 中止，避免攻击 Tag 中止自身。手动 M 明确取消剩余导弹。
+Near／FarPhaseSkill 任务比较启动前后的 Active Spec，保存自己新启动的技能句柄；任务中止仅取消自身技能，避免误取消并发飞行。Scorpion 分支保留。第一阶段 Near=TailStrike、Far=MissileBarrage；默认 Flight／Reassemble，共4唯一技能。闭合路线持续飞行；MantaCombat 地图手动T施放，Scorpion地图V走正式BT自动远程→变形→近战。

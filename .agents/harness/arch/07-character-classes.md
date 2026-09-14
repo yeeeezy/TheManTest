@@ -74,3 +74,9 @@
 ### CoreMorph 尾链折角修正（2026-09-13）
 
 ScorpionCombat.AdvanceTail 现根据实时尾根—目标距离，求解原解剖弧线的统一曲率倍率；每节角度共同缩放，节长和尾刺长度不变。普通关节上限 20°、尾刺连接上限 16°；弧线平面使用身体上方向与目标方向。不可达目标保持最近合法弧线，避免局部折返／拉长。蓄力、刺出、正常收回和取消收回共用同一求解，不再使用原无角度约束的端点 FABRIK。八足 CCD、GA／GE／Cue 与素材保持不变。源数学逐字一致的旧验收只适用于本反馈前。
+
+### CoreMorph Manta 导弹轰炸（2026-09-13）
+
+同一 CoreMorphBoss 新增 UCoreMorphMissileCombat／UCoreMorphMissileEffects。Combat 在 GA 活跃期间管理锁定地面区域、逐枚发射、弧线及 WorldStatic Sweep；发射点取正在运动的原能量核网格 Bounds.Origin。Effects 由 MissileBarrage Cue 启停，负责专属导弹／尾焰／红圈／爆炸／灯光，不结算伤害，不创建额外 ASC。
+默认4枚，半径1000cm，散布3500cm，预警0.8s，发射间隔0.3s，飞行2.2～2.5s，冷却6s，参数位于 MissileCombat。有效落点不足时只使用能找到的区域。四个新材质位于具体头领 Effects/Materials。
+L_CoreMorphMantaCombat 使用闭合环线，V飞行、T当前阶段Far技能、C取消、M变形、P暂停、R复位。Flight::ResetPreview 恢复154个 Manta 分件可见性／溶解值／查询碰撞，修复从蝎子重播时身体隐形。Review／测试保留到总验收后清理。

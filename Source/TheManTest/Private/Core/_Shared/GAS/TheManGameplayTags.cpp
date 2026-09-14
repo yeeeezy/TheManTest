@@ -30,3 +30,6 @@ UE_DEFINE_GAMEPLAY_TAG(TAG_State_CoreMorph_TailCooldown, "State.CoreMorph.TailCo
 UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_CoreMorph_TailCharge, "GameplayCue.CoreMorph.TailCharge");
 
 UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_CoreMorph_TailBlast, "GameplayCue.CoreMorph.TailBlast");
+
+UE_DEFINE_GAMEPLAY_TAG(TAG_State_CoreMorph_MissileCooldown, "State.CoreMorph.MissileCooldown");
+UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_CoreMorph_MissileBarrage, "GameplayCue.CoreMorph.MissileBarrage");

@@ -218,3 +218,19 @@
 - 最终 `tail-strength-final-build.log` Development Editor Win64 Succeeded；`tail-strength-pie.log` ScorpionBatch Success。实际日志确认 x1.20 → 30.00 伤害、x2.00 → 50.00，两个倍率下多分件目标都只扣一次；原基础25、范围遮挡／取消／死亡／尾链／完整 BT 及 PIE 退出回归通过。
 - 用户“以后记住”已落实到 `.agents/harness/AGENTS.md` 的“敌人伤害强度倍率”规则和 arch10：新增／迁入敌人伤害必须接倍率且只乘一次，区分技能阶段与强度波次，验证基础／增强／上限和范围去重。
 - 无 Content 或源工程改动，无新增依赖。全部后台编辑器退出；结果未提交／push。尾刺强度倍率现已接通，剩余第四批三枪／附着弹适配仍未实施。
+
+### Manta 核心导弹轰炸（2026-09-13，验证完成，待用户观感校验）
+
+- 用户要求新增 Manta 远程技能：能量核心发射导弹，随机多个地面区域轰炸，显示红圈。本轮优先执行该技能，第四批三枪接入仍待后续；写入前 checkpoint 84ec77a。
+- 新增 MissileBarrage GA、MissileDamage／Cooldown GE、专属 Cue、MissileCombat／Effects；第一阶段 Far 配置，主 BT 飞行与远程并行。默认4枚，落点提前锁定、圈间留空，逐枚取实时核心位置及发射时伤害倍率；范围按 ASC 去重／静态遮挡。4个新材质及专属Cue，新增 L_CoreMorphMantaCombat 闭环路线检查地图。
+- missile-clean-build.log Succeeded；missile-ai-author.log 主 BT Authoring Success，蓝图／材质／地图编译保存。missile-pie.log MissileBatch Success，4落点／x1.2发射快照24／多分件去重／暂停／取消／变形／死亡／活动GA退出通过。材质创建先设domain再设blend的中间状态触发警告，保存后的红圈在冷PIE正常显示，冷资产回读待最终完成。
+- 截图发现原有 Review 复位缺陷：蝎子变形完成后 Reset 只恢复位置，没有恢复 Manta 分件显隐和溶解值。Flight::ResetPreview 已恢复154分件可见性／溶解／查询碰撞，补充断言；额外验证主BT确实并行施放远程，以及新导弹基础20／封顶40。
+- missile-full-regression.log 首轮8项 CoreMorph 全 Success；missile-final-build.log 复位修正冷构建 Succeeded。最终四项相关 PIE 回归进行中。
+- adaptive-source-audit.json：源5195文件哈希再次全部一致。当前结果未提交／push。一次文档写入发现 PowerShell 管道非UTF8导致新增中文丢失，已从本轮checkpoint保留原文并用显式UTF8重写本轮记录；另发现 Tags 头文件3条原中文注释受早期编码转换影响，已从checkpoint恢复并扫描本轮修改源码无替换字符；仅注释修复后再次冷构建。
+
+- 最终 missile-final-pie.log：FlightBatch、MissileBatch、ReassemblyBatch、ScorpionBatch 全 Success；包含恢复154分件可见性／溶解值、导弹基础20／x1.2=24／封顶40、发射后增强不追改已发弹、主BT实际飞行并发远程后再变形近战。此前 missile-full-regression.log 的8项全套亦全部Success。
+- 已查看最终 MantaMissiles-Flight／Impact 截图：身体恢复正常，移动核心发射、弧线尾焰、锁定红圈、地面爆炸均可见。用户主观观感校验待进行。
+- missile-cold-audit.log/json COREMORPH_MISSILE_COLD_OK：490头领资产、4份唯一技能／Near1 Far1默认2、4个正式Cue的AssetRegistry标签一致、新材质引用及闭环地图通过，Redirector／源模块依赖均0；红圈最终材质重新编译正常。源5195文件再次未变。
+- 本轮效果均有实际引用，无被替换的闲置旧特效，不删除仍在使用的尾刺或重组资源。所有后台编辑器退出，结果未提交／push；剩余第四批武器／附着弹适配未实施。
+
+- `missile-handoff-build.log` 最终 Development Editor Win64 Succeeded；最后头文件仅恢复中文注释，功能逻辑与最终PIE通过版本一致。

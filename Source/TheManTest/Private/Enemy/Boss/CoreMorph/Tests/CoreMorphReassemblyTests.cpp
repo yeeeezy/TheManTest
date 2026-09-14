@@ -43,7 +43,7 @@ bool FCheckReassembly::Update()
     auto* R=Boss->Reassembly.Get();auto* ASC=Boss->GetAbilitySystemComponent();
     if(!Test->TestNotNull(TEXT("Cold-loaded reassembly layout"),R->Layout.Get()))return true;
     Test->TestEqual(TEXT("Layout contains both final assemblies"),R->Layout->Pieces.Num(),455);
-    Test->TestEqual(TEXT("Flight and transformation are each granted once"),ASC->GetActivatableAbilities().Num(),3);
+    Test->TestEqual(TEXT("Flight and transformation are each granted once"),ASC->GetActivatableAbilities().Num(),4);
     Test->TestEqual(TEXT("One ASC for both forms"),TInlineComponentArray<UAbilitySystemComponent*>(Boss).Num(),1);
     Hurt(Boss,25);Boss->SetCombatPhase(2);
     for(float Time:{.2f,.8f,2.2f,4.8f})
@@ -102,7 +102,7 @@ bool FCheckReassembly::Update()
     Test->TestEqual(TEXT("Exactly 301 visible scorpion surfaces"),Visible,301);
     Test->TestEqual(TEXT("Morphing never heals or replaces Health"),ASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()),75.f);
     Test->TestEqual(TEXT("Form and combat phase are independent"),Boss->GetCombatPhase(),2);
-    Test->TestEqual(TEXT("No repeated ability grants across cancellations and forms"),ASC->GetActivatableAbilities().Num(),3);
+    Test->TestEqual(TEXT("No repeated ability grants across cancellations and forms"),ASC->GetActivatableAbilities().Num(),4);
     Test->TestTrue(TEXT("Successful commit keeps the source dust tail alive"),R->HasCue());
     Advance(R,4.2f);
     Test->TestFalse(TEXT("Dust tail expires its Cue"),R->HasCue() || ASC->HasMatchingGameplayTag(TAG_GameplayCue_CoreMorph_Reassembly));

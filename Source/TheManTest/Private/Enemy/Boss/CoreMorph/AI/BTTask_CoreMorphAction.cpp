@@ -14,10 +14,11 @@ EBTNodeResult::Type UBTTask_CoreMorphAction::ExecuteTask(UBehaviorTreeComponent&
  auto* C=B->ScorpionCombat.Get();auto* ASC=B->GetAbilitySystemComponent();
  if(Action==ECoreMorphTreeAction::Idle)return EBTNodeResult::InProgress;
  if(Action==ECoreMorphTreeAction::Approach || Action==ECoreMorphTreeAction::Face)return C->StartAction(Action==ECoreMorphTreeAction::Approach?ECoreMorphScorpionAction::Approach:ECoreMorphScorpionAction::Face)?EBTNodeResult::InProgress:EBTNodeResult::Failed;
- if(Action==ECoreMorphTreeAction::PhaseSkill)
+ if(Action==ECoreMorphTreeAction::PhaseSkill || Action==ECoreMorphTreeAction::FarPhaseSkill)
  {
-  if(!B->UseRandomSkill(C->Target,EEnemySkillRange::Near))return EBTNodeResult::Failed;
-  for(auto& Spec:ASC->GetActivatableAbilities())if(Spec.IsActive()){AbilityHandle=Spec.Handle;break;}
+  TSet<FGameplayAbilitySpecHandle> Before;for(const auto& Spec:ASC->GetActivatableAbilities())if(Spec.IsActive())Before.Add(Spec.Handle);
+  if(!B->UseRandomSkill(C->Target,Action==ECoreMorphTreeAction::FarPhaseSkill?EEnemySkillRange::Far:EEnemySkillRange::Near))return EBTNodeResult::Failed;
+  for(auto& Spec:ASC->GetActivatableAbilities())if(Spec.IsActive() && !Before.Contains(Spec.Handle)){AbilityHandle=Spec.Handle;break;}
  }
  else
  {
