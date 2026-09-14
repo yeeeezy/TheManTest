@@ -511,7 +511,7 @@
                          "archive_file": "archive/FEAT-081-core-morph-boss-migration.md",
                          "created": "2026-09-13",
                          "updated": "2026-09-13",
-                         "current_batch": "Batch 1 appearance/flight implemented and reviewed; Development Editor build, cold assets, real PIE FlightBatch and five existing weapon/humanoid regressions passed. Await user manual validation before batch 2.",
+                         "current_batch": "Batch 1 editor Capsule/body alignment fixed and reviewed. All 154 piece world transforms preserved; root is within 0.77 cm of rigid core. Build, real PIE FlightBatch and EditorPlacement (move/rotate/scale/reconstruct/editor duplicate) passed. Evidence: origin-fixed.json, origin-build.log, origin-validation.log, origin-editor-verified.log in CoreMorph57Prep/Saved/Review. Local pre-fix checkpoint 0516b0d; fix uncommitted/unpushed. Await user review before batch 2.",
                          "verification_evidence": "CoreMorph57Prep/Saved/Review: build-final.log, cold-audit.json, flight-pie-final.log (FlightBatch Success), batch1-validation.log (five existing regression tests Success), source-final-audit.json (5195 source hashes unchanged; eight flight method bodies identical). Target Saved/CoreMorphMigration contains four rendered PIE screenshots. No commit/push or engine upgrade.",
                          "done_criteria": [
                              "Keep target UE 5.7.4; preserve runnable UE58Blank source unchanged.",

@@ -26,7 +26,9 @@ void UCoreMorphFlightComponent::RebuildAssembly()
 		auto* Mesh = NewObject<UStaticMeshComponent>(Owner);
 		Mesh->ComponentTags.Add(TEXT("CoreMorphVisual"));
 		Mesh->SetupAttachment(Owner->GetRootComponent());
-		Mesh->SetAbsolute(true, true, true);
+		// Editor pieces follow the placement gizmo, including during a drag. Runtime
+		// pieces use world poses while the root independently follows the flight body.
+		Mesh->SetAbsolute(bHaveFrame, bHaveFrame, bHaveFrame);
 		Mesh->SetMobility(EComponentMobility::Movable);
 		Mesh->SetStaticMesh(Piece.Mesh);
 		Mesh->SetCanEverAffectNavigation(false);
@@ -42,14 +44,16 @@ void UCoreMorphFlightComponent::RebuildAssembly()
 		Mesh->SetCustomPrimitiveDataFloat(6, 1.f / FMath::Max(1.f, Piece.RevealSpan));
 		Pieces.Add(Mesh);
 	}
-	if (!bHaveFrame) ChoreographyFrame = Owner->GetActorTransform();
+	// Placement denotes the body, not the distant origin of the source choreography.
+	// Compose in local space so moving, rotating or scaling an instance preserves placement.
+	if (!bHaveFrame) ChoreographyFrame = FTransform(-Path.GetFormOffset(0)) * Owner->GetActorTransform();
 	UpdatePose();
 }
 
 void UCoreMorphFlightComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	ChoreographyFrame = GetOwner()->GetActorTransform();
+	ChoreographyFrame = FTransform(-Path.GetFormOffset(0)) * GetOwner()->GetActorTransform();
 	bHaveFrame = true;
 	RebuildAssembly();
 }

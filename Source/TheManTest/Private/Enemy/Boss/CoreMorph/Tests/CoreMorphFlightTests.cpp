@@ -3,6 +3,8 @@
 #include "Tests/AutomationCommon.h"
 #include "Tests/AutomationEditorCommon.h"
 #include "Editor.h"
+#include "FileHelpers.h"
+#include "Subsystems/EditorActorSubsystem.h"
 #include "EngineUtils.h"
 #include "Engine/World.h"
 #include "Engine/GameViewportClient.h"
@@ -14,6 +16,7 @@
 #include "Enemy/EnemyAttributeSetBase.h"
 #include "Enemy/Boss/CoreMorph/CoreMorphBoss.h"
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightComponent.h"
+#include "Enemy/Boss/CoreMorph/Data/CoreMorphVisualLayout.h"
 #include "Enemy/Boss/CoreMorph/GAS/Abilities/GA_CoreMorphFlight.h"
 #include "Core/_Shared/GAS/TheManGameplayTags.h"
 
@@ -104,6 +107,8 @@ bool FCoreMorphValidate::Update()
 	Test->TestFalse(TEXT("Boss has no humanoid blood cue"), Boss->GetHitReactionCueTag().IsValid());
 	Boss->ResetFlightPreview();
 	const FVector Initial = Boss->GetActorLocation();
+	Test->TestTrue(TEXT("Review map body stays at its pre-fix world placement"), Initial.Equals(FVector(-16000, 0, 2500), .01));
+	Test->TestTrue(TEXT("Original world choreography is preserved"), Boss->Flight->GetChoreographyFrame().Equals(FTransform(FVector(0, 0, 900)), .001));
 	Test->TestTrue(TEXT("Flight starts through GA"), Boss->StartFlightPreview());
 	Boss->Flight->SetComponentTickEnabled(false);
 	Test->TestFalse(TEXT("Duplicate flight cannot activate"), Boss->StartFlightPreview());
@@ -180,6 +185,50 @@ DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FCoreMorphScreenshot, FString, Na
 bool FCoreMorphScreenshot::Update()
 {
 	FScreenshotRequest::RequestScreenshot(FPaths::ConvertRelativePathToFull(FPaths::ProjectSavedDir() / TEXT("CoreMorphMigration") / Name), false, false);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCoreMorphPlacement, "TheManTest.Enemy.CoreMorph.EditorPlacement", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FCoreMorphPlacement::RunTest(const FString& Parameters)
+{
+	// AutomationOpenMap also starts PIE; placement/duplication must run in editor mode.
+	if (!FEditorFileUtils::LoadMap(FPaths::ProjectContentDir() / TEXT("Maps/CoreMorph/L_CoreMorphFlight.umap"), false, false)) return false;
+	UWorld* World = GEditor->GetEditorWorldContext().World();
+	UClass* Class = LoadClass<ACoreMorphBoss>(nullptr, TEXT("/Game/Enemy/Boss/CoreMorph/Blueprint/BP_CoreMorphBoss.BP_CoreMorphBoss_C"));
+	if (!TestNotNull(TEXT("Editor world"), World) || !TestNotNull(TEXT("Final boss Blueprint"), Class)) return false;
+	FActorSpawnParameters Spawn;
+	Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	const FTransform Placement(FRotator(0, 37, 0), FVector(800, -2500, 3600), FVector(1.25));
+	auto* Boss = World->SpawnActor<ACoreMorphBoss>(Class, Placement, Spawn);
+	if (!TestNotNull(TEXT("Editor-placed boss"), Boss)) return false;
+	auto Check = [this](ACoreMorphBoss* Actor, const FTransform& Expected)
+	{
+		TestTrue(FString::Printf(TEXT("Placement root unchanged: actual %s; expected %s"), *Actor->GetActorTransform().ToString(), *Expected.ToString()), Actor->GetActorTransform().Equals(Expected, .001));
+		const auto& Pieces = Actor->Flight->GetPieces();
+		TestEqual(TEXT("Editor has exactly 154 visual pieces"), Pieces.Num(), 154);
+		TestEqual(TEXT("No stale components after construction"), TInlineComponentArray<UStaticMeshComponent*>(Actor).Num(), 154);
+		if (!Actor->VisualLayout || Pieces.Num() != Actor->VisualLayout->Pieces.Num()) return;
+		double MaxError = 0;
+		for (int32 I = 0; I < Pieces.Num(); ++I)
+		{
+			const FVector Position = Expected.TransformPosition(Actor->VisualLayout->Pieces[I].Position * 1.5);
+			MaxError = FMath::Max(MaxError, FVector::Dist(Pieces[I]->GetComponentLocation(), Position));
+			TestFalse(TEXT("Editor visual follows parent translation"), Pieces[I]->IsUsingAbsoluteLocation());
+		}
+		TestTrue(FString::Printf(TEXT("All rest pieces follow the placed body (max error %.6f cm)"), MaxError), MaxError < .01);
+	};
+	Check(Boss, Placement);
+	const FTransform Moved(FRotator(0, -81, 0), FVector(-2200, 1300, 4200), FVector(.8));
+	Boss->SetActorTransform(Moved); // The gizmo must move the visuals even before construction reruns.
+	Check(Boss, Moved);
+	Boss->PostEditMove(true);
+	for (int32 I = 0; I < 3; ++I) { Boss->RerunConstructionScripts(); Check(Boss, Moved); }
+	const FVector DuplicateOffset(2500, 0, 0);
+	auto* Duplicate = Cast<ACoreMorphBoss>(GEditor->GetEditorSubsystem<UEditorActorSubsystem>()->DuplicateActor(Boss, World, DuplicateOffset));
+	FTransform DuplicatePlacement = Moved;
+	DuplicatePlacement.AddToTranslation(DuplicateOffset);
+	if (TestNotNull(TEXT("Duplicated editor instance"), Duplicate)) { Check(Duplicate, DuplicatePlacement); World->DestroyActor(Duplicate); }
+	World->DestroyActor(Boss);
 	return true;
 }
 

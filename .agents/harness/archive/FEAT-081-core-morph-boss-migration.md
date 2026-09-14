@@ -56,4 +56,16 @@
 
 ## 后续必须处理
 
+### 第一批反馈：编辑器 Capsule 与主体偏移（已修正，待用户复查）
+
+用户于本批检查时指出未 PIE 的 Capsule 远离分件，已确认动手修复。原因：编辑状态以旧编舞原点作为 Actor 位置，而主体加了 (-16000,0,1600) cm 的起飞偏移；只在 BeginPlay 后同步根位置。改为 Actor 位置直接表示主体，编辑和 BeginPlay 用逆起飞偏移推导固定编舞坐标；原飞行计算不改。只对已知检查地图迁移摆放，保持 154 分件世界姿态和原路线。修正前本地 WIP checkpoint 为 `0516b0d`，无 push。本次修正完成后继续等待用户第一批校验。
+
+- 实现：编辑态分件使用相对变换，拖动时直接跟随 Actor；BeginPlay 记录独立编舞坐标后重建为绝对世界姿态。Actor 新位置直接代表主体，检查地图从 (0,0,900) 调整到 (-16000,0,2500)，得到的编舞参考仍为 (0,0,900)。Capsule 保持 NoCollision，分件命中查询规则不变。
+- `origin-before.json`／`origin-fixed.json`：154 分件修正前后世界位置最大变化 0 cm，旋转和缩放一致；保存并重开地图后仍一致。根至刚性核心距离 0.7684 cm。
+- `origin-build.log`：最终 Development Editor Win64 编译成功。`origin-validation.log` 中 FlightBatch Success（包含原世界编舞参考、完整实时飞行、取消、死亡及退出检查）；`origin-editor-verified.log` 中 EditorPlacement Success（移动、旋转、缩放、三次重构造和真正编辑器复制）。
+- 测试入口修正：SpawnActor 的 Template 生成默认会复合模板根变换，并不等同编辑器复制，改用 EditorActorSubsystem.DuplicateActor；AutomationOpenMap 会自动启动 PIE，编辑态测试改用 FEditorFileUtils.LoadMap。早期失败日志保留供追溯，以 origin-editor-verified.log 为最终编辑器结果。
+- Blueprint 在离屏编辑器打开、编译保存验证；只有检查地图产生资产差异，没有修改 154 网格／5 材质或源项目。修正代码仅涉及 FlightComponent 与回归测试。自动编辑器已退出，本次修正未提交／push。
+
+用户另确认最终验收后清理临时检查地图／相机类／演示截图日志；自动回归测试保留有价值的断言，临时演示部分清除。源项目与对照备份保留，本轮不提前删除验收工具。
+
 三枪最终适配尚未完成：现有枪口遮挡与附着弹偏向 skeletal mesh；爆炸需按头领身份去重并选择真实表面检查遮挡。阶段技能重复授予风险、BT 取消边界在战斗批次处理。第一批不宣称蝎子／重组／完整战斗或三枪命中已验收。
