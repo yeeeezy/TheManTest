@@ -163,3 +163,16 @@
 - 三个蓝图在编辑器编译保存；冷启动正式LobbyMap PIE完成2693样本，三枪九种持枪动画、两种空手站立、数字1双向切换通过。实际模型路径、材质、0.8倍bounds、单节点动画类、关键骨骼输出验证通过；肩肘／右手位置误差最大约0.007cm，验证退出后地图／正式武器／动画包哈希不变。未改C++，无需构建。
 - 证据：D:/Blender Projects/LobbyCompactWeapons/source-grips-verified.json、blender-grip-validation.json(ok=true)，Saved/Codex/compact-pie.log(BLENDER_GRIP_VALIDATION_OK)。已查看Blender双侧预览和UE实际双侧握持截图，实机截图前缀LobbyCompactGrip-。仅实现和客观检查完成，最终观感待用户反馈。
 - 早期脚本对只读struct属性直接赋值失败，改用set_editor_property后编译保存成功；未把脚本失败当作完成。产品改动未最终提交／push。此前相机菜单已通过6151620推送到origin/main；旧归档中的待推送文字属历史。
+
+
+## 2026-09-14 右手握柄重新标定
+
+- 用户15:24两张截图指出爆破／电击右手握柄不贴合；上一轮2693样本仅证明播放／引用／骨骼输出正确，不能证明手掌与模型接触正确。用户批准先校准每枪挂点、再修左手成品动画，不用IK，不新增骨架插槽。
+- checkpoint7b9c56d保存上一轮大厅副本和动画。Blender新工程D:/Blender Projects/LobbyGripAnchors，通过原模型正侧视坐标和右手双侧近景标定；保持80%模型尺寸与hand_r，分别调整WeaponPresentations[1/2]的RelaxedAttachment／ReadyAttachment平移。
+- 相对于前轮枪局部坐标，爆破放松平移(0,-2.4,+5.6)cm、举枪(0,0,+4.8)cm；电击放松(0,0,+4.8)cm、举枪(0,+1.6,+4.8)cm。最终hand_r相对挂点完整变换保存在mounts.json；不是直接把这些枪局部增量写进手骨局部坐标。旋转经近景检查保留原值。
+- 同步重制两枪各RelaxedIdle／RelaxedIdle_02／RifleIdle共六条左手FK动画，保留全身、上臂、肘部枢轴和右手骨骼。右手通过移动枪到掌心校准；左手通过独立前臂／手腕旋转重新托枪。旧80%Mesh与两个展示数据BP未再修改。
+- 六条Blender动作已烘焙保存为LobbyGripAnchors_Animated.blend，TMIIR冷回读全骨骼逐帧与依赖验证后仅迁移六条最终动画。大厅角色BP已编译保存。正式LobbyMap PIE挂点矩阵、动画及两侧/右手特写检查已完成，结果如下。
+
+- 最终冷启动实际PIE通过2602样本，三枪九种持枪动画、两种站立、数字1切换均正常；新增断言确认实际枪组件变换等于Blender最终mounts.json组合源组件变换。全部骨骼／引用／材质／80%模型尺寸检查通过，验证退出后相关资产与地图哈希保持不变。
+- 已查看爆破／电击举枪与放松（含Relaxed02）的右手近景，及两侧托枪画面。右手握柄高度较旧版明显校正，左手重新贴合枪身下方／侧面。截图D:/Blender Projects/LobbyGripAnchors/LobbyAnchorGrip-{1,2}-{Relaxed,Relaxed02,Rifle}-{Left,Right,RightHand}.png；验证blender-grip-validation.json ok=true，日志Saved/Codex/grip-anchors-pie.log为BLENDER_GRIP_VALIDATION_OK。
+- 本轮只改大厅角色BP的四组挂点和六条成品动画；模型、展示数据BP、维修枪、正式武器、地图、骨架和C++未改。无IK。后台编辑器已退出。最终视觉仍可由用户近景复核，本轮未最终提交／push。

@@ -1,6 +1,6 @@
 {
     "schema_version": "1.0",
-    "last_updated": "2026-09-14-lobby-compact-weapons",
+    "last_updated": "2026-09-14-lobby-grip-anchors",
     "active_animation_task": "Accepted behavior: ONLY delayed explosion damage triggers directional knockback on all actually damaged surviving enemies; first impact still damages and attaches without reaction. Development Editor Win64 and three focused PIE tests passed. Implementation f1eda8b and prior history were pushed to origin/main and remote SHA verified. User clarified that audio and remaining saved asset edits should also be published; supplemental commit includes all 88 remaining Content packages (73 modified, 15 new), including audio, hit texture, weapon settings, test maps and 80 external actors. Valid package headers and LFS tracking verified; 29.75 MB. No asset-content or source-code changes during publication. This supersedes earlier instructions to leave those asset edits local. Delivery and synchronization are tracked in Git.",
     "active_feature": "FEAT-082",
     "archive_file": "feature_archive.json",
@@ -10,16 +10,16 @@
             "name": "Lobby character presentation and Maintenance Worker assets",
             "status": "in_progress",
             "created": "2026-09-13",
-            "updated": "2026-09-14-lobby-compact-weapons",
+            "updated": "2026-09-14-lobby-grip-anchors",
             "archive_file": "archive/FEAT-082-lobby-character-presentation.md",
-            "current_batch": "Blender three-gun grips accepted. Approved CHARACTER/WEAPON editable UMG menu implemented with gold outline, Engine Roboto, explicit camera buttons and no background-click toggle. Existing cameras use 0.7s smoothstep with synchronized pose/lens/focus, 5/3cm mouse movement and near half; full-body 26mm and gun 40mm on 36x20.25mm filmback. Editor build and BP compile/save passed; final cold PIE validation ok, 540 samples, six held-pose cases/12 transitions, repeated/reversed clicks, mouse bounds and unchanged validation package hashes. Final *00002 UI screenshots reviewed for all guns. No animation/weapon edits, no final commit/push; ready for user visual review. Preview parity fixed: per-frame camera-component world transforms and framing/overscan/postprocess settings sync. Editor build and four cold PIE GetCameraView parity cases passed, including live edits and return; direct placed-camera/Rig screenshots reviewed. Map unchanged. Checkpoint82e1b44; this fix uncommitted. User authorized publishing current main, including prior local commits and this camera fix, to origin/main.",
+            "current_batch": "Approved per-gun right-hand grip calibration completed: four independent Relaxed/Ready attachment translations for compact Explosion/Electric meshes, followed by six independent FK left-hand animation revisions. Shared hand_r retained, no IK. BP compiled/saved, finalized animations verified in TMIIR then migrated. Actual LobbyMap PIE 2602 samples passed including final Blender mount transform agreement; right-hand closeups and both-side views reviewed. Checkpoint7b9c56d preserves previous compact version; latest changes uncommitted/unpushed. User visual acceptance pending.",
             "done_criteria": [
                 "Delete only the three confirmed old meshes.",
                 "TMIIR performs RTG; target receives only final lobby assets and required dependencies under MaintenanceWorker.",
                 "Provide reusable lobby display Actor base and Maintenance Worker subclass with all unarmed standing idle variants and optional rifle poses.",
                 "Compile, validate Blueprint and actual animation playback/rendering; clean migration paths and verify existing gameplay assets unchanged."
             ],
-            "verification_evidence": "两把大厅专用静态枪复制为80%尺寸；独立展示数据BP引用专用Mesh，六条Blender FK成品动画在TMIIR烘焙逐帧验证后迁入。三个BP编译保存，正式LobbyMap冷启动PIE2693样本通过，实际模型/材质/bounds/九种持枪动画/两种站立/数字1切换通过，双侧实机截图已查看。未改正式武器、维修枪、地图或C++；无IK。未最终提交/push，待用户观感反馈。"
+            "verification_evidence": "D:/Blender Projects/LobbyGripAnchors/source-grips-verified.json and blender-grip-validation.json(ok=true,2602 samples); Saved/Codex/grip-anchors-pie.log BLENDER_GRIP_VALIDATION_OK. Six per-gun animations and lobby BP only; original weapons, 80% meshes, maps and RepairGun unchanged. No C++ or skeleton edits."
         },
         {
             "id": "FEAT-077",

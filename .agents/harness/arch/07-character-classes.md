@@ -98,3 +98,6 @@ ScorpionCombat.AdvanceTail 现根据实时尾根—目标距离，求解原解�
 同一 CoreMorphBoss 新增 UCoreMorphMissileCombat／UCoreMorphMissileEffects。Combat 在 GA 活跃期间管理锁定地面区域、逐枚发射、弧线及 WorldStatic Sweep；发射点取正在运动的原能量核网格 Bounds.Origin。Effects 由 MissileBarrage Cue 启停，负责专属导弹／尾焰／红圈／爆炸／灯光，不结算伤害，不创建额外 ASC。
 默认4枚，半径1000cm，散布3500cm，预警0.8s，发射间隔0.3s，飞行2.2～2.5s，冷却6s，参数位于 MissileCombat。有效落点不足时只使用能找到的区域。四个新材质位于具体头领 Effects/Materials。
 L_CoreMorphMantaCombat 使用闭合环线，V飞行、T当前阶段Far技能、C取消、M变形、P暂停、R复位。Flight::ResetPreview 恢复154个 Manta 分件可见性／溶解值／查询碰撞，修复从蝎子重播时身体隐形。Review／测试保留到总验收后清理。
+
+
+FEAT-082右手握柄后续校准：80%静态副本及源组件平移保持，WeaponPresentations[1/2]的RelaxedAttachment／ReadyAttachment已再次分别校准，不再仅等于初版平移乘0.8。最终以BP默认值为准；对应Blender记录为D:/Blender Projects/LobbyGripAnchors/mounts.json。仍统一挂hand_r，四组独立偏移加六条独立FK动画，不新增骨架Socket，不使用IK。
