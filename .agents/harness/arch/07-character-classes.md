@@ -2,7 +2,7 @@
 
 ## 大厅展示角色（FEAT-082）
 
-`ALobbyCharacterBase : AActor` 位于 `Characters/CharacterBase/Lobby`，拥有DisplayMesh和无碰撞的DisplayWeapon；Relaxed／Rifle两种展示姿态分别循环播放配置的成品AnimSequence，`SetDisplayPose`供大厅UI调用。它不创建ASC、装备或角色移动组件。`AMaintenanceWorkerLobbyCharacter` 位于 `Characters/MaintenanceWorker/Lobby`，具体资产配置在 `MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby`。放松／持枪姿态的武器局部挂点变换分别可配。
+`ALobbyCharacterBase : AActor` 位于 `Characters/CharacterBase/Lobby`，拥有DisplayMesh和无碰撞的DisplayWeapon；默认Standing空手站立，StandingAnimations配置所有站立待机，StandingIdleIndex选择版本。`SetStandingIdleIndex(0/1)`选择并进入Standing；无效索引忽略，编辑器超出范围的索引钳制。`SetDisplayPose`还可选择保留的Relaxed放松持枪／Rifle举枪姿态；Standing始终隐藏展示武器。它不创建ASC、装备或角色移动组件。`AMaintenanceWorkerLobbyCharacter` 位于 `Characters/MaintenanceWorker/Lobby`，具体资产配置在 `MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby`。两种持枪姿态的武器局部挂点变换分别可配。
 
 模型、目标骨架、动画和展示步枪所需材质纹理归 `MaintenanceWorker/Lobby/{Meshes,Animations,Materials,Textures}`。只在TMIIR制作RTG，目标不接收Rifle_01源骨架／IKRig／IKRetargeter。既有可玩角色Body和FirstPerson资产不被替换。
 

@@ -2,7 +2,7 @@
 
 ## 大厅人物展示资源（FEAT-082）
 
-用户新增大厅摆放用`/Game/Characters/MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby`，继承AMaintenanceWorkerLobbyCharacter→ALobbyCharacterBase→AActor。提供DisplayPose（Relaxed放松持枪／Rifle举枪）和SetDisplayPose供UI调用。它只负责人物和展示武器，不创建Pawn／ASC／游戏装备；模型与两条动画在TMIIR完成适配，成品归MaintenanceWorker/Lobby。此次未改LobbyMap布局和既有选角UI／GameMode流程，用户自行摆放。
+用户新增大厅摆放用`/Game/Characters/MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby`，继承AMaintenanceWorkerLobbyCharacter→ALobbyCharacterBase→AActor。默认DisplayPose=Standing空手站立，StandingIdleIndex=0；UI用SetStandingIdleIndex(0/1)选择两种站立待机，用SetDisplayPose选择Standing／Relaxed放松持枪／Rifle举枪。Standing隐藏武器。它只负责人物和展示武器，不创建Pawn／ASC／游戏装备；模型与四条动画在TMIIR完成适配，成品归MaintenanceWorker/Lobby。此次未改LobbyMap布局和既有选角UI／GameMode流程，用户自行摆放。
 
 - Enemy死亡与玩家流程独立：EnemyBase.OnDeath现在启动布娃娃并停止AI/技能，CorpseLifetime默认5游戏秒后销毁，详情见arch07/09/11；不会触发玩家回大厅。Enemy在死亡瞬间解除GameState波次/阶段订阅，尸体不继续升级。
 

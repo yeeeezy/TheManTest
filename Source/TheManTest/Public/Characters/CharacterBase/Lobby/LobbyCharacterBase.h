@@ -12,7 +12,8 @@ UENUM(BlueprintType)
 enum class ELobbyCharacterPose : uint8
 {
 	Relaxed,
-	Rifle
+	Rifle,
+	Standing
 };
 
 /** Presentation actor for character selection scenes. Assets are supplied by character subclasses. */
@@ -29,6 +30,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Lobby|Presentation")
 	void SetDisplayPose(ELobbyCharacterPose NewPose);
 
+	/** Select a standing idle variant and enter the unarmed standing pose. */
+	UFUNCTION(BlueprintCallable, Category="Lobby|Presentation")
+	void SetStandingIdleIndex(int32 NewIndex);
+
 	UFUNCTION(BlueprintPure, Category="Lobby|Presentation")
 	ELobbyCharacterPose GetDisplayPose() const { return DisplayPose; }
 
@@ -39,7 +44,13 @@ public:
 	TObjectPtr<UStaticMeshComponent> DisplayWeapon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Presentation")
-	ELobbyCharacterPose DisplayPose = ELobbyCharacterPose::Relaxed;
+	ELobbyCharacterPose DisplayPose = ELobbyCharacterPose::Standing;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Lobby|Animation")
+	TArray<TObjectPtr<UAnimSequence>> StandingAnimations;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Animation", meta=(ClampMin="0"))
+	int32 StandingIdleIndex = 0;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Lobby|Animation")
 	TObjectPtr<UAnimSequence> RelaxedAnimation;

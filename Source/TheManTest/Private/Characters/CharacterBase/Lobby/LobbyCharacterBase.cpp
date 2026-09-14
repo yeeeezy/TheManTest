@@ -37,9 +37,23 @@ void ALobbyCharacterBase::SetDisplayPose(ELobbyCharacterPose NewPose)
 	ApplyPresentation();
 }
 
+void ALobbyCharacterBase::SetStandingIdleIndex(int32 NewIndex)
+{
+	if (!StandingAnimations.IsValidIndex(NewIndex)) return;
+	if (StandingIdleIndex == NewIndex && DisplayPose == ELobbyCharacterPose::Standing) return;
+	StandingIdleIndex = NewIndex;
+	DisplayPose = ELobbyCharacterPose::Standing;
+	ApplyPresentation();
+}
+
 void ALobbyCharacterBase::ApplyPresentation()
 {
 	UAnimSequence* Animation = DisplayPose == ELobbyCharacterPose::Rifle ? RifleAnimation : RelaxedAnimation;
+	if (DisplayPose == ELobbyCharacterPose::Standing)
+	{
+		StandingIdleIndex = StandingAnimations.IsEmpty() ? 0 : FMath::Clamp(StandingIdleIndex, 0, StandingAnimations.Num() - 1);
+		Animation = StandingAnimations.IsValidIndex(StandingIdleIndex) ? StandingAnimations[StandingIdleIndex].Get() : nullptr;
+	}
 	DisplayMesh->OverrideAnimationData(Animation, true, true);
 	DisplayMesh->PlayAnimation(Animation, true);
 	if (UAnimSingleNodeInstance* Instance = DisplayMesh->GetSingleNodeInstance())
@@ -55,5 +69,5 @@ void ALobbyCharacterBase::ApplyPresentation()
 	DisplayWeapon->AttachToComponent(DisplayMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponAttachSocket);
 	DisplayWeapon->SetRelativeTransform(DisplayPose == ELobbyCharacterPose::Rifle ? RifleWeaponRelativeTransform : RelaxedWeaponRelativeTransform);
 	DisplayWeapon->SetVisibility(bValidSocket && DisplayWeapon->GetStaticMesh() &&
-		(DisplayPose == ELobbyCharacterPose::Rifle || bShowWeaponWhenRelaxed));
+		(DisplayPose == ELobbyCharacterPose::Rifle || (DisplayPose == ELobbyCharacterPose::Relaxed && bShowWeaponWhenRelaxed)));
 }

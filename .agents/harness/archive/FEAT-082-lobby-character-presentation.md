@@ -1,5 +1,15 @@
 # FEAT-082 大厅角色展示
 
+## 2026-09-14 站立待机纠正（当前）
+
+- 用户明确要求空手站立待机，多个版本全部重定向导入；此前Relaxed为持枪放松，并不满足该要求。操作前检查点644f4a7保留上一批结果。
+- Rifle_01中确认NW_Stand_Relaxed_Rifle_Idle_IP与NW_MOB_Stand_Relaxed_Rifle_Idle_IP两个空手版本，均2.1667秒，源与重定向成品截图已检查。Root_Motion对应版本不重复迁入；W2持枪和Crouch蹲姿不作为空手站立版本。
+- TMIIR复用RTG_RifleToMaintenanceWorker，向既有成品大厅骨架导出AS_MaintenanceWorker_Lobby_StandingIdle_01／02。只迁入这两个AnimSequence，依赖仅为目标已存在的大厅Mesh／Skeleton，未覆盖模型或带入工作资产。
+- 基类新增Standing（追加枚举以保留旧值）、StandingAnimations、StandingIdleIndex、SetStandingIdleIndex；默认空手站立并隐藏武器。保留Relaxed／Rifle可选，无效运行时索引忽略。
+- standing-build.log：Development Editor Win64 Succeeded。standing-target-pie.json ok=true：两个站立版本实际播放并输出不同手部姿态，武器隐藏，根位置不变；无效索引忽略，切到Rifle再返回Standing正常，播放中退出PIE且TestMap哈希不变。StandingTarget-0／1截图已查看。
+- standing-target-cold.log：STANDING_TARGET_COLD_OK，39资产全部可加载且/Game依赖均为所属Lobby目录；四条动画统一成品骨架、无根位移；BP默认Standing和两个索引配置持久化，冷生成Actor隐藏武器。没有IKRig／RTG／Redirector。Git范围仅本轮两个动画、展示BP、两个基类文件与harness，模型／骨架／地图未变，全部后台编辑器已退出。
+- 本轮结果未提交／push，待用户主观校验。下方早期Relaxed／Rifle说明为此前持枪批次历史，当前默认和用法以上述Standing配置为准。
+
 用户授权：删除MaintenanceWorker/Meshes下刚确认无引用的三个旧Mesh；从TMIIR重新迁入大厅用完整维修工及Rifle_01待机／持枪动画。RTG仅在TMIIR完成，TheManTest仅接收成品和必要依赖。新建大厅人物展示基类及维修工派生类，专属资产全部归维修工目录。
 
 - 操作前检查点：8eee960；FEAT-081暂停，导弹不装配但保留，第4批未完成。
