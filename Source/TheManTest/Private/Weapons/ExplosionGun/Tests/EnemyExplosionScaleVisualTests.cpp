@@ -123,7 +123,7 @@ public:
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FEnemyExplosionScaleVisualTest,"TheManTest.Player.Weapons.EnemyExplosionScaleVisual",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
 bool FEnemyExplosionScaleVisualTest::RunTest(const FString&)
 {
- AutomationOpenMap(TEXT("/Game/Maps/VFXTest/VFXTestMap"));
+ AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
  ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
  ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
  ADD_LATENT_AUTOMATION_COMMAND(FEnemyScaleVisualCommand(this));

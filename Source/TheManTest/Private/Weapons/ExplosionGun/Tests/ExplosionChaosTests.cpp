@@ -151,7 +151,7 @@ public:
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FExplosionChaosTest,"TheManTest.Player.Weapons.ExplosionChaosGround",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
 bool FExplosionChaosTest::RunTest(const FString&)
 {
- AutomationOpenMap(TEXT("/Game/Maps/VFXTest/VFXTestMap"));
+ AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
  ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
  ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
  ADD_LATENT_AUTOMATION_COMMAND(FExplosionChaosCommand(this));

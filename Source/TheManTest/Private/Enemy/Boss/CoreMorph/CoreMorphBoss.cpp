@@ -97,28 +97,6 @@ void ACoreMorphBoss::ReactToProjectileHit(AActor* HitInstigator)
 	// Receiving damage never snaps the heading or interrupts this creature's choreography.
 }
 
-bool ACoreMorphBoss::StartFlightPreview()
-{
-	return !IsDead() && CurrentForm == ECoreMorphForm::Manta &&
-		AbilitySystemComponent->TryActivateAbilityByClass(UGA_CoreMorphFlight::StaticClass());
-}
-
-void ACoreMorphBoss::ResetFlightPreview()
-{
-	if (IsDead()) return;
-	ScorpionCombat->bEnabled=false;
-	ScorpionCombat->ResetCombat();
-	TailEffects->Shutdown();
-	MissileCombat->StopSalvo();MissileEffects->EndCue();
-	AbilitySystemComponent->CancelAbilities(nullptr, nullptr);
-	AbilitySystemComponent->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(TAG_State_CoreMorph_TailCooldown));
-	AbilitySystemComponent->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(TAG_State_CoreMorph_MissileCooldown));
-	Reassembly->ResetPreview();
-	SetForm(ECoreMorphForm::Manta);
-	Flight->ResetPreview();
-	// A review replay does not reset health, combat phase, or grant another ability.
-}
-
 bool ACoreMorphBoss::StartReassembly()
 {
 	return !IsDead() && AbilitySystemComponent->TryActivateAbilityByClass(UGA_CoreMorphReassemble::StaticClass());

@@ -13,7 +13,7 @@ void UBTService_CoreMorphTarget::TickNode(UBehaviorTreeComponent& BT,uint8* M,fl
 {
  Super::TickNode(BT,M,Dt);auto* B=BT.GetAIOwner()?Cast<ACoreMorphBoss>(BT.GetAIOwner()->GetPawn()):nullptr;auto* BB=BT.GetBlackboardComponent();if(!B || !BB)return;
  auto* C=B->ScorpionCombat.Get();if(C->IsPaused())return;
- C->Target=IsValid(C->ReviewTarget)?C->ReviewTarget.Get():IsValid(B->LastThreat)?B->LastThreat.Get():UGameplayStatics::GetPlayerPawn(B,0);
+ C->Target=IsValid(B->LastThreat)?B->LastThreat.Get():UGameplayStatics::GetPlayerPawn(B,0);
  if(auto* Enemy=Cast<AEnemyBase>(C->Target))if(Enemy->IsDead())C->Target=nullptr;
  B->MissileCombat->Target=C->Target;
  BB->SetValueAsBool(TEXT("CanBombard"),B->MissileCombat->CanFire() && !B->GetAbilitySystemComponent()->HasMatchingGameplayTag(TAG_State_CoreMorph_MissileCooldown) && !B->GetAbilitySystemComponent()->HasMatchingGameplayTag(TAG_State_CoreMorph_Attacking));

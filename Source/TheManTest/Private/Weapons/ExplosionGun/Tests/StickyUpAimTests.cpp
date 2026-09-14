@@ -82,7 +82,7 @@ public:
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStickyUpAimTest,"TheManTest.Player.Weapons.StickyUpwardAim",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
 bool FStickyUpAimTest::RunTest(const FString&)
 {
- AutomationOpenMap(TEXT("/Game/Maps/VFXTest/VFXTestMap"));
+ AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
  ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
  ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(2.f));
  ADD_LATENT_AUTOMATION_COMMAND(FStickyUpAimCommand(this));

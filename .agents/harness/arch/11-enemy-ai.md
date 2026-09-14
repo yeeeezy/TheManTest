@@ -1,5 +1,8 @@
 # 敌人 AI 与战斗系统
 
+> 当前清理状态（2026-09-13）：用户要求立即清理测试设施，取代下文旧批次“总验收后清理”的安排。5张CoreMorph检查地图、专属地面材质、5个Tests cpp与CoreMorphFlightReview h/cpp均已删除。Boss的StartFlightPreview／ResetFlightPreview及Flight的ResetPreview已删除；Reassembly内部ResetPreview改名ResetAssembly，仍用于正式变形初始化。ReviewTarget已删除，正式BT目标由LastThreat／玩家决定。保留FlightRoute、正式主BT、GA／GE／Cue及490个头领资产。以后只有TestMap作为测试地图，不能再照旧地图入口操作。
+
+
 - FEAT-081 第三批主 BT：`ACoreMorphAIController` 真正 Possess 唯一头领；`BT_CoreMorphBoss`／`BB_CoreMorphBoss` 位于头领 AI 目录。Selector 内蝠鲼分支 Flight GA→Reassemble GA；蝎子分支按范围／冷却选择 Face→当前阶段近距技能、Approach 或 Idle。`BTTask_CoreMorphAction` 等待并取消具体活动能力句柄；攻击三个动作阶段属于 GA，不拆成三个 BT 技能。`BTService_CoreMorphTarget` 选择检查目标／LastThreat／玩家并更新形态和距离，形态与阶段独立。
 - 八足运动沿用源的地面接触、身体扫掠和局部扇形避障，不是 NavMesh 全局寻路；尚未实现绕过任意复杂障碍的路径规划。ScorpionCombat.bEnabled 默认 false，检查地图 V/M 开启；旧飞行／重组检查地图保持原入口。取消、目标销毁、死亡和退出必须同时清 GA／GE 与运动状态；完整三枪适配仍属第四批。
 

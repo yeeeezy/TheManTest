@@ -40,8 +40,6 @@ public:
 	void SetForm(ECoreMorphForm Form);
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CoreMorph") ECoreMorphForm CurrentForm = ECoreMorphForm::Manta;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CoreMorph") TObjectPtr<AActor> LastThreat;
-	UFUNCTION(BlueprintCallable, Category="CoreMorph|Review") bool StartFlightPreview();
-	UFUNCTION(BlueprintCallable, Category="CoreMorph|Review") void ResetFlightPreview();
 private:
 	FActiveGameplayEffectHandle FormEffect;
 };

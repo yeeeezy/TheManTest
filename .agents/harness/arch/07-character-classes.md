@@ -1,5 +1,8 @@
 # 具体角色类
 
+> 当前清理状态（2026-09-13）：用户要求立即清理测试设施，取代下文旧批次“总验收后清理”的安排。5张CoreMorph检查地图、专属地面材质、5个Tests cpp与CoreMorphFlightReview h/cpp均已删除。Boss的StartFlightPreview／ResetFlightPreview及Flight的ResetPreview已删除；Reassembly内部ResetPreview改名ResetAssembly，仍用于正式变形初始化。ReviewTarget已删除，正式BT目标由LastThreat／玩家决定。保留FlightRoute、正式主BT、GA／GE／Cue及490个头领资产。以后只有TestMap作为测试地图，不能再照旧地图入口操作。
+
+
 - FEAT-081 第三批：同一 CoreMorphBoss 新增 `ScorpionMovement` 与 `ScorpionCombat` 组件，替代源隐藏 PhysicalScorpion Actor；复用 Reassembly 的 301 分件，移动根位置同步到唯一 Pawn。`DA_CoreMorphScorpionLayout` 仅含 75 组关节枢轴／64 足链节点，不引用源网格。运动组件负责接触／CCD，战斗组件负责受关节角度限制的整链曲率求解和刺尖 Sweep，尾刺 GA 控制出招阶段。Reassembly 在运动接管后只更新固定落点 Cue，不再覆盖主体姿态。
 - 新检查入口 `/Game/Maps/CoreMorph/L_CoreMorphScorpion`：V 启用主 BT 完整飞行→重组→蝎子战斗，M 立即重组；1／2／3 移动测试目标、T 通过阶段技能集请求尾刺、C 取消尾刺，P 暂停、R 复位、F 相机。原地图不自动启动蝎子战斗；临时检查工具仍待最终总验收后清理。
 

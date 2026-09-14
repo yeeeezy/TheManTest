@@ -89,7 +89,7 @@ public:
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FProjectileAimTest,"TheManTest.Player.Weapons.ProjectileCrosshairAim",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
 bool FProjectileAimTest::RunTest(const FString&)
 {
- AutomationOpenMap(TEXT("/Game/Maps/VFXTest/VFXTestMap"));
+ AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
  ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
  ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(2.f));
  ADD_LATENT_AUTOMATION_COMMAND(FProjectileAimCommand(this));

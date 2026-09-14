@@ -713,104 +713,7 @@ private:
 	int32 RangeMode = 0;
 };
 
-class FAuditPlacedPhantomAnimationPIECommand final : public IAutomationLatentCommand
-{
-public:
-	explicit FAuditPlacedPhantomAnimationPIECommand(FAutomationTestBase* InTest) : Test(InTest) {}
-	virtual bool Update() override
-	{
-		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
-		if (!World) return false;
-		if (StartTime <= 0.f)
-		{
-			StartTime = World->GetTimeSeconds();
-			return false;
-		}
-		if (World->GetTimeSeconds() - StartTime < 1.f) return false;
 
-		int32 PlacedCount = 0;
-		for (TActorIterator<APhantom> It(World); It; ++It)
-		{
-			APhantom* Phantom = *It;
-			if (!IsValid(Phantom)) continue;
-			++PlacedCount;
-			USkeletalMeshComponent* Mesh = Phantom->GetMesh();
-			UHumanoidEnemyAnimInstance* Anim = Mesh ? Cast<UHumanoidEnemyAnimInstance>(Mesh->GetAnimInstance()) : nullptr;
-			Test->TestTrue(TEXT("Placed Phantom uses a valid humanoid AnimInstance"), IsValid(Anim));
-			if (!Mesh || !IsValid(Anim)) continue;
-
-			const FString AnimClassPath = Anim->GetClass()->GetPathName();
-			const FString MeshPath = GetPathNameSafe(Mesh->GetSkeletalMeshAsset());
-			const FString SkeletonPath = Mesh->GetSkeletalMeshAsset()
-				? GetPathNameSafe(Mesh->GetSkeletalMeshAsset()->GetSkeleton()) : TEXT("None");
-			FPoseSnapshot Snapshot;
-			Mesh->SnapshotPose(Snapshot);
-			FString MachineDebug = TEXT("none");
-			FString PlayerDebug;
-			if (const IAnimClassInterface* RuntimeClass = IAnimClassInterface::GetFromClass(Anim->GetClass()))
-			{
-				for (const FStructProperty* NodeProperty : RuntimeClass->GetAnimNodeProperties())
-				{
-					void* NodeMemory = NodeProperty->ContainerPtrToValuePtr<void>(Anim);
-					if (NodeProperty->Struct == FAnimNode_StateMachine::StaticStruct())
-					{
-						const FAnimNode_StateMachine* Machine = static_cast<const FAnimNode_StateMachine*>(NodeMemory);
-						MachineDebug = FString::Printf(TEXT("%d@%.3f"), Machine->GetCurrentState(), Machine->GetCurrentStateElapsedTime());
-					}
-					else if (NodeProperty->Struct->IsChildOf(FAnimNode_AssetPlayerBase::StaticStruct()))
-					{
-						const FAnimNode_AssetPlayerBase* Player = static_cast<const FAnimNode_AssetPlayerBase*>(NodeMemory);
-						if (Player->GetCachedBlendWeight() > KINDA_SMALL_NUMBER)
-						{
-							PlayerDebug += FString::Printf(TEXT("%s[w=%.2f,t=%.3f] "), *NodeProperty->GetName(),
-								Player->GetCachedBlendWeight(), Player->GetAccumulatedTime());
-							PlayerDebug += FString::Printf(TEXT("group=%s role=%d method=%d asset=%s "),
-								*Player->GetGroupName().ToString(), static_cast<int32>(Player->GetGroupRole()),
-								static_cast<int32>(Player->GetGroupMethod()), *GetPathNameSafe(Player->GetAnimAsset()));
-							if (NodeProperty->Struct->IsChildOf(FAnimNode_BlendSpacePlayerBase::StaticStruct()))
-							{
-								const FAnimNode_BlendSpacePlayerBase* BlendPlayer = static_cast<const FAnimNode_BlendSpacePlayerBase*>(NodeMemory);
-								PlayerDebug += FString::Printf(TEXT("pos=%s asset=%s playrate=%.2f loop=%d start=%.2f "),
-									*BlendPlayer->GetPosition().ToString(), *GetPathNameSafe(BlendPlayer->GetBlendSpace()),
-									BlendPlayer->GetPlayRate(), BlendPlayer->IsLooping(), BlendPlayer->GetStartPosition());
-							}
-						}
-					}
-				}
-			}
-			float MaxPoseAngularDelta = 0.f;
-			for (const FName BoneName : {FName(TEXT("upperarm_l")), FName(TEXT("upperarm_r")), FName(TEXT("spine_03"))})
-			{
-				const int32 BoneIndex = Mesh->GetBoneIndex(BoneName);
-				if (BoneIndex == INDEX_NONE) continue;
-				const int32 SnapshotIndex = Snapshot.BoneNames.IndexOfByKey(BoneName);
-				if (!Snapshot.LocalTransforms.IsValidIndex(SnapshotIndex)) continue;
-				const FTransform& Current = Snapshot.LocalTransforms[SnapshotIndex];
-				const FTransform& Reference = Mesh->GetSkeletalMeshAsset()->GetRefSkeleton().GetRefBonePose()[BoneIndex];
-				MaxPoseAngularDelta = FMath::Max(MaxPoseAngularDelta,
-					Current.GetRotation().AngularDistance(Reference.GetRotation()));
-			}
-
-			Test->AddInfo(FString::Printf(
-				TEXT("PLACED_PHANTOM actor=%s mesh=%s skeleton=%s anim=%s mode=%d ai=%d pose_delta=%.3f velocity=%.1f tick=%d pause=%d rate=%.2f recent=%d visibility_tick=%d machine=%s players=%s"),
-				*Phantom->GetName(), *MeshPath, *SkeletonPath, *AnimClassPath,
-				static_cast<int32>(Mesh->GetAnimationMode()), static_cast<int32>(Phantom->GetAIState()),
-				MaxPoseAngularDelta, Phantom->GetVelocity().Size2D(), Mesh->IsComponentTickEnabled(), Mesh->bPauseAnims,
-				Mesh->GlobalAnimRateScale, Mesh->WasRecentlyRendered(), static_cast<int32>(Mesh->VisibilityBasedAnimTickOption),
-				*MachineDebug, *PlayerDebug));
-			Test->TestTrue(TEXT("Placed Phantom uses original Rifle child AnimBP"),
-				AnimClassPath.Contains(TEXT("ABP_Phantom_OriginalRifle_C")));
-			Test->TestEqual(TEXT("Placed Phantom mesh runs Animation Blueprint mode"),
-				Mesh->GetAnimationMode(), EAnimationMode::AnimationBlueprint);
-			Test->TestTrue(TEXT("Placed Phantom pose is not reference pose"), MaxPoseAngularDelta > 0.1f);
-		}
-		Test->TestTrue(TEXT("TestMap contains a placed Phantom"), PlacedCount > 0);
-		return true;
-	}
-private:
-	FAutomationTestBase* Test = nullptr;
-	float StartTime = 0.f;
-};
 
 class FValidateTwoPointPatrolLoopPIECommand final : public IAutomationLatentCommand
 {
@@ -891,99 +794,7 @@ private:
 	FVector PreviousLocation = FVector::ZeroVector;
 };
 
-class FAuditPlacedPatrolProgressPIECommand final : public IAutomationLatentCommand
-{
-public:
-	explicit FAuditPlacedPatrolProgressPIECommand(FAutomationTestBase* InTest) : Test(InTest) {}
-	virtual bool Update() override
-	{
-		UWorld* World = GEditor ? GEditor->PlayWorld : nullptr;
-		if (!World) return false;
-		if (!Enemy.IsValid())
-		{
-			for (TActorIterator<APhantom> It(World); It; ++It)
-			{
-				Enemy = *It;
-				break;
-			}
-			Test->TestTrue(TEXT("Placed-patrol audit found the TestMap Phantom"), Enemy.IsValid());
-			if (!Enemy.IsValid()) return true;
-			Test->AddInfo(FString::Printf(TEXT("PLACED_PATROL_ACTOR path=%s name=%s start=%s mesh_rel=%s"),
-				*Enemy->GetPathName(), *Enemy->GetName(), *Enemy->GetActorLocation().ToString(),
-				*Enemy->GetMesh()->GetRelativeLocation().ToString()));
-			Test->TestEqual(TEXT("TestMap Phantom keeps its four authored patrol points"), Enemy->GetPatrolPointCount(), 4);
-			AHumanoidAIController* RealController = Cast<AHumanoidAIController>(Enemy->GetController());
-			Test->TestNotNull(TEXT("Placed Phantom keeps its production humanoid AI controller"), RealController);
-			if (!RealController) return true;
-			// Deliberately keep production perception enabled: this regression must match the
-			// normal Play flow rather than an isolated patrol-only setup.
-			Enemy->SetAIState(EHumanoidEnemyAIState::Patrol);
-			StartTime = World->GetTimeSeconds();
-			PreviousLocation = Enemy->GetActorLocation();
-			LastArrivalCount = Enemy->GetPatrolArrivalCount();
-			CaptureOverview(World, TEXT("PatrolPIE_00_Start.png"));
-			return false;
-		}
 
-		Travel += FVector::Dist2D(PreviousLocation, Enemy->GetActorLocation());
-		PreviousLocation = Enemy->GetActorLocation();
-		const int32 Arrivals = Enemy->GetPatrolArrivalCount();
-		if (Arrivals != LastArrivalCount)
-		{
-			Test->AddInfo(FString::Printf(TEXT("PLACED_PATROL arrival=%d next_index=%d elapsed=%.2f loc=%s target=%s"),
-				Arrivals, Enemy->GetCurrentPatrolIndex(), World->GetTimeSeconds() - StartTime,
-				*Enemy->GetActorLocation().ToString(), *Enemy->GetCurrentPatrolTargetLocation().ToString()));
-			if (Arrivals == 2) CaptureOverview(World, TEXT("PatrolPIE_02_SecondPoint.png"));
-			if (Arrivals == 3) CaptureOverview(World, TEXT("PatrolPIE_03_ThirdPoint.png"));
-			LastArrivalCount = Arrivals;
-		}
-		if (Arrivals < 3 && World->GetTimeSeconds() - StartTime < 40.f) return false;
-
-		Test->TestTrue(TEXT("Placed TestMap Phantom physically advances from patrol point two to point three"), Arrivals >= 3);
-		Test->AddInfo(FString::Printf(
-			TEXT("PLACED_PATROL_FINAL arrivals=%d index=%d state=%d pending=%d scanning=%d wait=%.2f travel=%.1f velocity=%.1f loc=%s target=%s"),
-			Arrivals, Enemy->GetCurrentPatrolIndex(), static_cast<int32>(Enemy->GetAIState()), Enemy->IsPendingTurn(),
-			Enemy->IsPatrolScanning(), Enemy->GetPatrolWaitRemaining(), Travel, Enemy->GetVelocity().Size2D(),
-			*Enemy->GetActorLocation().ToString(), *Enemy->GetCurrentPatrolTargetLocation().ToString()));
-		return true;
-	}
-private:
-	static bool CaptureOverview(UWorld* World, const FString& FileName)
-	{
-		if (!World) return false;
-		UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>();
-		RenderTarget->RenderTargetFormat = RTF_RGBA8;
-		RenderTarget->InitAutoFormat(1280, 720);
-		RenderTarget->UpdateResourceImmediate(true);
-
-		USceneCaptureComponent2D* Capture = NewObject<USceneCaptureComponent2D>(World->GetWorldSettings());
-		Capture->RegisterComponentWithWorld(World);
-		Capture->TextureTarget = RenderTarget;
-		Capture->ProjectionType = ECameraProjectionMode::Perspective;
-		Capture->FOVAngle = 90.f;
-		Capture->SetWorldLocation(FVector(-3500.f, 400.f, 1000.f));
-		Capture->SetWorldRotation(FRotator(-22.f, 0.f, 0.f));
-		Capture->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
-		Capture->CaptureScene();
-
-		TArray<FColor> Pixels;
-		FTextureRenderTargetResource* RenderTargetResource = RenderTarget->GameThread_GetRenderTargetResource();
-		const bool bRead = RenderTargetResource && RenderTargetResource->ReadPixels(Pixels);
-		TArray64<uint8> PNGData;
-		if (bRead) FImageUtils::PNGCompressImageArray(1280, 720, Pixels, PNGData);
-		const FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("Screenshots"), FileName);
-		const bool bSaved = bRead && !PNGData.IsEmpty() && FFileHelper::SaveArrayToFile(PNGData, *Path);
-		Capture->DestroyComponent();
-		return bSaved;
-	}
-
-	FAutomationTestBase* Test = nullptr;
-	TWeakObjectPtr<APhantom> Enemy;
-	FVector PreviousLocation = FVector::ZeroVector;
-	float StartTime = 0.f;
-	float Travel = 0.f;
-	int32 LastArrivalCount = 0;
-};
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomPIESmokeTest,
 	"TheManTest.Enemy.Phantom.PIESmoke",
@@ -1000,18 +811,7 @@ bool FPhantomPIESmokeTest::RunTest(const FString& Parameters)
 	return true;
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPlacedPhantomAnimationPIETest,
-	"TheManTest.Enemy.Phantom.PIEPlacedAnimation",
-	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
-bool FPlacedPhantomAnimationPIETest::RunTest(const FString& Parameters)
-{
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
-	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
-	ADD_LATENT_AUTOMATION_COMMAND(FAuditPlacedPhantomAnimationPIECommand(this));
-	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
-	return true;
-}
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomPatrolLoopPIETest,
 	"TheManTest.Enemy.Phantom.PIEPatrolLoop",
@@ -1027,19 +827,7 @@ bool FPhantomPatrolLoopPIETest::RunTest(const FString& Parameters)
 	return true;
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPlacedPhantomPatrolProgressPIETest,
-	"TheManTest.Enemy.Phantom.PIEPlacedPatrolProgress",
-	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
-bool FPlacedPhantomPatrolProgressPIETest::RunTest(const FString& Parameters)
-{
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
-	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
-	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
-	ADD_LATENT_AUTOMATION_COMMAND(FAuditPlacedPatrolProgressPIECommand(this));
-	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
-	return true;
-}
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomTacticalRetreatPIETest,
 	"TheManTest.Enemy.Phantom.PIETacticalRetreat",
@@ -1342,17 +1130,7 @@ public:
 				TEXT("/Game/Enemy/Nightmare/FlyingBug2/Blueprint/BP_NightmareFlyingBug2.BP_NightmareFlyingBug2_C"));
 			FVector SpawnLocation(10000.f, -10000.f, 300.f);
 			FVector RouteEnd(11800.f, -10000.f, 350.f);
-			for (TActorIterator<AStaticMeshActor> It(World); It; ++It)
-			{
-				if (It->GetActorLabel() == TEXT("Validation_FlyingBugTerrain_Start"))
-				{
-					SpawnLocation = It->GetActorLocation() + FVector(0.f, 0.f, 180.f);
-				}
-				else if (It->GetActorLabel() == TEXT("Validation_FlyingBugTerrain_End"))
-				{
-					RouteEnd = It->GetActorLocation() + FVector(0.f, 0.f, 100.f);
-				}
-			}
+
 			FHitResult GroundHit;
 			if (World->LineTraceSingleByChannel(GroundHit, SpawnLocation + FVector(0.f, 0.f, 600.f),
 				SpawnLocation - FVector(0.f, 0.f, 1200.f), ECC_Visibility))

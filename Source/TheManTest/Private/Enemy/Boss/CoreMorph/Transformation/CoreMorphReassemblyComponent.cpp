@@ -37,7 +37,7 @@ bool UCoreMorphReassemblyComponent::CanStart() const
 bool UCoreMorphReassemblyComponent::Start()
 {
     if(!CanStart())return false;
-    ResetPreview();
+    ResetAssembly();
     CapturedRoot=Boss()->GetActorTransform();
     const auto& Motion=Boss()->Flight->GetMotionState();
     const FRotator Heading(0,Motion.GetBody().Rotator().Yaw,0);
@@ -115,7 +115,7 @@ void UCoreMorphReassemblyComponent::Cancel()
         for(int32 I=154;I<Components.Num();++I){Components[I]->SetVisibility(false);Components[I]->SetCollisionEnabled(ECollisionEnabled::NoCollision);}
     }
 }
-void UCoreMorphReassemblyComponent::ResetPreview()
+void UCoreMorphReassemblyComponent::ResetAssembly()
 {
     Cancel();
     for(int32 I=154;I<Components.Num();++I)if(IsValid(Components[I]))Components[I]->DestroyComponent();

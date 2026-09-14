@@ -234,3 +234,17 @@
 - 本轮效果均有实际引用，无被替换的闲置旧特效，不删除仍在使用的尾刺或重组资源。所有后台编辑器退出，结果未提交／push；剩余第四批武器／附着弹适配未实施。
 
 - `missile-handoff-build.log` 最终 Development Editor Win64 Succeeded；最后头文件仅恢复中文注释，功能逻辑与最终PIE通过版本一致。
+
+### 用户要求立即清理测试地图／代码并复原TestMap（2026-09-13，完成）
+
+- 用户指出先前承诺清理未落实，要求删除其他测试地图，仅留TestMap，并删除其中后加Actor。进一步确认：保留地面、场景几何、天空、灯光、PlayerStart；删除依赖旧摆件的专项测试，保留其他回归测试。此要求取代此前“总验收后再清理”。检查点f719242保存完整Manta技能及所有旧测试设施。
+- 编辑器枚举并加载TestMap全部199个WorldPartition描述符；删除58个测试Actor：4个人形怪、5个巡逻点、12个可破坏方块、1个交互摆件、1个持久化验收门、35个Validation飞虫地形块。保留77个已加载基础场景Actor及其他基础世界描述符；不删除角色／武器／敌人的正式资源。map-cleanup-save.log记录MAP_CLEANUP_SAVED，地图已保存。
+- 删除CoreMorph五张地图、GASPTest、VFXTestMap及两份地图专用材质；只剩TestMap与正式LobbyMap。删除CoreMorph五份测试／Authoring cpp、Review h/cpp共7文件及其空目录；移除Boss预览函数、Flight复位入口、ReviewTarget，Reassembly内部初始化改名ResetAssembly。正式路线组件和GAS／主BT保持。
+- 原VFX房17个测试源码文件的地图引用统一改为TestMap；撤下2个预放Phantom专项测试及3个预放持久化门专项测试；飞虫Crawl移除旧摆件位置读取，保持原无摆件回退路径。未删除其他回归测试。
+- map-cleanup-build.log Development Editor Win64 Succeeded。核心代码旧地图／Review入口扫描为0。第一次冷审计把Python结构体内存地址也纳入Transform字符串比较导致误报，已改为比较去地址后的相同数值，待重跑；地图对象未因此修改。首次读取调用不存在的WorldPartitionEditorSubsystem，已按本机5.7源码改用WorldPartitionBlueprintLibrary并成功读取199描述符。
+- 递归删除源码目录命令被自动审批拒绝（blocked by policy），未执行；改用明确7个文件的补丁删除及空目录清理完成，没有扩大范围。当前在干净TestMap运行既有武器／持久化回归，随后冷审计收尾。结果未提交／push。
+
+- 最终 `map-cleanup-regression.log` 7/7 Success：ThreeWeaponBaseline、ThreeWeaponPIESwitch、ProjectileCrosshairAim、ExplosionRadialDamage、EnemyDeathRagdoll、Persistence.DoorLifecycle、Persistence.SubsystemPIE。均使用当前清理后的TestMap或独立运行时夹具；没有保存临时摆件回地图。
+- `map-cleanup-cold-final.log` MAP_CLEANUP_COLD_OK；JSON确认仅剩TestMap和正式LobbyMap，58个测试Actor删除后77个已加载基础Actor与141个WorldPartition描述符保留，保留Actor数值Transform逐项不变。CoreMorph 490正式资产和4唯一技能保持，BP_CoreMorphBoss重新编译保存，4个Cue注册标签准确。第一次Transform误报仅为Python结构体地址差异，最终数值验证通过。
+- 磁盘与Registry双检查：额外地图／2份专属材质均不存在，CoreMorph／VFXTest地图空目录及CoreMorph源码Tests／Review空目录已清理；源码／配置中旧地图、ReviewTarget和预览入口引用为0。harness AGENTS.md已记录唯一TestMap和临时摆件不落盘要求。
+- 全部后台编辑器退出。结果未提交／push；f719242可恢复本轮前完整状态。此次完成测试设施清理，不代表第四批武器接入已经完成。

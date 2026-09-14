@@ -23,7 +23,7 @@ public:
     bool CanStart() const;
     bool Start();
     void Cancel();
-    void ResetPreview();
+    void ResetAssembly();
     void Shutdown();
     void BeginCue();
     void EndCue();

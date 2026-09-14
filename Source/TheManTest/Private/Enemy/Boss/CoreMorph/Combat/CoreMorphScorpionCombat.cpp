@@ -85,7 +85,7 @@ void UCoreMorphScorpionCombat::SetPaused(bool Value)
 {
     bPaused=Value;
     if(Boss)if(auto* AI=Cast<ACoreMorphAIController>(Boss->GetController()))if(auto* Brain=AI->GetBrainComponent())
-    {if(Value)Brain->PauseLogic(TEXT("Review pause"));else Brain->ResumeLogic(TEXT("Review resume"));}
+    {if(Value)Brain->PauseLogic(TEXT("Combat pause"));else Brain->ResumeLogic(TEXT("Combat resume"));}
 }
 bool UCoreMorphScorpionCombat::IsAttacking() const
 {return Boss && Boss->GetAbilitySystemComponent()->HasMatchingGameplayTag(TAG_State_CoreMorph_Attacking);}

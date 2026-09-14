@@ -11,7 +11,7 @@
 | `Public/Core/Persistence/PersistentActorInterface.h` / `Private/...cpp` | Actor 自定义 `FInstancedStruct` 采集与应用接口 |
 | `Public/Core/Persistence/WorldPersistenceSubsystem.h` / `Private/...cpp` | GameInstance 生命周期内按地图与 GUID 保存、恢复和运行时实例重建 |
 | `Public/Actors/Persistence/WorldPersistenceTestDoor.h` / `Private/...cpp` | FEAT-079 验收 Door；Pawn 进入 Trigger 后开启 |
-| `Private/Core/Tests/WorldPersistenceTests.cpp` | Door、地图资产、注册表、Transform、运行时重建、墓碑与真实跨关卡预 BeginPlay 恢复自动化 |
+| `Private/Core/Tests/WorldPersistenceTests.cpp` | Door生命周期、注册表、Transform、运行时重建与墓碑自动化 |
 
 ## 规则
 
@@ -35,6 +35,6 @@
 
 ## 当前验收对象
 
-`TestMap` 的 `PersistenceAcceptanceDoor` 位于 PlayerStart 前方约 500cm。进入 Trigger 后门板旋转到 90°；回合结束进入大厅并再次进入 TestMap 后，应保持开启和原 Transform。
+用户于2026-09-13要求清理TestMap，PersistenceAcceptanceDoor预放置实例已删除。依赖它的PlacedDoorAsset、真实跨关卡摆件恢复和墓碑专项测试已撤下；核心持久化实现与LobbyMap流程保持。
 
-`TheManTest.Core.Persistence` 当前 5 项自动化覆盖：基础 Door、自定义状态、注册表采集、同 World 运行时重建、真实 `TestMap → LobbyMap → TestMap` 的预放置/运行时实例恢复，以及墓碑 Actor 不进入 BeginPlay。
+TheManTest.Core.Persistence 当前保留 DoorLifecycle／SubsystemPIE 两项，运行时自行生成并清理对象，不依赖或保存地图摆件。此前5项的历史验证见FEAT-079归档，不能再作为当前注册清单。

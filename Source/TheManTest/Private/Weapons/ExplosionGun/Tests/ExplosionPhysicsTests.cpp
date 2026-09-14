@@ -57,7 +57,7 @@ public:
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FExplosionPhysicsTest,"TheManTest.Player.Weapons.ExplosionSimulatedPhysics",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
 bool FExplosionPhysicsTest::RunTest(const FString&)
 {
- AutomationOpenMap(TEXT("/Game/Maps/VFXTest/VFXTestMap"));
+ AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
  ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
  ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1));
  ADD_LATENT_AUTOMATION_COMMAND(FExplosionPhysicsCommand(this));

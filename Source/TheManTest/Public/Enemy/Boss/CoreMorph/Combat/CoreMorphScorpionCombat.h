@@ -40,7 +40,6 @@ public:
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Combat") TObjectPtr<AActor> Target;
 
     UPROPERTY(Transient) TObjectPtr<UCoreMorphScorpionMovement> Motor;
-    UPROPERTY(EditInstanceOnly,Category="Combat") TObjectPtr<AActor> ReviewTarget;
     FSimpleMulticastDelegate OnStrikeStageFinished;
     FSimpleMulticastDelegate OnStrikeInvalidated;
     DECLARE_MULTICAST_DELEGATE_OneParam(FStrikeContact,const FHitResult&);

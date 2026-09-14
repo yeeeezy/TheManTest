@@ -288,3 +288,9 @@ AFPSInfiltrator::SetupPlayerInputComponent（override，先 Super）
 | 持续编译失败 | 将完整错误信息记入 archive Bug 日志，标记需人工介入 |
 | 发现范围蔓延 | 停止，新建功能条目，回到当前功能 |
 | 完成标准不明确 | 重新阅读 `feature_list.json`；没有证据不得标记完成 |
+
+### 测试场景清理约定（用户要求，2026-09-13）
+
+- 项目只保留 TestMap 作为测试地图；LobbyMap 是正式选角流程地图，保留。不得再次向目标项目添加独立测试／Review 地图或 CoreMorph 临时相机、按键、Authoring／专项测试代码。
+- TestMap 保留基础地形／场景几何、天空、灯光、PlayerStart 和导航设施；用户后加的敌人、武器、可破坏测试方块、巡逻点、验收门、Validation 地形块已清理。后续验证不得把临时摆件保存回地图。
+- 用户选择删除依赖旧摆件的专项测试、保留其他回归测试。通用测试可在 PIE 临时生成并清理自己的对象，统一使用 TestMap；验证脚本和截图等证据放外部工作目录。

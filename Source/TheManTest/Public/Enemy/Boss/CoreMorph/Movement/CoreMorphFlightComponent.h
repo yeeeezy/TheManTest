@@ -36,7 +36,6 @@ public:
 	// Presentation maneuver inside the active flight GA; no dodge or damage state.
 	bool RequestRoll(bool bFast, int32 Direction = 1);
 	void StopFlight();
-	void ResetPreview();
 	void Shutdown();
 	bool IsFlying() const { return bFlying; }
 	float GetFlightSeconds() const { return FlightSeconds; }

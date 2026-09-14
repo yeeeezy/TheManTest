@@ -1,5 +1,8 @@
 # GAS 技能系统
 
+> 当前清理状态（2026-09-13）：用户要求立即清理测试设施，取代下文旧批次“总验收后清理”的安排。5张CoreMorph检查地图、专属地面材质、5个Tests cpp与CoreMorphFlightReview h/cpp均已删除。Boss的StartFlightPreview／ResetFlightPreview及Flight的ResetPreview已删除；Reassembly内部ResetPreview改名ResetAssembly，仍用于正式变形初始化。ReviewTarget已删除，正式BT目标由LastThreat／玩家决定。保留FlightRoute、正式主BT、GA／GE／Cue及490个头领资产。以后只有TestMap作为测试地图，不能再照旧地图入口操作。
+
+
 - FEAT-081 第三批：`GA_CoreMorphTailStrike` 通过现有 `PhaseSkillSets[0].NearAbilities` 授予一次，DefaultAbilities 仍仅 Flight／Reassemble，共三个能力。GA 管理 Windup→Thrust→Recover，订阅同头领战斗组件的阶段完成和接触事件；组件不决定何时启动技能。`GE_CoreMorphAttacking` 持有攻击 Tag；GA 结束移除并施加 `GE_CoreMorphTailCooldown`，时长读取本头领参数；`GE_CoreMorphTailDamage` 使用负值 Data.Damage 修改目标共享 Health。取消后无伤害地收回，死亡清状态和停止运动。无源 ApplyPointDamage 路径，无新增音效／粒子资产，现有 Cue 分工不变。
 
 - FEAT-081 第二批：同 ASC 默认授予 Flight 和 Reassemble 各一次。`GA_CoreMorphReassemble` 用 `GE_CoreMorphTransforming` 持有 `State.CoreMorph.Transforming`，阻止重入和飞行；成功时具体头领 SetForm 更换 Manta/Scorpion 无限 GE，不更改战斗阶段、Health 或技能列表。`GC_CoreMorph_Reassembly` 注册在头领专属 GAS/GameplayCues，负责金属流／沙尘池和灯光生命周期；取消立即移除，成功保留至冲击后 8 秒。此处迁入的是源单向变形，R 仍为检查复位，不是逆向技能。第二批验证见 FEAT-081 archive。

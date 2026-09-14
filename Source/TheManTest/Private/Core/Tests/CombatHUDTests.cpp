@@ -453,7 +453,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 bool FElectricMuzzleVisualCaptureTest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/VFXTest/VFXTestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.8f));
 	ADD_LATENT_AUTOMATION_COMMAND(FSwitchToNextWeaponCommand(this));
@@ -523,7 +523,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FExplosionVisualTest,
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FExplosionVisualTest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/VFXTest/VFXTestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
 	ADD_LATENT_AUTOMATION_COMMAND(FSwitchToNextWeaponCommand(this));
