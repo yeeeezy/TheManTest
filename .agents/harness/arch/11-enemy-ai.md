@@ -1,5 +1,8 @@
 # 敌人 AI 与战斗系统
 
+- FEAT-081 第三批主 BT：`ACoreMorphAIController` 真正 Possess 唯一头领；`BT_CoreMorphBoss`／`BB_CoreMorphBoss` 位于头领 AI 目录。Selector 内蝠鲼分支 Flight GA→Reassemble GA；蝎子分支按范围／冷却选择 Face→当前阶段近距技能、Approach 或 Idle。`BTTask_CoreMorphAction` 等待并取消具体活动能力句柄；攻击三个动作阶段属于 GA，不拆成三个 BT 技能。`BTService_CoreMorphTarget` 选择检查目标／LastThreat／玩家并更新形态和距离，形态与阶段独立。
+- 八足运动沿用源的地面接触、身体扫掠和局部扇形避障，不是 NavMesh 全局寻路；尚未实现绕过任意复杂障碍的路径规划。ScorpionCombat.bEnabled 默认 false，检查地图 V/M 开启；旧飞行／重组检查地图保持原入口。取消、目标销毁、死亡和退出必须同时清 GA／GE 与运动状态；完整三枪适配仍属第四批。
+
 - 当前OnDeath不立即Destroy：先取消ASC技能、停止AI Brain/移动并解除Controller，清Actor计时器/波次订阅，关闭角色Tick与胶囊，进入布娃娃；CorpseLifetime默认5游戏秒后Destroy。Humanoid AIState置Dead，武器网格无碰撞并跟手部骨骼；Phantom取消隐身。UseRandomSkill拒绝死人。
 
 **何时读取：** 修改敌人巡逻/转身/感知/战斗状态、行为树、敌人技能集（阶段×近中远）、敌人 GAS 或敌人动画驱动时。

@@ -1,5 +1,7 @@
 # 构建配置
 
+- FEAT-081 第三批：仅 Editor 增加 BehaviorTreeEditor 与 AIGraph，供显式 `TheManTest.Authoring.CoreMorphAI` 创建／保存可编辑主 BT 图；运行时仅使用既有 AIModule。无引擎升级或新插件。
+
 - 2026-09-05 EnemyEffectScale：Editor-only增加NiagaraEditor，供ExplosionScaleAudit检查/显式安装本枪Niagara缩放模块；运行时与Game目标不引入编辑器模块。
 
 - 2026-09-05：Private运行时依赖增加RigVM，供原生FRigUnit_EnemyHitReaction；复用既有ControlRig依赖及Editor-only ControlRigDeveloper/AnimGraph/AssetTools。无新插件，不引入重定向模块。

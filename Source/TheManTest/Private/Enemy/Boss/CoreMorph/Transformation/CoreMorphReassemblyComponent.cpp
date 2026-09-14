@@ -1,4 +1,5 @@
 #include "Enemy/Boss/CoreMorph/Transformation/CoreMorphReassemblyComponent.h"
+#include "Enemy/Boss/CoreMorph/Combat/CoreMorphScorpionCombat.h"
 #include "Enemy/Boss/CoreMorph/CoreMorphBoss.h"
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightComponent.h"
 #include "Core/_Shared/GAS/TheManGameplayTags.h"
@@ -409,6 +410,9 @@ void UCoreMorphReassemblyComponent::UpdateImpact()
 void UCoreMorphReassemblyComponent::UpdatePose()
 {
  if(!Layout || Components.Num()!=Layout->Pieces.Num())return;
+ // The landing Cue can outlive construction; it must not reclaim the moving assembly.
+ if(!bMorphing && Boss()->ScorpionCombat->IsDrivingPose())
+ {UpdateImpact();if(Fragments)Fragments->SetVisibility(false);if(Sparks)Sparks->SetVisibility(false);return;}
  for(int32 I=0;I<Components.Num();++I)
  {
   const auto& P=Layout->Pieces[I];FVector Pos=P.Position+GetFormOffset(P.Form);FQuat Q=FQuat::Identity;float Reveal=0;

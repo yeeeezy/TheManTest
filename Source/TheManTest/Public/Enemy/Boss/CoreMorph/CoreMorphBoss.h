@@ -7,6 +7,8 @@
 class UCoreMorphVisualLayout;
 class UCoreMorphFlightComponent;
 class UCoreMorphReassemblyComponent;
+class UCoreMorphScorpionMovement;
+class UCoreMorphScorpionCombat;
 
 UENUM(BlueprintType)
 enum class ECoreMorphForm : uint8 { Manta, Scorpion };
@@ -25,6 +27,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="CoreMorph") TObjectPtr<UCoreMorphVisualLayout> VisualLayout;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CoreMorph") TObjectPtr<UCoreMorphFlightComponent> Flight;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CoreMorph") TObjectPtr<UCoreMorphReassemblyComponent> Reassembly;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="CoreMorph") TObjectPtr<UCoreMorphScorpionMovement> ScorpionMovement;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="CoreMorph") TObjectPtr<UCoreMorphScorpionCombat> ScorpionCombat;
+	virtual void AimAtTarget(AActor* Target) override;
 	UFUNCTION(BlueprintCallable, Category="CoreMorph") bool StartReassembly();
 	void SetForm(ECoreMorphForm Form);
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="CoreMorph") ECoreMorphForm CurrentForm = ECoreMorphForm::Manta;

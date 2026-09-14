@@ -1,5 +1,8 @@
 # 具体角色类
 
+- FEAT-081 第三批：同一 CoreMorphBoss 新增 `ScorpionMovement` 与 `ScorpionCombat` 组件，替代源隐藏 PhysicalScorpion Actor；复用 Reassembly 的 301 分件，移动根位置同步到唯一 Pawn。`DA_CoreMorphScorpionLayout` 仅含 75 组关节枢轴／64 足链节点，不引用源网格。运动组件负责接触／CCD，战斗组件负责尾链 FABRIK 和刺尖 Sweep，尾刺 GA 控制出招阶段。Reassembly 在运动接管后只更新固定落点 Cue，不再覆盖主体姿态。
+- 新检查入口 `/Game/Maps/CoreMorph/L_CoreMorphScorpion`：V 启用主 BT 完整飞行→重组→蝎子战斗，M 立即重组；1／2／3 移动测试目标、T 通过阶段技能集请求尾刺、C 取消尾刺，P 暂停、R 复位、F 相机。原地图不自动启动蝎子战斗；临时检查工具仍待最终总验收后清理。
+
 - FEAT-081 风墙反馈：Reassembly 的 SandWave Cue 实例池为 3 圈 × 3 层 × 128 扇区；接地墙身、顶部浪脊、后卷层等速径向扩散。M_CoreMorph_SandWave 的实例数据 0 是透明度、1 是组件提供的波龄，材质不用全局 Time，暂停时几何和流动一起冻结。源金属流／构建保持，沙尘方程与材质已按用户要求改造，不再要求此分支与源逐字／哈希一致。
 
 - FEAT-081 第二批进行中：ACoreMorphBoss 新增 Reassembly 组件，与 Flight 共用原 154 蝠鲼组件，运行时新增 301 蝎子组件；唯一 Actor／ASC／Health 不变。DA_CoreMorphReassembly 存两形态采样和必要 VFX 成品，原 DA_CoreMorphVisualLayout 保持飞行专用 154 条。GA_Reassemble 捕获实际姿态和速度后取消飞行；完整构建提交 Scorpion GE，取消回滚 Manta，死亡清理所有查询面。Cue 创建并销毁瞬态实例网格／灯光；成功后沙尘尾效有界存活。未接入八足移动、尾刺或新 BT。验证状态以 archive 为准。

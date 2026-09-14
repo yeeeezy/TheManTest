@@ -147,3 +147,19 @@
 - 画面首轮尘色接近地面，已将圈间隔拉开至 0.65 秒，并增加墙面与浪脊明暗。最终 1280×720 实际截图已检查，呈立起、翻卷的尘幕；观感待用户校验。
 - `wind-wall-final-cold-audit.log`／`wind-wall-cold-audit.json`：477 资产冷加载，455 分件布局，Cue Registry 名称准确，无源模块依赖／Redirector；只有 M_CoreMorph_SandWave 与原迁入包哈希不同，其余 313 包保持。源 5195 文件 SHA-256 再次一致。
 - 自动编辑器全部退出。本轮改动未提交／push；仍停在第二批反馈，用户在原 L_CoreMorphReassembly 中按 V 或 M 复查，未进入第三批。
+
+## 第三批：八足移动与尾刺（2026-09-13，进行中）
+
+- 用户确认“可以接着迁移”，第二批重组及风墙已验收，授权推进第三批。WIP `49c233e` 保存已验收风墙；当前无目标编辑器进程。
+- 核实源沙漠实际使用 GiantScorpionLayout 的 64 足链节点、七段八足 CCD、交替四足接触及尾链 FABRIK；不迁入旧四节点步态或额外网格。隐藏 PhysicalScorpion Actor 改为同头领的移动组件。
+- 本批专属主 BT 管理形态入口、追近／转向／攻击决策；尾刺 GA 管理蓄力／刺出／收回和取消，GE 管理攻击状态／冷却及伤害。复用阶段技能集，形态不重授能力。完成后用户自行校验，不自动推进三枪／附着／范围伤害去重的第四批。
+- 已迁入仅数值的 75 个关节分组／64 足链节点结构，不重复导入巨蝎网格。ScorpionMovement 保留地面采样、交替四足、限角 CCD；ScorpionCombat 复用现有 301 蝎子分件和 FABRIK 尾链，直接同步本头领根位置。
+- 尾刺 GA 接管蓄力、刺出和恢复段；攻击状态与冷却由 GE 提供，刺尖真实 Sweep 命中后通过伤害 GE 修改目标 ASC，删除源 ApplyPointDamage 路径。主 BT 已创建并保存可编辑图（scorpion-ai-author-02.log Success），使用当前阶段近距技能集请求 GA。
+- 重组组件在移动接管后只更新固定落点的 Cue，避免沙尘尾效覆盖移动姿态。新增检查地图／蓝图引用写入进行中。初次编辑器图编译缺 AIGraph 依赖，已补为仅 Editor 模块；scorpion-build-03.log 成功。该轮尚未完成实际 PIE，不能视为已验收。
+- `scorpion-pie-02.log`：ScorpionBatch Success。真实 PIE 验证一个被专属 Controller 控制的头领／一个 ASC／三个技能，移动时旧沙尘不会拉回主体；支撑足不少于四只、已落足无滑动、腿段长度保持；尾刺 GE 单次扣 25、冷却阻止立即重放、墙体挡伤害。
+- 三个出招时段 .3／1.05／1.6 秒取消后均无后续伤害并回收；同三个时点死亡清 GA／足尾求解状态／Cue 并停 Tick。目标销毁取消攻击、阶段切换不改形态或重授技能。实时主 BT 自动完整飞行→重组→追近→转向→尾刺并真实碰到检查目标，活动尾刺退出 PIE 清理通过。
+- 1280×720 Scorpion-Walk／Windup／Thrust 截图已查看，八足及尾链装配保持；动态自然程度待用户校验。首轮挡墙失败由未设置为 Movable 的测试墙导致，第二轮已构建真实碰撞并通过，不以首轮日志作最终结果。
+- `scorpion-regression.log` 旧六项全部 Success：AdaptiveMotion、EditorPlacement、FlightBatch、ReassemblyBatch、RollMotion、RouteReview。加本轮 ScorpionBatch 共七项通过；未修改武器或人形逻辑，不替代第四批最终三枪／人形总回归。
+- `scorpion-math-audit.json` 四个关键求解函数在类型／所有权适配后与源一致；`adaptive-source-audit.json` 源 5195 文件不变。最终资产冷审计进行中，之后交用户第三批观感校验。
+- `scorpion-cold-audit.log/json` 最终通过：480 项头领资产，75 关节分组／64 足链节点与源数值逐项一致，专属 Controller／主 BT／第一阶段近距尾刺配置正确；一个阶段技能加两个常驻技能，无源模块依赖或 Redirector。原 313 个分件／特效包继续匹配迁入哈希，SandWave 为此前已验收的有意改造。
+- 第三批自审完成，所有自动编辑器退出。源码、Blueprint、主 BT、数值数据和新检查地图的改动未提交／push；源工程保持不变。用户校验入口 L_CoreMorphScorpion（V/M，1/2/3，T/C，P/R/F），当前仅局部避障，完整武器适配／复杂寻路不是本轮验收结果。等待用户反馈，不进入第四批。

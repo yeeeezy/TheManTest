@@ -22,3 +22,7 @@ UE_DEFINE_GAMEPLAY_TAG(TAG_State_CoreMorph_Form_Scorpion, "State.CoreMorph.Form.
 UE_DEFINE_GAMEPLAY_TAG(TAG_State_CoreMorph_Transforming, "State.CoreMorph.Transforming")
 
 UE_DEFINE_GAMEPLAY_TAG(TAG_GameplayCue_CoreMorph_Reassembly, "GameplayCue.CoreMorph.Reassembly")
+
+UE_DEFINE_GAMEPLAY_TAG(TAG_State_CoreMorph_Attacking, "State.CoreMorph.Attacking");
+
+UE_DEFINE_GAMEPLAY_TAG(TAG_State_CoreMorph_TailCooldown, "State.CoreMorph.TailCooldown");

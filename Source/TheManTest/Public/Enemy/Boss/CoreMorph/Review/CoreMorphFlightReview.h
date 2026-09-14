@@ -29,6 +29,10 @@ public:
 	UPROPERTY(EditInstanceOnly, Category="Review") TObjectPtr<ACoreMorphBoss> Boss;
 	UPROPERTY(EditInstanceOnly, Category="Review") TArray<FCoreMorphReviewRoute> Routes;
 	UPROPERTY(EditInstanceOnly, Category="Review") bool bReassemblyReview = false;
+	UPROPERTY(EditInstanceOnly,Category="Review") bool bScorpionReview=false;
+	void MoveCombatTarget(int32 Side);
+	void CancelCombatStrike();
+	void Strike();
 	bool SelectRoute(int32 Index);
 	void PlayFlight();
 	void ResetFlight();
@@ -42,7 +46,7 @@ private:
 	bool bStartFirstRoute = false;
 	bool bPendingReassembly = false;
 	int32 SelectedRoute = INDEX_NONE;
-	void RouteOne() { SelectRoute(0); }
-	void RouteTwo() { SelectRoute(1); }
-	void RouteThree() { SelectRoute(2); }
+	void RouteOne() { if(bScorpionReview)MoveCombatTarget(0);else SelectRoute(0); }
+	void RouteTwo() { if(bScorpionReview)MoveCombatTarget(1);else SelectRoute(1); }
+	void RouteThree() { if(bScorpionReview)MoveCombatTarget(2);else SelectRoute(2); }
 };

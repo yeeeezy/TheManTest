@@ -4,6 +4,9 @@
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightRoute.h"
 #include "Enemy/Boss/CoreMorph/Transformation/CoreMorphReassemblyComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Enemy/Boss/CoreMorph/Combat/CoreMorphScorpionCombat.h"
+#include "Enemy/Boss/CoreMorph/GAS/Abilities/GA_CoreMorphTailStrike.h"
+#include "AbilitySystemComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -39,13 +42,14 @@ void ACoreMorphFlightReview::BeginPlay()
 		InputComponent->BindKey(EKeys::Q, IE_Pressed, this, &ThisClass::SlowRoll);
 		InputComponent->BindKey(EKeys::E, IE_Pressed, this, &ThisClass::FastRoll);
 		InputComponent->BindKey(EKeys::M, IE_Pressed, this, &ThisClass::Reassemble);
-		if (!Routes.IsEmpty())
+		if (!Routes.IsEmpty() || bScorpionReview)
 		{
 			InputComponent->BindKey(EKeys::One, IE_Pressed, this, &ThisClass::RouteOne);
 			InputComponent->BindKey(EKeys::Two, IE_Pressed, this, &ThisClass::RouteTwo);
 			InputComponent->BindKey(EKeys::Three, IE_Pressed, this, &ThisClass::RouteThree);
-			bStartFirstRoute = true;
+			bStartFirstRoute = !bScorpionReview;
 		}
+		if(bScorpionReview){InputComponent->BindKey(EKeys::C,IE_Pressed,this,&ThisClass::CancelCombatStrike);InputComponent->BindKey(EKeys::T,IE_Pressed,this,&ThisClass::Strike);}
 		PC->SetViewTarget(this);
 	}
 }
@@ -81,6 +85,7 @@ void ACoreMorphFlightReview::Tick(float Dt)
 	SetActorRotation((Target - GetActorLocation()).Rotation());
 	if (GEngine)
 	{
+		if(bScorpionReview)GEngine->AddOnScreenDebugMessage(uint64(GetUniqueID())+1,0.f,FColor::Yellow,TEXT("SCORPION REVIEW | V: AI flight + morph | M: Morph now | 1/2/3: Move target | T: Strike GA | C: Cancel strike"));
 		const FString RouteText = Routes.IsValidIndex(SelectedRoute)
 			? FString::Printf(TEXT("ROUTE %d: %s | 1/2/3: Switch & Play\n"), SelectedRoute + 1, *Routes[SelectedRoute].Label) : FString();
 		GEngine->AddOnScreenDebugMessage(uint64(GetUniqueID()), 0.f, FColor::White,
@@ -108,15 +113,16 @@ void ACoreMorphFlightReview::EndPlay(const EEndPlayReason::Type Reason)
 	Super::EndPlay(Reason);
 }
 
-void ACoreMorphFlightReview::PlayFlight() { if (IsValid(Boss) && Boss->StartFlightPreview()) bPendingReassembly=bReassemblyReview; }
+void ACoreMorphFlightReview::PlayFlight() { if(IsValid(Boss)){if(bScorpionReview){Boss->ScorpionCombat->bEnabled=true;Boss->ScorpionCombat->SetPaused(false);}else if(Boss->StartFlightPreview())bPendingReassembly=bReassemblyReview;} }
 void ACoreMorphFlightReview::ResetFlight() { bPendingReassembly=false;if (IsValid(Boss)) Boss->ResetFlightPreview(); }
 void ACoreMorphFlightReview::PauseFlight()
 {
 	if(!IsValid(Boss))return;
+	if(bScorpionReview)Boss->ScorpionCombat->SetPaused(!Boss->ScorpionCombat->IsPaused());
 	if(Boss->Reassembly->IsMorphing() || Boss->CurrentForm==ECoreMorphForm::Scorpion)Boss->Reassembly->SetPaused(!Boss->Reassembly->IsPaused());
 	else Boss->Flight->SetPaused(!Boss->Flight->IsPaused());
 }
-void ACoreMorphFlightReview::Reassemble() { bPendingReassembly=false;if(IsValid(Boss))Boss->StartReassembly(); }
+void ACoreMorphFlightReview::Reassemble() { bPendingReassembly=false;if(IsValid(Boss)){if(bScorpionReview)Boss->ScorpionCombat->bEnabled=true;Boss->StartReassembly();} }
 void ACoreMorphFlightReview::SlowRoll() { if (IsValid(Boss)) Boss->Flight->RequestRoll(false); }
 void ACoreMorphFlightReview::FastRoll() { if (IsValid(Boss)) Boss->Flight->RequestRoll(true); }
 void ACoreMorphFlightReview::ToggleCamera()
@@ -127,3 +133,16 @@ void ACoreMorphFlightReview::ToggleCamera()
 		PC->SetViewTarget(bFollow || !PC->GetPawn() ? this : static_cast<AActor*>(PC->GetPawn()));
 	}
 }
+
+void ACoreMorphFlightReview::MoveCombatTarget(int32 Side)
+{
+ if(!IsValid(Boss) || !IsValid(Boss->ScorpionCombat->ReviewTarget))return;
+ const float Angle=Side==0?0:Side==1?-65:65;
+ const FVector Center=Boss->CurrentForm==ECoreMorphForm::Scorpion?Boss->GetActorLocation()-FVector(0,0,785.72):FVector(2400,0,0);
+ Boss->ScorpionCombat->ReviewTarget->SetActorLocation(Center+Boss->GetActorForwardVector().RotateAngleAxis(Angle,FVector::UpVector)*6000+FVector(0,0,100));
+}
+void ACoreMorphFlightReview::CancelCombatStrike()
+{
+ if(IsValid(Boss))if(auto* S=Boss->GetAbilitySystemComponent()->FindAbilitySpecFromClass(UGA_CoreMorphTailStrike::StaticClass()))Boss->GetAbilitySystemComponent()->CancelAbilityHandle(S->Handle);
+}
+void ACoreMorphFlightReview::Strike(){if(IsValid(Boss))Boss->UseRandomSkill(Boss->ScorpionCombat->Target,EEnemySkillRange::Near);}

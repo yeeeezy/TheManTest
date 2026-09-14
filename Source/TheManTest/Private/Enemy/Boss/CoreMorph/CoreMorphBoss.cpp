@@ -1,4 +1,9 @@
 #include "Enemy/Boss/CoreMorph/CoreMorphBoss.h"
+#include "Enemy/Boss/CoreMorph/Movement/CoreMorphScorpionMovement.h"
+#include "Enemy/Boss/CoreMorph/Combat/CoreMorphScorpionCombat.h"
+#include "Enemy/Boss/CoreMorph/AI/CoreMorphAIController.h"
+#include "Enemy/Boss/CoreMorph/GAS/Abilities/GA_CoreMorphTailStrike.h"
+#include "Core/_Shared/GAS/TheManGameplayTags.h"
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightComponent.h"
 #include "Enemy/Boss/CoreMorph/GAS/Abilities/GA_CoreMorphFlight.h"
 #include "Enemy/Boss/CoreMorph/GAS/Effects/GE_CoreMorphManta.h"
@@ -18,7 +23,10 @@ ACoreMorphBoss::ACoreMorphBoss()
 	Reassembly = CreateDefaultSubobject<UCoreMorphReassemblyComponent>(TEXT("CoreMorphReassembly"));
 	DefaultAbilities.Add(UGA_CoreMorphFlight::StaticClass());
 	DefaultAbilities.Add(UGA_CoreMorphReassemble::StaticClass());
-	AIControllerClass = AAIController::StaticClass();
+	ScorpionMovement=CreateDefaultSubobject<UCoreMorphScorpionMovement>(TEXT("ScorpionMovement"));
+	ScorpionCombat=CreateDefaultSubobject<UCoreMorphScorpionCombat>(TEXT("ScorpionCombat"));
+	PhaseSkillSets.AddDefaulted_GetRef().NearAbilities.Add(UGA_CoreMorphTailStrike::StaticClass());
+	AIControllerClass = ACoreMorphAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->DefaultLandMovementMode = MOVE_None;
@@ -50,6 +58,7 @@ void ACoreMorphBoss::BeginPlay()
 void ACoreMorphBoss::EndPlay(const EEndPlayReason::Type Reason)
 {
 	AbilitySystemComponent->CancelAllAbilities();
+	ScorpionCombat->ResetCombat();
 	Reassembly->Shutdown();
 	Flight->Shutdown();
 	AbilitySystemComponent->RemoveActiveGameplayEffect(FormEffect);
@@ -61,8 +70,11 @@ void ACoreMorphBoss::OnDeath()
 	if (IsDead()) return;
 	// No skeletal asset/PhysicsAsset is assigned. Base supplies the shared terminal lifecycle.
 	Super::OnDeath();
+	ScorpionCombat->ResetCombat();
+	ScorpionCombat->SetComponentTickEnabled(false);
 	Reassembly->Shutdown();
 	Flight->Shutdown();
+	AbilitySystemComponent->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(TAG_State_CoreMorph_TailCooldown));
 	LastThreat = nullptr;
 	AbilitySystemComponent->RemoveActiveGameplayEffect(FormEffect);
 }
@@ -82,7 +94,10 @@ bool ACoreMorphBoss::StartFlightPreview()
 void ACoreMorphBoss::ResetFlightPreview()
 {
 	if (IsDead()) return;
+	ScorpionCombat->bEnabled=false;
+	ScorpionCombat->ResetCombat();
 	AbilitySystemComponent->CancelAbilities(nullptr, nullptr);
+	AbilitySystemComponent->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(TAG_State_CoreMorph_TailCooldown));
 	Reassembly->ResetPreview();
 	SetForm(ECoreMorphForm::Manta);
 	Flight->ResetPreview();
@@ -102,3 +117,5 @@ void ACoreMorphBoss::SetForm(ECoreMorphForm Form)
 	const UGameplayEffect* Effect=Form==ECoreMorphForm::Manta?static_cast<const UGameplayEffect*>(GetDefault<UGE_CoreMorphManta>()):GetDefault<UGE_CoreMorphScorpion>();
 	FormEffect=AbilitySystemComponent->ApplyGameplayEffectToSelf(Effect,1.f,AbilitySystemComponent->MakeEffectContext());
 }
+
+void ACoreMorphBoss::AimAtTarget(AActor* Target){if(!IsDead() && IsValid(Target))ScorpionCombat->Target=Target;}
