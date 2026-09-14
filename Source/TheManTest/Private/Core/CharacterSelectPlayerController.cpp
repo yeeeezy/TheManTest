@@ -54,6 +54,31 @@ void ACharacterSelectPlayerController::SetPointerOverUI(bool bInPointerOverUI)
 
 void ACharacterSelectPlayerController::SetWeaponPresentationView(bool bWeapon)
 {
+	for (TActorIterator<ALobbyCharacterBase> It(GetWorld()); It; ++It)
+	{
+		ALobbyCharacterBase* LobbyCharacter = *It;
+		if (bWeapon)
+		{
+			LobbyCharacter->SetWeaponReady(true);
+		}
+		else
+		{
+			TArray<int32> ValidIdleIndices;
+			if (LobbyCharacter->WeaponPresentations.IsValidIndex(LobbyCharacter->DisplayWeaponIndex))
+			{
+				const auto& Animations = LobbyCharacter->WeaponPresentations[LobbyCharacter->DisplayWeaponIndex].RelaxedAnimations;
+				for (int32 Index = 0; Index < Animations.Num(); ++Index)
+				{
+					if (Animations[Index]) ValidIdleIndices.Add(Index);
+				}
+			}
+			if (!ValidIdleIndices.IsEmpty())
+				LobbyCharacter->SetRelaxedIdleIndex(ValidIdleIndices[FMath::RandHelper(ValidIdleIndices.Num())]);
+			else
+				LobbyCharacter->SetWeaponReady(false);
+		}
+		break;
+	}
 	if (ACharacterSelectCameraSwitcher* Switcher = GetCameraSwitcher())
 	{
 		if (bWeapon) Switcher->SetNearCameraView();

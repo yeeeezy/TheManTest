@@ -1,14 +1,11 @@
 # 当前工作面板
 
-- Active feature：FEAT-082大厅角色展示，FEAT-080/081暂停。菜单/相机一致性已随6151620推送，当前大厅握持返修未推送。
-- 爆破枪、电击枪使用80%大厅专用Mesh及EquipmentBase展示数据BP；维修枪仍读原资源。每枪两条放松、一条举枪，共九条独立成品动画；统一hand_r，每枪Relaxed/Ready独立偏移，无IK。
-- 前轮右手握柄挂点与左手返修通过2602样本，源工程LobbyGripAnchors；其右手食指仍偏低，已按用户15:46截图再次修复。
+- Active feature：FEAT-082大厅展示，FEAT-080/081暂停。三枪独立动画、两把80%大厅副本、挂点与电击食指微调已保存；最终食指工程LobbyElectricTriggerFine，详情见archive。
+- 最新实现：WEAPON按钮同步近景与Rifle；CHARACTER同步远景与Relaxed，每次点击从当前枪非空放松动画中随机选一条循环播放。允许随机重复。
+- 两按钮初始/点击后均无常驻高亮，仅Hovered使用高亮样式，Pressed为中性。
 
-## 最新交接：电击枪指尖高度微调
+## 验证与交接
 
-- 只改电击枪三条动画的index_01_r/index_02_r/index_03_r局部旋转，指尖抬入上方小扳机口。枪位、hand_r、掌心、其他手指及既有左手动画保持。无需修改插槽或C++。
-- Blender工程D:/Blender Projects/LobbyElectricTriggerFine/LobbyElectricTriggerFine_Animated.blend；与上一轮偏移对比确认仅新增右食指三节。TMIIR逐帧验证后仅迁移三条最终动画。
-- 正式LobbyMap冷启动PIE651样本通过，包含新增食指骨骼、原挂点矩阵、三姿势和数字1切换；三张右手特写已查看。证据目录LobbyElectricTriggerFine，日志Saved/Codex/electric-trigger-fine-pie.log，blender-grip-validation.json ok=true。
-- checkpoint 4d1cbb5保留上轮挂点和左手修复；本轮产品改动仅三条ElectricGun动画，BP/模型/其他枪/地图/C++不变。后台编辑器退出，未最终提交/push，待用户观感反馈。
-
-- 用户明确反馈指尖仍偏低，本轮进一步只抬index_02_r/index_03_r，近节index_01_r及其他旋转偏移保持。与前版baked-grips逐项对比通过；最新细调图前缀LobbyTriggerFine，旧LobbyTriggerGrip不是最终高度。
+- Development Editor Win64构建通过，UI BP编译；实际LobbyMap PIE三枪各64次随机选择覆盖两条动画，姿势/实际播放资产/相机状态一致，真实鼠标hover及移出通过。lobby-pose-menu-validation.json ok=true，日志和截图Saved/Codex/lobby-pose-menu-*、PoseMenu-Hover/Neutral00000.png；截图已查看。
+- checkpoint7a4ed42保存此前资源微调。当前新增改动为Controller.cpp、LobbyPresentationWidgetBase.h/.cpp及harness，没有资产/地图改动，未最终提交/push。后台编辑器退出。
+- 用户询问Rifle/Relax动画过渡，已说明当前硬切，0.7秒过渡只有相机；建议约0.3秒姿势混合+枪挂点同步平滑，但尚未获得明确实现指令，未添加。下一步根据用户反馈决定是否做过渡。

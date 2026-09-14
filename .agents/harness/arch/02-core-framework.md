@@ -37,3 +37,6 @@ IMC_Default 的 IA_Test = One（键盘1）。BP_TheManPlayerController 的 TestS
 正式LobbyMap使用BP_CharacterSelectGameMode，CharacterSelectWidgetClass引用/Game/UI/Lobby/WBP_LobbyPresentation（原为空）。父类ULobbyPresentationWidgetBase绑定Button_Character和Button_Weapon、维护选中描边，UMG资产持有布局／样式／英文文字；它不调用SelectCharacterAndStart。原WBP_CharacterSelect和回合选角流程独立。Editor辅助TheManLobbyAssetLibrary仅初始化空WidgetBlueprint，不覆盖已有布局。
 
 - FEAT-082相机一致性：Switcher每帧读取绑定CameraComponent世界变换（含组件相对偏移），同步取景约束／过扫描／后处理；场景相机是最终取景来源，不能再用一次性Actor位置缓存。鼠标居中、切换结束、相同视口尺寸时与场景相机视图一致。
+
+
+FEAT-082按钮姿势联动（2026-09-14）：SetWeaponPresentationView现在同步大厅展示Actor和镜头。true=Rifle/近景，false=从当前枪非空RelaxedAnimations均匀随机选一条并进入Relaxed/远景，每次调用重新选，允许重复。UI不再保留选中高亮，仅Hovered高亮。角色仍SingleNode硬切，没有动画混合；既有0.7秒平滑仅用于相机。此说明覆盖之前“按钮仅切相机”的行为记录。

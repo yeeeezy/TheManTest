@@ -21,6 +21,6 @@ protected:
 	void ShowCharacter();
 	UFUNCTION()
 	void ShowWeapon();
-	void ApplySelection(bool bWeapon);
+	void ConfigureButtonStyles();
 };
 

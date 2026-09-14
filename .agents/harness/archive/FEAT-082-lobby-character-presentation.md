@@ -197,3 +197,14 @@
 
 - 最终实际LobbyMap PIE651样本通过，检查三姿势食指骨骼/挂点矩阵及数字1切换，退出包哈希不变。已查看正侧Blender放大图和UE举枪/放松特写，指尖在扳机口内较上轮小幅上移。证据目录LobbyElectricTriggerFine，blender-grip-validation.json ok=true，Saved/Codex/electric-trigger-fine-pie.log。
 - 产品仅三条ElectricGun动画改动，其他资产/C++无变化。后台验证编辑器退出，未最终提交/push，待用户近景反馈。
+
+
+## 2026-09-14 按钮联动姿势与仅悬停高亮
+
+- 用户授权WEAPON进入Rifle，CHARACTER进入Relaxed且多条动画随机选择；初始无高亮，仅hover高亮。checkpoint7a4ed42保存上轮食指微调。
+- CharacterSelectPlayerController::SetWeaponPresentationView同步首个大厅展示Actor姿势与远近镜头：WEAPON调用SetWeaponReady(true)，CHARACTER从当前枪非空RelaxedAnimations中均匀随机选一条调用SetRelaxedIdleIndex；没有可用条目时走SetWeaponReady(false)后备。每次点击CHARACTER重新选择，允许随机重复；选中动画按原SingleNode循环。
+- LobbyPresentationWidgetBase去掉选择态ApplySelection，初始化统一中性Normal边框，Pressed使用Normal，Hovered继续使用UMG配置的高亮；点击不改变Normal，不保留选中高亮。
+- Development Editor Win64构建Succeeded。首轮局部Character变量遮蔽Controller成员，改名LobbyCharacter后通过。实际LobbyMap PIE三枪分别点击WEAPON和64次CHARACTER，均进入对应姿势，随机集合覆盖0/1，实际AnimSequence与当前枪配置一致；初始与点击后的Normal无高亮，实际移动鼠标触发hover/移出通过。UI BP在编辑器编译，未保存资产。
+- 验证Saved/Codex/lobby-pose-menu-validation.json ok=true，lobby-pose-menu-build.log Succeeded，lobby-pose-menu-pie.log POSE_MENU_OK；PoseMenu-Hover00000.png/Neutral00000.png已查看。首轮测试所需SlateBlueprintLibrary未暴露，改为依据已知布局移动真实指针后通过。
+- 用户同时询问Rifle/Relax是否有过渡：当前OverrideAnimationData+PlayAnimation仍是硬切，只有相机0.7秒smoothstep。已建议约0.3秒姿势混合并同步枪挂点平滑；此轮仅回答并提出建议，尚未实现角色动画混合，等待用户决定。
+- 本轮只有Controller.cpp、LobbyPresentationWidgetBase.h/.cpp与harness变更；无地图/资产改动，未最终提交/push。后台验证编辑器已退出。

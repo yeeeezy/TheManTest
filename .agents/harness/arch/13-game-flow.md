@@ -104,3 +104,6 @@ TestMap（GameMode=BP_TheManGameMode : ATheManGameModeBase）
 ## FEAT-082 正式大厅展示UI（2026-09-14）
 
 当前LobbyMap实际GameMode为BP_CharacterSelectGameMode（上文BP_LobbyGameMode描述为旧流程）。该GM创建WBP_LobbyPresentation，左侧纵向CHARACTER／WEAPON只切换展示镜头，不启动游戏或改持枪动画。Controller明确设置远／近相机，背景点击不切换。既有FarCamera展示角色整体、NearCamera展示枪与双手，0.7秒同步镜头过渡；鼠标幅度5／3cm，近景减半。人物放置和独立三枪动画保持。
+
+
+FEAT-082按钮姿势联动（2026-09-14）：SetWeaponPresentationView现在同步大厅展示Actor和镜头。true=Rifle/近景，false=从当前枪非空RelaxedAnimations均匀随机选一条并进入Relaxed/远景，每次调用重新选，允许重复。UI不再保留选中高亮，仅Hovered高亮。角色仍SingleNode硬切，没有动画混合；既有0.7秒平滑仅用于相机。此说明覆盖之前“按钮仅切相机”的行为记录。
