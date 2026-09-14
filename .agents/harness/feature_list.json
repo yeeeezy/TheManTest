@@ -1,6 +1,6 @@
 {
     "schema_version": "1.0",
-    "last_updated": "2026-09-14-electric-trigger-finger",
+    "last_updated": "2026-09-14-electric-trigger-height-fine",
     "active_animation_task": "Accepted behavior: ONLY delayed explosion damage triggers directional knockback on all actually damaged surviving enemies; first impact still damages and attaches without reaction. Development Editor Win64 and three focused PIE tests passed. Implementation f1eda8b and prior history were pushed to origin/main and remote SHA verified. User clarified that audio and remaining saved asset edits should also be published; supplemental commit includes all 88 remaining Content packages (73 modified, 15 new), including audio, hit texture, weapon settings, test maps and 80 external actors. Valid package headers and LFS tracking verified; 29.75 MB. No asset-content or source-code changes during publication. This supersedes earlier instructions to leave those asset edits local. Delivery and synchronization are tracked in Git.",
     "active_feature": "FEAT-082",
     "archive_file": "feature_archive.json",
@@ -10,16 +10,16 @@
             "name": "Lobby character presentation and Maintenance Worker assets",
             "status": "in_progress",
             "created": "2026-09-13",
-            "updated": "2026-09-14-electric-trigger-finger",
+            "updated": "2026-09-14-electric-trigger-height-fine",
             "archive_file": "archive/FEAT-082-lobby-character-presentation.md",
-            "current_batch": "User closeup revealed ElectricGun index finger below the separate upper trigger opening. Corrected only index_01_r/index_02_r/index_03_r local rotations in its three finalized lobby animations using Blender FK; weapon attachments, hand_r, other fingers and left arm unchanged. TMIIR full-frame verification and target PIE653 samples passed; all three actual right-hand closeups reviewed. Checkpoint dad3466 preserves prior grip calibration. Latest three animation changes uncommitted/unpushed.",
+            "current_batch": "User clarified fingertip remains slightly low. Fine adjustment completed only on ElectricGun index_02_r/index_03_r rotations across its three lobby animations; proximal joint and all other bones/attachments unchanged. TMIIR full-frame validation and actual LobbyMap PIE651 samples passed; closeup reviewed. Checkpoint4d1cbb5 preserves previous trigger pose. Latest changes uncommitted/unpushed.",
             "done_criteria": [
                 "Delete only the three confirmed old meshes.",
                 "TMIIR performs RTG; target receives only final lobby assets and required dependencies under MaintenanceWorker.",
                 "Provide reusable lobby display Actor base and Maintenance Worker subclass with all unarmed standing idle variants and optional rifle poses.",
                 "Compile, validate Blueprint and actual animation playback/rendering; clean migration paths and verify existing gameplay assets unchanged."
             ],
-            "verification_evidence": "D:/Blender Projects/LobbyElectricTrigger/source-grips-verified.json; blender-grip-validation.json ok=true,653 samples; Saved/Codex/electric-trigger-pie.log. UE screenshots LobbyTriggerGrip-2-{Relaxed,Relaxed02,Rifle}-RightHand.png show index finger in upper trigger opening. Only three ElectricGun animation packages modified."
+            "verification_evidence": "D:/Blender Projects/LobbyElectricTriggerFine/source-grips-verified.json; blender-grip-validation.json ok=true,651 samples; Saved/Codex/electric-trigger-fine-pie.log. Blender TriggerDetail-Side and actual LobbyTriggerFine right-hand closeups reviewed. Only three ElectricGun animation packages changed."
         },
         {
             "id": "FEAT-077",

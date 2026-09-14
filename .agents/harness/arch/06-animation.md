@@ -106,4 +106,4 @@ Aim → Idle：AIState != Aim，Blend 0.2s
 **已删除（FEAT-041）：** 旧 `UTheManAnimInstanceBase`（绑定旧 `ATheManCharacterBase`）已删除。对应旧 ABP（`ABP_MainCharacter` / `ABP_FirstPerson_MainCharacter`）需在编辑器一并删除。
 
 
-FEAT-082电击枪扳机补修：其三条大厅成品动画额外直接修index_01_r／index_02_r／index_03_r旋转，使食指进入上方独立扳机口。hand_r和其他右手骨骼、枪挂点及左手修复不变；因此此前“右手保持”的历史描述不再包含这三节食指。最新工程LobbyElectricTrigger，无IK。
+FEAT-082电击枪扳机补修：其三条大厅成品动画额外直接修index_01_r／index_02_r／index_03_r旋转，使食指进入上方独立扳机口。hand_r和其他右手骨骼、枪挂点及左手修复不变；因此此前“右手保持”的历史描述不再包含这三节食指。最新微调工程LobbyElectricTriggerFine：用户确认指尖仍低后，仅进一步抬高中/末节，近节与其他部分保持，无IK。

@@ -187,3 +187,13 @@
 - TMIIR冷回读三条动画全帧、全骨骼位置/旋转和依赖校验通过，仅迁移电击枪三条成品。目标正式LobbyMap PIE653样本通过，包含食指三个骨骼实际输出、原挂点矩阵、三种姿态与数字1切换；验证退出后包哈希不变。
 - 已逐张查看三种姿态的UE右手特写，指尖进入上方扳机口。证据D:/Blender Projects/LobbyElectricTrigger/source-grips-verified.json、blender-grip-validation.json(ok=true)、LobbyTriggerGrip-2-{Relaxed,Relaxed02,Rifle}-RightHand.png；日志Saved/Codex/electric-trigger-pie.log。旧LobbyGripAnchors特写仍是食指未修版，不作为本次结果。
 - git diff确认本轮产品只改三条ElectricGun动画，没有改BP、挂点、Mesh、地图、其他枪或C++。后台编辑器已退出；未最终提交/push。
+
+
+## 2026-09-14 电击枪指尖高度微调
+
+- 用户反馈仍差一点，并明确选择“指尖还偏低”。截图目录没有新增图，最新仍15:46:12；基于已生成当前版本的正侧/俯视扳机特写微调，不误用旧截图当作新状态。
+- checkpoint4d1cbb5保存上轮食指修复。此次仅进一步抬起index_02_r和index_03_r局部旋转，近节index_01_r与其他骨骼、挂点和模型保持。三条动作偏移与上轮逐项对比确认只有这两节改变。Blender工程D:/Blender Projects/LobbyElectricTriggerFine/LobbyElectricTriggerFine_Animated.blend。
+- 已检查TriggerDetail-Side/Top，指尖从靠近扳机口下沿进一步上移。三条成品已烘焙，TMIIR全帧校验与实际PIE复核通过。
+
+- 最终实际LobbyMap PIE651样本通过，检查三姿势食指骨骼/挂点矩阵及数字1切换，退出包哈希不变。已查看正侧Blender放大图和UE举枪/放松特写，指尖在扳机口内较上轮小幅上移。证据目录LobbyElectricTriggerFine，blender-grip-validation.json ok=true，Saved/Codex/electric-trigger-fine-pie.log。
+- 产品仅三条ElectricGun动画改动，其他资产/C++无变化。后台验证编辑器退出，未最终提交/push，待用户近景反馈。
