@@ -16,6 +16,8 @@
 
 - FEAT-081 第一批反馈修正：编辑态 Actor／Capsule 原点直接对应主体，分件以相对变换跟随摆放；运行时从摆放反推固定编舞参考，切换到绝对分件姿态。不得再把编辑态 Actor 原点放在距主体 160 米的旧轨迹原点。
 
+- FEAT-081 尾部反馈：专属 `CoreMorph/Movement/CoreMorphTailMotion.h/.cpp` 根据每帧实际身体世界速度计算尾巴摆动幅度，正 Z 速度增强爬升波，平飞／下降平滑回落。FlightComponent 持有并更新状态，暂停／取消／死亡冻结、复位清零；FlightPath 只消费结果。路线、翅膀与横向盘旋弧形仍为源编排。
+
 - 2026-09-05当前：ExplosionHitReaction仅有动画分支，Rig模式/参数/求解器已删除。默认HitReactionPostProcess为Humanoid/_Shared/Animations/Logic/ABP_Humanoid_HitReaction_C。BP_Phantom仅配置前后左右4条AS_Humanoid_BlastRifle方向动画；具体Skeleton成品在外部资源项目适配。ApplyAnimationRootMotion默认开启，以扫掠胶囊消费非下落水平根位移，反应期间临时暂停Movement模式，结束/关闭恢复，死亡不恢复。组件构造启用Tick以消费位移，受击部位分类及HumanoidReactionBones.h已删除。
 
 - 致命枪击新增Enemy|Death.ProjectileKillKnockbackSpeed=250cm/s、ProjectileKillUpwardSpeed=120cm/s，沿弹道与世界上方向给整个布娃娃叠加速度；两个值设0关闭。ABulletBase只在活体变死体的直接伤害之后施加一次，随后仍保留ProjectileHitImpulse的命中点冲量。打旧尸体不重复全身击飞，爆炸范围伤害保持独立径向冲量。

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 
 class UCoreMorphVisualLayout;
+struct FCoreMorphTailMotion;
 
 // Accepted FEAT058 choreography in its fixed local frame. No Actor or GAS ownership here.
 struct THEMANTEST_API FCoreMorphFlightPath
@@ -19,7 +20,7 @@ struct THEMANTEST_API FCoreMorphFlightPath
 	float GetReleaseSeconds() const { return Schedule(.40f) * GetMorphDuration() + 2.f; }
 	void PrepareDive();
 	FTransform DivePose(float NormalizedTime) const;
-	FTransform SourcePose(int32 Index, float NormalizedTime) const;
+	FTransform SourcePose(int32 Index, float NormalizedTime, const FCoreMorphTailMotion& TailMotion) const;
 	float Schedule(float Choreography) const;
 	float ChoreographyTime(float NormalizedTime) const;
 private:

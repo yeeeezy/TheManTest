@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightPath.h"
+#include "Enemy/Boss/CoreMorph/Movement/CoreMorphTailMotion.h"
 #include "CoreMorphFlightComponent.generated.h"
 
 class UStaticMeshComponent;
@@ -31,10 +32,12 @@ public:
 	void SetPaused(bool bValue) { bPaused = bValue; }
 	const TArray<TObjectPtr<UStaticMeshComponent>>& GetPieces() const { return Pieces; }
 	const FTransform& GetChoreographyFrame() const { return ChoreographyFrame; }
+	const FCoreMorphTailMotion& GetTailMotion() const { return TailMotion; }
 	FCoreMorphFlightFinished OnFlightFinished;
 private:
 	UPROPERTY(Transient) TArray<TObjectPtr<UStaticMeshComponent>> Pieces;
 	FCoreMorphFlightPath Path;
+	FCoreMorphTailMotion TailMotion;
 	FTransform ChoreographyFrame;
 	bool bHaveFrame = false, bFlying = false, bPaused = false, bHolding = false;
 	float FlightSeconds = 0, IdleSeconds = 0;

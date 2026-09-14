@@ -114,6 +114,12 @@ bool FCoreMorphValidate::Update()
 	Test->TestFalse(TEXT("Duplicate flight cannot activate"), Boss->StartFlightPreview());
 	Step(Boss, 5.f);
 	Test->TestTrue(TEXT("Actual boss identity follows flight by over 50 m"), FVector::Dist(Boss->GetActorLocation(), Initial) > 5000.f);
+	Test->TestTrue(TEXT("Measured ascent drives the tail before the old timed pulse"), Boss->Flight->GetTailMotion().Climb > .2f);
+	const FTransform PausedTail = Boss->Flight->GetPieces().Last()->GetComponentTransform();
+	const float PausedPhase = Boss->Flight->GetTailMotion().Phase;
+	Boss->Flight->TickComponent(.5f, LEVELTICK_All, nullptr);
+	Test->TestEqual(TEXT("Pause freezes tail phase"), Boss->Flight->GetTailMotion().Phase, PausedPhase);
+	Test->TestTrue(TEXT("Pause freezes piece pose"), Boss->Flight->GetPieces().Last()->GetComponentTransform().Equals(PausedTail));
 	const FRotator Heading = Boss->GetActorRotation();
 	Boss->ReactToProjectileHit(Boss->GetWorld()->GetFirstPlayerController());
 	Damage(Boss, 25);
@@ -125,9 +131,12 @@ bool FCoreMorphValidate::Update()
 	Test->TestEqual(TEXT("Phase does not grant flight twice"), ASC->GetActivatableAbilities().Num(), 1);
 	ASC->CancelAllAbilities();
 	const FVector Cancelled = Boss->GetActorLocation();
+	const float CancelledPhase = Boss->Flight->GetTailMotion().Phase;
 	Step(Boss, .5f);
 	Test->TestTrue(TEXT("Cancellation freezes movement and ends the GA"), !Boss->Flight->IsFlying() && Boss->GetActorLocation().Equals(Cancelled, .01));
+	Test->TestEqual(TEXT("Cancellation also freezes tail motion"), Boss->Flight->GetTailMotion().Phase, CancelledPhase);
 	Boss->ResetFlightPreview();
+	Test->TestEqual(TEXT("Reset clears accumulated climb response"), Boss->Flight->GetTailMotion().Climb, 0.f);
 	Test->TestTrue(TEXT("Reset restores the original choreography frame"), Boss->GetActorLocation().Equals(Initial, .01));
 	Test->TestEqual(TEXT("Replay does not heal"), ASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()), 75.f);
 	Test->TestEqual(TEXT("Replay does not reset combat phase"), Boss->GetCombatPhase(), 2);
@@ -140,12 +149,16 @@ bool FCoreMorphValidate::Update()
 	Test->TestFalse(TEXT("Batch one ends before particle release"), Boss->Flight->IsFlying());
 	Test->TestNearlyEqual(TEXT("Release boundary is 13.4 seconds"), Boss->Flight->GetFlightSeconds(), 13.4f, .002f);
 	Test->TestFalse(TEXT("GA has ended at release boundary"), ASC->FindAbilitySpecFromClass(UGA_CoreMorphFlight::StaticClass())->IsActive());
+	Test->TestTrue(TEXT("Descent fades the climbing tail response"), Boss->Flight->GetTailMotion().Climb < .05f);
 	Test->TestFalse(TEXT("No implicit replay after completion"), Boss->StartFlightPreview());
 	Boss->ResetFlightPreview();
 	Boss->StartFlightPreview();
 	Boss->Flight->SetComponentTickEnabled(false);
 	Step(Boss, 2.f);
+	const float BeforeDeathPhase = Boss->Flight->GetTailMotion().Phase;
 	Damage(Boss, 1000);
+	Boss->Flight->TickComponent(.5f, LEVELTICK_All, nullptr);
+	Test->TestEqual(TEXT("Death cannot advance tail motion"), Boss->Flight->GetTailMotion().Phase, BeforeDeathPhase);
 	Test->TestTrue(TEXT("GE lethal damage enters EnemyBase death lifecycle"), Boss->IsDead());
 	Test->TestFalse(TEXT("Death cancels flight"), Boss->Flight->IsFlying());
 	Test->TestFalse(TEXT("Death stops flight ticking"), Boss->Flight->IsComponentTickEnabled());
@@ -185,6 +198,52 @@ DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FCoreMorphScreenshot, FString, Na
 bool FCoreMorphScreenshot::Update()
 {
 	FScreenshotRequest::RequestScreenshot(FPaths::ConvertRelativePathToFull(FPaths::ProjectSavedDir() / TEXT("CoreMorphMigration") / Name), false, false);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCoreMorphTailResponse, "TheManTest.Enemy.CoreMorph.TailMotion", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FCoreMorphTailResponse::RunTest(const FString& Parameters)
+{
+	auto Advance = [](FCoreMorphTailMotion& Motion, FVector Velocity, int32 Frames, float Dt)
+	{
+		for (int32 I = 0; I < Frames; ++I) Motion.Update(Velocity, Dt);
+	};
+	FCoreMorphTailMotion Level, Climbing, Descending, Rest;
+	Advance(Level, FVector(11000, 0, 0), 120, 1.f / 60.f);
+	Advance(Climbing, FVector(11000, 0, 8000), 120, 1.f / 60.f);
+	Advance(Descending, FVector(11000, 0, -8000), 120, 1.f / 60.f);
+	Advance(Rest, FVector::ZeroVector, 120, 1.f / 60.f);
+	TestTrue(TEXT("Actual ascent builds a strong response"), Climbing.Climb > .99f);
+	TestEqual(TEXT("Level flight never triggers the climb wave"), Level.Climb, 0.f);
+	TestEqual(TEXT("Descent is not mistaken for climb"), Descending.Climb, 0.f);
+	TestEqual(TEXT("Stationary motion has no flight stroke"), Rest.Movement, 0.f);
+	FVector LevelTip = FVector::ZeroVector, ClimbTip = FVector::ZeroVector, Root = FVector::ZeroVector;
+	FRotator LevelBend = FRotator::ZeroRotator, ClimbBend = FRotator::ZeroRotator, RootBend = FRotator::ZeroRotator;
+	Level.Apply(1, LevelTip, LevelBend);
+	Climbing.Apply(1, ClimbTip, ClimbBend);
+	Climbing.Apply(0, Root, RootBend);
+	TestTrue(TEXT("Climbing actually increases piece vertical deflection"), FMath::Abs(ClimbTip.Z) > FMath::Abs(LevelTip.Z) * 4);
+	TestTrue(TEXT("Tail base remains anchored"), Root.IsZero() && RootBend.IsZero());
+	// Trigger ascent after a completely different amount of level flight. No route timestamp is supplied.
+	FCoreMorphTailMotion Late;
+	Advance(Late, FVector(11000, 0, 0), 1080, 1.f / 60.f);
+	Advance(Late, FVector(11000, 0, 8000), 120, 1.f / 60.f);
+	TestNearlyEqual(TEXT("Climb response is independent of flight schedule"), Late.Climb, Climbing.Climb, .0001f);
+	const float BeforeLevel = Climbing.Climb;
+	Climbing.Update(FVector(11000, 0, 0), 1.f / 60.f);
+	TestTrue(TEXT("Crest transition fades without snapping"), Climbing.Climb < BeforeLevel && Climbing.Climb > BeforeLevel * .9f);
+	Advance(Climbing, FVector(11000, 0, -8000), 120, 1.f / 60.f);
+	TestTrue(TEXT("Sustained descent clears climb response"), Climbing.Climb < .002f);
+	FCoreMorphTailMotion At30, At120;
+	Advance(At30, FVector(11000, 0, 4000), 60, 1.f / 30.f);
+	Advance(At120, FVector(11000, 0, 4000), 240, 1.f / 120.f);
+	FVector Tip30 = FVector::ZeroVector, Tip120 = FVector::ZeroVector;
+	FRotator Bend30 = FRotator::ZeroRotator, Bend120 = FRotator::ZeroRotator;
+	At30.Apply(1, Tip30, Bend30); At120.Apply(1, Tip120, Bend120);
+	TestTrue(TEXT("30 and 120 FPS give the same response and pose"), Tip30.Equals(Tip120, .02) && Bend30.Equals(Bend120, .01));
+	const FCoreMorphTailMotion BeforeZeroDelta = At30;
+	At30.Update(FVector(0, 0, 8000), 0);
+	TestTrue(TEXT("Zero delta preserves response and phase"), At30.Climb == BeforeZeroDelta.Climb && At30.Phase == BeforeZeroDelta.Phase);
 	return true;
 }
 

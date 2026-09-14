@@ -1,7 +1,9 @@
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightPath.h"
+#include "Enemy/Boss/CoreMorph/Movement/CoreMorphTailMotion.h"
 #include "Enemy/Boss/CoreMorph/Data/CoreMorphVisualLayout.h"
 
-// Source: UE58Blank FEAT058. Preserve the accepted trajectory and wing/tail mathematics.
+// Source: UE58Blank FEAT058. Preserve trajectory, wings and lateral turn shape;
+// tail undulation now receives measured movement instead of a timed dive pulse.
 namespace
 {
 float Ease(float X){X=FMath::Clamp(X,0.f,1.f);return X*X*X*(X*(X*6-15)+10);}
@@ -95,7 +97,7 @@ FTransform FCoreMorphFlightPath::DivePose(float T) const
  Facing.Roll=55.f*Ease((Seconds-3.f)/1.3f)*(1-DiveBank);
  return FTransform(Facing.Quaternion(),FlightPosition(T));
 }
-FTransform FCoreMorphFlightPath::SourcePose(int32 Index,float T) const
+FTransform FCoreMorphFlightPath::SourcePose(int32 Index,float T,const FCoreMorphTailMotion& TailMotion) const
 {
  const auto& P=Layout->Pieces[Index];FVector Local=SourcePositions.IsValidIndex(Index)?SourcePositions[Index]:P.Position;
  const float Seconds=T*GetMorphDuration(),C=ChoreographyTime(T);
@@ -115,20 +117,13 @@ FTransform FCoreMorphFlightPath::SourcePose(int32 Index,float T) const
  }
  else if(P.Kind==TEXT("Tail"))
  {
-  const float S=FMath::Clamp(P.Order,0.f,1.f),Wave=Phase-1.1f-3*S;
-  Local.Y+=240*Start*S*S*FMath::Sin(Wave)*(1+.4f*Dive);
-  Local.Z+=130*Start*S*S*FMath::Sin(Wave-.8f);
-  Bend.Yaw=8*Start*S*FMath::Cos(Wave);Bend.Pitch=5*Start*S*FMath::Cos(Wave-.8f);
+  TailMotion.Apply(P.Order,Local,Bend);
   // Bend the trailing spine along the circular wake instead of rotating a rigid straight tail.
   // Let the long tail trail the heading change, then straighten along the locked dive.
   const float Turn=Ease((Seconds-3.f)/1.3f)*(1-Ease((Seconds-Schedule(.40f)*GetMorphDuration()-.65f)/1.f));
   const float Radius=10000/GetFormScale(0),Arc=-float(Local.X)/Radius;
   Local.X=FMath::Lerp(float(Local.X),-Radius*FMath::Sin(Arc),Turn);
   Local.Y+=Radius*(1-FMath::Cos(Arc))*Turn;Bend.Yaw-=FMath::RadiansToDegrees(Arc)*Turn;
-  // A single broad dorsoventral wave follows the head into the dive, delayed along the tail.
-  const float WaveTime=(Seconds-9.4f-S*.65f)/2.6f;
-  const float Pulse=FMath::Sin(2*PI*FMath::Clamp(WaveTime,0.f,1.f))*FMath::Square(FMath::Sin(PI*FMath::Clamp(WaveTime,0.f,1.f)));
-  Local.Z+=850*S*Pulse;Bend.Pitch+=12*S*Pulse;
  }
  const FTransform Body=DivePose(T);
  const float Size=GetFormScale(0);

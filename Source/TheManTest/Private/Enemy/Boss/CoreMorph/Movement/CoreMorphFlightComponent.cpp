@@ -76,6 +76,7 @@ bool UCoreMorphFlightComponent::StartFlight()
 	for (const auto& Piece : Pieces)
 		Path.SourcePositions.Add((ChoreographyFrame.InverseTransformPosition(Piece->GetComponentLocation()) - Path.GetFormOffset(0)) / Path.MantaScale);
 	Path.PrepareDive();
+	TailMotion = {};
 	FlightSeconds = 0;
 	bFlying = true;
 	bPaused = bHolding = false;
@@ -97,6 +98,7 @@ void UCoreMorphFlightComponent::ResetPreview()
 	bHolding = false;
 	FlightSeconds = IdleSeconds = 0;
 	Path.SourcePositions.Reset();
+	TailMotion = {};
 	SetComponentTickEnabled(true);
 	UpdatePose();
 }
@@ -113,7 +115,19 @@ void UCoreMorphFlightComponent::TickComponent(float Dt, ELevelTick Tick, FActorC
 {
 	Super::TickComponent(Dt, Tick, Function);
 	if (!Boss() || Boss()->IsDead() || bPaused || Dt <= 0) return;
-	if (bFlying) FlightSeconds = FMath::Min(FlightSeconds + Dt, Path.GetReleaseSeconds());
+	if (bFlying)
+	{
+		const float PreviousSeconds = FlightSeconds;
+		FlightSeconds = FMath::Min(FlightSeconds + Dt, Path.GetReleaseSeconds());
+		const float MotionSeconds = FlightSeconds - PreviousSeconds;
+		if (MotionSeconds > 0.f)
+		{
+			// CharacterMovement is disabled. Measure the actual body displacement
+			// used for this frame, including placement rotation/scale, not GetVelocity().
+			const FTransform Body = Path.DivePose(FlightSeconds / Path.GetMorphDuration()) * ChoreographyFrame;
+			TailMotion.Update((Body.GetLocation() - GetOwner()->GetActorLocation()) / MotionSeconds, MotionSeconds);
+		}
+	}
 	else if (!bHolding) IdleSeconds += Dt;
 	UpdatePose();
 	if (bFlying && FlightSeconds >= Path.GetReleaseSeconds())
@@ -136,7 +150,7 @@ void UCoreMorphFlightComponent::UpdatePose()
 	{
 		if (!IsValid(Pieces[I])) continue;
 		FTransform Pose;
-		if (bFlightPose) Pose = Path.SourcePose(I, T);
+		if (bFlightPose) Pose = Path.SourcePose(I, T, TailMotion);
 		else
 		{
 			const auto& Piece = Path.Layout->Pieces[I];
