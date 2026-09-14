@@ -1,17 +1,18 @@
 # 当前工作面板
 
-- Active feature：FEAT-082大厅角色展示。用户否决上一批IK握持；已改为每枪独立成品动画，只修左手腕旋转，等待前台观感确认。
+- Active feature：FEAT-082大厅角色展示。用户截图102535否决仅修手腕版，指定视觉参考Phantom。已在Blender用实际人物与三枪重做握持并接入，等待用户观感确认。
 - FEAT-081／080暂停，详见对应archive。
 
-## 当前配置
+## 当前实现
 
-- 正式LobbyMap及人物位置／镜头不变。Display Weapon Index：0维修枪、1爆破枪、2电击枪；读取三枪正式BP的实际模型／材质／组件变换，缩放未改。
-- 每枪独立RelaxedAnimations[0/1]和ReadyAnimation，共九条按枪命名的AS_MaintenanceWorker_Lobby动画；RelaxedIdleIndex或SetRelaxedIdleIndex(0/1)选择放松版本，IA_Test／数字1仍切换放松与举枪。
-- 大厅自定义IK AnimInstance、左手目标和AnimationCore依赖已删除；标准SingleNode直接播放。TMIIR仅修改hand_l旋转关键帧，原肩／肘／手腕位置与其他局部轨道不变；没有离线IK或新RTG。原五条动画保留，空手Standing仍用原动画。
+- 三枪各两条放松和一条举枪，现有九条按枪命名成品路径保持，Display Weapon Index为0维修枪／1爆破枪／2电击枪。RelaxedIdleIndex选择放松版本，数字1切换放松／举枪。
+- Blender对照Phantom掌心／手指形态进行FK摆姿：修lowerarm_l、hand_l、五指前两节共12个旋转轨道；保留上臂与肘部位置，手腕离开机匣，掌心托枪。身体／右手、骨骼局部位移和缩放保留。无IK求解或运行时握持处理。
+- Blender工程：D:/Blender Projects/LobbyWeaponGrip/LobbyWeaponGrip_Animated.blend，九个命名人物Action及对应枪Action；静态Phantom对照另存LobbyWeaponGrip.blend。脚本、导出资源、近景、制作数据和验证日志同目录。
+- TMIIR负责从Blender制作参数生成／核验最终九条AnimSequence，AssetTools迁入覆盖现有路径。目标本轮没有C++／BP／武器或挂点改动，不迁入参考Phantom资源、Rig或制作文件。
 
 ## 验证与交接
 
-- 目标与TMIIR辅助模块Development Editor编译通过；BP三枪动画引用编译保存通过。wrist-animation-validation实际LobbyMap PIE通过2806样本，九条持枪循环、两条Standing、模型材质缩放、原手臂位置、无效武器索引和One按键链均通过。运行时位置相对原Raw姿态最大差0.007172cm，旋转差0.179115度包含压缩误差。
-- 三枪普通／v2放松和举枪近景已检查；截图为外部CoreMorph57Prep/Saved/Review/LobbyWristFinal-*。不以数值测试替代用户观感确认。wrist-animation-cold-final冷读50资产通过：九条成品均绑定本枪，所有骨骼局部位置和其他骨骼旋转保持，手腕旋转与外部制作规格一致，依赖只有既有大厅Mesh／Skeleton，无Rig／RTG／Redirector。全部后台验证编辑器已退出。
-- checkpoint77b2434；本轮九条成品、展示BP、基类源码和harness未最终提交／push。正式武器、原动画、地图未改。源助手在TMIIR，备份及脚本在CoreMorph57Prep，目标不接收制作资产。
-- Phantom当时只恢复hand_r_wepSocket和枪相对scale1；这次采用直接修动画是用户新要求，不是复用旧IK方案。
+- TMIIR辅助模块编译成功。源冷读逐关键帧核对九条动画与Blender旋转修正、全部局部位置及依赖通过；Blender实际骨骼与制作数据误差小于0.000003m。
+- validate-grips实际LobbyMap PIE通过2816样本，九条持枪和两条Standing完整循环，标准SingleNode、模型材质缩放、修正后手部输出、肩肘位置及身体／右手保留、One按键链与无效枪索引均通过。测试前后地图及资产哈希不变。
+- 已查看LobbyBlenderGrip-*实机两侧近景，并打开维修枪侧视预览；不以数字测试替代用户观感。全部后台制作／测试编辑器已退出。
+- checkpoint4d581c3；九条成品动画及harness未最终提交／push。工作区另外有用户保存的LobbyMap.umap变更（10:27:14），保留，不归入本轮动画改动或擅自回退。

@@ -2,7 +2,7 @@
 
 ## 大厅持枪姿态（FEAT-082，2026-09-14）
 
-FEAT-082大厅：已移除自定义LobbyCharacterAnimInstance及左臂IK，恢复标准SingleNode播放。每把正式武器配置独立两条Relaxed与一条Rifle成品序列，TMIIR只修hand_l旋转，保留原手臂位置和其他骨骼轨道。共九条按枪命名成品，目标不保留动画制作Rig或Retargeter。
+FEAT-082大厅：已移除自定义LobbyCharacterAnimInstance及左臂IK，恢复标准SingleNode播放。每把正式武器配置独立两条Relaxed与一条Rifle成品序列，Blender对照Phantom修正左前臂、手腕及拇指／四指前两节旋转，TMIIR生成最终序列；上臂与肘部位置、身体／右手保持。共九条按枪命名成品，目标不保留动画制作Rig或Retargeter。
 
 - 2026-09-05当前受击仅播放成品动画：EnemyHitReactionComponent仅按Actor局部入射方向选择，BP_Phantom直接配置前后左右4条AS_Humanoid_BlastRifle_{Front,Back,Left,Right}，来自Mixamo并在外部适配现役70骨。原始时长/30fps保留，握枪和腿长差异已调整。
 - 共享无骨架后处理位于Humanoid/_Shared/Animations/Logic/ABP_Humanoid_HitReaction。输入Pose缓存与动态SequenceEvaluator混合后输出；ReactionAnimation/Time/Alpha、UseFullBodyReaction由NativeUpdateAnimation提供。旧ControlRig节点、模式选择、RigUnit和Frame/旋转/包络参数已删除，不存在切回Rig的入口。

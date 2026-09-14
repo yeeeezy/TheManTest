@@ -110,3 +110,15 @@
 - 最终验证：wrist-animation-validation.log／json为WRIST_ANIMATION_VALIDATION_OK，实际LobbyMap PIE共2806样本；三枪各两放松／一举枪完整循环、两个Standing、标准SingleNode类、正式模型／材质／缩放、原肩肘手腕位置、无效枪索引和One→Relaxed→Rifle通过。原身体位置相对Raw姿态最大0.007172cm，旋转差0.179115度属于运行时压缩范围。测试前后地图、正式武器和原动画哈希不变。
 - wrist-animation-cold-final.log／json：WRIST_ANIMATION_COLD_OK，50资产全部加载，九条引用独立且全部局部骨骼位置／非hand_l旋转相对原动画保持；hand_l旋转与TMIIR制作规格一致，只有既有大厅Mesh／Skeleton依赖，无IKRig／RTG／Redirector。初次额外要求迁移前后整包字节一致不成立（AssetTools迁移会重新序列化包），改用逐骨骼原始姿态和明确制作旋转验证，不能把包哈希差异误判为动画差异。
 - 已查看三枪最终普通／v2放松及举枪近景，肘部保持原弯曲，手掌改为按各枪形状包覆；图为外部LobbyWristFinal-*。本次遵从只改手腕旋转，没有把手臂拉向固定握点；最终主观观感仍待用户确认。全部后台编辑器退出，无最终提交／push。
+
+## 2026-09-14 截图102535返修，Blender对照Phantom重新摆握持（进行中）
+
+- 用户截图102535明确显示维修枪举枪时左手腕穿进机匣。上一轮仅旋转手腕的结果被否决；数值验证不能说明握持正确。用户允许修不好的动作重新生成，并指定参考Phantom调整好的视觉姿态。
+- checkpoint4d581c3。未改目标C++、BP、武器模型尺寸／材质／挂点或地图。独立工程位于D:/Blender Projects/LobbyWeaponGrip；实际人物和三枪FBX、Phantom当前OriginalRifle人物／枪／姿态只读导出，用于同时摆放检查。导出初试commandlet缺MeshObject崩溃，改完整隐藏Editor启动导出成功；未关闭用户编辑器／保存地图。
+- Blender中按Phantom掌心／手指姿态参考重新进行FK摆姿。保留上臂与肘部位置，旋转lowerarm_l使手腕离开机匣，再调整hand_l及拇指／四指前两节；不使用IK求解、运行时约束或新Retargeter。三枪两放松／一举枪分别制作，帧数99／142／99，30fps，原循环身体动作保留。
+- 已保存LobbyWeaponGrip.blend静态对照和LobbyWeaponGrip_Animated.blend九个命名角色Action及配套枪动画。已出两侧清晰预览，自动打开维修枪侧视图；Phantom-Comparison为参考同场对照。Blender骨骼位置与导出制作数据检查一致。
+- TMIIR辅助模块ApplyLocalRotationOffsets已编译通过；只在外部成品副本写入已在Blender摆好／烘焙的12个骨骼旋转修正，位置／缩放轨道保留。目标只接收九条现有路径成品动画；最终源冷读、迁移、目标PIE与侧面近景验证进行中。
+
+- 最终源验证：verify-migrate-grips.log为BLENDER_GRIPS_VERIFIED_AND_MIGRATED_OK，9条各99／142／99关键帧共1020帧，所有骨骼局部位置误差0，旋转与Blender已摆好规格一致；依赖只有既有大厅Mesh／Skeleton。没有新Rig／Retargeter。目标九条原路径成品已覆盖，BP引用无需修改。
+- 最终实际PIE：validate-grips.log为BLENDER_GRIP_VALIDATION_OK，共2816样本，九持枪／二空手全循环及One→Relaxed→Rifle、无效索引、模型材质尺寸、标准SingleNode、修正的前臂手掌手指与原上臂肘部位置／右手身体输出均通过。不是旧版“手腕位置不动”的测试；现增加实际手腕偏离旧错位姿势超过4cm和当前成品输出检查。验证前后地图／武器／动画哈希保持。
+- 已查看LobbyBlenderGrip三枪放松／举枪实机近景，与截图102535对照，前臂不再穿入机匣，手掌改为从下方支撑。保留用户视觉验收，不宣称每个接触面已做逐三角形无穿透证明。所有后台编辑器退出，无最终提交／push。工作区另见用户10:27:14保存的LobbyMap.umap变更；本轮未保存地图、不回退该改动。
