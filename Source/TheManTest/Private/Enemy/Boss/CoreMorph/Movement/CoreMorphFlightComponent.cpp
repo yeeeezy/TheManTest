@@ -98,6 +98,7 @@ bool UCoreMorphFlightComponent::StartFlight()
 	ActiveRoute = FlightRoute;
 	bUsingRoute = ActiveRoute.IsValid();
 	RouteDistance = 0;
+	CurrentRouteSpeed = 0;
 	if (bUsingRoute)
 	{
 		const auto* Spline = ActiveRoute->Spline.Get();
@@ -126,6 +127,7 @@ void UCoreMorphFlightComponent::ResetPreview()
 	bHolding = bUsingRoute = false;
 	FlightSeconds = 0;
 	RouteDistance = 0;
+	CurrentRouteSpeed = 0;
 	ResetMotion(RestBody());
 	SetComponentTickEnabled(true);
 	UpdatePose();
@@ -151,6 +153,7 @@ void UCoreMorphFlightComponent::TickComponent(float Dt, ELevelTick Tick, FActorC
 		Left -= Step;
 		FVector Position = Motion.GetBody().GetLocation();
 		bool bFinished = false;
+		Motion.AccelerationIntent = 0;
 		if (bFlying && bUsingRoute)
 		{
 			const auto* Spline = ActiveRoute.IsValid() ? ActiveRoute->Spline.Get() : nullptr;
@@ -161,7 +164,18 @@ void UCoreMorphFlightComponent::TickComponent(float Dt, ELevelTick Tick, FActorC
 				break;
 			}
 			const float Length = Spline->GetSplineLength();
-			RouteDistance += FMath::Max(0.f, RouteSpeed) * Step;
+			const float DesiredSpeed = FMath::Max(0.f, RouteSpeed);
+			Motion.AccelerationIntent = FMath::Clamp((DesiredSpeed - CurrentRouteSpeed) / 6000.f, 0.f, 1.f);
+			if (DesiredSpeed <= CurrentRouteSpeed) CurrentRouteSpeed = DesiredSpeed;
+			else if (Motion.PowerStroke >= .7f * Motion.AccelerationIntent)
+			{
+				// The visible preparation leads acceleration; the downstroke then
+				// contributes more thrust than the recovery stroke.
+				const float Downstroke = FMath::Max(0.f, -FMath::Cos(Motion.Phase - 1.8f));
+				const float Thrust = (.15f + .85f * Motion.PowerStroke) * (.35f + .65f * Downstroke);
+				CurrentRouteSpeed = FMath::FInterpConstantTo(CurrentRouteSpeed, DesiredSpeed, Step, FMath::Max(1.f, RouteAcceleration) * Thrust);
+			}
+			RouteDistance += CurrentRouteSpeed * Step;
 			bFinished = !Spline->IsClosedLoop() && RouteDistance >= Length;
 			RouteDistance = Spline->IsClosedLoop() ? FMath::Fmod(RouteDistance, double(Length)) : FMath::Min(RouteDistance, double(Length));
 			Position = Spline->GetLocationAtDistanceAlongSpline(float(RouteDistance), ESplineCoordinateSpace::World);
@@ -172,6 +186,12 @@ void UCoreMorphFlightComponent::TickComponent(float Dt, ELevelTick Tick, FActorC
 			Step = FMath::Min(Step, Path.GetReleaseSeconds() - FlightSeconds);
 			FlightSeconds += Step;
 			Position = ChoreographyFrame.TransformPosition(Path.FlightPosition(FlightSeconds / Path.GetMorphDuration()));
+			// Preserve the accepted reference path. Look ahead for acceleration so
+			// its presentation can anticipate the motion without a timestamp gate.
+			const float Future = FMath::Min(FlightSeconds + .4f, Path.GetReleaseSeconds());
+			const float Before = FMath::Max(0.f, Future - .02f);
+			const FVector FutureDelta = ChoreographyFrame.TransformVector(Path.FlightPosition(Future / Path.GetMorphDuration()) - Path.FlightPosition(Before / Path.GetMorphDuration()));
+			Motion.AccelerationIntent = FMath::Clamp((float(FutureDelta.Size()) / FMath::Max(.001f, Future - Before) - Motion.GetSpeed()) / 6000.f, 0.f, 1.f);
 			bFinished = FlightSeconds >= Path.GetReleaseSeconds();
 		}
 		Motion.Update(Position, Step);

@@ -13,6 +13,10 @@ struct THEMANTEST_API FCoreMorphFlightMotion
 	FTransform PiecePose(const FCoreMorphVisualPiece& Piece, const FVector& PieceScale) const;
 	const FTransform& GetBody() const { return Body; }
 	float Movement = 0.f, Climb = 0.f, Dive = 0.f, Bank = 0.f, Phase = 0.f;
+	// Intent arrives before displacement. Propulsion waits for this preparation
+	// to become visible instead of only reacting to acceleration after it happened.
+	float AccelerationIntent = 0.f, PowerStroke = 0.f;
+	float GetSpeed() const { return float(PreviousVelocity.Size()); }
 	int32 GetHistoryCount() const { return History.Num(); }
 private:
 	struct FTrailSample { double Distance; FTransform Pose; };

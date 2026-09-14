@@ -6,6 +6,8 @@
 
 ## 当前完成与待办
 
+- 当前进行中：用户要求加速前大力挥翼与随机轻柔／快速翻转卷翼。加速意图与先发力再提速代码、测试已准备，尚未编译／PIE；“翻转”是侧滚还是水平掉头待用户说明，翻转未实现。用户前台编辑器 PID 33624 仍开着，已请求保存关闭，未自行关闭。
+
 - 新增三路线检查地图 `/Game/Maps/CoreMorph/L_CoreMorphRoutes`：Play 自动起飞，1 缓弯爬升（20 秒）／2 左右 S 弯（22 秒）／3 盘旋俯冲（27 秒），数字键切换重播；P 暂停、R 复位、V 播放、F 相机。编译、保存重开、RouteReview 实际 PIE 三条完整播放和原 FlightBatch 回归均通过，等待用户评价自然程度。
 
 - 已完成源项目外部快照、5.7 准备工程、154 蝠鲼网格与 5 材质重建及 AssetTools 迁入。
@@ -19,4 +21,4 @@
 
 ## 会话交接
 
-按用户要求提供三条可直接观看的路线，新增 L_CoreMorphRoutes，等待用户观感反馈，不进入第二批。全身适配成果已在写入前保存为 WIP checkpoint `c8b8e0e`；本轮地图／Review 控件／测试／文档未提交或 push。外部准备工程 Saved/Review/routes-tests-build.log 编译通过，routes-author-02.log 和 routes-authored.json 验证保存重开／全部控制点，routes-validation.log 的 RouteReview 与 FlightBatch 两项 Success。三条路线真实世界 Tick 分别完整飞行 20／22／27 秒并正确结束，切换复用同一个头领和 GA。Play 自动开始第 1 条，1／2／3 重播切换；原 L_CoreMorphFlight 保持手动 V 与原对照路线。初次直接 World 复制触发 Python 引用导致的编辑器内存清理断言，已改用 NewLevelFromTemplate 并释放 Python 引用后解决。源项目／目标版本／运动求解器与头领正式资产未改，自动编辑器已退出。新地图属于最终验收后清理的临时检查工具。
+最新请求是加速前发力、随机轻柔／快速翻转且翅膀卷起。三路线成果已先保存为 WIP `3938497`；当前 FlightMotion／FlightComponent／测试的加速意图修改未编译、未提交／push，不能宣称已生效。Motion.AccelerationIntent 驱动 PowerStroke，Spline 先显现挥翼再按推力累积速度，源位置路线保留并前瞻 .4 秒驱动发力。翻转方向待用户回复（侧滚／水平掉头），翻转尚未实现。用户启动的前台 TheManTest 编辑器 PID 33624 未关闭，已异步请求保存关闭以冷编译，不能擅自终止。后续完成机动卷翼后跑 AdaptiveMotion／FlightBatch／RouteReview，并更新验证证据。上一轮三路线实际 PIE 验证见 routes-validation.log；新地图 L_CoreMorphRoutes 的 1／2／3 自动切换入口继续保留。源和目标引擎不变，不进入第二批。

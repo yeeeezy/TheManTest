@@ -26,15 +26,16 @@ void FCoreMorphFlightMotion::Update(const FVector& Position, float Dt)
 		* FMath::Clamp(Speed / 4000.f, 0.f, 1.f);
 	Dive = FMath::Lerp(Dive, DiveTarget, Blend);
 	Activity = FMath::Lerp(Activity, 1.f, Blend);
+	PowerStroke = FMath::Lerp(PowerStroke, FMath::Clamp(AccelerationIntent, 0.f, 1.f), 1.f - FMath::Exp(-Dt / .12f));
 	const float Acceleration = FMath::Clamp((Speed - PreviousSpeed) / Dt / 8000.f, 0.f, 1.f);
-	Stroke = FMath::Lerp(Stroke, FMath::Clamp(.18f + .6f * Movement + .5f * Climb + .2f * Acceleration, 0.f, 1.2f) * (1.f - .8f * Dive), Blend);
+	Stroke = FMath::Lerp(Stroke, FMath::Clamp(.18f + .6f * Movement + .5f * Climb + .2f * Acceleration + .9f * PowerStroke, 0.f, 1.6f) * (1.f - .8f * Dive), Blend);
 
 	// Seeded, low-frequency variation is shared across each connected surface.
 	// No per-frame random draws and no independent jitter on neighbouring pieces.
 	NoiseClock += Dt;
 	Noise = Randomness * (.65f * FMath::Sin(NoiseClock * .73f + NoiseOffsets.X) + .35f * FMath::Sin(NoiseClock * 1.13f + NoiseOffsets.Y));
 	Asymmetry = Randomness * FMath::Sin(NoiseClock * .47f + NoiseOffsets.Z);
-	Phase = FMath::Fmod(Phase + Dt * 2.f * PI * (.35f + .45f * Movement + .3f * Climb) * (1.f + .15f * Noise), 2.f * PI);
+	Phase = FMath::Fmod(Phase + Dt * 2.f * PI * (.35f + .45f * Movement + .3f * Climb + .25f * PowerStroke) * (1.f + .15f * Noise), 2.f * PI);
 
 	float TurnRate = 0.f;
 	if (Velocity.SizeSquared2D() > 10000. && PreviousVelocity.SizeSquared2D() > 10000.)
@@ -99,6 +100,7 @@ FTransform FCoreMorphFlightMotion::PiecePose(const FCoreMorphVisualPiece& Piece,
 		const float Wave = Phase - 1.8f * Span + .25f * float(Local.X / 1000.) + Side * .15f * Asymmetry;
 		const float Gain = Activity * Stroke * (1.f + .2f * Noise + Side * .1f * Asymmetry);
 		Local.Z += 780.f * Gain * FMath::Pow(Span, 1.7f) * FMath::Sin(Wave) - 300.f * Dive * Span * Span;
+		Local.Z += 350.f * PowerStroke * Span * Span * (1.f - Dive);
 		Local.Y -= Side * 180.f * Gain * Span * Span * FMath::Square(FMath::Sin(Wave));
 		Local.X -= 600.f * Dive * Span * Span;
 		Bend.Roll = Side * (32.f * Gain * Span * FMath::Sin(Wave) - 16.f * Dive * Span);

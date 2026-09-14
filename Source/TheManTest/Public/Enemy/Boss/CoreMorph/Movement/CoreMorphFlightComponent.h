@@ -21,6 +21,7 @@ public:
 	// Empty uses the source reference route. Spline flights begin at its first point.
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="CoreMorph|Flight") TObjectPtr<ACoreMorphFlightRoute> FlightRoute;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CoreMorph|Flight", meta=(ClampMin="0", Units="cm/s")) float RouteSpeed = 11000.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CoreMorph|Flight", meta=(ClampMin="1")) float RouteAcceleration = 16000.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CoreMorph|Motion", meta=(ClampMin="0", ClampMax="1")) float MotionRandomness = .18f;
 	// Zero picks a new seed on reset. Nonzero gives repeatable motion for review.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CoreMorph|Motion") int32 MotionSeed = 0;
@@ -35,6 +36,7 @@ public:
 	void Shutdown();
 	bool IsFlying() const { return bFlying; }
 	float GetFlightSeconds() const { return FlightSeconds; }
+	double GetRouteDistance() const { return RouteDistance; }
 	float GetReleaseSeconds() const { return Path.GetReleaseSeconds(); }
 	bool IsPaused() const { return bPaused; }
 	void SetPaused(bool bValue) { bPaused = bValue; }
@@ -51,6 +53,7 @@ private:
 	FTransform ChoreographyFrame;
 	bool bHaveFrame = false, bFlying = false, bPaused = false, bHolding = false, bUsingRoute = false;
 	float FlightSeconds = 0;
+	float CurrentRouteSpeed = 0;
 	double RouteDistance = 0;
 	ACoreMorphBoss* Boss() const;
 	void ResetMotion(const FTransform& Body);
