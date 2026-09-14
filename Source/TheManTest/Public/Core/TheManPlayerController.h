@@ -17,7 +17,7 @@ struct FOnAttributeChangeData;
  * ATheManPlayerController
  * 职责：按键注册表。持有所有 IA_ 资产并添加 IMC，不路由任何角色逻辑。
  * 角色在 SetupPlayerInputComponent 中通过 GetController() 取 IA 资产并自行绑定。
- * 例外：TestSwitchCharacterAction 属于 Controller 级元操作，保留在此。
+ * 例外：TestSwitchCharacterAction 保留原序列化名，承载用户预留的 IA_Test 测试入口。
  */
 UCLASS()
 class THEMANTEST_API ATheManPlayerController : public APlayerController
@@ -26,6 +26,7 @@ class THEMANTEST_API ATheManPlayerController : public APlayerController
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void SetupInputComponent() override;
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
@@ -96,7 +97,11 @@ protected:
 	FDelegateHandle HealthChangedDelegateHandle;
 	FDelegateHandle MaxHealthChangedDelegateHandle;
 
-	void HandleTestSwitchCharacter();
+	void HandleTestInput();
+	void ClearInputTest();
+	TWeakObjectPtr<AActor> InputTestSubject;
+	TWeakObjectPtr<AActor> InputTestRoute;
+	TWeakObjectPtr<AActor> InputTestController;
 
 	// 调试快进：调用 GameState->DebugSkipTime()
 	void HandleDebugSkipTime();

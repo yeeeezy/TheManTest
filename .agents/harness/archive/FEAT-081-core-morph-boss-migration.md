@@ -248,3 +248,14 @@
 - `map-cleanup-cold-final.log` MAP_CLEANUP_COLD_OK；JSON确认仅剩TestMap和正式LobbyMap，58个测试Actor删除后77个已加载基础Actor与141个WorldPartition描述符保留，保留Actor数值Transform逐项不变。CoreMorph 490正式资产和4唯一技能保持，BP_CoreMorphBoss重新编译保存，4个Cue注册标签准确。第一次Transform误报仅为Python结构体地址差异，最终数值验证通过。
 - 磁盘与Registry双检查：额外地图／2份专属材质均不存在，CoreMorph／VFXTest地图空目录及CoreMorph源码Tests／Review空目录已清理；源码／配置中旧地图、ReviewTarget和预览入口引用为0。harness AGENTS.md已记录唯一TestMap和临时摆件不落盘要求。
 - 全部后台编辑器退出。结果未提交／push；f719242可恢复本轮前完整状态。此次完成测试设施清理，不代表第四批武器接入已经完成。
+
+### 复用用户预留1键测试Manta（2026-09-13，验证通过，待用户观感校验）
+
+- 用户提醒已有预留测试按键，要求以后统一使用。查明IA_Test映射One，BP_TheManPlayerController的TestSwitchCharacterAction已引用该资产，但旧C++回调仅切换MaintenanceWorker。38a495d检查点保存上轮已完成清理；本轮不重新添加任何检查地图／相机／按键资产。
+- 在原Controller入口改为HandleTestInput：仅PIE，按1临时生成RF_Transient Boss及闭合Spline路线，战斗组件bEnabled驱动正式主BT持续空中轰炸；再按1销毁本轮Boss、AIController和路线。OnUnPossess／EndPlay共同清理；不移动玩家、不改变地图资产。旧字段名保留以维持BP引用，角色切换正式函数仍保留。
+- 首次冷构建因局部Pawn／Player遮蔽Controller成员C4458被拒，改名并补充独立AIController弱引用清理；reserved-input-final-build.log Succeeded。外部实际PIE验证脚本通过EnhancedInput注入IA_Test，覆盖启动／红圈／弹体／爆炸／重按取消／活动测试退出，正在执行。首次脚本使用未暴露get_pawn，已改用get_controlled_pawn；未影响实现。
+- 读取IMC时采用UE5.7 DefaultKeyMappings.Mappings，旧Mappings已废弃为空；当前One绑定核对无误。长期规则写入AGENTS.md及arch02。
+
+- 最终 `reserved-input-key-verified.log` 输出 RESERVED_INPUT_PIE_OK；`reserved-input-pie.json` 为 ok=true，warning／missile／blast均true。采用引擎内置 Input.+key One／Input.-key One，经过实际按键映射和Started回调，确认4个预警贴花、导弹及爆炸渲染实例，预警和爆炸时重按均清理Boss／AIController／路线且可以重新启动，活动导弹期间退出PIE正常；玩家Pawn未切换，TestMap磁盘哈希不变，编辑世界没有残留Boss／路线。
+- 外部验证脚本前期遇到Python未暴露的Subsystem辅助API及受保护Effects字段；最终改为引擎内置按键模拟、公开组件枚举和材质识别。ExecutePythonScript需显式set_keep_python_script_alive(True)保留异步PIE回调。这些是验证脚本兼容问题，最终运行没有Error／断言／Ensure，不涉及新增项目测试源码。
+- 最终仅既有Controller h/cpp及harness改动；Controller蓝图编译保存没有磁盘差异，输入资产和地图未改，仍仅TestMap／正式LobbyMap。Development Editor Win64编译已通过，后台编辑器全部退出。本轮结果未提交／push；未来复用1键入口，第四批武器适配仍待实施。

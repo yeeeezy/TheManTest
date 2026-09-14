@@ -294,3 +294,9 @@ AFPSInfiltrator::SetupPlayerInputComponent（override，先 Super）
 - 项目只保留 TestMap 作为测试地图；LobbyMap 是正式选角流程地图，保留。不得再次向目标项目添加独立测试／Review 地图或 CoreMorph 临时相机、按键、Authoring／专项测试代码。
 - TestMap 保留基础地形／场景几何、天空、灯光、PlayerStart 和导航设施；用户后加的敌人、武器、可破坏测试方块、巡逻点、验收门、Validation 地形块已清理。后续验证不得把临时摆件保存回地图。
 - 用户选择删除依赖旧摆件的专项测试、保留其他回归测试。通用测试可在 PIE 临时生成并清理自己的对象，统一使用 TestMap；验证脚本和截图等证据放外部工作目录。
+
+### 预留测试按键（用户明确要求，2026-09-13）
+
+- 以后手动测试统一复用既有 `IA_Test`，当前 IMC_Default 映射为键盘上方 `1`（One），入口在 `ATheManPlayerController::HandleTestInput`。优先读取此入口再实施测试，禁止另造独立测试地图／相机／新按键。
+- `TestSwitchCharacterAction` 为避免破坏现有BP引用而保留旧序列化字段名，实际已作为通用预留测试入口；不能再因名称误认为1键必须切换角色。
+- 当前临时场景是 Manta 导弹：PIE按1开始，再按1结束。只在运行时生成Transient头领／路线，走正式主BT／GA／GE／Cue；退出PIE或玩家解除占有统一清理。后续任务替换这个入口的当前测试内容，不累积独立Review设施。

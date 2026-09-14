@@ -2,7 +2,12 @@
 
 - Active feature：FEAT-081 CoreMorph头领迁移，in_progress；FEAT-080暂停。
 - 已迁入飞行、重组／风墙、八足／尾刺雷爆；Manta核心导弹GA已实现并验证。唯一Actor／ASC／Health，目标UE5.7.4，源UE58Blank5.8.2保持不变。第四批三枪／附着弹适配仍待实施。
-- 用户最新要求清理所有额外测试地图，TestMap恢复基础场景；并删除依赖旧摆件的专项测试、保留其他回归测试。本轮清理已完成，取代旧“总验收后再清理”安排。
+- 用户最新要求以后统一复用预留测试按键。已确认 IA_Test 映射为键盘上方1；当前接入Manta导弹测试，冷编译及实际PIE按键链验证通过，待用户观感校验。
+
+## 当前测试入口
+
+- 打开TestMap并进入PIE，按1临时生成Manta及闭合飞行路线，由正式主BT驱动导弹GA；再按1清理。退出PIE或玩家解除占有也清理头领、AIController和路线，地图不保存摆件。
+- 入口为ATheManPlayerController::HandleTestInput；保留TestSwitchCharacterAction旧序列化字段名以维持BP的IA_Test引用。以后替换此入口当前测试内容，不新建测试地图、相机或额外按键。长期规则已写入AGENTS.md及arch02。
 
 ## 最新清理结果
 
@@ -23,7 +28,8 @@
 - map-cleanup-regression.log：7/7 Success，三枪配置／切换、准星射击、范围爆炸、原有人形怪布娃娃、两项保留的持久化回归。
 - map-cleanup-cold-final.log/json：仅TestMap／LobbyMap、77保留Actor的Transform不变、141描述符、490头领资产、4唯一技能及Cue注册通过；BP_CoreMorphBoss冷编译保存。
 - Registry和磁盘清场完成；源码／配置没有旧地图／CoreMorph临时入口引用。全部后台编辑器退出。
+- reserved-input-final-build.log：Development Editor Win64 Succeeded。reserved-input-key-verified.log／reserved-input-pie.json：RESERVED_INPUT_PIE_OK，经过引擎One按键模拟→IMC_Default→IA_Test→Controller，确认4个预警圈、导弹／爆炸实例、重按清理及再次启动、活动导弹退出PIE；玩家Pawn未切换，TestMap文件哈希不变。
 
 ## 会话交接
 
-WIP `f719242` 保存清理前完整Manta技能／检查设施；当前清理结果未提交／push。用户已确认删除旧摆件专项测试、保留其他回归。长期约定已写入AGENTS.md，禁止再创建独立测试地图或保存临时摆件。外部脚本 `cleanup_maps.py` 已执行，不要重跑；证据位于 `D:/Unreal Projects/CoreMorph57Prep/Saved/Review/map-cleanup-*`。下一步按用户新需求推进正式功能，第四批武器适配仍未实施。详情见 [FEAT-081 archive](archive/FEAT-081-core-morph-boss-migration.md)。
+WIP `38a495d` 保存已完成的地图／测试代码清理；更早的 `f719242` 保存清理前完整Manta技能／检查设施。本轮预留1键修改未提交／push，无Content改动，后台编辑器已退出。用户现在可在TestMap的PIE按1校验导弹观感；以后统一复用该入口。外部脚本 `cleanup_maps.py` 已执行，不要重跑；按键验证脚本为 `D:/Unreal Projects/CoreMorph57Prep/Scripts/verify_reserved_input.py`，证据在同工程 `Saved/Review/reserved-input-*`。第四批三枪／附着弹适配仍未实施，本轮不宣称该批完成。详情见 [FEAT-081 archive](archive/FEAT-081-core-morph-boss-migration.md)。

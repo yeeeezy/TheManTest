@@ -13,6 +13,14 @@
 #include "Weapons/_Shared/Firearms/Firearm.h"
 #include "Blueprint/UserWidget.h"
 #include "AbilitySystemComponent.h"
+#if WITH_EDITOR
+#include "Enemy/Boss/CoreMorph/CoreMorphBoss.h"
+#include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightComponent.h"
+#include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightRoute.h"
+#include "Enemy/Boss/CoreMorph/Combat/CoreMorphScorpionCombat.h"
+#include "Components/SplineComponent.h"
+#include "AIController.h"
+#endif
 
 void ATheManPlayerController::BeginPlay()
 {
@@ -46,6 +54,7 @@ void ATheManPlayerController::OnPossess(APawn* InPawn)
 
 void ATheManPlayerController::OnUnPossess()
 {
+	ClearInputTest();
 	UnbindCombatHUD();
 	Super::OnUnPossess();
 }
@@ -213,13 +222,13 @@ void ATheManPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
-	// Controller 只处理元操作（角色切换）；所有角色输入由各 Character 自行绑定
+	// Controller 处理预留测试入口和元操作；角色输入仍由各 Character 自行绑定
 	if (UEnhancedInputComponent* EIC = CastChecked<UEnhancedInputComponent>(InputComponent))
 	{
 		if (TestSwitchCharacterAction)
 		{
 			EIC->BindAction(TestSwitchCharacterAction, ETriggerEvent::Started,
-				this, &ATheManPlayerController::HandleTestSwitchCharacter);
+				this, &ATheManPlayerController::HandleTestInput);
 		}
 
 		// 调试快进：仅在填了 IA 资产时绑定
@@ -231,9 +240,85 @@ void ATheManPlayerController::SetupInputComponent()
 	}
 }
 
-void ATheManPlayerController::HandleTestSwitchCharacter()
+void ATheManPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	SwitchCharacter(FName("MaintenanceWorker"));
+	ClearInputTest();
+	Super::EndPlay(EndPlayReason);
+}
+
+void ATheManPlayerController::ClearInputTest()
+{
+#if WITH_EDITOR
+	if (AActor* AI = InputTestController.Get()) AI->Destroy();
+	if (AActor* Subject = InputTestSubject.Get())
+	{
+		Subject->Destroy(); // Boss EndPlay cancels GA and removes Cue/components.
+	}
+	if (AActor* Route = InputTestRoute.Get()) Route->Destroy();
+#endif
+	InputTestSubject.Reset();
+	InputTestRoute.Reset();
+	InputTestController.Reset();
+}
+
+void ATheManPlayerController::HandleTestInput()
+{
+#if WITH_EDITOR
+	// IA_Test is the user's reserved test slot. Replace this scenario for future work;
+	// never add a second mapping or save its transient objects into TestMap.
+	if (!IsLocalController() || !GetWorld() || GetWorld()->WorldType != EWorldType::PIE) return;
+	if (InputTestSubject.IsValid() || InputTestRoute.IsValid())
+	{
+		ClearInputTest();
+		ClientMessage(TEXT("Manta missile test cleared."));
+		return;
+	}
+	APawn* PlayerPawn = GetPawn();
+	if (!IsValid(PlayerPawn)) return;
+	UClass* BossClass = LoadClass<ACoreMorphBoss>(nullptr,
+		TEXT("/Game/Enemy/Boss/CoreMorph/Blueprint/BP_CoreMorphBoss.BP_CoreMorphBoss_C"));
+	if (!BossClass) return;
+
+	FVector Center = PlayerPawn->GetActorLocation();
+	FHitResult Ground;
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(ReservedInputTestGround), false, PlayerPawn);
+	if (!GetWorld()->LineTraceSingleByObjectType(Ground, Center + FVector(0, 0, 500),
+		Center - FVector(0, 0, 15000), FCollisionObjectQueryParams(ECC_WorldStatic), Query))
+	{
+		ClientMessage(TEXT("Manta missile test needs ground below the player."));
+		return;
+	}
+	Center.Z = Ground.ImpactPoint.Z + 6500;
+	const FVector Forward = FRotator(0, GetControlRotation().Yaw, 0).Vector();
+	const FVector Side = FVector::CrossProduct(FVector::UpVector, Forward);
+	const FVector Start = Center + Forward * 14000;
+	FActorSpawnParameters Spawn;
+	Spawn.Owner = this;
+	Spawn.ObjectFlags |= RF_Transient;
+	Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	auto* Route = GetWorld()->SpawnActor<ACoreMorphFlightRoute>(
+		ACoreMorphFlightRoute::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, Spawn);
+	InputTestRoute = Route;
+	if (!Route) return;
+	Route->Spline->ClearSplinePoints(false);
+	for (int32 I = 0; I < 8; ++I)
+	{
+		const float Angle = I * UE_TWO_PI / 8;
+		Route->Spline->AddSplinePoint(Center + (Forward * FMath::Cos(Angle) + Side * FMath::Sin(Angle)) * 14000,
+			ESplineCoordinateSpace::World, false);
+	}
+	Route->Spline->SetClosedLoop(true, true);
+	auto* Boss = GetWorld()->SpawnActor<ACoreMorphBoss>(BossClass, Start, Side.Rotation(), Spawn);
+	InputTestSubject = Boss;
+	InputTestController = Boss ? Boss->GetController() : nullptr;
+	if (!Boss) { ClearInputTest(); return; }
+	Boss->Flight->FlightRoute = Route;
+	Boss->Flight->RouteSpeed = 6000;
+	Boss->ScorpionCombat->bEnabled = true; // Saved main BT owns flight and ranged GA decisions.
+	Boss->LastThreat = PlayerPawn;
+	SetControlRotation((Start - PlayerPawn->GetPawnViewLocation()).Rotation());
+	ClientMessage(TEXT("Manta missile test started. Press 1 again to clear."));
+#endif
 }
 
 void ATheManPlayerController::HandleDebugSkipTime()

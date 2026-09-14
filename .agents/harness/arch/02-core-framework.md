@@ -24,7 +24,10 @@
 
 ## 测试地图
 
-- `/Game/Maps/CoreMorph/L_CoreMorphFlight`：FEAT-081 第一批独立飞行检查场，原生 GameModeBase 默认自由飞行 Pawn；`ACoreMorphFlightReview` 提供 V 播放、R 复位、P 暂停、F 跟随／自由相机。只绑定本地图相机 Actor 的输入，不修改正式 IMC、PlayerController 或默认地图。13.4 秒在粒子释放前停住，等待后续变形批次。
 
 
 - 2026-09-13 用户清理：额外7张测试地图（CoreMorph×5、GASPTest、VFXTestMap）及两份地图专属材质已删除。只保留TestMap作为测试地图；LobbyMap正式流程保持。TestMap删除58个后加测试Actor，基础环境与PlayerStart保持。旧VFX房自动化改用TestMap，临时对象不保存回关卡。
+
+## 统一预留测试入口
+
+IMC_Default 的 IA_Test = One（键盘1）。BP_TheManPlayerController 的 TestSwitchCharacterAction 保留旧字段名／IA引用，Started事件现在调用HandleTestInput，不再切维修工。入口仅PIE执行；当前按1临时生成CoreMorph头领和闭合路线，以正式主BT测试空中导弹，再按1清理；OnUnPossess／EndPlay也清理头领、AIController及路线。主逻辑位于既有PlayerController.cpp的WITH_EDITOR段，不新增测试地图、相机或按键。未来手动验证替换该入口当前场景；地图持续保持干净。
