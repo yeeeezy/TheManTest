@@ -1,23 +1,18 @@
 # 当前工作面板
 
-- Active feature：FEAT-082 大厅角色展示。已纠正为两种空手站立待机，待用户在LobbyMap摆放和主观校验。
-- FEAT-081与FEAT-080暂停；头领导弹要求不装配但保留，第4批武器／附着弹适配未完成，详见对应archive。
+- Active feature：FEAT-082 大厅角色展示，等待用户在LobbyMap摆放与主观校验。
+- FEAT-081／080暂停；导弹不装配但保留，第4批武器适配未完成，详见对应archive。
 
-## 本轮完成
+## 当前结果
 
-- TMIIR复用RTG_RifleToMaintenanceWorker，将Rifle_01的NW_Stand_Relaxed_Rifle_Idle_IP、NW_MOB_Stand_Relaxed_Rifle_Idle_IP两种空手站立待机重定向到大厅维修工骨架，均2.1667秒。源和成品姿态均已查看。
-- 仅迁入两个最终AnimSequence：MaintenanceWorker/Lobby/Animations/AS_MaintenanceWorker_Lobby_StandingIdle_01、02；与前批合计39资产。未覆盖模型、骨架或原有动画，不迁入RTG／IKRig／源骨架。
-- ALobbyCharacterBase新增Standing姿态、StandingAnimations数组、StandingIdleIndex及SetStandingIdleIndex；BP默认Standing、索引0、隐藏武器。旧Relaxed放松持枪／Rifle举枪保留可选。
-- LobbyMap／TestMap布局及既有Body／FirstPerson未修改；没有新增项目内测试代码、地图或保存验证摆件。
-
-## 验证
-
-- standing-build.log：Development Editor Win64 Succeeded。
-- standing-target-pie.log／json：STANDING_TARGET_PIE_OK。两个版本动画时钟前进、实际手部姿态不同、武器隐藏、根位置保持；无效索引安全忽略；切到Rifle后返回Standing正常，播放中退出PIE且TestMap哈希不变。StandingTarget-0／1截图已查看。
-- 最终冷回读结果见FEAT-082 archive；外部证据在D:/Unreal Projects/CoreMorph57Prep/Saved/Review/standing-*。
+- 维修工Lobby目录共40资产：完整展示模型及依赖、两种空手Standing、两种持枪Relax、一种Rifle举枪。
+- 最新在TMIIR复用RTG将W2_Stand_Relaxed_Idle_v2_IP导出为AS_MaintenanceWorker_Lobby_RelaxedIdle_02（4.7秒）。普通RelaxedIdle（3.2667秒）此前已存在；Root_Motion版本不重复迁入。
+- 新动画路径：/Game/Characters/MaintenanceWorker/Lobby/Animations/AS_MaintenanceWorker_Lobby_RelaxedIdle_02。
+- 展示BP默认Standing；Standing Idle Index=0／1切换空手版本。Display Pose=Relaxed时，BP Class Defaults的Relaxed Animation可选普通RelaxedIdle或RelaxedIdle_02。本轮只新增动画，没有修改C++、BP或地图。
+- RTG／源骨架／IKRig只留TMIIR，目标仅成品。源与成品姿态已检查，详细验证结果见[FEAT-082](archive/FEAT-082-lobby-character-presentation.md)。
 
 ## 会话交接
 
-操作前checkpoint644f4a7保留上一批大厅结果，最初旧Mesh可从8eee960恢复。本轮纠正结果未提交／push。蓝图：/Game/Characters/MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby；默认Display Pose=Standing，Details的Standing Idle Index用0／1选择；UI调用SetStandingIdleIndex(0/1)即可进入对应站立版本。原Relaxed是持枪放松，不是用户所指空手站立。源RTG留在TMIIR，初次制备／迁移脚本不要重跑。详情见[FEAT-082](archive/FEAT-082-lobby-character-presentation.md)。
+最新补齐Relax前检查点541d8d6保存上一轮空手结果；本轮未提交／push。展示蓝图：/Game/Characters/MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby。初次制作或迁移脚本不要重跑。外部证据在D:/Unreal Projects/CoreMorph57Prep/Saved/Review/relax-*与RelaxTarget-*.png。目标用户编辑器35076保持运行，验证使用独立隐藏进程，不保存瞬态BP配置／地图。新动画可在原Relaxed Animation字段选择，不存在Relaxed索引字段。
 
-预留IA_Test仍为键盘1，未来手动测试统一复用；当前Controller中的场景仍为此前Manta入口。TestMap只保留基础环境。若恢复FEAT-081，应重新核对BP实际PhaseSkillSets；此前卸装仅改原生默认并通过编译，未冷核对BP配置。
+预留IA_Test仍为键盘1，当前仍是Manta入口；未来手动测试统一复用。TestMap只保留基础环境。恢复FEAT-081时需冷核对实际BP PhaseSkillSets，此前卸装仅改原生默认并编译。

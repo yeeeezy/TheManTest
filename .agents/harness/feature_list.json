@@ -1,6 +1,6 @@
 {
     "schema_version":  "1.0",
-    "last_updated": "2026-09-14-lobby-standing-idles",
+    "last_updated": "2026-09-14-lobby-relaxed-idles",
     "active_animation_task": "Accepted behavior: ONLY delayed explosion damage triggers directional knockback on all actually damaged surviving enemies; first impact still damages and attaches without reaction. Development Editor Win64 and three focused PIE tests passed. Implementation f1eda8b and prior history were pushed to origin/main and remote SHA verified. User clarified that audio and remaining saved asset edits should also be published; supplemental commit includes all 88 remaining Content packages (73 modified, 15 new), including audio, hit texture, weapon settings, test maps and 80 external actors. Valid package headers and LFS tracking verified; 29.75 MB. No asset-content or source-code changes during publication. This supersedes earlier instructions to leave those asset edits local. Delivery and synchronization are tracked in Git.",
     "active_feature":  "FEAT-082",
     "archive_file":  "feature_archive.json",
@@ -12,9 +12,9 @@
                          "created": "2026-09-13",
                          "updated": "2026-09-14",
                          "archive_file": "archive/FEAT-082-lobby-character-presentation.md",
-                         "current_batch": "Corrected idle to unarmed standing: both NW standing variants retargeted in TMIIR and imported as StandingIdle_01/02. Target39 owner-local lobby assets. DefaultStanding hides weapon; StandingIdleIndex0/1 and SetStandingIdleIndex select variants. Relaxed/rifle retained. Build, actual PIE and cold audit passed; awaiting user visual review. No map/gameplay edits. Checkpoint644f4a7; correction uncommitted/unpushed.",
+                         "current_batch": "Both armed Relax idle versions available: existing RelaxedIdle and newly retargeted RelaxedIdle_02 (4.7s) from TMIIR W2 v2. Only one new final animation,40 owner-local assets. Select via existing BP Relaxed Animation field; Standing default preserved. No C++/BP/map changes. Checkpoint541d8d6; result uncommitted/unpushed. Verification details in archive; user editor remains open.",
                          "done_criteria": ["Delete only the three confirmed old meshes.", "TMIIR performs RTG; target receives only final lobby assets and required dependencies under MaintenanceWorker.", "Provide reusable lobby display Actor base and Maintenance Worker subclass with all unarmed standing idle variants and optional rifle poses.", "Compile, validate Blueprint and actual animation playback/rendering; clean migration paths and verify existing gameplay assets unchanged."],
-                         "verification_evidence": "standing-build.log Succeeded. standing-target-pie.json ok=true: both standing animations advance with distinct hand poses, no visible weapon, stationary root, invalid index ignored, Rifle switch and return, active PIE exit and TestMap hash unchanged; source and target screenshots inspected. standing-target-cold.log STANDING_TARGET_COLD_OK:39 valid owner-local assets, four final animations, correct skeleton, root fixed, Standing default and indices persisted, no IK rigs/RTG/redirectors or external Game dependencies. Prior old-mesh cleanup and rifle validation recorded in archive."
+                         "verification_evidence": "relax-target-pie.log RELAX_TARGET_PIE_OK: cold-loaded40 owner-local assets with no source rigs/retargeters/redirectors; new v2 matches final skeleton and4.7s duration. Actual transient PIE v2 playback with visible attached rifle and stationary root, switch to Rifle and return to originalRelax, PIE exit and unchangedTestMap hash. Final rendered v2 screenshot inspected. OnlyContent change is one new final animation; no C++/BP/map changes; user editor35076 retained. Prior standing/build evidence in archive."
                      },
                      {
                          "id":  "FEAT-077",

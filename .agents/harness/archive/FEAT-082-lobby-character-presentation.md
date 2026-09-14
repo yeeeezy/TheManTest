@@ -1,5 +1,14 @@
 # FEAT-082 大厅角色展示
 
+## 2026-09-14 补齐持枪Relax待机
+
+- 用户要求持枪Relax的所有版本也重定向导入。Rifle_01有W2_Stand_Relaxed_Idle_IP与W2_Stand_Relaxed_Idle_v2_IP两个版本；普通版已迁入，本次只补v2，Root_Motion对应版本不重复迁入。
+- checkpoint541d8d6保存前轮空手站立结果。在TMIIR复用既有RTG，新增最终AS_MaintenanceWorker_Lobby_RelaxedIdle_02（4.7秒），普通版RelaxedIdle（3.2667秒）保留。源成品姿态截图RelaxRetarget-0／1已查看。
+- 只迁入一个AnimSequence，依赖仅既有大厅成品Mesh／Skeleton，当前合计40资产。用户在BP的Relaxed Animation选择RelaxedIdle或RelaxedIdle_02，Display Pose选择Relaxed即可展示。默认Standing保持，不新增C++或保存BP／地图。
+- 当前目标用户编辑器35076运行中；验证使用独立隐藏编辑器进程，NoSaveConfig／Multiprocess，不保存瞬态BP参数和地图，不关闭用户编辑器。尝试通过本机HTTP读取MCP工具列表曾被自动审批拦截，未执行，改用外部编辑器脚本。
+- relax-target-pie.log／json最终RELAX_TARGET_PIE_OK：冷加载40资产、owner-local依赖及无IKRig／RTG／Redirector断言通过，v2骨架与时长正确。实际PIE播放v2、展示武器附着可见、根位置不动，切到Rifle及返回普通Relax正常，退出PIE且TestMap哈希不变，RelaxTarget-Relaxed.png已查看。Git确认唯一Content变化为新增v2，验证进程已退出，用户35076保留。
+- 外部验证前两次分别因临时CDO配置未传入PIE、EditDefaultsOnly禁止实例set_editor_property而失败；最终在瞬态展示Actor进入Relaxed后用现有DisplayMesh播放v2验证成品，不改产品代码或保存默认配置。没有声称永久装配v2；用户可自行在BP Class Defaults选择。无C++修改，无需重新编译。
+
 ## 2026-09-14 站立待机纠正（当前）
 
 - 用户明确要求空手站立待机，多个版本全部重定向导入；此前Relaxed为持枪放松，并不满足该要求。操作前检查点644f4a7保留上一批结果。
