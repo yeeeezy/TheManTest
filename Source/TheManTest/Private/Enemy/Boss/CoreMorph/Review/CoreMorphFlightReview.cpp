@@ -1,6 +1,7 @@
 #include "Enemy/Boss/CoreMorph/Review/CoreMorphFlightReview.h"
 #include "Enemy/Boss/CoreMorph/CoreMorphBoss.h"
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightComponent.h"
+#include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightRoute.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -33,6 +34,13 @@ void ACoreMorphFlightReview::BeginPlay()
 		InputComponent->BindKey(EKeys::R, IE_Pressed, this, &ThisClass::ResetFlight);
 		InputComponent->BindKey(EKeys::P, IE_Pressed, this, &ThisClass::PauseFlight);
 		InputComponent->BindKey(EKeys::F, IE_Pressed, this, &ThisClass::ToggleCamera);
+		if (!Routes.IsEmpty())
+		{
+			InputComponent->BindKey(EKeys::One, IE_Pressed, this, &ThisClass::RouteOne);
+			InputComponent->BindKey(EKeys::Two, IE_Pressed, this, &ThisClass::RouteTwo);
+			InputComponent->BindKey(EKeys::Three, IE_Pressed, this, &ThisClass::RouteThree);
+			bStartFirstRoute = true;
+		}
 		PC->SetViewTarget(this);
 	}
 }
@@ -41,6 +49,13 @@ void ACoreMorphFlightReview::Tick(float Dt)
 {
 	Super::Tick(Dt);
 	if (!IsValid(Boss)) return;
+	// Wait for the boss's BeginPlay to initialize and grant its GA, regardless
+	// of serialized actor order in the review map.
+	if (bStartFirstRoute && Boss->HasActorBegunPlay())
+	{
+		bStartFirstRoute = false;
+		SelectRoute(0);
+	}
 	FVector Target, Extent;
 	Boss->GetActorBounds(false, Target, Extent);
 	int32 Width = 16, Height = 9;
@@ -51,8 +66,25 @@ void ACoreMorphFlightReview::Tick(float Dt)
 	SetActorLocation(Target + FVector(-8500, -11500, 5000).GetSafeNormal() * Distance);
 	SetActorRotation((Target - GetActorLocation()).Rotation());
 	if (GEngine)
+	{
+		const FString RouteText = Routes.IsValidIndex(SelectedRoute)
+			? FString::Printf(TEXT("ROUTE %d: %s | 1/2/3: Switch & Play\n"), SelectedRoute + 1, *Routes[SelectedRoute].Label) : FString();
 		GEngine->AddOnScreenDebugMessage(uint64(GetUniqueID()), 0.f, FColor::White,
-			FString::Printf(TEXT("FLIGHT REVIEW | V: Play | R: Reset | P: Pause | F: Camera | %.2f s"), Boss->Flight->GetFlightSeconds()));
+			RouteText + FString::Printf(TEXT("FLIGHT REVIEW | V: Play | R: Reset | P: Pause | F: Camera | %.2f s"), Boss->Flight->GetFlightSeconds()));
+	}
+}
+
+bool ACoreMorphFlightReview::SelectRoute(int32 Index)
+{
+	if (!IsValid(Boss) || Boss->IsDead() || !Boss->HasActorBegunPlay()
+		|| !Routes.IsValidIndex(Index) || !IsValid(Routes[Index].Route)) return false;
+	Boss->ResetFlightPreview();
+	Boss->Flight->FlightRoute = Routes[Index].Route;
+	Boss->Flight->RouteSpeed = Routes[Index].Speed;
+	SelectedRoute = Index;
+	bFollow = true;
+	if (auto* PC = GetWorld()->GetFirstPlayerController()) PC->SetViewTarget(this);
+	return Boss->StartFlightPreview();
 }
 
 void ACoreMorphFlightReview::EndPlay(const EEndPlayReason::Type Reason)

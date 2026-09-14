@@ -6,6 +6,8 @@
 
 ## 当前完成与待办
 
+- 新增三路线检查地图 `/Game/Maps/CoreMorph/L_CoreMorphRoutes`：Play 自动起飞，1 缓弯爬升（20 秒）／2 左右 S 弯（22 秒）／3 盘旋俯冲（27 秒），数字键切换重播；P 暂停、R 复位、V 播放、F 相机。编译、保存重开、RouteReview 实际 PIE 三条完整播放和原 FlightBatch 回归均通过，等待用户评价自然程度。
+
 - 已完成源项目外部快照、5.7 准备工程、154 蝠鲼网格与 5 材质重建及 AssetTools 迁入。
 - 第一批外观与飞行已完成自验和审查，等待用户校验。单头领、单 ASC／Health、飞行 GA、形态 GE、Blueprint 和检查地图已就位。
 - 用户反馈编辑态 Capsule 远离主体，已修正并完成自验。Actor 改为主体原点，编辑态相对分件、运行态固定编舞坐标；检查地图 154 分件世界位置变化为 0，根距刚性核心约 0.77 cm。编译、FlightBatch 与 EditorPlacement（移动／旋转／缩放／重构造／实际复制）均通过，待用户复查。
@@ -17,4 +19,4 @@
 
 ## 会话交接
 
-第一批全身路线适配和随机变化已实现并自验，等待用户复查，不进入第二批。此前爬升尾部反馈保存为本地 WIP checkpoint `bf812e8`；本轮修改未提交／push。外部准备工程 Saved/Review/adaptive-build.log 编译成功，adaptive-validation.log 的 AdaptiveMotion／EditorPlacement／FlightBatch 三项 Success（含真实 PIE 两条镜像 Spline、循环、悬停、路线销毁和原生命周期）；adaptive-source-audit.json 证明源 5195 文件未变、5 个保留的位置轨迹函数与源一致。FlightMotion 无固定动作时点，FlightPath 只提供旧对照路线位置，TailMotion 已合并删除。FlightRoute 选可摆放的 CoreMorphFlightRoute，Spline 首点起飞；MotionRandomness 默认 .18、0 关闭，MotionSeed 为 0 时复位选新种子、非零可复现。完整操作见 FEAT-081 archive。目标 5.7.4／源 5.8.2 保持不变，自动编辑器已退出；观感交由用户在 L_CoreMorphFlight 校验，最终验收才清理临时检查工具。
+按用户要求提供三条可直接观看的路线，新增 L_CoreMorphRoutes，等待用户观感反馈，不进入第二批。全身适配成果已在写入前保存为 WIP checkpoint `c8b8e0e`；本轮地图／Review 控件／测试／文档未提交或 push。外部准备工程 Saved/Review/routes-tests-build.log 编译通过，routes-author-02.log 和 routes-authored.json 验证保存重开／全部控制点，routes-validation.log 的 RouteReview 与 FlightBatch 两项 Success。三条路线真实世界 Tick 分别完整飞行 20／22／27 秒并正确结束，切换复用同一个头领和 GA。Play 自动开始第 1 条，1／2／3 重播切换；原 L_CoreMorphFlight 保持手动 V 与原对照路线。初次直接 World 复制触发 Python 引用导致的编辑器内存清理断言，已改用 NewLevelFromTemplate 并释放 Python 引用后解决。源项目／目标版本／运动求解器与头领正式资产未改，自动编辑器已退出。新地图属于最终验收后清理的临时检查工具。

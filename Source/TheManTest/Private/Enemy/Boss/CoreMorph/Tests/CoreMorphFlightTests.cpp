@@ -14,6 +14,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/SplineComponent.h"
 #include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightRoute.h"
+#include "Enemy/Boss/CoreMorph/Review/CoreMorphFlightReview.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Enemy/EnemyAttributeSetBase.h"
 #include "Enemy/Boss/CoreMorph/CoreMorphBoss.h"
@@ -355,6 +356,76 @@ bool FCoreMorphPlacement::RunTest(const FString& Parameters)
 	DuplicatePlacement.AddToTranslation(DuplicateOffset);
 	if (TestNotNull(TEXT("Duplicated editor instance"), Duplicate)) { Check(Duplicate, DuplicatePlacement); World->DestroyActor(Duplicate); }
 	World->DestroyActor(Boss);
+	return true;
+}
+
+namespace
+{
+class FCoreMorphReviewRoutes : public IAutomationLatentCommand
+{
+	FAutomationTestBase* Test;
+	int32 Index = 0;
+	double Started = 0;
+	bool bCaptured = false;
+public:
+	explicit FCoreMorphReviewRoutes(FAutomationTestBase* In) : Test(In) {}
+	bool Update() override
+	{
+		auto* Boss = FindBoss();
+		if (!Boss) { Test->AddError(TEXT("Missing boss in route review PIE")); return true; }
+		ACoreMorphFlightReview* Review = nullptr;
+		for (TActorIterator<ACoreMorphFlightReview> It(Boss->GetWorld()); It; ++It) { Review = *It; break; }
+		if (!Review || Review->Routes.Num() != 3) { Test->AddError(TEXT("Three saved review routes must load")); return true; }
+		if (!Started)
+		{
+			if (Index == 0)
+			{
+				Test->TestTrue(TEXT("First route starts automatically after PIE initialization"), Boss->Flight->IsFlying());
+				Test->TestTrue(TEXT("Review camera references the same boss"), Review->Boss == Boss);
+				// Switch while the GA is active, then replay the first route.
+				Test->TestTrue(TEXT("Switching an active flight cancels and restarts safely"), Review->SelectRoute(2));
+			}
+			if (!Test->TestTrue(TEXT("Route selection starts its saved flight"), Review->SelectRoute(Index))) return true;
+			Test->TestEqual(TEXT("Switching routes keeps one granted ability"), Boss->GetAbilitySystemComponent()->GetActivatableAbilities().Num(), 1);
+			Test->TestEqual(TEXT("Switching routes keeps 154 owned pieces"), Boss->Flight->GetPieces().Num(), 154);
+			Started = FPlatformTime::Seconds();
+			bCaptured = false;
+			return false;
+		}
+		if (!bCaptured && Boss->Flight->GetFlightSeconds() > 7)
+		{
+			FScreenshotRequest::RequestScreenshot(FPaths::ConvertRelativePathToFull(FPaths::ProjectSavedDir() / TEXT("CoreMorphMigration") /
+				FString::Printf(TEXT("RouteReview-%d.png"), Index + 1)), false, false);
+			bCaptured = true;
+		}
+		if (Boss->Flight->IsFlying() && FPlatformTime::Seconds() - Started < 60) return false;
+		Test->TestFalse(TEXT("Saved route completes with real world ticking"), Boss->Flight->IsFlying());
+		const auto* Spline = Review->Routes[Index].Route->Spline.Get();
+		Test->TestTrue(TEXT("Review route reaches its actual endpoint"), Boss->GetActorLocation().Equals(
+			Spline->GetLocationAtDistanceAlongSpline(Spline->GetSplineLength(), ESplineCoordinateSpace::World), .1));
+		for (const auto& Piece : Boss->Flight->GetPieces())
+			Test->TestFalse(TEXT("Review route leaves every mesh pose finite"), Piece->GetComponentTransform().ContainsNaN());
+		Test->TestFalse(TEXT("Route endpoint ends its GA"), Boss->GetAbilitySystemComponent()->FindAbilitySpecFromClass(UGA_CoreMorphFlight::StaticClass())->IsActive());
+		++Index;
+		Started = 0;
+		if (Index < 3) return false;
+		Test->TestTrue(TEXT("Review can restart after all three routes"), Review->SelectRoute(0));
+		EndingBoss = Boss;
+		return true;
+	}
+};
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCoreMorphRoutesPIE, "TheManTest.Enemy.CoreMorph.RouteReview", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FCoreMorphRoutesPIE::RunTest(const FString& Parameters)
+{
+	if (!FEditorFileUtils::LoadMap(FPaths::ProjectContentDir() / TEXT("Maps/CoreMorph/L_CoreMorphRoutes.umap"), false, false)) return false;
+	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(2.f));
+	ADD_LATENT_AUTOMATION_COMMAND(FCoreMorphReviewRoutes(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(.3f));
+	ADD_LATENT_AUTOMATION_COMMAND(FCoreMorphAfterExit(this));
 	return true;
 }
 

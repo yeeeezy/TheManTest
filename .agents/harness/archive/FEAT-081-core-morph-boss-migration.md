@@ -56,6 +56,16 @@
 
 ## 后续必须处理
 
+### 第一批观感检查：三条示例路线（2026-09-13，自验通过，待用户校验）
+
+- 用户要求提供几条路线自行判断自然程度。本轮新增独立 `/Game/Maps/CoreMorph/L_CoreMorphRoutes`，一个头领和三个可编辑 Spline；原对照地图不改。写入前将全身适配成果保存为本地 WIP checkpoint `c8b8e0e`，无 push。
+- 复用检查相机 `CoreMorphFlightReview`，仅示例地图配置 Routes 列表后绑定 1／2／3 切换并立即播放。等 Boss BeginPlay 完成后自动播放第一条；保留 V 播放、R 复位、P 暂停、F 相机。每次切换复用同一个 Boss、ASC 和飞行 GA，取消旧飞行再启动新路线。
+- 路线为 Gentle Climb（8000 cm/s，缓弯爬升）、S-Turns（11000 cm/s，左右转弯伴轻微升降）、Orbit and Dive（10000 cm/s，盘旋上升后俯冲拉平）；随机强度仍 .18，种子 0。
+- `routes-build.log` 与 `routes-tests-build.log` 均编译成功。地图初次用 AssetTools 直接复制 World 后加载，因 Python 持有 World 包触发编辑器 World Memory Leaks 断言，未生成磁盘新地图且原地图未改。改用 LevelEditorSubsystem.NewLevelFromTemplate，并在重开验证前释放 Python Actor 引用，`routes-author-02.log` 创建／保存／重开通过，无 Error。
+- `routes-authored.json` 记录 3 条路线全部控制点、速度和长度换算时长：19.91／22.32／27.14 秒；重开地图后逐点回读通过。一个 Boss、一个 Review 和三个 Route 引用完整，Maps/CoreMorph 范围无 Redirector；只新增约 99 KB 检查地图，复用既有地面材质。原地图、头领资产和运动求解器未改。
+- `routes-validation.log`：`CoreMorph.RouteReview` 与原 `CoreMorph.FlightBatch` 均 Success。三条保存路线分别在实际 PIE 正常世界 Tick 下完整播放至末端；验证自动起飞、飞行中切换、单 GA／154 分件、所有末端姿态有限、GA 结束、重新播放与活动飞行退出 PIE 清理。新地图完成审查，自动编辑器已退出；本轮修改未提交／push。
+- 用户入口：打开 `/Game/Maps/CoreMorph/L_CoreMorphRoutes` 后 Play 自动播放第 1 条；1／2／3 切换并重播，P 暂停，R 复位后 V 播放，F 自由／跟随相机。`Saved/CoreMorphMigration/RouteReview-{1,2,3}.png` 是实际渲染截图；离屏视口较窄，仅作运行证据，自然程度仍由用户在编辑器观察确认。新检查地图同样列入最终验收后的临时工具清理范围。
+
 ### 第一批反馈：全身路线适配与平滑随机（2026-09-13，自验通过，待用户校验）
 
 - 用户要求所有部位根据线路和实时状态变化，换路线不重写动作，另要求增加随机性。本轮属于第一批飞行反馈；不进入重组批次。已将上一轮尾部反馈保存为本地 WIP checkpoint `bf812e8`，无 push。
