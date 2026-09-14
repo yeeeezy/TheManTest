@@ -1,5 +1,13 @@
 # FEAT-082 大厅角色展示
 
+## 2026-09-14 新版选角大厅恢复
+
+- 用户指出当前`/Game/Maps/LobbyMap`是弃用的旧空地图，新版大厅已被删除。审计确认LobbyMap从初始提交到全部可达／悬空Git提交始终只有同一48,850字节旧版本，Autosaves、Backups和回收站没有新版LobbyMap；本轮大厅角色验证脚本也始终只加载TestMap且验证哈希，不曾保存LobbyMap。
+- 根据FEAT-045历史继续定位，找到2026-08-01提交a03f30d删除的`/Game/Maps/SciFiIndustrialBase/Maps/SciFiIndustrialBase`及327个同目录依赖。该8.8MB地图Git LFS对象含CharacterSelectCameraSwitcher、FarCamera、NearCamera、CineCameraActor与BP_CharacterSelect字符串，确定为用户完成过的新选角大厅。
+- 恢复前checkpoint197788a保存举枪展示批次。随后从`a03f30d^`恢复完整`Content/Maps/SciFiIndustrialBase`，共328文件，保持原路径，不覆盖旧LobbyMap。
+- `restored-character-select-map.log/json`：RESTORED_CHARACTER_SELECT_MAP_OK。地图冷加载成功，328资产全部加载，场景1976 Actor；找到CharacterSelectCameraSwitcher与4个CineCameraActor。验证没有保存地图，全部后台编辑器已退出。
+- 当前只恢复内容，未把GameInstance的LobbyMapName或项目启动流程改到新地图；旧流程仍可能指向弃用LobbyMap，接线需用户另行确认。恢复结果未提交／push，整个SciFiIndustrialBase目录当前作为Git恢复改动存在。
+
 ## 2026-09-14 可复用举枪接口与维修枪展示（进行中）
 
 - 用户确认在ALobbyCharacterBase新增所有大厅人物可复用的SetWeaponReady(bool)，true进入Rifle举枪，false进入Relaxed持枪；IsWeaponReady供UI读取。空手Standing与SetDisplayPose保持。
