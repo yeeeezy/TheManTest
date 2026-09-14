@@ -28,11 +28,12 @@ AEnemyBase（Public/Enemy/）  ← 所有敌人基类，ASC+属性挂自身（�
 ### CoreMorph 头领（FEAT-081，第一批）
 
 - `Enemy/Boss/BossEnemyBase.h` 为公共语义层；`CoreMorph/CoreMorphBoss.h/.cpp` 持有具体形态和飞行组件，继承一份 ASC／Health。没有人形骨骼、击退、布娃娃或血肉受击 Cue。
-- `CoreMorph/Movement/CoreMorphFlightPath` 保留源 FEAT058 编舞数学；`CoreMorphFlightComponent` 管理 154 个同 Owner 静态分件。Actor／Capsule 在编辑态直接位于身体主体，分件用相对变换跟随摆放；用逆起飞偏移乘 Actor Transform 推导编舞参考坐标，BeginPlay 固定该坐标并将分件切为绝对世界姿态，实际 Pawn 根位置跟随飞行。CharacterMovement 在飞行预览中关闭。检查地图根位置为 (-16000,0,2500)，对应原编舞原点 (0,0,900)，原分件世界姿态不变。
+- `CoreMorph/Movement/CoreMorphFlightPath` 只保留源 FEAT058 参考路线的位置数学；`CoreMorphFlightComponent` 管理 154 个同 Owner 静态分件。Actor／Capsule 在编辑态直接位于身体主体，分件用相对变换跟随摆放；用逆起飞偏移乘 Actor Transform 推导参考路线坐标，BeginPlay 固定该坐标并将分件切为绝对世界姿态，实际 Pawn 根位置跟随飞行。CharacterMovement 在飞行预览中关闭。检查地图根位置为 (-16000,0,2500)，对应原路线原点 (0,0,900)，静态装配位置不变。
 - `CoreMorph/GAS/Abilities/GA_CoreMorphFlight` 管理飞行生命周期；`GAS/Effects/GE_CoreMorphManta` 持有形态 Tag。阶段仍走 EnemyBase 的 `PhaseSkillSets/SetCombatPhase`，预览复位不重置阶段、Health 或技能授予。
-- 第一批尾部反馈：`FCoreMorphTailMotion` 接收 FlightComponent 的实际世界位移／DeltaTime，以向上速度平滑驱动爬升摆动，替代 SourcePose 原固定秒数的上下甩尾。振荡相位连续、尾段错相；暂停／取消／死亡冻结、重播清零。当前路径、翅膀和尾巴横向盘旋弧形仍是固定编排，并未实现任意路线 AI。
+- 第一批全身反馈：`FCoreMorphFlightMotion` 只接收世界位置／DeltaTime，从速度、升降、加速和转向计算身体朝向／侧倾及翅膀动作；尾巴按距离追随有界三维运动历史并叠加错相摆动。种子控制平滑随机节奏、波幅、左右差异，刚性核心仍与躯体统一运动。旧 TailMotion 已合并删除，SourcePose／DivePose 固定动作编排已移除。暂停／取消／死亡冻结，复位清空状态与轨迹。
+- 可选 `ACoreMorphFlightRoute` 提供可在编辑器修改的 Spline，FlightComponent.FlightRoute 选择路线、RouteSpeed 控制速度；从首点开始，开放路线末端结束、闭合路线循环，无固定表现时点。空引用仍走源参考路径。MotionRandomness 默认 .18、0 关闭，MotionSeed 默认 0（复位选新种子）、非零可复现。当前是路线跟随与实时表现，正式战斗 AI／避障仍属于后续工作。
 - 正式资产 `/Game/Enemy/Boss/CoreMorph/{Blueprint,Data,Meshes,Materials}`。`BP_CoreMorphBoss` 引用 `DA_CoreMorphVisualLayout` 和已有 `GE_EnemyBase_Init`。
-- 本批尚未接战斗 BT，检查地图直接请求飞行 GA，在 13.4 秒粒子释放前冻结。主 BT／形态子树、变形、蝎子运动和攻击按后续批次接入；不得将当前预览误认为完整战斗。
+- 本批尚未接战斗 BT，检查地图直接请求飞行 GA；默认源参考路线在 13.4 秒粒子释放前冻结，自定义 Spline 按实际末端／循环条件结束。主 BT／形态子树、变形、蝎子运动和攻击按后续批次接入；不得将当前预览误认为完整战斗。
 - 检查入口 `/Game/Maps/CoreMorph/L_CoreMorphFlight`，V 播放、R 复位、P 暂停、F 切换相机；控件只属于地图专属 `CoreMorph/Review/CoreMorphFlightReview`。
 
 ### 基类 / 属性 / 技能集

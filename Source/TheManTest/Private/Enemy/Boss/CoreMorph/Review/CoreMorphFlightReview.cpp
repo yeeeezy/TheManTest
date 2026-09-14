@@ -52,7 +52,7 @@ void ACoreMorphFlightReview::Tick(float Dt)
 	SetActorRotation((Target - GetActorLocation()).Rotation());
 	if (GEngine)
 		GEngine->AddOnScreenDebugMessage(uint64(GetUniqueID()), 0.f, FColor::White,
-			FString::Printf(TEXT("FLIGHT REVIEW | V: Play | R: Reset | P: Pause | F: Camera | %.2f / 13.40 s"), Boss->Flight->GetFlightSeconds()));
+			FString::Printf(TEXT("FLIGHT REVIEW | V: Play | R: Reset | P: Pause | F: Camera | %.2f s"), Boss->Flight->GetFlightSeconds()));
 }
 
 void ACoreMorphFlightReview::EndPlay(const EEndPlayReason::Type Reason)

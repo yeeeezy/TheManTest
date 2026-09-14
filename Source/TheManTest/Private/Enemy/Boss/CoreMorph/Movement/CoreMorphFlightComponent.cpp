@@ -2,6 +2,8 @@
 #include "Enemy/Boss/CoreMorph/CoreMorphBoss.h"
 #include "Enemy/Boss/CoreMorph/Data/CoreMorphVisualLayout.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SplineComponent.h"
+#include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightRoute.h"
 #include "Engine/World.h"
 
 UCoreMorphFlightComponent::UCoreMorphFlightComponent()
@@ -19,9 +21,9 @@ void UCoreMorphFlightComponent::RebuildAssembly()
 	TInlineComponentArray<UStaticMeshComponent*> Old(Owner);
 	for (auto* Piece : Old) if (Piece->ComponentHasTag(TEXT("CoreMorphVisual"))) Piece->DestroyComponent();
 	Pieces.Reset();
-	Path.Layout = Owner->VisualLayout;
-	if (!Path.Layout) return;
-	for (const auto& Piece : Path.Layout->Pieces)
+	Layout = Owner->VisualLayout;
+	if (!Layout) return;
+	for (const auto& Piece : Layout->Pieces)
 	{
 		auto* Mesh = NewObject<UStaticMeshComponent>(Owner);
 		Mesh->ComponentTags.Add(TEXT("CoreMorphVisual"));
@@ -46,7 +48,11 @@ void UCoreMorphFlightComponent::RebuildAssembly()
 	}
 	// Placement denotes the body, not the distant origin of the source choreography.
 	// Compose in local space so moving, rotating or scaling an instance preserves placement.
-	if (!bHaveFrame) ChoreographyFrame = FTransform(-Path.GetFormOffset(0)) * Owner->GetActorTransform();
+	if (!bHaveFrame)
+	{
+		ChoreographyFrame = FTransform(-Path.GetFormOffset(0)) * Owner->GetActorTransform();
+		ResetMotion(RestBody());
+	}
 	UpdatePose();
 }
 
@@ -55,6 +61,8 @@ void UCoreMorphFlightComponent::BeginPlay()
 	Super::BeginPlay();
 	ChoreographyFrame = FTransform(-Path.GetFormOffset(0)) * GetOwner()->GetActorTransform();
 	bHaveFrame = true;
+	Layout = Boss()->VisualLayout;
+	ResetMotion(RestBody());
 	RebuildAssembly();
 }
 
@@ -64,19 +72,38 @@ void UCoreMorphFlightComponent::EndPlay(const EEndPlayReason::Type Reason)
 	Super::EndPlay(Reason);
 }
 
+FTransform UCoreMorphFlightComponent::RestBody() const
+{
+	return FTransform(ChoreographyFrame.GetRotation(), ChoreographyFrame.TransformPosition(Path.GetFormOffset(0)));
+}
+
+void UCoreMorphFlightComponent::ResetMotion(const FTransform& Body)
+{
+	float TailLength = 100.f;
+	if (Layout) for (const auto& Piece : Layout->Pieces)
+		if (Piece.Kind == TEXT("Tail")) TailLength = FMath::Max(TailLength, float(-Piece.Position.X * Path.MantaScale * ChoreographyFrame.GetScale3D().X));
+	Motion.Reset(Body, MotionSeed ? MotionSeed : FMath::Rand(), MotionRandomness, TailLength);
+}
+
 bool UCoreMorphFlightComponent::CanStartFlight() const
 {
-	return Boss() && !Boss()->IsDead() && Path.Layout && Pieces.Num() == 154 && !bFlying && !bHolding;
+	if (!Boss() || Boss()->IsDead() || !Layout || Pieces.Num() != 154 || bFlying || bHolding) return false;
+	return !FlightRoute || (IsValid(FlightRoute) && FlightRoute->Spline && FlightRoute->Spline->GetSplineLength() > 1.f);
 }
 
 bool UCoreMorphFlightComponent::StartFlight()
 {
 	if (!CanStartFlight()) return false;
-	Path.SourcePositions.Reset();
-	for (const auto& Piece : Pieces)
-		Path.SourcePositions.Add((ChoreographyFrame.InverseTransformPosition(Piece->GetComponentLocation()) - Path.GetFormOffset(0)) / Path.MantaScale);
 	Path.PrepareDive();
-	TailMotion = {};
+	ActiveRoute = FlightRoute;
+	bUsingRoute = ActiveRoute.IsValid();
+	RouteDistance = 0;
+	if (bUsingRoute)
+	{
+		const auto* Spline = ActiveRoute->Spline.Get();
+		ResetMotion(FTransform(Spline->GetDirectionAtDistanceAlongSpline(0, ESplineCoordinateSpace::World).Rotation(),
+			Spline->GetLocationAtDistanceAlongSpline(0, ESplineCoordinateSpace::World)));
+	}
 	FlightSeconds = 0;
 	bFlying = true;
 	bPaused = bHolding = false;
@@ -90,15 +117,16 @@ void UCoreMorphFlightComponent::StopFlight()
 	bFlying = false;
 	bHolding = true;
 	bPaused = false;
+	ActiveRoute.Reset();
 }
 
 void UCoreMorphFlightComponent::ResetPreview()
 {
 	StopFlight();
-	bHolding = false;
-	FlightSeconds = IdleSeconds = 0;
-	Path.SourcePositions.Reset();
-	TailMotion = {};
+	bHolding = bUsingRoute = false;
+	FlightSeconds = 0;
+	RouteDistance = 0;
+	ResetMotion(RestBody());
 	SetComponentTickEnabled(true);
 	UpdatePose();
 }
@@ -114,54 +142,57 @@ void UCoreMorphFlightComponent::Shutdown()
 void UCoreMorphFlightComponent::TickComponent(float Dt, ELevelTick Tick, FActorComponentTickFunction* Function)
 {
 	Super::TickComponent(Dt, Tick, Function);
-	if (!Boss() || Boss()->IsDead() || bPaused || Dt <= 0) return;
-	if (bFlying)
+	if (!Boss() || Boss()->IsDead() || bPaused || bHolding || Dt <= 0 || !FMath::IsFinite(Dt)) return;
+	// Sample routes at a bounded step so curvature, damping and trail quality
+	// remain stable at low frame rates. Only the route owns progress/end conditions.
+	for (float Left = Dt; Left > SMALL_NUMBER;)
 	{
-		const float PreviousSeconds = FlightSeconds;
-		FlightSeconds = FMath::Min(FlightSeconds + Dt, Path.GetReleaseSeconds());
-		const float MotionSeconds = FlightSeconds - PreviousSeconds;
-		if (MotionSeconds > 0.f)
+		float Step = FMath::Min(Left, 1.f / 120.f);
+		Left -= Step;
+		FVector Position = Motion.GetBody().GetLocation();
+		bool bFinished = false;
+		if (bFlying && bUsingRoute)
 		{
-			// CharacterMovement is disabled. Measure the actual body displacement
-			// used for this frame, including placement rotation/scale, not GetVelocity().
-			const FTransform Body = Path.DivePose(FlightSeconds / Path.GetMorphDuration()) * ChoreographyFrame;
-			TailMotion.Update((Body.GetLocation() - GetOwner()->GetActorLocation()) / MotionSeconds, MotionSeconds);
+			const auto* Spline = ActiveRoute.IsValid() ? ActiveRoute->Spline.Get() : nullptr;
+			if (!IsValid(Spline) || Spline->GetSplineLength() <= 1.f)
+			{
+				StopFlight();
+				OnFlightFinished.Broadcast();
+				break;
+			}
+			const float Length = Spline->GetSplineLength();
+			RouteDistance += FMath::Max(0.f, RouteSpeed) * Step;
+			bFinished = !Spline->IsClosedLoop() && RouteDistance >= Length;
+			RouteDistance = Spline->IsClosedLoop() ? FMath::Fmod(RouteDistance, double(Length)) : FMath::Min(RouteDistance, double(Length));
+			Position = Spline->GetLocationAtDistanceAlongSpline(float(RouteDistance), ESplineCoordinateSpace::World);
+			FlightSeconds += Step;
+		}
+		else if (bFlying)
+		{
+			Step = FMath::Min(Step, Path.GetReleaseSeconds() - FlightSeconds);
+			FlightSeconds += Step;
+			Position = ChoreographyFrame.TransformPosition(Path.FlightPosition(FlightSeconds / Path.GetMorphDuration()));
+			bFinished = FlightSeconds >= Path.GetReleaseSeconds();
+		}
+		Motion.Update(Position, Step);
+		if (bFinished)
+		{
+			UpdatePose();
+			StopFlight();
+			OnFlightFinished.Broadcast();
+			break;
 		}
 	}
-	else if (!bHolding) IdleSeconds += Dt;
 	UpdatePose();
-	if (bFlying && FlightSeconds >= Path.GetReleaseSeconds())
-	{
-		StopFlight();
-		OnFlightFinished.Broadcast();
-	}
 }
 
 void UCoreMorphFlightComponent::UpdatePose()
 {
-	if (!Path.Layout || Path.Layout->Pieces.Num() != Pieces.Num()) return;
-	const bool bFlightPose = bFlying || bHolding;
-	const float T = FlightSeconds / Path.GetMorphDuration();
-	FTransform Body = bFlightPose ? Path.DivePose(T) : FTransform(Path.GetFormOffset(0));
-	Body *= ChoreographyFrame;
+	if (!Layout || Layout->Pieces.Num() != Pieces.Num()) return;
+	const FTransform& Body = Motion.GetBody();
 	if (bHaveFrame)
 		GetOwner()->SetActorLocationAndRotation(Body.GetLocation(), FRotator(0, Body.Rotator().Yaw, 0), false, nullptr, ETeleportType::TeleportPhysics);
+	const FVector Scale = ChoreographyFrame.GetScale3D() * Path.MantaScale;
 	for (int32 I = 0; I < Pieces.Num(); ++I)
-	{
-		if (!IsValid(Pieces[I])) continue;
-		FTransform Pose;
-		if (bFlightPose) Pose = Path.SourcePose(I, T, TailMotion);
-		else
-		{
-			const auto& Piece = Path.Layout->Pieces[I];
-			FVector V = Piece.Position;
-			const float U = FMath::Clamp(float(FMath::Abs(V.Y) / 2540.), 0.f, 1.f);
-			const float EaseIn = FMath::Clamp(IdleSeconds / 1.5f, 0.f, 1.f);
-			const float Blend = EaseIn * EaseIn * EaseIn * (EaseIn * (EaseIn * 6 - 15) + 10);
-			if (Piece.Kind == TEXT("Wing")) V.Z += 150 * U * U * FMath::Sin(IdleSeconds * 1.05f - U * 1.2f) * Blend;
-			if (Piece.Kind == TEXT("Tail")) V.Y += 55 * Piece.Order * Piece.Order * FMath::Sin(IdleSeconds * .9f - Piece.Order * 3) * Blend;
-			Pose = FTransform(FQuat::Identity, V * Path.MantaScale + Path.GetFormOffset(0), FVector(Path.MantaScale));
-		}
-		Pieces[I]->SetWorldTransform(Pose * ChoreographyFrame);
-	}
+		if (IsValid(Pieces[I])) Pieces[I]->SetWorldTransform(Motion.PiecePose(Layout->Pieces[I], Scale));
 }

@@ -12,6 +12,8 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SplineComponent.h"
+#include "Enemy/Boss/CoreMorph/Movement/CoreMorphFlightRoute.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Enemy/EnemyAttributeSetBase.h"
 #include "Enemy/Boss/CoreMorph/CoreMorphBoss.h"
@@ -83,6 +85,51 @@ void Damage(ACoreMorphBoss* Boss, float Amount)
 	auto* ASC = Boss->GetAbilitySystemComponent();
 	ASC->ApplyGameplayEffectToSelf(Effect, 1.f, ASC->MakeEffectContext());
 }
+
+void ValidateSpline(ACoreMorphBoss* Boss, FAutomationTestBase* Test)
+{
+	Boss->ResetFlightPreview();
+	const FVector Origin = Boss->GetActorLocation();
+	auto* Route = Boss->GetWorld()->SpawnActor<ACoreMorphFlightRoute>();
+	if (!Test->TestNotNull(TEXT("Editable route spawned in actual PIE"), Route)) return;
+	Boss->Flight->FlightRoute = Route;
+	Boss->Flight->RouteSpeed = 9000;
+	float FirstBank = 0;
+	for (float Side : {1.f, -1.f})
+	{
+		Route->Spline->SetSplinePoints({Origin, Origin + FVector(10000, 3000 * Side, 6000),
+			Origin + FVector(17000, 10000 * Side, 12000), Origin + FVector(17000, 20000 * Side, 2000)}, ESplineCoordinateSpace::World);
+		Boss->ResetFlightPreview();
+		Test->TestTrue(TEXT("Different route starts through the same GA"), Boss->StartFlightPreview());
+		Boss->Flight->SetComponentTickEnabled(false);
+		Step(Boss, 2);
+		const auto& State = Boss->Flight->GetMotionState();
+		Test->TestTrue(TEXT("Custom route ascent drives motion"), State.Climb > .15f);
+		if (Side > 0) FirstBank = State.Bank;
+		else Test->TestTrue(TEXT("Mirroring the route reverses bank automatically"), FirstBank * State.Bank < -1.f);
+		const FVector Expected = Route->Spline->GetLocationAtDistanceAlongSpline(18000, ESplineCoordinateSpace::World);
+		Test->TestTrue(TEXT("Boss follows spline distance instead of source choreography"), Boss->GetActorLocation().Equals(Expected, 5));
+		Step(Boss, 8);
+		Test->TestFalse(TEXT("Open route completes at its endpoint"), Boss->Flight->IsFlying());
+		Test->TestTrue(TEXT("Final body reaches actual spline endpoint"), Boss->GetActorLocation().Equals(Route->Spline->GetLocationAtSplinePoint(3, ESplineCoordinateSpace::World), .1));
+	}
+	Route->Spline->SetClosedLoop(true);
+	Boss->ResetFlightPreview(); Boss->StartFlightPreview(); Boss->Flight->SetComponentTickEnabled(false);
+	Step(Boss, 15);
+	Test->TestTrue(TEXT("Loop route has no fixed 13.4 second presentation cutoff"), Boss->Flight->IsFlying());
+	Test->TestTrue(TEXT("Tail history remains bounded on looping routes"), Boss->Flight->GetMotionState().GetHistoryCount() < 1500);
+	Boss->Flight->RouteSpeed = 0;
+	const FVector Hover = Boss->GetActorLocation();
+	Step(Boss, 2);
+	Test->TestTrue(TEXT("Zero route speed hovers without pose errors"), Boss->GetActorLocation().Equals(Hover, .01) && Boss->Flight->GetMotionState().Movement < .01);
+	for (const auto& Piece : Boss->Flight->GetPieces()) Test->TestFalse(TEXT("Every runtime piece pose stays finite"), Piece->GetComponentTransform().ContainsNaN());
+	Route->Destroy();
+	Step(Boss, .1f);
+	Test->TestFalse(TEXT("Removed route ends flight safely"), Boss->Flight->IsFlying());
+	Test->TestFalse(TEXT("Removed route releases active GA"), Boss->GetAbilitySystemComponent()->FindAbilitySpecFromClass(UGA_CoreMorphFlight::StaticClass())->IsActive());
+	Boss->Flight->FlightRoute = nullptr;
+	Boss->ResetFlightPreview();
+}
 }
 
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FCoreMorphValidate, FAutomationTestBase*, Test);
@@ -105,6 +152,7 @@ bool FCoreMorphValidate::Update()
 	Test->TestTrue(TEXT("Form is owned by a GE"), ASC->HasMatchingGameplayTag(TAG_State_CoreMorph_Form_Manta));
 	Test->TestNull(TEXT("Boss has no humanoid skeletal asset"), Boss->GetMesh()->GetSkeletalMeshAsset());
 	Test->TestFalse(TEXT("Boss has no humanoid blood cue"), Boss->GetHitReactionCueTag().IsValid());
+	ValidateSpline(Boss, Test);
 	Boss->ResetFlightPreview();
 	const FVector Initial = Boss->GetActorLocation();
 	Test->TestTrue(TEXT("Review map body stays at its pre-fix world placement"), Initial.Equals(FVector(-16000, 0, 2500), .01));
@@ -114,11 +162,11 @@ bool FCoreMorphValidate::Update()
 	Test->TestFalse(TEXT("Duplicate flight cannot activate"), Boss->StartFlightPreview());
 	Step(Boss, 5.f);
 	Test->TestTrue(TEXT("Actual boss identity follows flight by over 50 m"), FVector::Dist(Boss->GetActorLocation(), Initial) > 5000.f);
-	Test->TestTrue(TEXT("Measured ascent drives the tail before the old timed pulse"), Boss->Flight->GetTailMotion().Climb > .2f);
+	Test->TestTrue(TEXT("Measured ascent drives the tail before the old timed pulse"), Boss->Flight->GetMotionState().Climb > .2f);
 	const FTransform PausedTail = Boss->Flight->GetPieces().Last()->GetComponentTransform();
-	const float PausedPhase = Boss->Flight->GetTailMotion().Phase;
+	const float PausedPhase = Boss->Flight->GetMotionState().Phase;
 	Boss->Flight->TickComponent(.5f, LEVELTICK_All, nullptr);
-	Test->TestEqual(TEXT("Pause freezes tail phase"), Boss->Flight->GetTailMotion().Phase, PausedPhase);
+	Test->TestEqual(TEXT("Pause freezes tail phase"), Boss->Flight->GetMotionState().Phase, PausedPhase);
 	Test->TestTrue(TEXT("Pause freezes piece pose"), Boss->Flight->GetPieces().Last()->GetComponentTransform().Equals(PausedTail));
 	const FRotator Heading = Boss->GetActorRotation();
 	Boss->ReactToProjectileHit(Boss->GetWorld()->GetFirstPlayerController());
@@ -131,12 +179,12 @@ bool FCoreMorphValidate::Update()
 	Test->TestEqual(TEXT("Phase does not grant flight twice"), ASC->GetActivatableAbilities().Num(), 1);
 	ASC->CancelAllAbilities();
 	const FVector Cancelled = Boss->GetActorLocation();
-	const float CancelledPhase = Boss->Flight->GetTailMotion().Phase;
+	const float CancelledPhase = Boss->Flight->GetMotionState().Phase;
 	Step(Boss, .5f);
 	Test->TestTrue(TEXT("Cancellation freezes movement and ends the GA"), !Boss->Flight->IsFlying() && Boss->GetActorLocation().Equals(Cancelled, .01));
-	Test->TestEqual(TEXT("Cancellation also freezes tail motion"), Boss->Flight->GetTailMotion().Phase, CancelledPhase);
+	Test->TestEqual(TEXT("Cancellation also freezes tail motion"), Boss->Flight->GetMotionState().Phase, CancelledPhase);
 	Boss->ResetFlightPreview();
-	Test->TestEqual(TEXT("Reset clears accumulated climb response"), Boss->Flight->GetTailMotion().Climb, 0.f);
+	Test->TestEqual(TEXT("Reset clears accumulated climb response"), Boss->Flight->GetMotionState().Climb, 0.f);
 	Test->TestTrue(TEXT("Reset restores the original choreography frame"), Boss->GetActorLocation().Equals(Initial, .01));
 	Test->TestEqual(TEXT("Replay does not heal"), ASC->GetNumericAttribute(UEnemyAttributeSetBase::GetHealthAttribute()), 75.f);
 	Test->TestEqual(TEXT("Replay does not reset combat phase"), Boss->GetCombatPhase(), 2);
@@ -149,16 +197,16 @@ bool FCoreMorphValidate::Update()
 	Test->TestFalse(TEXT("Batch one ends before particle release"), Boss->Flight->IsFlying());
 	Test->TestNearlyEqual(TEXT("Release boundary is 13.4 seconds"), Boss->Flight->GetFlightSeconds(), 13.4f, .002f);
 	Test->TestFalse(TEXT("GA has ended at release boundary"), ASC->FindAbilitySpecFromClass(UGA_CoreMorphFlight::StaticClass())->IsActive());
-	Test->TestTrue(TEXT("Descent fades the climbing tail response"), Boss->Flight->GetTailMotion().Climb < .05f);
+	Test->TestTrue(TEXT("Descent fades the climbing tail response"), Boss->Flight->GetMotionState().Climb < .05f);
 	Test->TestFalse(TEXT("No implicit replay after completion"), Boss->StartFlightPreview());
 	Boss->ResetFlightPreview();
 	Boss->StartFlightPreview();
 	Boss->Flight->SetComponentTickEnabled(false);
 	Step(Boss, 2.f);
-	const float BeforeDeathPhase = Boss->Flight->GetTailMotion().Phase;
+	const float BeforeDeathPhase = Boss->Flight->GetMotionState().Phase;
 	Damage(Boss, 1000);
 	Boss->Flight->TickComponent(.5f, LEVELTICK_All, nullptr);
-	Test->TestEqual(TEXT("Death cannot advance tail motion"), Boss->Flight->GetTailMotion().Phase, BeforeDeathPhase);
+	Test->TestEqual(TEXT("Death cannot advance tail motion"), Boss->Flight->GetMotionState().Phase, BeforeDeathPhase);
 	Test->TestTrue(TEXT("GE lethal damage enters EnemyBase death lifecycle"), Boss->IsDead());
 	Test->TestFalse(TEXT("Death cancels flight"), Boss->Flight->IsFlying());
 	Test->TestFalse(TEXT("Death stops flight ticking"), Boss->Flight->IsComponentTickEnabled());
@@ -201,49 +249,68 @@ bool FCoreMorphScreenshot::Update()
 	return true;
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCoreMorphTailResponse, "TheManTest.Enemy.CoreMorph.TailMotion", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
-bool FCoreMorphTailResponse::RunTest(const FString& Parameters)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCoreMorphAdaptiveMotion, "TheManTest.Enemy.CoreMorph.AdaptiveMotion", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FCoreMorphAdaptiveMotion::RunTest(const FString& Parameters)
 {
-	auto Advance = [](FCoreMorphTailMotion& Motion, FVector Velocity, int32 Frames, float Dt)
+	FCoreMorphVisualPiece Wing, Tail, Core;
+	Wing.Kind = TEXT("Wing"); Wing.Position = FVector(0, 2200, 0);
+	Tail.Kind = TEXT("Tail"); Tail.Position = FVector(-6000, 0, 0); Tail.Order = 0; // Isolate route trail from the wave.
+	Core.Kind = TEXT("Body");
+	auto RunStraight = [](FCoreMorphFlightMotion& State, FVector Velocity, int32 Frames, float Dt)
 	{
-		for (int32 I = 0; I < Frames; ++I) Motion.Update(Velocity, Dt);
+		for (int32 I = 0; I < Frames; ++I) State.Update(State.GetBody().GetLocation() + Velocity * Dt, Dt);
 	};
-	FCoreMorphTailMotion Level, Climbing, Descending, Rest;
-	Advance(Level, FVector(11000, 0, 0), 120, 1.f / 60.f);
-	Advance(Climbing, FVector(11000, 0, 8000), 120, 1.f / 60.f);
-	Advance(Descending, FVector(11000, 0, -8000), 120, 1.f / 60.f);
-	Advance(Rest, FVector::ZeroVector, 120, 1.f / 60.f);
-	TestTrue(TEXT("Actual ascent builds a strong response"), Climbing.Climb > .99f);
-	TestEqual(TEXT("Level flight never triggers the climb wave"), Level.Climb, 0.f);
-	TestEqual(TEXT("Descent is not mistaken for climb"), Descending.Climb, 0.f);
-	TestEqual(TEXT("Stationary motion has no flight stroke"), Rest.Movement, 0.f);
-	FVector LevelTip = FVector::ZeroVector, ClimbTip = FVector::ZeroVector, Root = FVector::ZeroVector;
-	FRotator LevelBend = FRotator::ZeroRotator, ClimbBend = FRotator::ZeroRotator, RootBend = FRotator::ZeroRotator;
-	Level.Apply(1, LevelTip, LevelBend);
-	Climbing.Apply(1, ClimbTip, ClimbBend);
-	Climbing.Apply(0, Root, RootBend);
-	TestTrue(TEXT("Climbing actually increases piece vertical deflection"), FMath::Abs(ClimbTip.Z) > FMath::Abs(LevelTip.Z) * 4);
-	TestTrue(TEXT("Tail base remains anchored"), Root.IsZero() && RootBend.IsZero());
-	// Trigger ascent after a completely different amount of level flight. No route timestamp is supplied.
-	FCoreMorphTailMotion Late;
-	Advance(Late, FVector(11000, 0, 0), 1080, 1.f / 60.f);
-	Advance(Late, FVector(11000, 0, 8000), 120, 1.f / 60.f);
-	TestNearlyEqual(TEXT("Climb response is independent of flight schedule"), Late.Climb, Climbing.Climb, .0001f);
-	const float BeforeLevel = Climbing.Climb;
-	Climbing.Update(FVector(11000, 0, 0), 1.f / 60.f);
-	TestTrue(TEXT("Crest transition fades without snapping"), Climbing.Climb < BeforeLevel && Climbing.Climb > BeforeLevel * .9f);
-	Advance(Climbing, FVector(11000, 0, -8000), 120, 1.f / 60.f);
-	TestTrue(TEXT("Sustained descent clears climb response"), Climbing.Climb < .002f);
-	FCoreMorphTailMotion At30, At120;
-	Advance(At30, FVector(11000, 0, 4000), 60, 1.f / 30.f);
-	Advance(At120, FVector(11000, 0, 4000), 240, 1.f / 120.f);
-	FVector Tip30 = FVector::ZeroVector, Tip120 = FVector::ZeroVector;
-	FRotator Bend30 = FRotator::ZeroRotator, Bend120 = FRotator::ZeroRotator;
-	At30.Apply(1, Tip30, Bend30); At120.Apply(1, Tip120, Bend120);
-	TestTrue(TEXT("30 and 120 FPS give the same response and pose"), Tip30.Equals(Tip120, .02) && Bend30.Equals(Bend120, .01));
-	const FCoreMorphTailMotion BeforeZeroDelta = At30;
-	At30.Update(FVector(0, 0, 8000), 0);
-	TestTrue(TEXT("Zero delta preserves response and phase"), At30.Climb == BeforeZeroDelta.Climb && At30.Phase == BeforeZeroDelta.Phase);
+	FCoreMorphFlightMotion Level, Climb, Dive, Late;
+	for (auto* State : {&Level, &Climb, &Dive, &Late}) State->Reset(FTransform::Identity, 42, 0, 20000);
+	RunStraight(Level, FVector(11000, 0, 0), 240, 1.f / 120.f);
+	RunStraight(Climb, FVector(11000, 0, 8000), 240, 1.f / 120.f);
+	RunStraight(Dive, FVector(11000, 0, -11000), 240, 1.f / 120.f);
+	RunStraight(Late, FVector(11000, 0, 0), 600, 1.f / 120.f);
+	RunStraight(Late, FVector(11000, 0, 8000), 240, 1.f / 120.f);
+	TestTrue(TEXT("State distinguishes climb, level and dive"), Climb.Climb > .99f && Level.Climb == 0 && Dive.Climb == 0 && Dive.Dive > .99f);
+	TestNearlyEqual(TEXT("Climb activation is independent of route time"), Late.Climb, Climb.Climb, .0001f);
+	const FVector WingLevel = Level.GetBody().InverseTransformPosition(Level.PiecePose(Wing, FVector::OneVector).GetLocation());
+	const FVector WingDive = Dive.GetBody().InverseTransformPosition(Dive.PiecePose(Wing, FVector::OneVector).GetLocation());
+	TestTrue(TEXT("Downward velocity folds the actual wing pose"), WingDive.X < WingLevel.X - 300);
+	RunStraight(Dive, FVector(11000, 0, 0), 240, 1.f / 120.f);
+	TestTrue(TEXT("Wing unfolds again when flight levels out"), Dive.Dive < .001f);
+	TestTrue(TEXT("Rigid core follows the computed body"), Climb.PiecePose(Core, FVector::OneVector).Equals(Climb.GetBody(), .001));
+	const FTransform Frozen = Climb.PiecePose(Wing, FVector::OneVector);
+	Climb.Update(FVector(100, 200, 300), 0);
+	TestTrue(TEXT("Zero delta freezes all state"), Frozen.Equals(Climb.PiecePose(Wing, FVector::OneVector)));
+	float FirstBank = 0;
+	for (float Side : {1.f, -1.f})
+	{
+		FCoreMorphFlightMotion Circle;
+		Circle.Reset(FTransform::Identity, 42, 0, 20000);
+		for (int32 I = 1; I <= 360; ++I)
+		{
+			const float Angle = I / 120.f;
+			Circle.Update(FVector(10000 * FMath::Sin(Angle), Side * 10000 * (1 - FMath::Cos(Angle)), Angle * 1500), 1.f / 120.f);
+		}
+		if (Side > 0) FirstBank = Circle.Bank;
+		else TestTrue(TEXT("Left and right turns bank in opposite directions"), FirstBank * Circle.Bank < -100.f);
+		const float TrailAngle = 3.f - 6000.f / FMath::Sqrt(10000.f * 10000.f + 1500.f * 1500.f);
+		const FVector Expected(10000 * FMath::Sin(TrailAngle), Side * 10000 * (1 - FMath::Cos(TrailAngle)), TrailAngle * 1500);
+		TestTrue(TEXT("Tail follows travelled 3D curvature, not a fixed circle formula"), Circle.PiecePose(Tail, FVector::OneVector).GetLocation().Equals(Expected, 3));
+	}
+	FCoreMorphFlightMotion RandomA, RandomB, RandomC, DisabledA, DisabledB;
+	RandomA.Reset(FTransform::Identity, 42, 1, 20000); RandomB.Reset(FTransform::Identity, 42, 1, 20000);
+	RandomC.Reset(FTransform::Identity, 73, 1, 20000);
+	DisabledA.Reset(FTransform::Identity, 42, 0, 20000); DisabledB.Reset(FTransform::Identity, 73, 0, 20000);
+	for (auto* State : {&RandomA, &RandomB, &RandomC, &DisabledA, &DisabledB}) RunStraight(*State, FVector(11000, 0, 3000), 360, 1.f / 120.f);
+	TestTrue(TEXT("Same seed is reproducible"), RandomA.PiecePose(Wing, FVector::OneVector).Equals(RandomB.PiecePose(Wing, FVector::OneVector), .001));
+	TestFalse(TEXT("Different seeds vary the actual wing"), RandomA.PiecePose(Wing, FVector::OneVector).Equals(RandomC.PiecePose(Wing, FVector::OneVector), .1));
+	TestTrue(TEXT("Zero randomness disables seed differences"), DisabledA.PiecePose(Wing, FVector::OneVector).Equals(DisabledB.PiecePose(Wing, FVector::OneVector), .001));
+	const FTransform Before = RandomA.PiecePose(Wing, FVector::OneVector);
+	RunStraight(RandomA, FVector(11000, 0, 3000), 1, 1.f / 120.f);
+	const FVector BeforeLocal = RandomB.GetBody().InverseTransformPosition(Before.GetLocation());
+	const FVector AfterLocal = RandomA.GetBody().InverseTransformPosition(RandomA.PiecePose(Wing, FVector::OneVector).GetLocation());
+	TestTrue(TEXT("Random motion is smooth between frames"), FVector::Dist(BeforeLocal, AfterLocal) < 80);
+	FCoreMorphFlightMotion At30, At120;
+	At30.Reset(FTransform::Identity, 42, .18f, 20000); At120.Reset(FTransform::Identity, 42, .18f, 20000);
+	RunStraight(At30, FVector(11000, 0, 4000), 60, 1.f / 30.f); RunStraight(At120, FVector(11000, 0, 4000), 240, 1.f / 120.f);
+	TestTrue(TEXT("Frame rates preserve the movement response"), FMath::Abs(At30.Climb - At120.Climb) < .001f && At30.GetBody().Equals(At120.GetBody(), .02));
 	return true;
 }
 

@@ -56,6 +56,25 @@
 
 ## 后续必须处理
 
+### 第一批反馈：全身路线适配与平滑随机（2026-09-13，自验通过，待用户校验）
+
+- 用户要求所有部位根据线路和实时状态变化，换路线不重写动作，另要求增加随机性。本轮属于第一批飞行反馈；不进入重组批次。已将上一轮尾部反馈保存为本地 WIP checkpoint `bf812e8`，无 push。
+- `FCoreMorphFlightPath` 缩减为原对照路线的位置提供者；移除固定 `DivePose/SourcePose/ChoreographyTime` 表现代码。新 `FCoreMorphFlightMotion` 只接收世界位置和 DeltaTime，计算速度、向上速度、下降比例、加速度及有符号转向；身体朝向／侧倾、扑翼幅度／频率／收翼由这些运动量驱动。刚性躯干和核心统一跟随身体，保持装配关系。
+- 尾部改为按距离采样身体实际走过的三维轨迹，短历史用初始方向向后延伸；历史只保留尾长所需范围，替代旧固定半径、固定时点的转弯。旧 `CoreMorphTailMotion.h/.cpp` 合并进全身 Motion 后删除，避免两套尾部驱动并存。
+- 随机由种子决定的低频连续信号提供，翼面／尾部共享连续变化；轻微改变节奏、幅度、左右差异及身体侧倾，不改变路线或各分件装配归属。`MotionRandomness` 默认 0.18，0 关闭；`MotionSeed` 默认 0，在复位时取新种子，非零可复现。振荡与平滑仍使用 DeltaTime，但没有“第几秒开始动作”的表现时间表。
+- 新增可摆放 `ACoreMorphFlightRoute`，自带可编辑 Spline。Boss 的 FlightComponent 中 `FlightRoute` 选该实例，`RouteSpeed` 控制速度；从样条首点开始，开放路线到末端结束，闭合路线循环直到取消。空引用仍走原 13.4 秒对照路径。只在飞行开始选定路线对象，速度可实时变化；路径被销毁时安全结束 GA。运行 Tick 以最多 1/120 秒步长采样，暂停／取消／死亡冻结，复位清空路径历史。
+- 原检查地图仍用于用户复查，未新增／修改目标资产。Review 屏幕时间改为实际飞行秒数，不对自定义路线显示固定 13.4 秒终点。源工程与目标引擎版本未改动。
+- `adaptive-build.log`：Development Editor Win64 编译成功，无新增 C++ 警告。`adaptive-validation.log`：`AdaptiveMotion/EditorPlacement/FlightBatch` 三项均 Success；实际 PIE 使用两条镜像 Spline 检查转弯侧倾、升降、距离跟随和末端停止，闭合路线飞过 13.4 秒仍活动，零速度悬停与路线销毁正常结束。原路径的取消／暂停／复位／死亡／退出和编辑器移动／旋转／缩放／重构造／复制均通过。
+- AdaptiveMotion 直接验证三维弯曲历史位置（3 cm 容差）、升降自动收展翼、同种子可复现、异种子差异、随机关闭、连续帧平滑与 30／120 FPS 运动响应。`adaptive-source-audit.json`：5195 源文件未变；5 个保留的轨迹函数与源完全一致。旧翼部动作公式已改为实时驱动，历史“翼部不变”结论只适用于之前批次。
+- 差异审查完成：表现求解器无 Schedule、固定轨道半径或飞行绝对时间触发；振荡器仅以 DeltaTime 累积相位。全局随机只在实例复位选择种子，分件求值无随机抽签；尾迹按最大尾长裁剪。无新增 GAS、计时器或伤害归属；目标资产和源项目均未改变。本轮修改未提交／push，自动编辑器已退出，等待用户第一批观感校验。
+
+#### 用户调整路线／随机参数
+
+1. 在关卡放置原生 `CoreMorphFlightRoute`，选中其 `FlightRoute` Spline 编辑控制点，需要循环时开启 Closed Loop。
+2. 选择 `BP_CoreMorphBoss` 的 Flight 组件，在 `CoreMorph|Flight` 的 Flight Route 指定该 Actor；开始飞行会移至样条首点。Route Speed 默认 11000 cm/s，设 0 可停在当前位置。
+3. `CoreMorph|Motion` 的 Motion Randomness 默认 0.18；0 关闭随机，数值越大变化越明显。Motion Seed 为 0 时复位会换种子，非零可复现。调整随机参数后按 R 复位再 V 播放。
+4. Flight Route 留空恢复原对照路线。姿态会随新路线计算；原源工程仍保留原先逐时编排的视觉对照。当前未接入避障或战斗 AI，也未进入重组批次。
+
 ### 第一批反馈：爬升驱动尾巴摆动（2026-09-13，自验通过，待用户校验）
 
 - 用户要求“改成根据是否爬升自己计算摆动”。按本轮明确请求处理第一批飞行反馈；不进入第二批。写入前将已知 Capsule 修正保存为本地 WIP checkpoint `441b533`，没有 push。

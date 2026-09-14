@@ -16,7 +16,8 @@
 
 - FEAT-081 第一批反馈修正：编辑态 Actor／Capsule 原点直接对应主体，分件以相对变换跟随摆放；运行时从摆放反推固定编舞参考，切换到绝对分件姿态。不得再把编辑态 Actor 原点放在距主体 160 米的旧轨迹原点。
 
-- FEAT-081 尾部反馈：专属 `CoreMorph/Movement/CoreMorphTailMotion.h/.cpp` 根据每帧实际身体世界速度计算尾巴摆动幅度，正 Z 速度增强爬升波，平飞／下降平滑回落。FlightComponent 持有并更新状态，暂停／取消／死亡冻结、复位清零；FlightPath 只消费结果。路线、翅膀与横向盘旋弧形仍为源编排。
+- FEAT-081 全身路线适配：`CoreMorph/Movement/CoreMorphFlightMotion.h/.cpp` 只接收实际世界位置／DeltaTime，驱动全身朝向、侧倾、扑翼／收翼和尾部三维轨迹跟随，并加入种子控制的平滑随机变化。FlightComponent 持有运动状态与有界尾迹历史；暂停／取消／死亡冻结、复位清空。原 TailMotion 已合并删除；FlightPath 只保留原参考路线的位置计算，不再持有分件或动作时间表。
+- `ACoreMorphFlightRoute` 是可摆放的 Spline 路线 Actor；Boss 的 FlightComponent.FlightRoute 选择实例，RouteSpeed 控制移动，开放路线到末端结束、闭合路线持续循环。MotionRandomness 控制幅度（默认 .18，0 关闭），MotionSeed 非零可复现；随机参数在复位时读取。空路线引用继续使用 13.4 秒源对照路线。
 
 - 2026-09-05当前：ExplosionHitReaction仅有动画分支，Rig模式/参数/求解器已删除。默认HitReactionPostProcess为Humanoid/_Shared/Animations/Logic/ABP_Humanoid_HitReaction_C。BP_Phantom仅配置前后左右4条AS_Humanoid_BlastRifle方向动画；具体Skeleton成品在外部资源项目适配。ApplyAnimationRootMotion默认开启，以扫掠胶囊消费非下落水平根位移，反应期间临时暂停Movement模式，结束/关闭恢复，死亡不恢复。组件构造启用Tick以消费位移，受击部位分类及HumanoidReactionBones.h已删除。
 
