@@ -1,5 +1,11 @@
 # 具体角色类
 
+## 大厅展示角色（FEAT-082）
+
+`ALobbyCharacterBase : AActor` 位于 `Characters/CharacterBase/Lobby`，拥有DisplayMesh和无碰撞的DisplayWeapon；Relaxed／Rifle两种展示姿态分别循环播放配置的成品AnimSequence，`SetDisplayPose`供大厅UI调用。它不创建ASC、装备或角色移动组件。`AMaintenanceWorkerLobbyCharacter` 位于 `Characters/MaintenanceWorker/Lobby`，具体资产配置在 `MaintenanceWorker/Lobby/Blueprint/BP_MaintenanceWorker_Lobby`。放松／持枪姿态的武器局部挂点变换分别可配。
+
+模型、目标骨架、动画和展示步枪所需材质纹理归 `MaintenanceWorker/Lobby/{Meshes,Animations,Materials,Textures}`。只在TMIIR制作RTG，目标不接收Rifle_01源骨架／IKRig／IKRetargeter。既有可玩角色Body和FirstPerson资产不被替换。
+
 > 当前清理状态（2026-09-13）：用户要求立即清理测试设施，取代下文旧批次“总验收后清理”的安排。5张CoreMorph检查地图、专属地面材质、5个Tests cpp与CoreMorphFlightReview h/cpp均已删除。Boss的StartFlightPreview／ResetFlightPreview及Flight的ResetPreview已删除；Reassembly内部ResetPreview改名ResetAssembly，仍用于正式变形初始化。ReviewTarget已删除，正式BT目标由LastThreat／玩家决定。保留FlightRoute、正式主BT、GA／GE／Cue及490个头领资产。以后只有TestMap作为测试地图，不能再照旧地图入口操作。
 
 
