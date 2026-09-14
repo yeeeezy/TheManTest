@@ -39,13 +39,7 @@ protected:
 	ACameraActor* NearCamera = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Camera", meta = (ClampMin = "0.0"))
-	float BlendTime = 0.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Camera")
-	TEnumAsByte<EViewTargetBlendFunction> BlendFunction = VTBlend_Cubic;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Camera", meta = (ClampMin = "0.0"))
-	float BlendExp = 2.0f;
+	float BlendTime = 0.7f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Camera")
 	bool bStartInNearCamera = false;
@@ -54,13 +48,13 @@ protected:
 	bool bEnableMouseParallax = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Mouse Parallax", meta = (ClampMin = "0.0"))
-	float MouseParallaxHorizontalStrength = 20.0f;
+	float MouseParallaxHorizontalStrength = 5.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Mouse Parallax", meta = (ClampMin = "0.0"))
-	float MouseParallaxVerticalStrength = 12.0f;
+	float MouseParallaxVerticalStrength = 3.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Mouse Parallax", meta = (ClampMin = "0.0"))
-	float MouseParallaxInterpSpeed = 6.0f;
+	float MouseParallaxInterpSpeed = 5.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Mouse Parallax")
 	bool bInvertMouseParallax = false;
@@ -77,29 +71,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Mouse Parallax", meta = (ClampMin = "0.0"))
 	float MaxFocalLengthScale = 3.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Switch Overshoot")
-	bool bEnableSwitchOvershoot = true;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Switch Overshoot", meta = (ClampMin = "0.0"))
-	float SwitchOvershootDistance = 500.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Switch Overshoot", meta = (ClampMin = "0.0"))
-	float SwitchOvershootDistanceRatio = 0.08f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Switch Overshoot", meta = (ClampMin = "0.0"))
-	float MaxSwitchOvershootDistance = 1000.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Switch Overshoot", meta = (ClampMin = "0.0"))
-	float SwitchOvershootReturnSpeed = 8.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Switch Overshoot", meta = (ClampMin = "0.0"))
-	float SwitchSpringStrength = 28.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Switch Overshoot", meta = (ClampMin = "0.0"))
-	float SwitchSpringDamping = 5.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Switch Overshoot", meta = (ClampMin = "0.0"))
-	float SwitchRotationInterpSpeed = 4.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Select|Mouse Parallax", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float NearParallaxScale = 0.5f;
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Character Select|Camera")
 	void OnCameraViewChanged(bool bNearCamera);
@@ -114,7 +87,13 @@ private:
 	FTransform NearCameraBaseTransform;
 	FVector CurrentParallaxOffset = FVector::ZeroVector;
 	FVector RigBaseLocation = FVector::ZeroVector;
-	FVector RigVelocity = FVector::ZeroVector;
+	FTransform TransitionStart;
+	float TransitionElapsed = 0.f;
+	float TransitionDuration = 0.f;
+	float TransitionAlpha = 1.f;
+	float StartFocalLength = 35.f;
+	float StartFocusDistance = 100.f;
+	float StartAperture = 2.8f;
 
 	UPROPERTY(Transient)
 	ACineCameraActor* CameraRig = nullptr;
@@ -125,7 +104,7 @@ private:
 	void SyncRigCameraSettings() const;
 	void UpdateMouseParallax(float DeltaSeconds);
 	void UpdateRigTransform(float DeltaSeconds);
-	void StartSwitchSpring(bool bNearCamera);
+
 	ACameraActor* GetCurrentCamera() const;
 	const FTransform& GetCurrentBaseTransform() const;
 	float GetCurrentFocalLengthScale() const;

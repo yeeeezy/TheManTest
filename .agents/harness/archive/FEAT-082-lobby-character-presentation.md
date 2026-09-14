@@ -122,3 +122,21 @@
 - 最终源验证：verify-migrate-grips.log为BLENDER_GRIPS_VERIFIED_AND_MIGRATED_OK，9条各99／142／99关键帧共1020帧，所有骨骼局部位置误差0，旋转与Blender已摆好规格一致；依赖只有既有大厅Mesh／Skeleton。没有新Rig／Retargeter。目标九条原路径成品已覆盖，BP引用无需修改。
 - 最终实际PIE：validate-grips.log为BLENDER_GRIP_VALIDATION_OK，共2816样本，九持枪／二空手全循环及One→Relaxed→Rifle、无效索引、模型材质尺寸、标准SingleNode、修正的前臂手掌手指与原上臂肘部位置／右手身体输出均通过。不是旧版“手腕位置不动”的测试；现增加实际手腕偏离旧错位姿势超过4cm和当前成品输出检查。验证前后地图／武器／动画哈希保持。
 - 已查看LobbyBlenderGrip三枪放松／举枪实机近景，与截图102535对照，前臂不再穿入机匣，手掌改为从下方支撑。保留用户视觉验收，不宣称每个接触面已做逐三角形无穿透证明。所有后台编辑器退出，无最终提交／push。工作区另见用户10:27:14保存的LobbyMap.umap变更；本轮未保存地图、不回退该改动。
+
+
+## 2026-09-14 CHARACTER / WEAPON 展示菜单（实施中）
+
+- 用户接受Blender三枪握持，随后授权按YouTube OZObfPgL_5A约30秒和最新三张截图制作展示导航。视频26至40秒已读取，参考左侧纵向深灰长按钮、浅色带字距文字和金色细描边，以及全身到局部的镜头过渡。
+- 写入前checkpoint cf805ce保存前轮动画和用户LobbyMap变更。当前仅调整正式LobbyMap两台既有相机／Switcher，保留用户人物位置与其他场景对象。
+- 新增可编辑UMG WBP_LobbyPresentation，父类ULobbyPresentationWidgetBase负责按钮事件与选中态；BP_CharacterSelectGameMode原UI为空，现引用新菜单。旧WBP_CharacterSelect继续负责选角开局，不复用其启动游戏按钮。
+- 镜头原地图鼠标位移30／18、额外推进500、低阻尼5。现鼠标5／3，近景乘0.5；移除累加速度弹簧，以0.7秒smoothstep同步位置／旋转／焦距／手动对焦距离。相同目标忽略，切换中反向从当前画面继续，不从旧端点起跳；保留鼠标偏移为出发画面，过渡期间暂停新视差。
+- Controller新增明确的SetWeaponPresentationView；移除背景点击切换的输入绑定。三枪动画／武器资源保持。Editor新增空布局初始化助手TheManLobbyAssetLibrary，UMGEditor仅编辑器依赖，Slate/SlateCore运行时供按钮样式使用。初次编译TObjectPtr推导错误已修，Development Editor Win64编译成功；UMG和GM已编译保存。实际PIE与截图验证继续。
+
+
+### 展示菜单最终验证与交接
+
+- Development Editor Win64最终lobby-menu-build.log Succeeded；新UMG和GM在编辑器编译保存。UI字体改为持久化引用/Engine/EngineFonts/Roboto，解决首轮截图缺字。UMG布局可在Designer编辑，助手不在运行时创建布局。
+- 正式镜头最终画幅36×20.25mm，Far焦距26mm、位置人物原点+(14,-300,102)、看向原点+(70,0,96)；Near40mm、位置原点+(240,-165,138)、看向原点+(12,0,131)。以用户人物实际Z=24.121307为基准；先前44mm版本爆破枪枪口贴边，最终40mm和取景中心已纠正。原地图环境／角色位置／武器缩放／持枪动画保持。
+- 最终冷启动真实LobbyMap PIE：Saved/Codex/lobby-menu-validation.log为LOBBY_MENU_VALIDATION_OK，json ok=true，540镜头样本。三枪各Relaxed／Rifle共六组、12次远近切换实际UMG Button.OnClicked绑定调用通过；重复点击不重启过渡，0.75秒内落到目标、无越界回弹、焦距连续且到位，中途反向无位置跳变，鼠标角落位移5.78755cm低于5／3cm合成上限；背景输入不切镜头。退出后地图、GM、UI、全部大厅动画包哈希不变。
+- 已逐张查看最终Final-LobbyMenu-Weapon-{0..5}00002.png，0／1／2为维修／爆破／电击举枪，3／4／5为三枪放松；三枪枪口、握持均入镜，菜单清楚且不遮枪。全身视角Final-LobbyMenu-Character00002.png。截图为实机PIE含UI，未用假合成替代，位于Saved/Codex。数字1仍独立切姿势，菜单本身仅切相机。
+- 测试用Python脚本和日志只在Saved/Codex，不新增测试地图或永久验证对象。所有后台编辑器已退出，未关闭用户编辑器（实施期间未发现用户编辑器进程）。Git范围为菜单UMG、GM引用、LobbyMap两镜头／Switcher、相关C++与harness，无动画或正式武器资产改动。未最终提交／push，等待用户实际观感反馈。

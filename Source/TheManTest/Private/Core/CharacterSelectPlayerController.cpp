@@ -37,11 +37,6 @@ void ACharacterSelectPlayerController::SetupInputComponent()
 
 	if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent))
 	{
-		if (ClickAction)
-		{
-			EIC->BindAction(ClickAction, ETriggerEvent::Started,
-				this, &ACharacterSelectPlayerController::HandleClick);
-		}
 #if WITH_EDITOR
 		if (TestAction)
 		{
@@ -57,17 +52,19 @@ void ACharacterSelectPlayerController::SetPointerOverUI(bool bInPointerOverUI)
 	bPointerOverUI = bInPointerOverUI;
 }
 
-void ACharacterSelectPlayerController::HandleClick()
+void ACharacterSelectPlayerController::SetWeaponPresentationView(bool bWeapon)
 {
-	if (bPointerOverUI)
-	{
-		return;
-	}
-
 	if (ACharacterSelectCameraSwitcher* Switcher = GetCameraSwitcher())
 	{
-		Switcher->ToggleCameraView();
+		if (bWeapon) Switcher->SetNearCameraView();
+		else Switcher->SetFarCameraView();
 	}
+}
+
+bool ACharacterSelectPlayerController::IsWeaponPresentationView()
+{
+	const ACharacterSelectCameraSwitcher* Switcher = GetCameraSwitcher();
+	return Switcher && Switcher->IsUsingNearCamera();
 }
 
 #if WITH_EDITOR

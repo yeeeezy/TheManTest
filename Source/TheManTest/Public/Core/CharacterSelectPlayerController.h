@@ -20,6 +20,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Character Select|Input")
 	void SetPointerOverUI(bool bInPointerOverUI);
 
+	UFUNCTION(BlueprintCallable, Category = "Character Select|Camera")
+	void SetWeaponPresentationView(bool bWeapon);
+
+	UFUNCTION(BlueprintPure, Category = "Character Select|Camera")
+	bool IsWeaponPresentationView();
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character Select|Input")
 	TObjectPtr<UInputMappingContext> CharacterSelectMappingContext;
@@ -43,7 +49,7 @@ private:
 
 	bool bPointerOverUI = false;
 
-	void HandleClick();
+
 #if WITH_EDITOR
 	void HandleTestInput();
 #endif

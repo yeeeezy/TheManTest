@@ -62,27 +62,30 @@ void ACharacterSelectCameraSwitcher::ApplyCameraView(bool bNearCamera, float Ove
 		return;
 	}
 
-	bUsingNearCamera = bNearCamera;
+	if (bHasAppliedInitialView && bUsingNearCamera == bNearCamera)
+	{
+		return;
+	}
+	TransitionStart = CameraRig->GetActorTransform();
+	// Include the visible mouse offset in the departure pose, so a click never snaps.
 	CurrentParallaxOffset = FVector::ZeroVector;
-	if (!bHasAppliedInitialView)
+	const UCineCameraComponent* Lens = CameraRig->GetCineCameraComponent();
+	StartFocalLength = Lens->CurrentFocalLength;
+	StartFocusDistance = Lens->FocusSettings.ManualFocusDistance;
+	StartAperture = Lens->CurrentAperture;
+	bUsingNearCamera = bNearCamera;
+	TransitionElapsed = 0.f;
+	TransitionDuration = bHasAppliedInitialView ? FMath::Max(0.f, OverrideBlendTime) : 0.f;
+	TransitionAlpha = TransitionDuration > 0.f ? 0.f : 1.f;
+	if (TransitionDuration == 0.f)
 	{
-		const FTransform& BaseTransform = GetCurrentBaseTransform();
-		RigBaseLocation = BaseTransform.GetLocation();
-		RigVelocity = FVector::ZeroVector;
-		if (CameraRig)
-		{
-			CameraRig->SetActorLocation(RigBaseLocation);
-			CameraRig->SetActorRotation(BaseTransform.GetRotation());
-		}
-		bHasAppliedInitialView = true;
+		RigBaseLocation = GetCurrentBaseTransform().GetLocation();
+		CameraRig->SetActorTransform(GetCurrentBaseTransform());
 	}
-	else
-	{
-		StartSwitchSpring(bNearCamera);
-	}
+	bHasAppliedInitialView = true;
 	SyncRigCameraSettings();
-
-	PC->SetViewTargetWithBlend(CameraRig, OverrideBlendTime, BlendFunction, BlendExp);
+	// The rig itself interpolates; blending to the same ViewTarget does not move it.
+	PC->SetViewTarget(CameraRig);
 	OnCameraViewChanged(bUsingNearCamera);
 }
 
@@ -143,10 +146,13 @@ void ACharacterSelectCameraSwitcher::SyncRigCameraSettings() const
 
 	RigComponent->SetFilmback(SourceComponent->Filmback);
 	RigComponent->SetLensSettings(SourceComponent->LensSettings);
-	RigComponent->SetFocusSettings(SourceComponent->FocusSettings);
+	FCameraFocusSettings Focus = SourceComponent->FocusSettings;
+	Focus.ManualFocusDistance = FMath::Lerp(StartFocusDistance, Focus.ManualFocusDistance, TransitionAlpha);
+	Focus.bSmoothFocusChanges = false;
+	RigComponent->SetFocusSettings(Focus);
 	RigComponent->SetCropSettings(SourceComponent->CropSettings);
-	RigComponent->SetCurrentFocalLength(SourceComponent->CurrentFocalLength);
-	RigComponent->SetCurrentAperture(SourceComponent->CurrentAperture);
+	RigComponent->SetCurrentFocalLength(FMath::Lerp(StartFocalLength, SourceComponent->CurrentFocalLength, TransitionAlpha));
+	RigComponent->SetCurrentAperture(FMath::Lerp(StartAperture, SourceComponent->CurrentAperture, TransitionAlpha));
 	RigComponent->ExposureMethod = SourceComponent->ExposureMethod;
 	RigComponent->bOverride_CustomNearClippingPlane = SourceComponent->bOverride_CustomNearClippingPlane;
 	RigComponent->SetCustomNearClippingPlane(SourceComponent->CustomNearClippingPlane);
@@ -154,7 +160,7 @@ void ACharacterSelectCameraSwitcher::SyncRigCameraSettings() const
 
 void ACharacterSelectCameraSwitcher::UpdateMouseParallax(float DeltaSeconds)
 {
-	if (!bEnableMouseParallax)
+	if (!bEnableMouseParallax || TransitionAlpha < 1.f)
 	{
 		CurrentParallaxOffset = FMath::VInterpTo(
 			CurrentParallaxOffset, FVector::ZeroVector, DeltaSeconds, MouseParallaxInterpSpeed);
@@ -179,13 +185,14 @@ void ACharacterSelectCameraSwitcher::UpdateMouseParallax(float DeltaSeconds)
 	float MouseY = 0.0f;
 	if (!PC->GetMousePosition(MouseX, MouseY))
 	{
+		CurrentParallaxOffset = FMath::VInterpTo(CurrentParallaxOffset, FVector::ZeroVector, DeltaSeconds, MouseParallaxInterpSpeed);
 		return;
 	}
 
 	const float NormalizedX = FMath::Clamp((MouseX / static_cast<float>(ViewportSizeX) - 0.5f) * 2.0f, -1.0f, 1.0f);
 	const float NormalizedY = FMath::Clamp((0.5f - MouseY / static_cast<float>(ViewportSizeY)) * 2.0f, -1.0f, 1.0f);
 	const float DirectionScale = bInvertMouseParallax ? -1.0f : 1.0f;
-	const float FocalLengthScale = GetCurrentFocalLengthScale();
+	const float FocalLengthScale = GetCurrentFocalLengthScale() * (bUsingNearCamera ? NearParallaxScale : 1.f);
 
 	const FTransform& BaseTransform = GetCurrentBaseTransform();
 	const FVector TargetOffset =
@@ -204,47 +211,12 @@ void ACharacterSelectCameraSwitcher::UpdateRigTransform(float DeltaSeconds)
 	}
 
 	const FTransform& BaseTransform = GetCurrentBaseTransform();
-	const FVector TargetBaseLocation = BaseTransform.GetLocation();
-	const FVector Displacement = TargetBaseLocation - RigBaseLocation;
-	const FVector Acceleration = Displacement * SwitchSpringStrength - RigVelocity * SwitchSpringDamping;
-
-	RigVelocity += Acceleration * DeltaSeconds;
-	RigBaseLocation += RigVelocity * DeltaSeconds;
-
-	const FVector FinalLocation = RigBaseLocation + CurrentParallaxOffset;
-	const FRotator NewRotation = FMath::RInterpTo(
-		CameraRig->GetActorRotation(), BaseTransform.GetRotation().Rotator(), DeltaSeconds, SwitchRotationInterpSpeed);
-
-	CameraRig->SetActorLocation(FinalLocation);
-	CameraRig->SetActorRotation(NewRotation);
-}
-
-void ACharacterSelectCameraSwitcher::StartSwitchSpring(bool bNearCamera)
-{
-	if (!bEnableSwitchOvershoot)
-	{
-		return;
-	}
-
-	const FVector SourceLocation = bNearCamera
-		? FarCameraBaseTransform.GetLocation()
-		: NearCameraBaseTransform.GetLocation();
-	const FVector TargetLocation = bNearCamera
-		? NearCameraBaseTransform.GetLocation()
-		: FarCameraBaseTransform.GetLocation();
-
-	const FVector Travel = TargetLocation - SourceLocation;
-	const float TravelDistance = Travel.Size();
-	if (TravelDistance <= KINDA_SMALL_NUMBER)
-	{
-		return;
-	}
-
-	const float OvershootAmount = FMath::Min(
-		SwitchOvershootDistance + TravelDistance * SwitchOvershootDistanceRatio,
-		MaxSwitchOvershootDistance);
-
-	RigVelocity += Travel.GetSafeNormal() * OvershootAmount * SwitchOvershootReturnSpeed;
+	TransitionElapsed += DeltaSeconds;
+	const float T = TransitionDuration > 0.f ? FMath::Clamp(TransitionElapsed / TransitionDuration, 0.f, 1.f) : 1.f;
+	TransitionAlpha = T * T * (3.f - 2.f * T);
+	RigBaseLocation = FMath::Lerp(TransitionStart.GetLocation(), BaseTransform.GetLocation(), TransitionAlpha);
+	const FQuat Rotation = FQuat::Slerp(TransitionStart.GetRotation(), BaseTransform.GetRotation(), TransitionAlpha);
+	CameraRig->SetActorLocationAndRotation(RigBaseLocation + CurrentParallaxOffset, Rotation);
 }
 
 ACameraActor* ACharacterSelectCameraSwitcher::GetCurrentCamera() const

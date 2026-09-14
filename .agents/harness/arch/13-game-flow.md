@@ -100,3 +100,7 @@ TestMap（GameMode=BP_TheManGameMode : ATheManGameModeBase）
 ## 目录约定
 - UI 类（UMG widget）放 `Source/.../UI/`。
 - 框架级（GameMode / GameState / GameInstance / PlayerController / PlayerState）放 `Core/`。
+
+## FEAT-082 正式大厅展示UI（2026-09-14）
+
+当前LobbyMap实际GameMode为BP_CharacterSelectGameMode（上文BP_LobbyGameMode描述为旧流程）。该GM创建WBP_LobbyPresentation，左侧纵向CHARACTER／WEAPON只切换展示镜头，不启动游戏或改持枪动画。Controller明确设置远／近相机，背景点击不切换。既有FarCamera展示角色整体、NearCamera展示枪与双手，0.7秒同步镜头过渡；鼠标幅度5／3cm，近景减半。人物放置和独立三枪动画保持。

@@ -10,8 +10,8 @@
 | `Source/TheManTest/Private/Core/TheManGameModeBase.cpp` | 含 `[PawnSelect]` 临时诊断（查清后删） |
 | `Source/TheManTest/Public/Core/TheManLobbyGameMode.h` / `.cpp` | 大厅 GameMode：`DefaultPawnClass=nullptr`；BeginPlay 建选角色 UI + UI 输入模式（详见 13） |
 | `Source/TheManTest/Public/Core/CharacterSelectGameMode.h` / `.cpp` | 新选角场景专用 GameMode：不生成 Pawn；默认使用 `ACharacterSelectPlayerController`；可选创建新选角 UI；不依赖旧 LobbyMap / 旧 WBP |
-| `Source/TheManTest/Public/Core/CharacterSelectPlayerController.h` / `.cpp` | 新选角场景专用 Controller：GameAndUI 输入模式 + Enhanced Input IMC；点击非 UI 区域调用场景 `CharacterSelectCameraSwitcher` 切远近景；UI 可用 `SetPointerOverUI` 阻止空白点击逻辑 |
-| `Source/TheManTest/Public/Core/CharacterSelectCameraSwitcher.h` / `.cpp` | 新选角场景摄像机控制：引用远/近 Cine Camera 目标点；运行时自动生成内部 `ACineCameraActor` Rig 作为 ViewTarget；Rig 用弹簧切远近景、复制目标 Cine Camera 镜头参数，并叠加鼠标四方向视差 |
+| `Source/TheManTest/Public/Core/CharacterSelectPlayerController.h` / `.cpp` | 新选角场景专用 Controller：GameAndUI 输入模式 + Enhanced Input IMC；UI通过SetWeaponPresentationView明确切角色／武器镜头，IsWeaponPresentationView读取状态；不再绑定背景点击切镜头。原SetPointerOverUI接口保留兼容 |
+| `Source/TheManTest/Public/Core/CharacterSelectCameraSwitcher.h` / `.cpp` | 新选角场景摄像机控制：引用远/近 Cine Camera 目标点；运行时自动生成内部 `ACineCameraActor` Rig 作为 ViewTarget；Rig以BlendTime（0.7秒）smoothstep同步位置、四元数旋转、焦距、光圈、手动对焦距离；同目标忽略，反向切换从当前画面开始。鼠标视差5／3cm、近景乘0.5，切换期间暂停视差；无大推进／弹簧速度累加 |
 | `Source/TheManTest/Public/Core/TheManGameInstance.h` / `.cpp` | 跨关卡持久容器：`SelectedCharacterID` / `CarriedRoundNumber`；`SelectCharacterAndStart` / `HandlePlayerDeath`（详见 13） |
 | `Source/TheManTest/Public/Core/TheManPlayerController.h` | 增强输入绑定、`SwitchCharacter(FName)`、`DT_CharacterRoster` 指针；`PrimaryFireAction` / `SecondaryFireAction` / `ReloadAction`；`DebugSkipTimeAction`(调试快进)；本地 `CombatHUDWidget` 生命周期与 Equipment/Firearm 委托绑定 |
 | `Source/TheManTest/Private/Core/TheManPlayerController.cpp` | 输入回调；BeginPlay 加 IMC + **重置 GameOnly 输入模式**（覆盖大厅 UIOnly 残留，详见 13 BUG-037-001）；`HandleDebugSkipTime`；本地创建 `UCombatHUDWidgetBase`，在 Possess/UnPossess/切枪时解绑重绑装备、弹药和 PlayerState ASC 血量委托，不做 UI Tick |
@@ -31,3 +31,7 @@
 ## 统一预留测试入口
 
 IMC_Default 的 IA_Test = One（键盘1）。BP_TheManPlayerController 的 TestSwitchCharacterAction 保留旧字段名／IA引用，Started事件现在调用HandleTestInput，不再切维修工。入口仅PIE执行；当前按1临时生成CoreMorph头领和闭合路线，以正式主BT测试空中导弹，再按1清理；OnUnPossess／EndPlay也清理头领、AIController及路线。主逻辑位于既有PlayerController.cpp的WITH_EDITOR段，不新增测试地图、相机或按键。未来手动验证替换该入口当前场景；地图持续保持干净。
+
+## FEAT-082 展示导航
+
+正式LobbyMap使用BP_CharacterSelectGameMode，CharacterSelectWidgetClass引用/Game/UI/Lobby/WBP_LobbyPresentation（原为空）。父类ULobbyPresentationWidgetBase绑定Button_Character和Button_Weapon、维护选中描边，UMG资产持有布局／样式／英文文字；它不调用SelectCharacterAndStart。原WBP_CharacterSelect和回合选角流程独立。Editor辅助TheManLobbyAssetLibrary仅初始化空WidgetBlueprint，不覆盖已有布局。

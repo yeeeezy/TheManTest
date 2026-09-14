@@ -10,10 +10,10 @@ public class TheManTest : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "GameplayAbilities", "GameplayTags", "GameplayTasks", "BBBAimIK", "Niagara", "AIModule", "NavigationSystem", "UMG", "AnimGraphRuntime", "CinematicCamera", "Locomotor", "ControlRig", });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "GeometryCollectionEngine", "Chaos", "PhysicsCore", "FieldSystemEngine", "RigVM" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "GeometryCollectionEngine", "Chaos", "PhysicsCore", "FieldSystemEngine", "RigVM", "Slate", "SlateCore" });
 		if (Target.bBuildEditor)
 		{
-			PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "AssetTools", "AnimGraph", "BlueprintGraph", "ControlRigDeveloper", "AnimationBlueprintLibrary", "Kismet", "Slate", "SlateCore", "PlanarCut", "Voronoi", "AudioMixer", "RHI", "NiagaraEditor", "BehaviorTreeEditor", "AIGraph" });
+			PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "AssetTools", "AnimGraph", "BlueprintGraph", "ControlRigDeveloper", "AnimationBlueprintLibrary", "Kismet", "UMGEditor", "PlanarCut", "Voronoi", "AudioMixer", "RHI", "NiagaraEditor", "BehaviorTreeEditor", "AIGraph" });
 		}
 
 		// Uncomment if you are using Slate UI
