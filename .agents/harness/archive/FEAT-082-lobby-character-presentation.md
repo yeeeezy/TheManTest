@@ -1,10 +1,10 @@
 # FEAT-082 大厅角色展示
 
-## 2026-09-14 大厅环境资源目录整理
+## 2026-09-14 大厅地图资源目录整理与路径纠正
 
-- 用户确认整理路径。通过 Unreal AssetTools 将旧素材包目录`/Game/Maps/SciFiIndustrialBase`下326个大厅配套资源迁至`/Game/Environment/Lobby`：23 Blueprint、153 StaticMesh、48 Material／MaterialInstance、84 Texture、9 SoundCue、9 SoundWave，统一分类为Blueprint／Meshes／Materials／Textures／Audio。
-- LobbyMap与LobbyMap_BuiltData加载并保存，使序列化引用指向新路径；旧Asset Registry路径、旧磁盘目录和目标目录Redirector均为0。UE 5.7 Python AssetTools未暴露fixup_referencers，首次脚本在迁移完成后停于该接口；ResavePackages尝试触发引擎断言，随后改为加载保存全部直接引用方并清理重定向器完成，没有重复迁移或丢失资产。
-- 冷启动加载326个资产及LobbyMap通过：1985个Actor，全部资产可加载。实际LobbyMap PIE通过，BP_CharacterSelectPlayerController与唯一大厅展示Actor正常，One键Relaxed→Rifle→Relaxed，退出后地图未被PIE改写。无C++修改，无需编译。
+- 用户确认整理路径。最终通过 Unreal AssetTools 将旧素材包目录`/Game/Maps/SciFiIndustrialBase`下326个大厅地图专属资源迁至`/Game/Maps/Lobby`：23 Blueprint、153 StaticMesh、48 Material／MaterialInstance、84 Texture、9 SoundCue、9 SoundWave，统一分类为Blueprint／Meshes／Materials／Textures／Audio。
+- 中间曾误迁到`/Game/Environment/Lobby`；用户指出Environment属于环境交互／场景功能后，已立即纠正到Maps下的具体Lobby目录。错误路径的Asset Registry记录、Redirector和磁盘目录均为0；WIP checkpoint 3e4793b仅用于保存纠正前安全状态。
+- LobbyMap与LobbyMap_BuiltData已重新保存并指向最终路径。冷启动加载326个资产及LobbyMap通过：1985个Actor，全部资产可加载。实际LobbyMap PIE通过，BP_CharacterSelectPlayerController与唯一大厅展示Actor正常，One键Relaxed→Rifle→Relaxed，退出后地图未被PIE改写。无C++修改，无需编译。
 
 ## 2026-09-14 三把正式武器与双手握持返修（实现与验证完成）
 
