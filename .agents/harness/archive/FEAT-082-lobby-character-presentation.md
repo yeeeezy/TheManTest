@@ -1,5 +1,11 @@
 # FEAT-082 大厅角色展示
 
+## 2026-09-14 大厅环境资源目录整理
+
+- 用户确认整理路径。通过 Unreal AssetTools 将旧素材包目录`/Game/Maps/SciFiIndustrialBase`下326个大厅配套资源迁至`/Game/Environment/Lobby`：23 Blueprint、153 StaticMesh、48 Material／MaterialInstance、84 Texture、9 SoundCue、9 SoundWave，统一分类为Blueprint／Meshes／Materials／Textures／Audio。
+- LobbyMap与LobbyMap_BuiltData加载并保存，使序列化引用指向新路径；旧Asset Registry路径、旧磁盘目录和目标目录Redirector均为0。UE 5.7 Python AssetTools未暴露fixup_referencers，首次脚本在迁移完成后停于该接口；ResavePackages尝试触发引擎断言，随后改为加载保存全部直接引用方并清理重定向器完成，没有重复迁移或丢失资产。
+- 冷启动加载326个资产及LobbyMap通过：1985个Actor，全部资产可加载。实际LobbyMap PIE通过，BP_CharacterSelectPlayerController与唯一大厅展示Actor正常，One键Relaxed→Rifle→Relaxed，退出后地图未被PIE改写。无C++修改，无需编译。
+
 ## 2026-09-14 三把正式武器与双手握持返修（实现与验证完成）
 
 - 用户截图再次指出左手穿入护木，明确要求使用维修枪、爆破枪、电击枪，并授权自行调查尺寸和修复。checkpoint f74d947 保存此前大厅返修结果。之前“原配Rifle_01握持通过”的视觉结论被用户截图推翻。

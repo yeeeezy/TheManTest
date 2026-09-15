@@ -1,6 +1,6 @@
 {
     "schema_version": "1.0",
-    "last_updated": "2026-09-14-three-point-publication",
+    "last_updated": "2026-09-14-lobby-environment-organization",
     "active_animation_task": "Accepted behavior: ONLY delayed explosion damage triggers directional knockback on all actually damaged surviving enemies; first impact still damages and attaches without reaction. Development Editor Win64 and three focused PIE tests passed. Implementation f1eda8b and prior history were pushed to origin/main and remote SHA verified. User clarified that audio and remaining saved asset edits should also be published; supplemental commit includes all 88 remaining Content packages (73 modified, 15 new), including audio, hit texture, weapon settings, test maps and 80 external actors. Valid package headers and LFS tracking verified; 29.75 MB. No asset-content or source-code changes during publication. This supersedes earlier instructions to leave those asset edits local. Delivery and synchronization are tracked in Git.",
     "active_feature": "FEAT-082",
     "archive_file": "feature_archive.json",
@@ -10,9 +10,9 @@
             "name": "Lobby character presentation and Maintenance Worker assets",
             "status": "in_progress",
             "created": "2026-09-13",
-            "updated": "2026-09-14-three-point-publication",
+            "updated": "2026-09-14-lobby-environment-organization",
             "archive_file": "archive/FEAT-082-lobby-character-presentation.md",
-            "current_batch": "大厅三点光现状（2026-09-14，覆盖旧灯配置说明）：LobbyLighting/Previous_Disabled归档关闭Lobby_Top_SoftWhite、Lobby_Left_Red、Lobby_Right_White、SpotLight3、SpotLight4。关闭方式是LightComponent Visibility=false，旧灯位置/强度/颜色保留。LobbyLighting/ThreePoint新增三盏Movable RectLight：Lobby_Key_SoftWhite白色主光650lm、160×180cm、位置(-155,-185,295)；Lobby_Fill_SoftWhite白色补光220lm、160×200cm、位置(170,-150,175)；Lobby_Rim_Red红色轮廓光220lm、100×200cm、位置(160,130,235)。衰减半径均650cm，间接强度0，仅Lighting Channel1。人物和两枪组件原Channel0+1保持；曝光、环境灯、相机、人物位置保持。调亮度在对应灯Details的Intensity，调覆盖范围在Attenuation Radius，柔和程度在Source Width/Height。宽面光覆盖Relax/Rifle，不存在运行时灯位切换或跟随骨骼。 用户已授权提交并推送本轮三点光，发布状态以Git为准。",
+            "current_batch": "大厅环境目录整理完成：326个配套资源已由/Game/Maps/SciFiIndustrialBase迁至/Game/Environment/Lobby并按Blueprint、Meshes、Materials、Textures、Audio分类。LobbyMap与BuiltData引用已更新；旧Registry/磁盘目录和目标Redirector均为0。冷启动326资产与1985 Actor地图加载通过，实际LobbyMap PIE中大厅控制器、展示人物和One键Relaxed/Rifle往返通过。结果未提交或push。",
             "done_criteria": [
                 "Delete only the three confirmed old meshes.",
                 "TMIIR performs RTG; target receives only final lobby assets and required dependencies under MaintenanceWorker.",

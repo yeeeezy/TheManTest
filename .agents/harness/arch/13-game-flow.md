@@ -1,6 +1,6 @@
 # 游戏流程（回合 + 死亡 → 大厅选角色 → 重开）
 
-> 地图现状（2026-09-14）：FEAT-045选角场景已恢复并正式保存为`/Game/Maps/LobbyMap`，原同名弃用空地图已删除。场景依赖继续位于`/Game/Maps/SciFiIndustrialBase`，预计算数据为`/Game/Maps/LobbyMap_BuiltData`。`UTheManGameInstance::LobbyMapName`原本就是`LobbyMap`，因此死亡返回大厅流程现在直接进入正式选角场景。
+> 地图现状（2026-09-14）：FEAT-045选角场景已恢复并正式保存为`/Game/Maps/LobbyMap`，原同名弃用空地图已删除。326个大厅环境依赖已从素材包路径`/Game/Maps/SciFiIndustrialBase`迁至项目语义路径`/Game/Environment/Lobby/{Blueprint,Meshes,Materials,Textures,Audio}`，预计算数据仍为`/Game/Maps/LobbyMap_BuiltData`。`UTheManGameInstance::LobbyMapName`原本就是`LobbyMap`，因此死亡返回大厅流程直接进入正式选角场景。
 
 ## 大厅人物展示资源（FEAT-082）
 
