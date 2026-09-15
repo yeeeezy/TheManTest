@@ -1,16 +1,11 @@
 # 当前工作面板
 
 - Active feature：FEAT-082大厅展示；FEAT-080/081暂停。
-- 最新：按用户确认的第二版预览完成简洁武器选择器。透明布局、三张真实枪模侧视图点击切枪、金边/角标表示当前枪，枪名与两行介绍，左下角BACK；已去掉大底板、编号及左右箭头。
-- 图标来自当前真实维修枪骨骼模和两把80%大厅静态枪，外部制作工程D:/Blender Projects/LobbyWeaponIcons/LobbyWeaponIcons.blend。最终4纹理在UI/Lobby/Textures。文案/Thumbnail在BP_MaintenanceWorker_Lobby → Weapon Presentations配置。
-- BACK恢复主菜单/远景/随机Relax并保留枪种。原姿势及挂点0.5秒混合、相机0.7秒、每枪独立动画与握持保持；本轮不修改地图/灯光/枪模。
+- 本轮按用户要求归档关闭旧人物/枪械5盏灯，新增白主光/白补光/红轮廓三点光，目录LobbyLighting/Previous_Disabled与ThreePoint。
+- 旧灯保留原参数，只关Visibility；新灯650/220/220lm，半径650cm，Channel1，宽光源覆盖放松与举枪。曝光/环境/相机/动画/UI保持。
+- 此前简洁武器UI已推送至a73fcdc；当前checkpoint cbc41c3保存本轮前用户地图。用户已授权提交并推送本轮三点光，实际发布状态以Git为准。
 
-## 验证与交接
+## 会话交接
 
-- Development Editor Win64构建Succeeded；UMG与角色BP编译保存；冷启动实际LobbyMap PIE通过三枪按钮、对应模型/动画/文案/图标、唯一选中边框角标、真实鼠标悬停、60次连续切枪、重复当前枪不重启动画、BACK返回远景/Relax及保留枪索引。lobby-minimal-selector-validation.json ok=true；地图、两BP与四纹理退出后哈希不变。最新三枪和返回截图MinimalSelector-{0,1,2}00002.png、MinimalSelector-Back00002.png已查看，汇总MinimalSelector-Review.jpg，单张实际界面MinimalSelector-Preview.png。
-- UE5.7 SetDesiredSizeOverride/SetBrushSize都不保存到资产；最终用FSlateBrush.SetImageSize+SetBrush保存，避免回到缩略图过小版本。实际图标100×50、角标18×18。
-- checkpoint16decf7保存此前详情版本。本轮产品为UI/Editor作者工具源码、Thumbnail字段、两BP和4图标纹理；没有地图、正式武器或动画修改。用户已授权本次提交并推送，版本同步状态以Git为准。
-- 验证辅助进程退出，重新打开用户项目供手动预览。下一步按用户对实际UI比例/字体的反馈调整。
-
-- 发布交接：用户明确要求推送远端；已fetch确认main无分叉，本次包含此前9个本地checkpoint及最终简洁选择器、6项最终UI/配置资产（两BP、四纹理）。复用既有通过的构建/PIE证据，不修改产品实现。
-- 主体b813b65已推送origin/main并核对远端SHA一致，34个LFS对象约25MB上传成功。随后发现编辑器18:41:28新保存LobbyMap（8682972字节，SHA256 caeafe5d373605a07db75d7a6d016f4b694aeb9b6c3955c52cf386cc55c0a7c6），按本次发布授权补充提交当前磁盘地图。仅核对包头和LFS，不将此前UI/地图PIE验证冒充这份新保存地图的单独验证。
+- 最终冷启动实际LobbyMap PIE验证通过：三枪Relax/Rifle六张截图（ThreePoint-{0,1,2}-{Character,Weapon}00001.png）已查看，红轮廓220lm；旧5灯编辑器/运行时关闭、新3灯强度与通道正确，1982个原Actor变换及非目标灯配置保持，退出地图SHA256不变。lobby-three-point-validation.json ok=true，three-point-validation-final.log THREE_POINT_OK；最终汇总ThreePoint-Review.jpg。仅修改LobbyMap与harness，无C++或蓝图资产改动，无需编译。
+- 验证辅助编辑器退出；重新打开LobbyMap供用户调灯。下一步按用户观感反馈调整；本轮已获提交/push授权，发布状态以Git为准。

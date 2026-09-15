@@ -119,3 +119,6 @@ FEAT-082按钮姿势联动（2026-09-14）：SetWeaponPresentationView现在同�
 
 
 2026-09-14最终简洁选择器取代此前详情卡：WeaponDetailsPanel透明布局，WEAPON标题下三张112×112枪械按钮，按钮中实际模型侧视PNG100×50；选中金边和18×18角标。Button_RepairGun/ExplosionGun/ElectricGun选择索引0/1/2并保持Rifle/近景，同步名称/介绍/实际模型/独立动画；重复当前枪不重启。BACK独立放根Canvas左下角，返回远景/随机Relax并保留枪种。无大底板、02/03或左右翻页。FLobbyWeaponPresentation.Thumbnail引用UI/Lobby/Textures/T_Lobby_{RepairGun,ExplosionGun,ElectricGun}，非AI轮廓；三枪来自当前真实资产在外部Blender工程LobbyWeaponIcons统一渲染。文案、Thumbnail仍在维修工大厅BP Weapon Presentations配置。主菜单仅hover高亮，缩略图选中角标是用户确认的独立选择态。
+
+
+大厅三点光现状（2026-09-14，覆盖旧灯配置说明）：LobbyLighting/Previous_Disabled归档关闭Lobby_Top_SoftWhite、Lobby_Left_Red、Lobby_Right_White、SpotLight3、SpotLight4。关闭方式是LightComponent Visibility=false，旧灯位置/强度/颜色保留。LobbyLighting/ThreePoint新增三盏Movable RectLight：Lobby_Key_SoftWhite白色主光650lm、160×180cm、位置(-155,-185,295)；Lobby_Fill_SoftWhite白色补光220lm、160×200cm、位置(170,-150,175)；Lobby_Rim_Red红色轮廓光220lm、100×200cm、位置(160,130,235)。衰减半径均650cm，间接强度0，仅Lighting Channel1。人物和两枪组件原Channel0+1保持；曝光、环境灯、相机、人物位置保持。调亮度在对应灯Details的Intensity，调覆盖范围在Attenuation Radius，柔和程度在Source Width/Height。宽面光覆盖Relax/Rifle，不存在运行时灯位切换或跟随骨骼。

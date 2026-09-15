@@ -249,3 +249,14 @@
 
 - 用户明确要求推送远端。fetch确认main相对origin/main领先9个本地checkpoint、没有分叉；提交最终简洁选择器与四纹理，并连同此前握持/枪模/动画混合/地图灯光版本一起发布。发布前diff检查通过，既有Development Editor构建与实际PIE证据仍通过，本轮未改产品实现。提交及远端同步结果以Git历史和origin/main为准。
 - 主体b813b65已推送origin/main并核对远端SHA一致，34个LFS对象约25MB上传成功。随后发现编辑器18:41:28新保存LobbyMap（8682972字节，SHA256 caeafe5d373605a07db75d7a6d016f4b694aeb9b6c3955c52cf386cc55c0a7c6），按本次发布授权补充提交当前磁盘地图。仅核对包头和LFS，不将此前UI/地图PIE验证冒充这份新保存地图的单独验证。
+
+
+## 2026-09-14 人物三点光重布
+
+- 用户授权将现有人物/枪械灯分组关闭并重新布置三点光。checkpoint cbc41c3 保存用户最新地图。检查发现三盏旧RectLight之外还有SpotLight3/4，两盏聚光灯外锥角只有3度，容易在换姿势后照偏。
+- 五盏旧灯归入LobbyLighting/Previous_Disabled，LightComponent Visibility=false，保留原位置、颜色与强度供恢复。新增LobbyLighting/ThreePoint：Lobby_Key_SoftWhite、Lobby_Fill_SoftWhite、Lobby_Rim_Red，宽面光覆盖人物与枪的姿态范围。只照Channel1；当前曝光与环境灯保持。已保存地图，正在冷启动PIE检查三枪放松/举枪。
+
+- 最终冷启动实际LobbyMap PIE验证通过：三枪Relax/Rifle六张截图（ThreePoint-{0,1,2}-{Character,Weapon}00001.png）已查看，红轮廓220lm；旧5灯编辑器/运行时关闭、新3灯强度与通道正确，1982个原Actor变换及非目标灯配置保持，退出地图SHA256不变。lobby-three-point-validation.json ok=true，three-point-validation-final.log THREE_POINT_OK；最终汇总ThreePoint-Review.jpg。仅修改LobbyMap与harness，无C++或蓝图资产改动，无需编译。
+- 首轮红色反射使举枪枪身过红，轮廓光由650降至220lm后完成最终回归；没有增加动态跟随灯光系统。未最终提交/push。
+
+- 用户要求提交远端：fetch确认main领先1个安全检查点且无分叉；本次提交LobbyMap与四份harness记录，连同cbc41c3推送origin/main。沿用此前通过的三枪两姿态PIE验证；发布不修改灯光配置，提交与同步结果以Git为准。
