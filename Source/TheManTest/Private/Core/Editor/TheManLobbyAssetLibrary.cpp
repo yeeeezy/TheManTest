@@ -12,6 +12,11 @@
 #include "Components/TextBlock.h"
 #include "Components/Border.h"
 #include "Components/SizeBox.h"
+#include "Components/HorizontalBox.h"
+#include "Components/HorizontalBoxSlot.h"
+#include "Components/Overlay.h"
+#include "Components/OverlaySlot.h"
+#include "Components/Image.h"
 #include "UI/Lobby/LobbyPresentationWidgetBase.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/KismetEditorUtilities.h"
@@ -134,6 +139,96 @@ bool UTheManLobbyAssetLibrary::AddWeaponDetails(UBlueprint* Blueprint)
 	BackSlot->SetVerticalAlignment(VAlign_Center);
 	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(BP);
 	FKismetEditorUtilities::CompileBlueprint(BP);
+	return BP->Status != BS_Error;
+#else
+	return false;
+#endif
+}
+
+bool UTheManLobbyAssetLibrary::RefineWeaponDetails(UBlueprint* Blueprint, UTexture2D* CornerTexture)
+{
+#if WITH_EDITOR
+	auto* BP = Cast<UWidgetBlueprint>(Blueprint);
+	if (!BP || !BP->WidgetTree) return false;
+	auto* Tree = BP->WidgetTree.Get();
+	auto* Canvas = Cast<UCanvasPanel>(Tree->RootWidget);
+	auto* Panel = Cast<UVerticalBox>(Tree->FindWidget(TEXT("WeaponDetailsPanel")));
+	auto* Back = Cast<UButton>(Tree->FindWidget(TEXT("Button_Back")));
+	auto* Category = Cast<UTextBlock>(Tree->FindWidget(TEXT("Text_WeaponCategory")));
+	auto* Name = Cast<UTextBlock>(Tree->FindWidget(TEXT("Text_WeaponName")));
+	auto* Description = Cast<UTextBlock>(Tree->FindWidget(TEXT("Text_WeaponDescription")));
+	if (!Canvas || !Panel || !Back || !Category || !Name || !Description) return false;
+	auto SetImageSize = [](UImage* Image, FVector2D Size)
+	{
+		FSlateBrush Brush = Image->GetBrush(); Brush.SetImageSize(Size); Image->SetBrush(Brush);
+	};
+	if (Tree->FindWidget(TEXT("WeaponChoices")))
+	{
+		BP->Modify();
+		for (const TCHAR* Key : {TEXT("RepairGun"), TEXT("ExplosionGun"), TEXT("ElectricGun")})
+		{
+			if (auto* Icon = Cast<UImage>(Tree->FindWidget(FName(FString(TEXT("Image_")) + Key)))) SetImageSize(Icon, FVector2D(100,50));
+			if (auto* Corner = Cast<UImage>(Tree->FindWidget(FName(FString(TEXT("Corner_")) + Key)))) SetImageSize(Corner, FVector2D(18,18));
+		}
+		FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(BP); FKismetEditorUtilities::CompileBlueprint(BP);
+		return BP->Status != BS_Error;
+	}
+	BP->Modify(); Tree->Modify(); Canvas->Modify(); Panel->Modify();
+	UWidget* ObsoleteWidgets[] = {Tree->FindWidget(TEXT("WeaponInfoCard")), Tree->FindWidget(TEXT("WeaponInfoContent")), Tree->FindWidget(TEXT("BackButtonSize"))};
+	UWidget* RetainedWidgets[] = {Category, Name, Description, Back};
+	for (UWidget* Widget : RetainedWidgets) { Widget->Modify(); Widget->RemoveFromParent(); }
+	Panel->ClearChildren();
+	for (UWidget* Widget : ObsoleteWidgets)
+		if (Widget) Widget->Rename(nullptr, GetTransientPackage(), REN_DontCreateRedirectors);
+	auto* PanelSlot = CastChecked<UCanvasPanelSlot>(Panel->Slot);
+	PanelSlot->SetAnchors(FAnchors(0.095f, 0.28f)); PanelSlot->SetAlignment(FVector2D::ZeroVector); PanelSlot->SetPosition(FVector2D::ZeroVector);
+	auto Font = [](int32 Size, int32 Spacing) { FSlateFontInfo Info(LoadObject<UObject>(nullptr, TEXT("/Engine/EngineFonts/Roboto.Roboto")), Size, TEXT("Regular")); Info.LetterSpacing = Spacing; return Info; };
+	Category->SetFont(Font(16, 500)); Category->SetMinDesiredWidth(0.f);
+	Panel->AddChildToVerticalBox(Category)->SetPadding(FMargin(0,0,0,22));
+	auto* Choices = Tree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), TEXT("WeaponChoices"));
+	Panel->AddChildToVerticalBox(Choices)->SetPadding(FMargin(0,0,0,30));
+	const TCHAR* Keys[] = {TEXT("RepairGun"), TEXT("ExplosionGun"), TEXT("ElectricGun")};
+	for (int32 Index = 0; Index < 3; ++Index)
+	{
+		const FString Key(Keys[Index]);
+		auto* Size = Tree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), FName(TEXT("Size_") + Key));
+		Size->SetWidthOverride(112); Size->SetHeightOverride(112);
+		Choices->AddChildToHorizontalBox(Size)->SetPadding(FMargin(0,0,Index < 2 ? 16 : 0,0));
+		auto* Button = Tree->ConstructWidget<UButton>(UButton::StaticClass(), FName(TEXT("Button_") + Key));
+		Size->SetContent(Button);
+		FButtonStyle Style;
+		Style.Normal.DrawAs = ESlateBrushDrawType::RoundedBox;
+		Style.Normal.TintColor = FSlateColor(FLinearColor(0.01f,0.012f,0.016f,0.15f));
+		Style.Normal.OutlineSettings.RoundingType = ESlateBrushRoundingType::FixedRadius;
+		Style.Normal.OutlineSettings.CornerRadii = FVector4(0,0,0,0);
+		Style.Normal.OutlineSettings.Width = 1.f;
+		Style.Normal.OutlineSettings.Color = FSlateColor(FLinearColor(0.2f,0.22f,0.24f,0.65f));
+		Style.Hovered = Style.Normal; Style.Hovered.OutlineSettings.Color = FSlateColor(FLinearColor(0.65f,0.4f,0.09f,1));
+		Style.Pressed = Style.Normal; Style.Disabled = Style.Normal;
+		Style.NormalPadding = FMargin(0); Style.PressedPadding = FMargin(0); Button->SetStyle(Style);
+		auto* Overlay = Tree->ConstructWidget<UOverlay>(UOverlay::StaticClass(), FName(TEXT("Overlay_") + Key));
+		Overlay->SetVisibility(ESlateVisibility::HitTestInvisible);
+		auto* ButtonSlot = CastChecked<UButtonSlot>(Button->AddChild(Overlay)); ButtonSlot->SetPadding(FMargin(0)); ButtonSlot->SetHorizontalAlignment(HAlign_Fill); ButtonSlot->SetVerticalAlignment(VAlign_Fill);
+		auto* Icon = Tree->ConstructWidget<UImage>(UImage::StaticClass(), FName(TEXT("Image_") + Key));
+		SetImageSize(Icon, FVector2D(100,50));
+		auto* IconSlot = Overlay->AddChildToOverlay(Icon); IconSlot->SetHorizontalAlignment(HAlign_Center); IconSlot->SetVerticalAlignment(VAlign_Center);
+		auto* Corner = Tree->ConstructWidget<UImage>(UImage::StaticClass(), FName(TEXT("Corner_") + Key));
+		Corner->SetBrushFromTexture(CornerTexture); SetImageSize(Corner, FVector2D(18,18)); Corner->SetVisibility(ESlateVisibility::Collapsed);
+		auto* CornerSlot = Overlay->AddChildToOverlay(Corner); CornerSlot->SetHorizontalAlignment(HAlign_Right); CornerSlot->SetVerticalAlignment(VAlign_Top);
+	}
+	Name->SetFont(Font(27,180)); Name->SetWrapTextAt(440); Name->SetMinDesiredWidth(440);
+	Panel->AddChildToVerticalBox(Name)->SetPadding(FMargin(0,0,0,22));
+	auto* LineSize = Tree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), TEXT("WeaponRuleSize"));
+	LineSize->SetWidthOverride(72); LineSize->SetHeightOverride(1);
+	auto* RuleSlot = Panel->AddChildToVerticalBox(LineSize); RuleSlot->SetHorizontalAlignment(HAlign_Left); RuleSlot->SetPadding(FMargin(0,0,0,22));
+	auto* Rule = Tree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("WeaponRule")); Rule->SetPadding(FMargin(0)); Rule->SetBrushColor(FLinearColor(0.28f,0.30f,0.31f,0.75f)); LineSize->SetContent(Rule);
+	Description->SetFont(Font(15,100)); Description->SetWrapTextAt(440); Description->SetMinDesiredWidth(440); Description->SetLineHeightPercentage(1.45f);
+	Panel->AddChildToVerticalBox(Description);
+	auto* BackSlot = Canvas->AddChildToCanvas(Back); BackSlot->SetAnchors(FAnchors(0.095f,0.92f)); BackSlot->SetAlignment(FVector2D(0,1)); BackSlot->SetPosition(FVector2D::ZeroVector); BackSlot->SetSize(FVector2D(180,48));
+	FButtonStyle BackStyle = Back->GetStyle(); BackStyle.Normal.DrawAs = ESlateBrushDrawType::NoDrawType; BackStyle.Normal.TintColor = FSlateColor(FLinearColor::Transparent); BackStyle.Hovered = BackStyle.Normal; BackStyle.Hovered.DrawAs = ESlateBrushDrawType::Box; BackStyle.Hovered.TintColor = FSlateColor(FLinearColor(0.55f,0.38f,0.10f,0.10f)); BackStyle.Pressed = BackStyle.Normal; BackStyle.NormalPadding = FMargin(0); BackStyle.PressedPadding = FMargin(0); Back->SetStyle(BackStyle);
+	if (auto* Label = Cast<UTextBlock>(Tree->FindWidget(TEXT("Text_Back")))) { Label->SetText(FText::FromString(TEXT("\u2039  BACK"))); Label->SetFont(Font(16,350)); }
+	Back->SetVisibility(ESlateVisibility::Collapsed);
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(BP); FKismetEditorUtilities::CompileBlueprint(BP);
 	return BP->Status != BS_Error;
 #else
 	return false;

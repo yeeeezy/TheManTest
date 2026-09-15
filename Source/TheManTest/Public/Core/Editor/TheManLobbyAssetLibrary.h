@@ -5,6 +5,7 @@
 #include "TheManLobbyAssetLibrary.generated.h"
 
 class UBlueprint;
+class UTexture2D;
 
 /** Explicit editor authoring; never replaces an existing widget layout. */
 UCLASS()
@@ -16,4 +17,6 @@ public:
 	static bool InitializePresentationMenu(UBlueprint* Blueprint);
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Lobby")
 	static bool AddWeaponDetails(UBlueprint* Blueprint);
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Lobby")
+	static bool RefineWeaponDetails(UBlueprint* Blueprint, UTexture2D* CornerTexture);
 };

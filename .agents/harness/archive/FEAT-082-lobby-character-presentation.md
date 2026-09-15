@@ -234,3 +234,17 @@
 - 最终确认：正确写回数组后，现有地图实例正常继承三枪文案；此前以为地图覆盖导致空文本的初步判断并不成立，直接原因是Python数组Struct副本未写回。空文本实例的默认值后备仍保留作为兼容。
 - Development Editor Win64构建Succeeded；Widget BP与角色BP编译保存并冷回读。实际LobbyMap PIE验证三枪名称/介绍、打开详情时切枪刷新、BACK恢复主菜单/远景/Relax、64次连续进出覆盖Relax索引0/1、默认与Pressed中性/hover金边，通过后地图和两项资产哈希不变。lobby-weapon-details-validation.json ok=true，lobby-weapon-details-pie.log WEAPON_DETAILS_OK；三枪详情及返回截图均已查看，汇总WeaponDetails-Review.jpg。
 - 本轮产品只有UI与Editor authoring代码、展示结构两项文本字段、WBP_LobbyPresentation与BP_MaintenanceWorker_Lobby；地图/灯光/相机/动画/正式武器资产均未修改。后台编辑器退出，未最终提交/push。
+
+## 2026-09-14 简洁武器选择器与真实缩略图
+
+- 用户否决旧信息卡，先看imagegen预览并明确去掉02/03及左右箭头，再授权实现。保留三张枪械选择缩略图、金色选中边框/角标、名称/两行介绍、左下角BACK；透明背景，无大底板。checkpoint16decf7保存此前详情版本。
+- 从当前BP配置导出真实SK_SCFRIFLE及两把80%大厅StaticMesh，在D:/Blender Projects/LobbyWeaponIcons制作统一正交侧视、灰白材质/灯光、512×256透明PNG。三枪宽度76.804/76.232/74.318cm，模型顶点27742/3145/2106。来源路径exported.json；rendered.json和alpha-validation.json通过，Icons-Preview.png已查看并打开给用户。不是AI生成的枪轮廓。NullRHI骨骼模型导出触发引擎MeshObject断言，改为正常渲染进程导出后成功，没有修改源资产。
+- 四张纹理（三枪+小三角角标）导入UI/Lobby/Textures，TC_EDITOR_ICON、UI组、无mip、sRGB。每枪FLobbyWeaponPresentation新增Thumbnail；BP配置图标与精简两行介绍。Widget有三个真实按钮，点击调用SetDisplayWeaponIndex并保持Rifle/近景；名称、模型、动画、图标及唯一选中角标同步。主菜单仍只hover高亮；枪缩略图选中标记按用户确认预览保留。
+- RefineWeaponDetails重排既有WidgetTree，移除旧信息底板，把BACK放到根Canvas左下角；不会创建编号或左右翻页。首轮编译混合派生指针initializer_list推导失败，改显式UWidget指针数组后通过。首轮PIE切枪/返回已通过，但图标DesiredSizeOverride未持久化导致显示太小，改用序列化BrushSize并保存，正在最终回归。
+- 最终尺寸修复：UE5.7的SetBrushSize也只是SetDesiredSizeOverride的别名，不会序列化。查阅引擎Image.cpp后改为复制FSlateBrush、SetImageSize、SetBrush并保存；RefineWeaponDetails重复调用仅同步这六个图像尺寸，最终冷加载图标100×50、角标18×18显示正常。Python尺寸断言遇到DeprecateSlateVector2D字段未暴露，改以最终实际截图验证布局，没有放宽交互/资产断言。
+- Development Editor Win64构建Succeeded；UMG与角色BP编译保存；冷启动实际LobbyMap PIE通过三枪按钮、对应模型/动画/文案/图标、唯一选中边框角标、真实鼠标悬停、60次连续切枪、重复当前枪不重启动画、BACK返回远景/Relax及保留枪索引。lobby-minimal-selector-validation.json ok=true；地图、两BP与四纹理退出后哈希不变。最新三枪和返回截图MinimalSelector-{0,1,2}00002.png、MinimalSelector-Back00002.png已查看，汇总MinimalSelector-Review.jpg，单张实际界面MinimalSelector-Preview.png。
+- 本轮只改展示UI/配置/图标与对应源码，无地图、灯光、动画、枪模或正式武器变更；后台验证编辑器已退出，重新打开用户项目供预览。未最终提交/push。
+
+## 2026-09-14 远端发布
+
+- 用户明确要求推送远端。fetch确认main相对origin/main领先9个本地checkpoint、没有分叉；提交最终简洁选择器与四纹理，并连同此前握持/枪模/动画混合/地图灯光版本一起发布。发布前diff检查通过，既有Development Editor构建与实际PIE证据仍通过，本轮未改产品实现。提交及远端同步结果以Git历史和origin/main为准。

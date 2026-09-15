@@ -107,3 +107,6 @@ FEAT-082右手握柄后续校准：80%静态副本及源组件平移保持，Wea
 
 
 FLobbyWeaponPresentation新增DisplayName和Description（FText）供大厅武器详情读取，编辑BP默认值Weapon Presentations各枪条目配置；现役三枪均已设置英文文案，模型/挂点/动画字段保持。
+
+
+FLobbyWeaponPresentation新增Thumbnail(UTexture2D)，用于三枪实际模型侧视选择图。归UI/Lobby/Textures；BP默认值配置，目标地图自动继承，无需改地图。

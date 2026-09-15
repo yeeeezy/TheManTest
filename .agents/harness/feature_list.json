@@ -1,6 +1,6 @@
 {
     "schema_version": "1.0",
-    "last_updated": "2026-09-14-lobby-weapon-details",
+    "last_updated": "2026-09-14-lobby-remote-publication",
     "active_animation_task": "Accepted behavior: ONLY delayed explosion damage triggers directional knockback on all actually damaged surviving enemies; first impact still damages and attaches without reaction. Development Editor Win64 and three focused PIE tests passed. Implementation f1eda8b and prior history were pushed to origin/main and remote SHA verified. User clarified that audio and remaining saved asset edits should also be published; supplemental commit includes all 88 remaining Content packages (73 modified, 15 new), including audio, hit texture, weapon settings, test maps and 80 external actors. Valid package headers and LFS tracking verified; 29.75 MB. No asset-content or source-code changes during publication. This supersedes earlier instructions to leave those asset edits local. Delivery and synchronization are tracked in Git.",
     "active_feature": "FEAT-082",
     "archive_file": "feature_archive.json",
@@ -10,16 +10,16 @@
             "name": "Lobby character presentation and Maintenance Worker assets",
             "status": "in_progress",
             "created": "2026-09-13",
-            "updated": "2026-09-14-lobby-weapon-details",
+            "updated": "2026-09-14-lobby-remote-publication",
             "archive_file": "archive/FEAT-082-lobby-character-presentation.md",
-            "current_batch": "2026-09-14武器详情：WBP_LobbyPresentation中的PresentationMenu与WeaponDetailsPanel按近/远视图互斥显示；详情含Text_WeaponName、Text_WeaponDescription、Button_Back。BACK调用原ShowCharacter，恢复远景及每枪随机Relax。ULobbyPresentationWidgetBase缓存展示Actor，NativeTick仅检查视图/枪索引变化，变化才更新UMG；详情打开时换枪同步刷新。文案归BP_MaintenanceWorker_Lobby的Weapon Presentations各项DisplayName/Description（FText，多行介绍），无需改UI代码；空文本实例按WeaponClass回退角色BP默认值。原有深色/Roboto/金色hover风格保持，Back初始/点击不常驻高亮。 已实现验证，未最终提交/push，待用户反馈。",
+            "current_batch": "2026-09-14最终简洁选择器取代此前详情卡：WeaponDetailsPanel透明布局，WEAPON标题下三张112×112枪械按钮，按钮中实际模型侧视PNG100×50；选中金边和18×18角标。Button_RepairGun/ExplosionGun/ElectricGun选择索引0/1/2并保持Rifle/近景，同步名称/介绍/实际模型/独立动画；重复当前枪不重启。BACK独立放根Canvas左下角，返回远景/随机Relax并保留枪种。无大底板、02/03或左右翻页。FLobbyWeaponPresentation.Thumbnail引用UI/Lobby/Textures/T_Lobby_{RepairGun,ExplosionGun,ElectricGun}，非AI轮廓；三枪来自当前真实资产在外部Blender工程LobbyWeaponIcons统一渲染。文案、Thumbnail仍在维修工大厅BP Weapon Presentations配置。主菜单仅hover高亮，缩略图选中角标是用户确认的独立选择态。 已验证，待用户观感反馈，用户已授权提交并推送origin/main，版本同步状态以Git为准。",
             "done_criteria": [
                 "Delete only the three confirmed old meshes.",
                 "TMIIR performs RTG; target receives only final lobby assets and required dependencies under MaintenanceWorker.",
                 "Provide reusable lobby display Actor base and Maintenance Worker subclass with all unarmed standing idle variants and optional rifle poses.",
                 "Compile, validate Blueprint and actual animation playback/rendering; clean migration paths and verify existing gameplay assets unchanged."
             ],
-            "verification_evidence": "Development Editor Win64构建Succeeded；Widget BP与角色BP编译保存并冷回读。实际LobbyMap PIE验证三枪名称/介绍、打开详情时切枪刷新、BACK恢复主菜单/远景/Relax、64次连续进出覆盖Relax索引0/1、默认与Pressed中性/hover金边，通过后地图和两项资产哈希不变。lobby-weapon-details-validation.json ok=true，lobby-weapon-details-pie.log WEAPON_DETAILS_OK；三枪详情及返回截图均已查看，汇总WeaponDetails-Review.jpg。"
+            "verification_evidence": "Development Editor Win64构建Succeeded；UMG与角色BP编译保存；冷启动实际LobbyMap PIE通过三枪按钮、对应模型/动画/文案/图标、唯一选中边框角标、真实鼠标悬停、60次连续切枪、重复当前枪不重启动画、BACK返回远景/Relax及保留枪索引。lobby-minimal-selector-validation.json ok=true；地图、两BP与四纹理退出后哈希不变。最新三枪和返回截图MinimalSelector-{0,1,2}00002.png、MinimalSelector-Back00002.png已查看，汇总MinimalSelector-Review.jpg，单张实际界面MinimalSelector-Preview.png。"
         },
         {
             "id": "FEAT-077",

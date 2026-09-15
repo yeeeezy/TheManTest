@@ -8,6 +8,7 @@ class UAnimSequence;
 class USkeletalMeshComponent;
 class UStaticMeshComponent;
 class AEquipmentBase;
+class UTexture2D;
 
 USTRUCT(BlueprintType)
 struct FLobbyWeaponPresentation
@@ -22,6 +23,9 @@ struct FLobbyWeaponPresentation
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon", meta=(MultiLine=true))
 	FText Description;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon")
+	TObjectPtr<UTexture2D> Thumbnail;
 
 	/** Weapon Actor origin relative to the character's right hand. Mesh offsets come from the weapon BP. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon")

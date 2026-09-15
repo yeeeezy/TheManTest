@@ -116,3 +116,6 @@ FEAT-082按钮姿势联动（2026-09-14）：SetWeaponPresentationView现在同�
 
 
 2026-09-14武器详情：WBP_LobbyPresentation中的PresentationMenu与WeaponDetailsPanel按近/远视图互斥显示；详情含Text_WeaponName、Text_WeaponDescription、Button_Back。BACK调用原ShowCharacter，恢复远景及每枪随机Relax。ULobbyPresentationWidgetBase缓存展示Actor，NativeTick仅检查视图/枪索引变化，变化才更新UMG；详情打开时换枪同步刷新。文案归BP_MaintenanceWorker_Lobby的Weapon Presentations各项DisplayName/Description（FText，多行介绍），无需改UI代码；空文本实例按WeaponClass回退角色BP默认值。原有深色/Roboto/金色hover风格保持，Back初始/点击不常驻高亮。
+
+
+2026-09-14最终简洁选择器取代此前详情卡：WeaponDetailsPanel透明布局，WEAPON标题下三张112×112枪械按钮，按钮中实际模型侧视PNG100×50；选中金边和18×18角标。Button_RepairGun/ExplosionGun/ElectricGun选择索引0/1/2并保持Rifle/近景，同步名称/介绍/实际模型/独立动画；重复当前枪不重启。BACK独立放根Canvas左下角，返回远景/随机Relax并保留枪种。无大底板、02/03或左右翻页。FLobbyWeaponPresentation.Thumbnail引用UI/Lobby/Textures/T_Lobby_{RepairGun,ExplosionGun,ElectricGun}，非AI轮廓；三枪来自当前真实资产在外部Blender工程LobbyWeaponIcons统一渲染。文案、Thumbnail仍在维修工大厅BP Weapon Presentations配置。主菜单仅hover高亮，缩略图选中角标是用户确认的独立选择态。
