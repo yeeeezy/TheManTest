@@ -110,3 +110,6 @@ FEAT-082按钮姿势联动（2026-09-14）：SetWeaponPresentationView现在同�
 
 
 2026-09-14：运行时新增ULobbyPoseBlendAnimInstance（继承UAnimSingleNodeInstance），从当前显示的局部骨骼姿势快照向继续播放的目标成品动画混合；ALobbyCharacterBase.PoseBlendDuration默认0.5秒，SmoothStep进度同步静态/骨骼枪挂点。反向切换重新捕获当前姿势，重复相同状态不重启。初次显示及换枪立即应用；编辑器静态预览保留OverrideAnimationData/PlayAnimation。没有IK，既有每枪独立成品不变。
+
+
+大厅灯光（2026-09-14）：用户参考16:40:13红白侧光人物与16:39:39暗背景大厅截图，要求调暗整个Lobby、顶部大面积白光向下、画面左红右白。checkpoint7baac17保存此前0.5秒混合。现有地图内灯光强度降至原2.5%，PostProcessVolume固定EV100=3、补偿0；新增LobbyLighting文件夹三盏可直接调节的Movable RectLight：Lobby_Top_SoftWhite 250lm/180×140cm，Lobby_Left_Red 750lm/75×190cm，Lobby_Right_White 500lm/85×190cm，衰减半径均520cm、间接照明0.1。侧灯仅Lighting Channel1，地图人物与两个枪显示组件启用Channel0+1；顶灯Channel0，保留暗淡落地光区。左右以实际镜头画面为准（红灯世界+X，白灯-X）。仅修改LobbyMap，不改蓝图、材质、正式地图或C++，所有原Actor变换逐项相等。

@@ -1,12 +1,11 @@
 # 当前工作面板
 
-- Active feature：FEAT-082大厅展示；FEAT-080/081暂停。三枪独立动画、两把80%大厅副本、挂点与电击食指微调已保存，详见archive。
-- WEAPON进入Rifle/近景；CHARACTER从当前枪非空Relaxed动画随机选择并进入远景，允许重复。按钮初始和点击后无常驻高亮，仅hover高亮。
-- 最新：用户授权Rifle/Relax使用0.5秒混合。新增LobbyPoseBlendAnimInstance，当前姿势快照向目标动画混合，枪挂点同步SmoothStep。支持中途反向和重复点击，不使用IK。可调参数Lobby | Animation → Pose Blend Duration，默认0.5。
+- Active feature：FEAT-082大厅展示；FEAT-080/081暂停。
+- 最新灯光已保存LobbyMap：环境灯强度为原2.5%，固定EV100=3；顶部250lm柔白RectLight、画面左750lm红光、右500lm白光。场景Outliner的LobbyLighting文件夹可调三灯；侧光只照人物/枪械Channel1，顶光Channel0保留较暗落地光区。
+- 三枪独立动画、两把80%大厅副本、握持与食指微调保持。WEAPON进入Rifle/近景，CHARACTER随机Relax/远景；只有hover高亮。姿态及挂点0.5秒混合，相机0.7秒。
 
 ## 验证与交接
 
-- Development Editor Win64构建通过；实际LobbyMap PIE完成15组转换、525帧样本，覆盖三枪两条Relax、双向与途中反向、重复请求、同步挂点及0.5秒时长。局部骨骼旋转最大误差小于0.033度。lobby-pose-blend-validation.json ok=true，地图与资产哈希不变。
-- checkpoint2540972保存此前菜单改动；本轮产品仅LobbyCharacterBase.h/.cpp与新增LobbyPoseBlendAnimInstance.h/.cpp。没有动画资产、模型或地图修改，未最终提交/push。
-- 相机继续使用原0.7秒过渡；初次显示及切换枪种立即应用，编辑器静态预览仍显示目标姿态。下一步根据用户实际观感调整。
-- 已查看三枪放松/过渡中间/举枪9张UE截图，后台编辑器退出；视觉截图脚本收尾JSON序列化问题及修复记录见archive。
+- 冷启动回读及实际LobbyMap PIE验证通过：三灯强度/照明通道、人物与两个枪组件通道、固定曝光均持久化；三枪远近镜头共6张画面已查看，验证退出后地图SHA256不变。Saved/Codex/lobby-lighting-validation.json ok=true，lobby-lighting-validation.log LOBBY_LIGHTING_OK，LobbyLighting-Review.jpg为汇总。没有C++/蓝图资产修改，无需重新编译；后台编辑器退出。
+- checkpoint7baac17保存此前0.5秒混合；本轮产品仅Content/Maps/LobbyMap.umap及harness。原Actor变换逐项不变，没有代码、正式武器、BP或材质修改，未最终提交/push。
+- 场景原有多DirectionalLight优先级及VSM队列警告记录见archive；本次没有额外处理。下一步根据用户对光比/背景暗度的视觉反馈调整。

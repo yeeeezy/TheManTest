@@ -217,3 +217,10 @@
 - Development Editor Win64构建Succeeded（lobby-pose-blend-build.log）。实际LobbyMap PIE三枪、两条Relax版本、双向切换及中途反向通过：15组完成记录、525帧样本，关键手臂/手指局部旋转与期望混合最大误差0.033度以内；切换瞬间姿势/挂点连续，挂点每帧同步，重复请求不重启，0.5秒完成后关闭Actor Tick。退出后地图与大厅资产哈希不变。证据Saved/Codex/lobby-pose-blend-validation.json ok=true。首轮验证脚本调用未暴露get_current_time，改用mesh.get_position后通过；非产品故障。
 - 本轮仅LobbyCharacterBase和新增LobbyPoseBlendAnimInstance及harness改动，没有修改成品动画、挂点配置、模型或地图；未最终提交/push。
 - 已查看三枪实际UE放松/中间帧/举枪共9张截图（Saved/Codex/PoseBlend-*.png），WEAPON按钮触发混合，过渡姿态可见。视觉脚本末尾仅JSON写入因包含DelegateHandle失败，截图均已完成；已修正脚本序列化，未将其冒充完整自动验证，数值验证使用独立通过的lobby-pose-blend-validation.json。后台编辑器均已退出。
+
+## 2026-09-14 大厅暗背景与红白人物灯光
+
+- 用户参考16:40:13红白侧光人物与16:39:39暗背景大厅截图，要求调暗整个Lobby、顶部大面积白光向下、画面左红右白。checkpoint7baac17保存此前0.5秒混合。现有地图内灯光强度降至原2.5%，PostProcessVolume固定EV100=3、补偿0；新增LobbyLighting文件夹三盏可直接调节的Movable RectLight：Lobby_Top_SoftWhite 250lm/180×140cm，Lobby_Left_Red 750lm/75×190cm，Lobby_Right_White 500lm/85×190cm，衰减半径均520cm、间接照明0.1。侧灯仅Lighting Channel1，地图人物与两个枪显示组件启用Channel0+1；顶灯Channel0，保留暗淡落地光区。左右以实际镜头画面为准（红灯世界+X，白灯-X）。仅修改LobbyMap，不改蓝图、材质、正式地图或C++，所有原Actor变换逐项相等。
+- 两轮实际PIE预览后收敛：首轮灯光偏亮、地面溢光且左右与画面相反；第二轮降低强度并限制侧灯通道，已查看远景。author脚本保存成功，正在冷启动回读与三枪远近景验证。
+- 冷启动回读及实际LobbyMap PIE验证通过：三灯强度/照明通道、人物与两个枪组件通道、固定曝光均持久化；三枪远近镜头共6张画面已查看，验证退出后地图SHA256不变。Saved/Codex/lobby-lighting-validation.json ok=true，lobby-lighting-validation.log LOBBY_LIGHTING_OK，LobbyLighting-Review.jpg为汇总。没有C++/蓝图资产修改，无需重新编译；后台编辑器退出。
+- 范围内仍有原场景两盏DirectionalLight同优先级与VSM Non-Nanite队列警告（此前截图已有），未作为本次失败或进行额外渲染架构调整。最终产品仅LobbyMap.umap；未最终提交/push，待用户观感反馈。
