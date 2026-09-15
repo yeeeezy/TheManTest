@@ -1,9 +1,9 @@
 {
     "schema_version": "1.0",
-    "last_updated": "2026-09-15-map-folder-nesting",
+    "last_updated": "2026-09-15-enemy-character-asset-organization",
     "active_animation_task": "Accepted behavior: ONLY delayed explosion damage triggers directional knockback on all actually damaged surviving enemies; first impact still damages and attaches without reaction. Development Editor Win64 and three focused PIE tests passed. Implementation f1eda8b and prior history were pushed to origin/main and remote SHA verified. User clarified that audio and remaining saved asset edits should also be published; supplemental commit includes all 88 remaining Content packages (73 modified, 15 new), including audio, hit texture, weapon settings, test maps and 80 external actors. Valid package headers and LFS tracking verified; 29.75 MB. No asset-content or source-code changes during publication. This supersedes earlier instructions to leave those asset edits local. Delivery and synchronization are tracked in Git.",
-    "active_feature": "FEAT-082",
-    "archive_file": "feature_archive.json",
+    "active_feature": "FEAT-083",
+    "archive_file": "archive/FEAT-083-enemy-character-asset-organization.md",
     "features": [
         {
             "id": "FEAT-082",
@@ -20,6 +20,22 @@
                 "Compile, validate Blueprint and actual animation playback/rendering; clean migration paths and verify existing gameplay assets unchanged."
             ],
             "verification_evidence": "最终冷启动实际LobbyMap PIE验证通过：三枪Relax/Rifle六张截图（ThreePoint-{0,1,2}-{Character,Weapon}00001.png）已查看，红轮廓220lm；旧5灯编辑器/运行时关闭、新3灯强度与通道正确，1982个原Actor变换及非目标灯配置保持，退出地图SHA256不变。lobby-three-point-validation.json ok=true，three-point-validation-final.log THREE_POINT_OK；最终汇总ThreePoint-Review.jpg。仅修改LobbyMap与harness，无C++或蓝图资产改动，无需编译。"
+        },
+        {
+            "id": "FEAT-083",
+            "name": "Enemy and Character asset directory organization",
+            "status": "in_progress",
+            "created": "2026-09-15",
+            "updated": "2026-09-15",
+            "archive_file": "archive/FEAT-083-enemy-character-asset-organization.md",
+            "current_batch": "AssetTools organization complete: 468 assets moved. CoreMorph meshes split into Manta 154 and Scorpion 301; Humanoid shared cover Blueprint categorized; MaintenanceWorker legacy UE4Mannequin subtree replaced by consumer-owned Materials/Layers/Arms, Materials/Source and Textures/Arms paths. Cold load and Blueprint compile verification passed with zero scoped redirectors.",
+            "verification_evidence": "organize-enemy-character.log ENEMY_CHARACTER_ORGANIZED; verify-enemy-character-organization.log ENEMY_CHARACTER_COLD_OK with 468 assets loaded and two Blueprints compiled. Old Character path absent; CoreMorph Meshes root has no loose assets.",
+            "done_criteria": [
+                "Move assets only through Unreal AssetTools and preserve all serialized references.",
+                "Organize Character legacy assets by actual consumer without overwriting distinct same-name assets.",
+                "Split CoreMorph mesh inventory by Manta and Scorpion form and categorize the shared Cover Blueprint.",
+                "Cold load moved assets, compile affected Blueprints, and leave no scoped redirectors or obsolete disk directories."
+            ]
         },
         {
             "id": "FEAT-077",

@@ -60,6 +60,8 @@
 
 动画资产数量较少时直接放入 `Animations/Body` 或 `Animations/FirstPerson`。只有目录已明显拥挤时，才继续拆分 `Logic`、`Locomotion`、`Actions`。Skeleton 与 Physics Asset 跟随对应 Skeletal Mesh 放在 `Meshes`。
 
+同类型资源出现同名但服务不同消费者时，不得直接覆盖或删除。应在统一分类目录下按消费者继续分层，例如维修工第一人称手臂使用的材质层与贴图分别放在 `FirstPerson/Materials/Layers/Arms` 和 `FirstPerson/Textures/Arms`；保留用于追溯或派生的源材质放在 `FirstPerson/Materials/Source`。
+
 ## 武器、敌人和 Actor
 
 ```text
@@ -69,6 +71,8 @@
 ```
 
 同样遵循所有者优先和统一分类名。武器动画可按需分为 `Animations/FirstPerson` 与 `Animations/World`；敌人共享 AI 放在最近共同语义根的 `_Shared/AI`。
+
+单个敌人同一类型目录资产数量很大、且存在明确形态边界时，可在类型目录下按形态继续分层。例如 CoreMorph 的静态网格位于 `Meshes/Manta` 与 `Meshes/Scorpion`。共享 Cover 资源仍按类型放在 `_Shared/Cover/{Blueprint,Meshes,Materials,Textures}`。
 
 ## 地图
 
