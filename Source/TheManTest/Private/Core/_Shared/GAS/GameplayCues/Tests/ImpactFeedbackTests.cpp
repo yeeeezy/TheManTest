@@ -146,7 +146,7 @@ bool FSpatialImpactTest::RunTest(const FString&)
   if(!TestNotNull(TEXT("Compiled material resource exists"),Resource))return false;
   TestEqual(TEXT("No decal shader compile errors"),Resource->GetCompileErrors().Num(),0);
  }
- AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+ AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
  ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
  ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
  ADD_LATENT_AUTOMATION_COMMAND(FSpatialImpactCommand(this));

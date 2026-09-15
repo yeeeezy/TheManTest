@@ -77,7 +77,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 bool FEnemyHealthBarPIETest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.8f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidateEnemyHealthBarCommand(this));

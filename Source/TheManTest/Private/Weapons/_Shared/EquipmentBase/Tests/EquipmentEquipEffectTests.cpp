@@ -140,7 +140,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSharedEquipmentRevealTest,
     "TheManTest.Equipment.SharedEquipReveal",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
 bool FSharedEquipmentRevealTest::RunTest(const FString& Parameters)
 {
-    AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+    AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
     ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
     ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
     ADD_LATENT_AUTOMATION_COMMAND(FEquipmentRevealCheck(this));

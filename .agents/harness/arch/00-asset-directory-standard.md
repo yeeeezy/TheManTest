@@ -70,6 +70,10 @@
 
 同样遵循所有者优先和统一分类名。武器动画可按需分为 `Animations/FirstPerson` 与 `Animations/World`；敌人共享 AI 放在最近共同语义根的 `_Shared/AI`。
 
+## 地图
+
+每张正式地图或测试地图在`/Game/Maps/<MapName>/`拥有自己的目录，地图本体、BuiltData、HLOD以及只服务该地图的Blueprint／Meshes／Materials／Textures／Audio均放在该目录内。`/Game/Maps`根目录不直接放资产。World Partition生成的`__ExternalActors__`和`__ExternalObjects__`跟随地图包路径，由引擎管理。
+
 ## 新建、导入与迁移
 
 1. 先确定唯一所有者，再选择资源类型目录。

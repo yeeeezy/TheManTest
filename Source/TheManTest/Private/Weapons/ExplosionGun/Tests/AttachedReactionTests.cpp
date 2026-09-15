@@ -62,7 +62,7 @@ public:
 }
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FAttachedReactionTest,"TheManTest.Player.Weapons.AttachedLimbReaction",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
 bool FAttachedReactionTest::RunTest(const FString&){
- AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+ AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
  ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1));
  ADD_LATENT_AUTOMATION_COMMAND(FAttachedReactionCommand(this));ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());return true;
 }

@@ -53,11 +53,11 @@ protected:
 
 	// 选角色大厅地图名（编辑器配置）
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Run|Maps")
-	FName LobbyMapName = TEXT("LobbyMap");
+	FName LobbyMapName = TEXT("/Game/Maps/Lobby/LobbyMap");
 
 	// 测试/游戏地图名（编辑器配置）
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Run|Maps")
-	FName TestMapName = TEXT("TestMap");
+	FName TestMapName = TEXT("/Game/Maps/Test/TestMap");
 
 	// 游戏结束标记：HandleGameOver 置位，回大厅后 UI 读取。GameInstance 随进程存活，退出 PIE 自动重置
 	UPROPERTY(BlueprintReadOnly, Category = "Run")

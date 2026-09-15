@@ -310,7 +310,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFirstPersonWeaponJumpRuntimeTest,
 
 bool FFirstPersonWeaponJumpRuntimeTest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FFirstPersonWeaponJumpRuntimeCommand(this));
@@ -324,7 +324,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FViewmodelPositionLagRuntimeTest,
 
 bool FViewmodelPositionLagRuntimeTest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FViewmodelPositionLagRuntimeCommand(this));
@@ -338,7 +338,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLegArmProximityRuntimeTest,
 
 bool FLegArmProximityRuntimeTest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FLegArmProximityRuntimeCommand(this));
@@ -514,7 +514,7 @@ bool FPhantomReusableCombatTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("Humanoid muzzle effect has a visible production scale"), BurstCDO->GetMuzzleEffectScale().GetMin() >= 0.7f);
 	}
 
-	UWorld* World = LoadObject<UWorld>(nullptr, TEXT("/Game/Maps/TestMap.TestMap"));
+	UWorld* World = LoadObject<UWorld>(nullptr, TEXT("/Game/Maps/Test/TestMap.TestMap"));
 	TestNotNull(TEXT("Runtime test map"), World);
 	if (World)
 	{
@@ -802,7 +802,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomPIESmokeTest,
 
 bool FPhantomPIESmokeTest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidatePhantomPIECommand(this));
@@ -819,7 +819,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomPatrolLoopPIETest,
 
 bool FPhantomPatrolLoopPIETest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidateTwoPointPatrolLoopPIECommand(this));
@@ -835,7 +835,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomTacticalRetreatPIETest,
 
 bool FPhantomTacticalRetreatPIETest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidateTacticalMovementPIECommand(this, 300.f, -1));
@@ -849,7 +849,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPhantomTacticalApproachPIETest,
 
 bool FPhantomTacticalApproachPIETest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidateTacticalMovementPIECommand(this, 1200.f, 1));
@@ -1500,7 +1500,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPlayerFramingCaptureTest,
 bool FPlayerFramingCaptureTest::RunTest(const FString& Parameters)
 {
 	if (GEngine) GEngine->Exec(nullptr, TEXT("r.MotionBlurQuality 0"));
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.8f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidatePlayerViewmodelPIECommand(this));
@@ -1519,7 +1519,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FPlayerArmDistanceClipEvidenceTest,
 bool FPlayerArmDistanceClipEvidenceTest::RunTest(const FString& Parameters)
 {
 	if (GEngine) GEngine->Exec(nullptr, TEXT("r.MotionBlurQuality 0"));
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.8f));
 	ADD_LATENT_AUTOMATION_COMMAND(FStabilizePlayerViewmodelCommand());
@@ -1536,7 +1536,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLookDownJumpProximityEvidenceTest,
 bool FLookDownJumpProximityEvidenceTest::RunTest(const FString& Parameters)
 {
 	if (GEngine) GEngine->Exec(nullptr, TEXT("r.MotionBlurQuality 0"));
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.0f));
 	ADD_LATENT_AUTOMATION_COMMAND(FLookDownJumpProximityEvidenceCommand(this));
@@ -1550,7 +1550,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FShadowUpperBodyEvidenceTest,
 
 bool FShadowUpperBodyEvidenceTest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.2f));
 	ADD_LATENT_AUTOMATION_COMMAND(FShadowUpperBodyEvidenceCommand(this));
@@ -1564,7 +1564,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FEquipDissolveEvidenceTest,
 
 bool FEquipDissolveEvidenceTest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FEquipDissolveEvidenceCommand(this));
 	ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
@@ -1577,7 +1577,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FNightmareLocomotorCrawlEvidenceTest,
 
 bool FNightmareLocomotorCrawlEvidenceTest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.5f));
 	ADD_LATENT_AUTOMATION_COMMAND(FNightmareCrawlEvidenceCommand(this));
@@ -1591,7 +1591,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FNightmareLocomotorSlopeEvidenceTest,
 
 bool FNightmareLocomotorSlopeEvidenceTest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.5f));
 	ADD_LATENT_AUTOMATION_COMMAND(FNightmareSlopeEvidenceCommand(this));

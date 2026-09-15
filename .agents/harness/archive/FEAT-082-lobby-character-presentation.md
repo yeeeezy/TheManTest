@@ -1,5 +1,11 @@
 # FEAT-082 大厅角色展示
 
+## 2026-09-15 Lobby／Test 地图本体归入具体目录
+
+- 用户指出地图本体也应进入Maps下的具体地图目录。最终结构为`/Game/Maps/Lobby/LobbyMap`、`/Game/Maps/Lobby/LobbyMap_BuiltData`、`/Game/Maps/Test/TestMap`、`/Game/Maps/Test/TestMap_HLOD0_Instancing`；`/Game/Maps`根目录不再散落资产。
+- Config默认地图、GameInstance的LobbyMapName／TestMapName，以及20个C++自动化测试文件共41处路径引用已同步。TestMap的141个ExternalActor与5个ExternalObject已随新地图路径生成，旧外部对象目录清除。
+- Development Editor Win64冷构建成功。冷启动确认四项资产类型正确、Maps根目录资产0、Redirector 0；LobbyMap 1985 Actor、TestMap 77 Actor。Lobby实际PIE的One键Relaxed→Rifle→Relaxed通过；依赖新TestMap路径的EnemyBaseHealthBar自动化为Success（11条均为既有运行警告，errors=0）。
+
 ## 2026-09-14 大厅地图资源目录整理与路径纠正
 
 - 用户确认整理路径。最终通过 Unreal AssetTools 将旧素材包目录`/Game/Maps/SciFiIndustrialBase`下326个大厅地图专属资源迁至`/Game/Maps/Lobby`：23 Blueprint、153 StaticMesh、48 Material／MaterialInstance、84 Texture、9 SoundCue、9 SoundWave，统一分类为Blueprint／Meshes／Materials／Textures／Audio。

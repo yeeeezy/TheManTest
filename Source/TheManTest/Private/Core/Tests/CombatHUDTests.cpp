@@ -430,7 +430,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 bool FThreeWeaponPIESwitchTest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.8f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidateEquippedWeaponAnimationCommand(this, TEXT("RepairGun")));
@@ -453,7 +453,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 bool FElectricMuzzleVisualCaptureTest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.8f));
 	ADD_LATENT_AUTOMATION_COMMAND(FSwitchToNextWeaponCommand(this));
@@ -523,7 +523,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FExplosionVisualTest,
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FExplosionVisualTest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
 	ADD_LATENT_AUTOMATION_COMMAND(FSwitchToNextWeaponCommand(this));
@@ -670,7 +670,7 @@ bool FCombatHUDAndAmmoTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Shared damage effect remains presentation-free"),
 		DamageEffect && DamageEffect->GameplayCues.IsEmpty());
 
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.8f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidateCombatHUDCommand(this));

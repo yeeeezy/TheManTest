@@ -153,7 +153,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 bool FWorldPersistenceSubsystemPIETest::RunTest(const FString& Parameters)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(true));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
 	ADD_LATENT_AUTOMATION_COMMAND(FValidateWorldPersistenceSubsystemCommand(this));

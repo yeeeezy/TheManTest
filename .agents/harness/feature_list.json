@@ -1,6 +1,6 @@
 {
     "schema_version": "1.0",
-    "last_updated": "2026-09-14-lobby-map-directory-correction",
+    "last_updated": "2026-09-15-map-folder-nesting",
     "active_animation_task": "Accepted behavior: ONLY delayed explosion damage triggers directional knockback on all actually damaged surviving enemies; first impact still damages and attaches without reaction. Development Editor Win64 and three focused PIE tests passed. Implementation f1eda8b and prior history were pushed to origin/main and remote SHA verified. User clarified that audio and remaining saved asset edits should also be published; supplemental commit includes all 88 remaining Content packages (73 modified, 15 new), including audio, hit texture, weapon settings, test maps and 80 external actors. Valid package headers and LFS tracking verified; 29.75 MB. No asset-content or source-code changes during publication. This supersedes earlier instructions to leave those asset edits local. Delivery and synchronization are tracked in Git.",
     "active_feature": "FEAT-082",
     "archive_file": "feature_archive.json",
@@ -10,9 +10,9 @@
             "name": "Lobby character presentation and Maintenance Worker assets",
             "status": "in_progress",
             "created": "2026-09-13",
-            "updated": "2026-09-14-lobby-map-directory-correction",
+            "updated": "2026-09-15-map-folder-nesting",
             "archive_file": "archive/FEAT-082-lobby-character-presentation.md",
-            "current_batch": "大厅地图目录整理已纠正完成：326个专属资源由/Game/Maps/SciFiIndustrialBase迁至/Game/Maps/Lobby并按Blueprint、Meshes、Materials、Textures、Audio分类；中间误用的/Game/Environment/Lobby已完全清除。LobbyMap与BuiltData引用已更新，旧Registry/磁盘目录和Redirector均为0。冷启动326资产与1985 Actor地图加载通过，实际LobbyMap PIE中大厅控制器、展示人物和One键Relaxed/Rifle往返通过。纠正前安全检查点3e4793b；最终结果未提交或push。",
+            "current_batch": "地图目录最终整理完成：大厅326个专属依赖及LobbyMap/LobbyMap_BuiltData均在/Game/Maps/Lobby；TestMap/TestMap_HLOD0_Instancing均在/Game/Maps/Test，Maps根目录资产0。配置、GameInstance和41处测试引用已同步；TestMap的141 ExternalActor与5 ExternalObject位于新路径，旧路径与Redirector均为0。Development Editor冷构建、两图冷加载、Lobby实际PIE和新TestMap路径自动化均通过。操作前检查点b06658c；最终结果未提交或push。",
             "done_criteria": [
                 "Delete only the three confirmed old meshes.",
                 "TMIIR performs RTG; target receives only final lobby assets and required dependencies under MaintenanceWorker.",

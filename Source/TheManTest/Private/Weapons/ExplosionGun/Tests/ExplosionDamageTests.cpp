@@ -105,7 +105,7 @@ public:
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FExplosionDamageTest,"TheManTest.Player.Weapons.ExplosionRadialDamage",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
 bool FExplosionDamageTest::RunTest(const FString&)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
 	ADD_LATENT_AUTOMATION_COMMAND(FExplosionDamageCommand(this));

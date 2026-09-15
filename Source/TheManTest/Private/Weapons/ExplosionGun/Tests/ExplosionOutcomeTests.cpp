@@ -114,7 +114,7 @@ public:
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FExplosionOutcomeTest,"TheManTest.Player.Weapons.ExplosionOutcomeBulletTime",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
 bool FExplosionOutcomeTest::RunTest(const FString&)
 {
- AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+ AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
  ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
  ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
  ADD_LATENT_AUTOMATION_COMMAND(FExplosionOutcomeCommand(this));

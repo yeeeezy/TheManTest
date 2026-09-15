@@ -122,7 +122,7 @@ public:
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBulletTimePainTest,"TheManTest.Feedback.BulletTimeAndPain",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
 bool FBulletTimePainTest::RunTest(const FString&)
 {
-	AutomationOpenMap(TEXT("/Game/Maps/TestMap"));
+	AutomationOpenMap(TEXT("/Game/Maps/Test/TestMap"));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartPIECommand(false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.f));
 	ADD_LATENT_AUTOMATION_COMMAND(FBulletTimePainCommand(this));
