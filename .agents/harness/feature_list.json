@@ -1,6 +1,6 @@
 {
     "schema_version": "1.0",
-    "last_updated": "2026-09-14-lobby-lighting",
+    "last_updated": "2026-09-14-lobby-weapon-details",
     "active_animation_task": "Accepted behavior: ONLY delayed explosion damage triggers directional knockback on all actually damaged surviving enemies; first impact still damages and attaches without reaction. Development Editor Win64 and three focused PIE tests passed. Implementation f1eda8b and prior history were pushed to origin/main and remote SHA verified. User clarified that audio and remaining saved asset edits should also be published; supplemental commit includes all 88 remaining Content packages (73 modified, 15 new), including audio, hit texture, weapon settings, test maps and 80 external actors. Valid package headers and LFS tracking verified; 29.75 MB. No asset-content or source-code changes during publication. This supersedes earlier instructions to leave those asset edits local. Delivery and synchronization are tracked in Git.",
     "active_feature": "FEAT-082",
     "archive_file": "feature_archive.json",
@@ -10,16 +10,16 @@
             "name": "Lobby character presentation and Maintenance Worker assets",
             "status": "in_progress",
             "created": "2026-09-13",
-            "updated": "2026-09-14-lobby-lighting",
+            "updated": "2026-09-14-lobby-weapon-details",
             "archive_file": "archive/FEAT-082-lobby-character-presentation.md",
-            "current_batch": "用户参考16:40:13红白侧光人物与16:39:39暗背景大厅截图，要求调暗整个Lobby、顶部大面积白光向下、画面左红右白。checkpoint7baac17保存此前0.5秒混合。现有地图内灯光强度降至原2.5%，PostProcessVolume固定EV100=3、补偿0；新增LobbyLighting文件夹三盏可直接调节的Movable RectLight：Lobby_Top_SoftWhite 250lm/180×140cm，Lobby_Left_Red 750lm/75×190cm，Lobby_Right_White 500lm/85×190cm，衰减半径均520cm、间接照明0.1。侧灯仅Lighting Channel1，地图人物与两个枪显示组件启用Channel0+1；顶灯Channel0，保留暗淡落地光区。左右以实际镜头画面为准（红灯世界+X，白灯-X）。仅修改LobbyMap，不改蓝图、材质、正式地图或C++，所有原Actor变换逐项相等。 冷启动与实际PIE验证通过，待用户视觉反馈，未最终提交/push。",
+            "current_batch": "2026-09-14武器详情：WBP_LobbyPresentation中的PresentationMenu与WeaponDetailsPanel按近/远视图互斥显示；详情含Text_WeaponName、Text_WeaponDescription、Button_Back。BACK调用原ShowCharacter，恢复远景及每枪随机Relax。ULobbyPresentationWidgetBase缓存展示Actor，NativeTick仅检查视图/枪索引变化，变化才更新UMG；详情打开时换枪同步刷新。文案归BP_MaintenanceWorker_Lobby的Weapon Presentations各项DisplayName/Description（FText，多行介绍），无需改UI代码；空文本实例按WeaponClass回退角色BP默认值。原有深色/Roboto/金色hover风格保持，Back初始/点击不常驻高亮。 已实现验证，未最终提交/push，待用户反馈。",
             "done_criteria": [
                 "Delete only the three confirmed old meshes.",
                 "TMIIR performs RTG; target receives only final lobby assets and required dependencies under MaintenanceWorker.",
                 "Provide reusable lobby display Actor base and Maintenance Worker subclass with all unarmed standing idle variants and optional rifle poses.",
                 "Compile, validate Blueprint and actual animation playback/rendering; clean migration paths and verify existing gameplay assets unchanged."
             ],
-            "verification_evidence": "冷启动回读及实际LobbyMap PIE验证通过：三灯强度/照明通道、人物与两个枪组件通道、固定曝光均持久化；三枪远近镜头共6张画面已查看，验证退出后地图SHA256不变。Saved/Codex/lobby-lighting-validation.json ok=true，lobby-lighting-validation.log LOBBY_LIGHTING_OK，LobbyLighting-Review.jpg为汇总。没有C++/蓝图资产修改，无需重新编译；后台编辑器退出。"
+            "verification_evidence": "Development Editor Win64构建Succeeded；Widget BP与角色BP编译保存并冷回读。实际LobbyMap PIE验证三枪名称/介绍、打开详情时切枪刷新、BACK恢复主菜单/远景/Relax、64次连续进出覆盖Relax索引0/1、默认与Pressed中性/hover金边，通过后地图和两项资产哈希不变。lobby-weapon-details-validation.json ok=true，lobby-weapon-details-pie.log WEAPON_DETAILS_OK；三枪详情及返回截图均已查看，汇总WeaponDetails-Review.jpg。"
         },
         {
             "id": "FEAT-077",

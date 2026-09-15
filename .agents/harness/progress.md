@@ -1,11 +1,12 @@
 # 当前工作面板
 
 - Active feature：FEAT-082大厅展示；FEAT-080/081暂停。
-- 最新灯光已保存LobbyMap：环境灯强度为原2.5%，固定EV100=3；顶部250lm柔白RectLight、画面左750lm红光、右500lm白光。场景Outliner的LobbyLighting文件夹可调三灯；侧光只照人物/枪械Channel1，顶光Channel0保留较暗落地光区。
-- 三枪独立动画、两把80%大厅副本、握持与食指微调保持。WEAPON进入Rifle/近景，CHARACTER随机Relax/远景；只有hover高亮。姿态及挂点0.5秒混合，相机0.7秒。
+- 最新：点击WEAPON显示对应枪名/介绍/BACK，隐藏主菜单；BACK恢复主菜单、远景与随机Relax。三枪文案可在BP_MaintenanceWorker_Lobby → Weapon Presentations → Display Name / Description编辑。布局位于WBP_LobbyPresentation，保持深色半透明、Roboto与金色hover风格。
+- 三枪独立动画、两把80%大厅枪、握持/食指微调保持。姿势及挂点0.5秒混合、相机0.7秒；按钮仅hover高亮。既有LobbyLighting三灯及用户当前地图照明不变。
 
 ## 验证与交接
 
-- 冷启动回读及实际LobbyMap PIE验证通过：三灯强度/照明通道、人物与两个枪组件通道、固定曝光均持久化；三枪远近镜头共6张画面已查看，验证退出后地图SHA256不变。Saved/Codex/lobby-lighting-validation.json ok=true，lobby-lighting-validation.log LOBBY_LIGHTING_OK，LobbyLighting-Review.jpg为汇总。没有C++/蓝图资产修改，无需重新编译；后台编辑器退出。
-- checkpoint7baac17保存此前0.5秒混合；本轮产品仅Content/Maps/LobbyMap.umap及harness。原Actor变换逐项不变，没有代码、正式武器、BP或材质修改，未最终提交/push。
-- 场景原有多DirectionalLight优先级及VSM队列警告记录见archive；本次没有额外处理。下一步根据用户对光比/背景暗度的视觉反馈调整。
+- Development Editor Win64构建Succeeded；Widget BP与角色BP编译保存并冷回读。实际LobbyMap PIE验证三枪名称/介绍、打开详情时切枪刷新、BACK恢复主菜单/远景/Relax、64次连续进出覆盖Relax索引0/1、默认与Pressed中性/hover金边，通过后地图和两项资产哈希不变。lobby-weapon-details-validation.json ok=true，lobby-weapon-details-pie.log WEAPON_DETAILS_OK；三枪详情及返回截图均已查看，汇总WeaponDetails-Review.jpg。
+- checkpoint38f0416保存灯光及当时用户地图状态。新增产品改动为LobbyPresentationWidgetBase、TheManLobbyAssetLibrary、FLobbyWeaponPresentation两项FText字段，以及WBP_LobbyPresentation/BP_MaintenanceWorker_Lobby两项资产；本轮地图没有改动。
+- 空文案问题最终定位为Python数组Struct须写回items[index]，修正后地图继承BP文本正常；默认值后备仍兼容空文本实例。详情以视图状态显示，不通过每帧重复设置文本。
+- 后台编辑器已退出，未最终提交/push。下一步按用户对布局/文案的反馈调整。

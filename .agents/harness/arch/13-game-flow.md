@@ -113,3 +113,6 @@ FEAT-082按钮姿势联动（2026-09-14）：SetWeaponPresentationView现在同�
 
 
 大厅灯光（2026-09-14）：用户参考16:40:13红白侧光人物与16:39:39暗背景大厅截图，要求调暗整个Lobby、顶部大面积白光向下、画面左红右白。checkpoint7baac17保存此前0.5秒混合。现有地图内灯光强度降至原2.5%，PostProcessVolume固定EV100=3、补偿0；新增LobbyLighting文件夹三盏可直接调节的Movable RectLight：Lobby_Top_SoftWhite 250lm/180×140cm，Lobby_Left_Red 750lm/75×190cm，Lobby_Right_White 500lm/85×190cm，衰减半径均520cm、间接照明0.1。侧灯仅Lighting Channel1，地图人物与两个枪显示组件启用Channel0+1；顶灯Channel0，保留暗淡落地光区。左右以实际镜头画面为准（红灯世界+X，白灯-X）。仅修改LobbyMap，不改蓝图、材质、正式地图或C++，所有原Actor变换逐项相等。
+
+
+2026-09-14武器详情：WBP_LobbyPresentation中的PresentationMenu与WeaponDetailsPanel按近/远视图互斥显示；详情含Text_WeaponName、Text_WeaponDescription、Button_Back。BACK调用原ShowCharacter，恢复远景及每枪随机Relax。ULobbyPresentationWidgetBase缓存展示Actor，NativeTick仅检查视图/枪索引变化，变化才更新UMG；详情打开时换枪同步刷新。文案归BP_MaintenanceWorker_Lobby的Weapon Presentations各项DisplayName/Description（FText，多行介绍），无需改UI代码；空文本实例按WeaponClass回退角色BP默认值。原有深色/Roboto/金色hover风格保持，Back初始/点击不常驻高亮。

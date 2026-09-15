@@ -17,6 +17,12 @@ struct FLobbyWeaponPresentation
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon")
 	TSubclassOf<AEquipmentBase> WeaponClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon")
+	FText DisplayName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon", meta=(MultiLine=true))
+	FText Description;
+
 	/** Weapon Actor origin relative to the character's right hand. Mesh offsets come from the weapon BP. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon")
 	FTransform RelaxedAttachment;

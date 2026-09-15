@@ -104,3 +104,6 @@ FEAT-082右手握柄后续校准：80%静态副本及源组件平移保持，Wea
 
 
 2026-09-14：运行时新增ULobbyPoseBlendAnimInstance（继承UAnimSingleNodeInstance），从当前显示的局部骨骼姿势快照向继续播放的目标成品动画混合；ALobbyCharacterBase.PoseBlendDuration默认0.5秒，SmoothStep进度同步静态/骨骼枪挂点。反向切换重新捕获当前姿势，重复相同状态不重启。初次显示及换枪立即应用；编辑器静态预览保留OverrideAnimationData/PlayAnimation。没有IK，既有每枪独立成品不变。
+
+
+FLobbyWeaponPresentation新增DisplayName和Description（FText）供大厅武器详情读取，编辑BP默认值Weapon Presentations各枪条目配置；现役三枪均已设置英文文案，模型/挂点/动画字段保持。

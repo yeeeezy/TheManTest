@@ -224,3 +224,13 @@
 - 两轮实际PIE预览后收敛：首轮灯光偏亮、地面溢光且左右与画面相反；第二轮降低强度并限制侧灯通道，已查看远景。author脚本保存成功，正在冷启动回读与三枪远近景验证。
 - 冷启动回读及实际LobbyMap PIE验证通过：三灯强度/照明通道、人物与两个枪组件通道、固定曝光均持久化；三枪远近镜头共6张画面已查看，验证退出后地图SHA256不变。Saved/Codex/lobby-lighting-validation.json ok=true，lobby-lighting-validation.log LOBBY_LIGHTING_OK，LobbyLighting-Review.jpg为汇总。没有C++/蓝图资产修改，无需重新编译；后台编辑器退出。
 - 范围内仍有原场景两盏DirectionalLight同优先级与VSM Non-Nanite队列警告（此前截图已有），未作为本次失败或进行额外渲染架构调整。最终产品仅LobbyMap.umap；未最终提交/push，待用户观感反馈。
+
+## 2026-09-14 武器详情 UMG
+
+- 用户要求点击WEAPON后显示枪名、介绍、返回，风格统一。checkpoint38f0416保存此前灯光与当时磁盘地图状态。
+- 原WBP_LobbyPresentation新增WeaponDetailsPanel：左侧深色半透明信息卡，金色WEAPON标识、Roboto枪名/介绍、BACK按钮；进入武器视图折叠PresentationMenu，返回恢复菜单并调用原远景/随机Relax路径。Back沿用原按钮样式，仅hover高亮。
+- FLobbyWeaponPresentation新增可本地化FText DisplayName/Description（多行），配置在维修工大厅BP每枪条目。UMG缓存展示Actor，轻量检查镜头状态和枪索引，仅改变时刷新文字/可见性。空文本旧实例可按WeaponClass读取BP默认配置；不依赖枪索引写死文本。Editor库AddWeaponDetails只扩展现有WidgetTree，重复调用不覆盖布局。
+- Development Editor Win64编译通过；中间一次新增WeaponClass比较缺完整EquipmentBase定义，补include后通过。配置脚本先遇到EditDefaultsOnly不允许改地图实例，以及Python数组Struct副本须显式写回items[index]，现按BP默认值逐项写回，不修改地图。正在冷启动PIE验证最终资产与显示。
+- 最终确认：正确写回数组后，现有地图实例正常继承三枪文案；此前以为地图覆盖导致空文本的初步判断并不成立，直接原因是Python数组Struct副本未写回。空文本实例的默认值后备仍保留作为兼容。
+- Development Editor Win64构建Succeeded；Widget BP与角色BP编译保存并冷回读。实际LobbyMap PIE验证三枪名称/介绍、打开详情时切枪刷新、BACK恢复主菜单/远景/Relax、64次连续进出覆盖Relax索引0/1、默认与Pressed中性/hover金边，通过后地图和两项资产哈希不变。lobby-weapon-details-validation.json ok=true，lobby-weapon-details-pie.log WEAPON_DETAILS_OK；三枪详情及返回截图均已查看，汇总WeaponDetails-Review.jpg。
+- 本轮产品只有UI与Editor authoring代码、展示结构两项文本字段、WBP_LobbyPresentation与BP_MaintenanceWorker_Lobby；地图/灯光/相机/动画/正式武器资产均未修改。后台编辑器退出，未最终提交/push。

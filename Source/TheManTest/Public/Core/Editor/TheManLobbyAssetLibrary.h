@@ -14,4 +14,6 @@ class THEMANTEST_API UTheManLobbyAssetLibrary : public UBlueprintFunctionLibrary
 public:
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Lobby")
 	static bool InitializePresentationMenu(UBlueprint* Blueprint);
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Lobby")
+	static bool AddWeaponDetails(UBlueprint* Blueprint);
 };
