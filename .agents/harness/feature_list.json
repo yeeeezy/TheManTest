@@ -12,7 +12,7 @@
             "created": "2026-09-13",
             "updated": "2026-09-14-lobby-remote-publication",
             "archive_file": "archive/FEAT-082-lobby-character-presentation.md",
-            "current_batch": "2026-09-14最终简洁选择器取代此前详情卡：WeaponDetailsPanel透明布局，WEAPON标题下三张112×112枪械按钮，按钮中实际模型侧视PNG100×50；选中金边和18×18角标。Button_RepairGun/ExplosionGun/ElectricGun选择索引0/1/2并保持Rifle/近景，同步名称/介绍/实际模型/独立动画；重复当前枪不重启。BACK独立放根Canvas左下角，返回远景/随机Relax并保留枪种。无大底板、02/03或左右翻页。FLobbyWeaponPresentation.Thumbnail引用UI/Lobby/Textures/T_Lobby_{RepairGun,ExplosionGun,ElectricGun}，非AI轮廓；三枪来自当前真实资产在外部Blender工程LobbyWeaponIcons统一渲染。文案、Thumbnail仍在维修工大厅BP Weapon Presentations配置。主菜单仅hover高亮，缩略图选中角标是用户确认的独立选择态。 已验证，待用户观感反馈，用户已授权提交并推送origin/main，版本同步状态以Git为准。",
+            "current_batch": "2026-09-14最终简洁选择器取代此前详情卡：WeaponDetailsPanel透明布局，WEAPON标题下三张112×112枪械按钮，按钮中实际模型侧视PNG100×50；选中金边和18×18角标。Button_RepairGun/ExplosionGun/ElectricGun选择索引0/1/2并保持Rifle/近景，同步名称/介绍/实际模型/独立动画；重复当前枪不重启。BACK独立放根Canvas左下角，返回远景/随机Relax并保留枪种。无大底板、02/03或左右翻页。FLobbyWeaponPresentation.Thumbnail引用UI/Lobby/Textures/T_Lobby_{RepairGun,ExplosionGun,ElectricGun}，非AI轮廓；三枪来自当前真实资产在外部Blender工程LobbyWeaponIcons统一渲染。文案、Thumbnail仍在维修工大厅BP Weapon Presentations配置。主菜单仅hover高亮，缩略图选中角标是用户确认的独立选择态。 已验证，待用户观感反馈，用户已授权提交并推送origin/main，版本同步状态以Git为准。 主体b813b65已推送origin/main并核对远端SHA一致，34个LFS对象约25MB上传成功。随后发现编辑器18:41:28新保存LobbyMap（8682972字节，SHA256 caeafe5d373605a07db75d7a6d016f4b694aeb9b6c3955c52cf386cc55c0a7c6），按本次发布授权补充提交当前磁盘地图。仅核对包头和LFS，不将此前UI/地图PIE验证冒充这份新保存地图的单独验证。",
             "done_criteria": [
                 "Delete only the three confirmed old meshes.",
                 "TMIIR performs RTG; target receives only final lobby assets and required dependencies under MaintenanceWorker.",

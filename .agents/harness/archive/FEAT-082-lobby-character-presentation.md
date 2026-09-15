@@ -248,3 +248,4 @@
 ## 2026-09-14 远端发布
 
 - 用户明确要求推送远端。fetch确认main相对origin/main领先9个本地checkpoint、没有分叉；提交最终简洁选择器与四纹理，并连同此前握持/枪模/动画混合/地图灯光版本一起发布。发布前diff检查通过，既有Development Editor构建与实际PIE证据仍通过，本轮未改产品实现。提交及远端同步结果以Git历史和origin/main为准。
+- 主体b813b65已推送origin/main并核对远端SHA一致，34个LFS对象约25MB上传成功。随后发现编辑器18:41:28新保存LobbyMap（8682972字节，SHA256 caeafe5d373605a07db75d7a6d016f4b694aeb9b6c3955c52cf386cc55c0a7c6），按本次发布授权补充提交当前磁盘地图。仅核对包头和LFS，不将此前UI/地图PIE验证冒充这份新保存地图的单独验证。
