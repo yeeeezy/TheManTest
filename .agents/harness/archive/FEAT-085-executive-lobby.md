@@ -1,5 +1,23 @@
 # FEAT-085 执行官 Lobby 展示
 
+状态：done，关闭日期2026-09-16。以下各批历史中的进行中／待制作记录已被最终验收覆盖。
+
+## 最终验收（2026-09-16）
+
+- selection_pie.json ok=true：实际LobbyMap的13个检查点通过，包括角色页Relax、执行官选择、Back保留角色、Weapon举枪、快速逆向切换、回Relax、维修工三枪及跨角色保留枪索引；始终仅一个可见展示Actor，地图SHA256不变。
+- selection_preview.json ok=true：沉浸视口截取并查看 Character_Executive_UI00002.png／Weapon_Executive_UI00002.png，名字、介绍、选中框及Back可见；未添加角色缩略图。截图临时关闭景深／屏幕调试消息，不写入游戏配置。
+- selection_audit.json ok=true：执行官32成品包冷加载，零源工作依赖、重定向资产和Redirector，Relax与Ready引用正确。源码Development Editor Win64构建成功、三项Blueprint编译保存；文档已同步。
+- 本批未修改LobbyMap、战斗Pawn或Phantom。正式大厅初始仍为维修工，Character选择时生成执行官展示。没有新增测试地图／持久相机／按键；外部脚本和证据在D:/Blender Projects/ExecutiveLobby。
+- 实现完成并移入feature_archive.json；没有自动开启其他功能。操作前checkpoint4cf536c，最终代码／资产／harness改动未提交或push。
+
+## 第二批：角色选择与 Weapon 举枪（2026-09-15，进行中）
+
+- 用户接受首版，要求 Character 打开真正的角色选择，参考武器 UI 但只放名字与介绍；角色选择和返回保持 Relax，选执行官后再次点击 Weapon 必须举枪。
+- 操作前本地检查点 4cf536c 保存首批成品，未 push。新增 Controller 可配置角色展示列表及当前 Actor 引用，缓存两个角色实例与各自枪索引；所有姿态和 UI 均使用当前展示 Actor，不再任取场景第一个。
+- UI 分为主菜单、角色页、武器页；Back 回主菜单并 Relax，Character 页文字按钮选择维修工／执行官，使用现有武器页面字体、间距、选中金边和 Back。执行官只有自带狙击枪，武器页显示名字介绍并隐藏维修工三枪选择器。
+- 举枪源 W2_Stand_Aim_Idle_IP 在 TMIIR 原 RTG 生成，外部 Blender 修正枪方向及左手支撑，成品 AS_Executive_Lobby_ReadyIdle 迁入目标；30fps、3.2667 秒，99帧有限值和首尾检查通过，最大接缝0.0178cm，FBX回读骨位置最大误差0.000125cm。
+- Development Editor Win64 构建成功（selection-build-final.log）；三项 Blueprint 编译保存，selection_author.json ok=true。正在实际 LobbyMap PIE 验证角色／菜单往返与原三枪回归，地图无预设替换。
+
 ## 用户授权（2026-09-15）
 - 用户接受保留A0102原身材/骨架，重定向已有持枪动画并按展示图修正双手，接入Lobby。
 - 首批先完成素材自带狙击枪的Relax持枪待机与预览；举枪版本待首批观感确认后继续。

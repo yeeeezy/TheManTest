@@ -1,9 +1,25 @@
 {
     "schema_version":  "1.0",
-    "last_updated": "2026-09-15-phantom-soldier-complete",
+    "last_updated": "2026-09-16-executive-lobby-complete",
     "source_file":  "feature_list.json",
     "status_scope":  "done",
     "features":  [
+{
+    "id": "FEAT-085",
+    "name": "Executive lobby rifle presentation",
+    "status": "done",
+    "created": "2026-09-15",
+    "updated": "2026-09-16",
+    "archive_file": "archive/FEAT-085-executive-lobby.md",
+    "current_batch": "Complete: Character text-only selection for Maintenance Worker and Executive, Relax on selection/Back, Ready on Weapon for active character. Preserves individual weapon selection. Original Executive proportions and two final 30fps loops; no gameplay Pawn replacement.",
+    "done_criteria": [
+        "Preserve source proportions and skin; external source assets only in resource project",
+        "Validate looping relaxed rifle animation, both grips, cloak and ground contact",
+        "Integrate finalized display assets with existing lobby framework; compile and validate PIE"
+    ],
+    "closed": "2026-09-16",
+    "verification_evidence": "selection-build-final.log Development Editor Win64 Succeeded; three Blueprints compiled/saved. selection_author.json: Ready 99 samples, loop seam max0.0178cm, FBX bone roundtrip0.000125cm. selection_pie.json ok=true: 13 Lobby PIE checkpoints, Executive selection/Back/Weapon, rapid reversals, worker three weapons and retained choice, one visible actor; map hash unchanged. selection_preview.json ok=true and final UI screenshots inspected. selection_audit.json32 assets, zero source work dependencies/retargeters/redirectors. External evidence D:/Blender Projects/ExecutiveLobby. Checkpoint4cf536c; final changes uncommitted, no push."
+},
 {
     "id": "FEAT-084",
     "name": "Phantom soldier appearance on existing animation skeleton",

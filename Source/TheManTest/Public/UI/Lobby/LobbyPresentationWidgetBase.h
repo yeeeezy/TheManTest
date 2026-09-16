@@ -8,6 +8,7 @@ class UButton;
 class UTextBlock;
 class UVerticalBox;
 class UImage;
+class UHorizontalBox;
 class ALobbyCharacterBase;
 
 /** Presentation navigation only; character selection/start-game remains separate. */
@@ -22,6 +23,22 @@ protected:
 	TObjectPtr<UVerticalBox> PresentationMenu;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
 	TObjectPtr<UVerticalBox> WeaponDetailsPanel;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UHorizontalBox> WeaponChoices;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UVerticalBox> CharacterDetailsPanel;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> Text_CharacterName;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> Text_CharacterDescription;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UButton> Button_MaintenanceWorker;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UButton> Button_Executive;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> Text_MaintenanceWorkerChoice;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> Text_ExecutiveChoice;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock> Text_WeaponName;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
@@ -55,6 +72,13 @@ protected:
 	UFUNCTION()
 	void ShowWeapon();
 	UFUNCTION()
+	void ShowMenu();
+	UFUNCTION()
+	void SelectMaintenanceWorker();
+	UFUNCTION()
+	void SelectExecutive();
+	void SelectCharacter(int32 Index);
+	UFUNCTION()
 	void SelectRepairGun();
 	UFUNCTION()
 	void SelectExplosionGun();
@@ -66,5 +90,8 @@ protected:
 	TWeakObjectPtr<ALobbyCharacterBase> DisplayCharacter;
 	int32 LastWeaponIndex = INDEX_NONE;
 	bool bShowingWeaponDetails = false;
+	bool bShowingCharacterDetails = false;
+	bool bNeedsRefresh = true;
+	int32 LastCharacterIndex = INDEX_NONE;
 };
 

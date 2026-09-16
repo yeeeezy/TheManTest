@@ -1,6 +1,6 @@
 # 具体角色类
 
-FEAT-085：`/Game/Characters/TheExecutive/Lobby/Blueprint/BP_Executive_Lobby`直接继承ALobbyCharacterBase，首批仅Relaxed展示，网格/目标Skeleton/静态狙击枪/动画/材质纹理均归TheExecutive/Lobby。武器挂Bip01-R-Hand，固定挂点由成品动画与枪的世界姿态计算。未替换可玩执行官，也未永久替换LobbyMap中的维修工；Rifle/Standing后续制作。
+FEAT-085：`/Game/Characters/TheExecutive/Lobby/Blueprint/BP_Executive_Lobby`直接继承ALobbyCharacterBase，具有Relaxed和Rifle成品；网格/目标Skeleton/静态狙击枪/动画/材质纹理均归TheExecutive/Lobby。武器挂Bip01-R-Hand，各姿态挂点由成品动画与枪的世界姿态计算。大厅Controller按Character选择生成并缓存展示实例；未替换可玩执行官。基类DisplayWeaponName/Description为没有WeaponPresentations列表的单枪角色提供武器页英文文案。Standing非本批范围。
 
 ## 大厅展示角色（FEAT-082）
 

@@ -54,9 +54,8 @@ void ACharacterSelectPlayerController::SetPointerOverUI(bool bInPointerOverUI)
 
 void ACharacterSelectPlayerController::SetWeaponPresentationView(bool bWeapon)
 {
-	for (TActorIterator<ALobbyCharacterBase> It(GetWorld()); It; ++It)
+	if (ALobbyCharacterBase* LobbyCharacter = GetDisplayCharacter())
 	{
-		ALobbyCharacterBase* LobbyCharacter = *It;
 		if (bWeapon)
 		{
 			LobbyCharacter->SetWeaponReady(true);
@@ -77,13 +76,56 @@ void ACharacterSelectPlayerController::SetWeaponPresentationView(bool bWeapon)
 			else
 				LobbyCharacter->SetWeaponReady(false);
 		}
-		break;
 	}
 	if (ACharacterSelectCameraSwitcher* Switcher = GetCameraSwitcher())
 	{
 		if (bWeapon) Switcher->SetNearCameraView();
 		else Switcher->SetFarCameraView();
 	}
+}
+
+ALobbyCharacterBase* ACharacterSelectPlayerController::GetDisplayCharacter()
+{
+	if (IsValid(ActiveDisplayCharacter)) return ActiveDisplayCharacter;
+	DisplayCharacters.SetNum(CharacterPresentations.Num());
+	for (TActorIterator<ALobbyCharacterBase> It(GetWorld()); It; ++It)
+	{
+		if (It->IsHidden()) continue;
+		ActiveDisplayCharacter = *It;
+		for (int32 Index = 0; Index < CharacterPresentations.Num(); ++Index)
+			if (CharacterPresentations[Index].DisplayClass && It->IsA(CharacterPresentations[Index].DisplayClass))
+			{
+				DisplayCharacters[Index] = *It;
+				SelectedPresentationIndex = Index;
+				break;
+			}
+		break;
+	}
+	return ActiveDisplayCharacter;
+}
+
+bool ACharacterSelectPlayerController::SelectPresentationCharacter(int32 Index)
+{
+	if (!CharacterPresentations.IsValidIndex(Index) || !CharacterPresentations[Index].DisplayClass) return false;
+	ALobbyCharacterBase* Previous = GetDisplayCharacter();
+	if (!Previous) return false;
+	DisplayCharacters.SetNum(CharacterPresentations.Num());
+	ALobbyCharacterBase* Next = DisplayCharacters[Index];
+	if (!IsValid(Next))
+	{
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		Params.ObjectFlags |= RF_Transient;
+		Next = GetWorld()->SpawnActor<ALobbyCharacterBase>(CharacterPresentations[Index].DisplayClass, Previous->GetActorTransform(), Params);
+		if (!Next) return false;
+		DisplayCharacters[Index] = Next;
+	}
+	if (Previous != Next) Previous->SetActorHiddenInGame(true);
+	Next->SetActorHiddenInGame(false);
+	ActiveDisplayCharacter = Next;
+	SelectedPresentationIndex = Index;
+	SetWeaponPresentationView(false);
+	return true;
 }
 
 bool ACharacterSelectPlayerController::IsWeaponPresentationView()
@@ -101,9 +143,8 @@ void ACharacterSelectPlayerController::HandleTestInput()
 		return;
 	}
 
-	for (TActorIterator<ALobbyCharacterBase> It(World); It; ++It)
+	if (ALobbyCharacterBase* LobbyCharacter = GetDisplayCharacter())
 	{
-		ALobbyCharacterBase* LobbyCharacter = *It;
 		LobbyCharacter->SetWeaponReady(!LobbyCharacter->IsWeaponReady());
 		UE_LOG(LogTemp, Display, TEXT("[LobbyTest] %s weapon ready: %s"),
 			*LobbyCharacter->GetName(), LobbyCharacter->IsWeaponReady() ? TEXT("true") : TEXT("false"));

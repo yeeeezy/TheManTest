@@ -23,6 +23,65 @@
 #include "Styling/CoreStyle.h"
 #endif
 
+bool UTheManLobbyAssetLibrary::AddCharacterDetails(UBlueprint* Blueprint)
+{
+#if WITH_EDITOR
+	auto* BP = Cast<UWidgetBlueprint>(Blueprint);
+	if (!BP || !BP->WidgetTree) return false;
+	auto* Tree = BP->WidgetTree.Get();
+	auto* Canvas = Cast<UCanvasPanel>(Tree->RootWidget);
+	auto* OriginalPanel = Cast<UVerticalBox>(Tree->FindWidget(TEXT("WeaponDetailsPanel")));
+	auto* ExistingButton = Cast<UButton>(Tree->FindWidget(TEXT("Button_Character")));
+	if (!Canvas || !OriginalPanel || !ExistingButton) return false;
+	if (Tree->FindWidget(TEXT("CharacterDetailsPanel"))) return true;
+	BP->Modify(); Tree->Modify(); Canvas->Modify();
+	auto* Panel = Tree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), TEXT("CharacterDetailsPanel"));
+	Panel->SetVisibility(ESlateVisibility::Collapsed);
+	auto* Slot = Canvas->AddChildToCanvas(Panel);
+	auto* SourceSlot = CastChecked<UCanvasPanelSlot>(OriginalPanel->Slot);
+	Slot->SetLayout(SourceSlot->GetLayout()); Slot->SetAutoSize(true);
+	auto AddText = [&](const TCHAR* Name, const TCHAR* SourceName, const TCHAR* Text, float Bottom)
+	{
+		auto* Label = Tree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), Name);
+		auto* Source = CastChecked<UTextBlock>(Tree->FindWidget(SourceName));
+		Label->SetText(FText::FromString(Text)); Label->SetFont(Source->GetFont());
+		Label->SetColorAndOpacity(Source->GetColorAndOpacity());
+		Label->SetWrapTextAt(440); Label->SetMinDesiredWidth(440);
+		Label->SetLineHeightPercentage(1.45f);
+		Label->SetVisibility(ESlateVisibility::HitTestInvisible);
+		Panel->AddChildToVerticalBox(Label)->SetPadding(FMargin(0,0,0,Bottom));
+	};
+	AddText(TEXT("Text_CharacterCategory"), TEXT("Text_WeaponCategory"), TEXT("CHARACTER"), 22);
+	const TCHAR* Keys[] = {TEXT("MaintenanceWorker"), TEXT("Executive")};
+	for (int32 Index = 0; Index < 2; ++Index)
+	{
+		const FString Key(Keys[Index]);
+		auto* Size = Tree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), FName(TEXT("CharacterSize_") + Key));
+		Size->SetWidthOverride(440); Size->SetHeightOverride(54);
+		Panel->AddChildToVerticalBox(Size)->SetPadding(FMargin(0,0,0,Index == 0 ? 10 : 30));
+		auto* Button = Tree->ConstructWidget<UButton>(UButton::StaticClass(), FName(TEXT("Button_") + Key));
+		Button->SetStyle(ExistingButton->GetStyle()); Size->SetContent(Button);
+		auto* Label = Tree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), FName(TEXT("Text_") + Key + TEXT("Choice")));
+		Label->SetFont(FSlateFontInfo(LoadObject<UObject>(nullptr, TEXT("/Engine/EngineFonts/Roboto.Roboto")), 16, TEXT("Regular")));
+		Label->SetColorAndOpacity(FSlateColor(FLinearColor(.78f,.8f,.82f,1)));
+		Label->SetVisibility(ESlateVisibility::HitTestInvisible);
+		auto* LabelSlot = CastChecked<UButtonSlot>(Button->AddChild(Label));
+		LabelSlot->SetHorizontalAlignment(HAlign_Left); LabelSlot->SetVerticalAlignment(VAlign_Center);
+	}
+	AddText(TEXT("Text_CharacterName"), TEXT("Text_WeaponName"), TEXT(""), 22);
+	auto* RuleSize = Tree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), TEXT("CharacterRuleSize"));
+	RuleSize->SetWidthOverride(72); RuleSize->SetHeightOverride(1);
+	auto* RuleSlot = Panel->AddChildToVerticalBox(RuleSize); RuleSlot->SetHorizontalAlignment(HAlign_Left); RuleSlot->SetPadding(FMargin(0,0,0,22));
+	auto* Rule = Tree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("CharacterRule"));
+	Rule->SetPadding(FMargin(0)); Rule->SetBrushColor(FLinearColor(.28f,.30f,.31f,.75f)); RuleSize->SetContent(Rule);
+	AddText(TEXT("Text_CharacterDescription"), TEXT("Text_WeaponDescription"), TEXT(""), 0);
+	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(BP); FKismetEditorUtilities::CompileBlueprint(BP);
+	return BP->Status != BS_Error;
+#else
+	return false;
+#endif
+}
+
 bool UTheManLobbyAssetLibrary::InitializePresentationMenu(UBlueprint* Blueprint)
 {
 #if WITH_EDITOR

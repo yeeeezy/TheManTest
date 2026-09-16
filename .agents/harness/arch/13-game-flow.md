@@ -1,6 +1,6 @@
 # 游戏流程（回合 + 死亡 → 大厅选角色 → 重开）
 
-FEAT-085执行官首批已提供BP_Executive_Lobby和Relax持枪成品，实际LobbyMap只做未保存的临时PIE预览；正式地图仍为维修工展示。执行官的举枪/Standing以及角色选择UI尚未接入，不能将首批单独BP等同于完整选角流程。
+FEAT-085（2026-09-16）执行官已接入正式大厅展示选择：Character 打开独立角色详情页，文字按钮选择维修工或执行官，只显示名字和介绍；选择与 Back 都保持 Relax／远景。Back 返回主菜单，再点 Weapon 对当前角色进入 Rifle／近景；执行官使用自带狙击枪并显示对应文字，隐藏维修工三枪选择器。角色实例与各自枪索引由 CharacterSelectPlayerController 缓存，所有 UI／姿态均取当前 Actor。主菜单初始仍展示地图原维修工；无需替换地图，执行官在选择时生成。该流程不启动游戏、不改变原战斗 Pawn／GameInstance 选角入口。执行官已有 Relax 和 Ready 成品，Standing 非本批范围。
 
 > 地图现状（2026-09-14）：FEAT-045选角场景已恢复并正式保存为`/Game/Maps/Lobby/LobbyMap`，原同名弃用空地图已删除。326个大厅地图专属依赖已从素材包路径`/Game/Maps/SciFiIndustrialBase`迁至`/Game/Maps/Lobby/{Blueprint,Meshes,Materials,Textures,Audio}`，预计算数据仍为`/Game/Maps/Lobby/LobbyMap_BuiltData`。`/Game/Environment`保留给游戏环境中的交互与场景功能，不接收地图专属依赖。`UTheManGameInstance::LobbyMapName`原本就是`LobbyMap`，因此死亡返回大厅流程直接进入正式选角场景。
 

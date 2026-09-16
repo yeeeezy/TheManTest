@@ -103,6 +103,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Lobby|Weapon")
 	TArray<FLobbyWeaponPresentation> WeaponPresentations;
 
+	/** Text for a character's single display weapon when no selectable weapon roster is configured. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Lobby|Weapon")
+	FText DisplayWeaponName;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Lobby|Weapon", meta=(MultiLine=true))
+	FText DisplayWeaponDescription;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lobby|Weapon", meta=(ClampMin="0"))
 	int32 DisplayWeaponIndex = 0;
 

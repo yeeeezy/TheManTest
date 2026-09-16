@@ -4,6 +4,7 @@
 #include "Characters/CharacterBase/Lobby/LobbyCharacterBase.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
+#include "Components/HorizontalBox.h"
 #include "Components/Image.h"
 #include "EngineUtils.h"
 #include "Weapons/_Shared/EquipmentBase/EquipmentBase.h"
@@ -13,7 +14,9 @@ void ULobbyPresentationWidgetBase::NativeOnInitialized()
 	Super::NativeOnInitialized();
 	if (Button_Character) Button_Character->OnClicked.AddUniqueDynamic(this, &ThisClass::ShowCharacter);
 	if (Button_Weapon) Button_Weapon->OnClicked.AddUniqueDynamic(this, &ThisClass::ShowWeapon);
-	if (Button_Back) Button_Back->OnClicked.AddUniqueDynamic(this, &ThisClass::ShowCharacter);
+	if (Button_Back) Button_Back->OnClicked.AddUniqueDynamic(this, &ThisClass::ShowMenu);
+	if (Button_MaintenanceWorker) Button_MaintenanceWorker->OnClicked.AddUniqueDynamic(this, &ThisClass::SelectMaintenanceWorker);
+	if (Button_Executive) Button_Executive->OnClicked.AddUniqueDynamic(this, &ThisClass::SelectExecutive);
 	if (Button_RepairGun) Button_RepairGun->OnClicked.AddUniqueDynamic(this, &ThisClass::SelectRepairGun);
 	if (Button_ExplosionGun) Button_ExplosionGun->OnClicked.AddUniqueDynamic(this, &ThisClass::SelectExplosionGun);
 	if (Button_ElectricGun) Button_ElectricGun->OnClicked.AddUniqueDynamic(this, &ThisClass::SelectElectricGun);
@@ -33,16 +36,39 @@ void ULobbyPresentationWidgetBase::RefreshPresentation()
 {
 	auto* PC = GetOwningPlayer<ACharacterSelectPlayerController>();
 	if (!PC) return;
-	if (!DisplayCharacter.IsValid())
-		for (TActorIterator<ALobbyCharacterBase> It(GetWorld()); It; ++It) { DisplayCharacter = *It; break; }
+	ALobbyCharacterBase* Active = PC->GetDisplayCharacter();
+	if (DisplayCharacter.Get() != Active) { DisplayCharacter = Active; bNeedsRefresh = true; }
 	const bool bWeapon = PC->IsWeaponPresentationView();
 	const int32 Index = DisplayCharacter.IsValid() ? DisplayCharacter->DisplayWeaponIndex : INDEX_NONE;
-	if (bWeapon == bShowingWeaponDetails && Index == LastWeaponIndex) return;
+	if (!bNeedsRefresh && bWeapon == bShowingWeaponDetails && Index == LastWeaponIndex && LastCharacterIndex == PC->SelectedPresentationIndex) return;
+	bNeedsRefresh = false;
+	LastCharacterIndex = PC->SelectedPresentationIndex;
+	if (bWeapon) bShowingCharacterDetails = false;
 	bShowingWeaponDetails = bWeapon;
 	LastWeaponIndex = Index;
-	if (PresentationMenu) PresentationMenu->SetVisibility(bWeapon ? ESlateVisibility::Collapsed : ESlateVisibility::SelfHitTestInvisible);
+	if (PresentationMenu) PresentationMenu->SetVisibility(bWeapon || bShowingCharacterDetails ? ESlateVisibility::Collapsed : ESlateVisibility::SelfHitTestInvisible);
 	if (WeaponDetailsPanel) WeaponDetailsPanel->SetVisibility(bWeapon ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
-	if (Button_Back) Button_Back->SetVisibility(bWeapon ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	if (CharacterDetailsPanel) CharacterDetailsPanel->SetVisibility(bShowingCharacterDetails ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
+	if (Button_Back) Button_Back->SetVisibility(bWeapon || bShowingCharacterDetails ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	const auto* Character = PC->CharacterPresentations.IsValidIndex(LastCharacterIndex) ? &PC->CharacterPresentations[LastCharacterIndex] : nullptr;
+	if (Text_CharacterName) Text_CharacterName->SetText(Character ? Character->DisplayName : FText::GetEmpty());
+	if (Text_CharacterDescription) Text_CharacterDescription->SetText(Character ? Character->Description : FText::GetEmpty());
+	UButton* CharacterButtons[] = {Button_MaintenanceWorker, Button_Executive};
+	UTextBlock* CharacterLabels[] = {Text_MaintenanceWorkerChoice, Text_ExecutiveChoice};
+	for (int32 Choice = 0; Choice < UE_ARRAY_COUNT(CharacterButtons); ++Choice)
+	{
+		const bool bValid = PC->CharacterPresentations.IsValidIndex(Choice) && PC->CharacterPresentations[Choice].DisplayClass;
+		if (CharacterLabels[Choice]) CharacterLabels[Choice]->SetText(bValid ? PC->CharacterPresentations[Choice].DisplayName : FText::GetEmpty());
+		if (CharacterButtons[Choice])
+		{
+			CharacterButtons[Choice]->SetIsEnabled(bValid);
+			FButtonStyle Style = CharacterButtons[Choice]->GetStyle();
+			Style.Normal.OutlineSettings.Color = FSlateColor(Choice == LastCharacterIndex
+				? FLinearColor(0.65f, 0.40f, 0.09f, 1.f) : FLinearColor(0.20f, 0.22f, 0.24f, 0.65f));
+			Style.Pressed = Style.Normal;
+			CharacterButtons[Choice]->SetStyle(Style);
+		}
+	}
 	const FLobbyWeaponPresentation* Item = DisplayCharacter.IsValid() && DisplayCharacter->WeaponPresentations.IsValidIndex(Index)
 		? &DisplayCharacter->WeaponPresentations[Index] : nullptr;
 	// Older map instances serialized the whole presentation array before text fields existed.
@@ -52,8 +78,9 @@ void ULobbyPresentationWidgetBase::RefreshPresentation()
 		for (const auto& DefaultItem : Defaults->WeaponPresentations)
 			if (DefaultItem.WeaponClass == Item->WeaponClass) { Item = &DefaultItem; break; }
 	}
-	if (Text_WeaponName) Text_WeaponName->SetText(Item ? Item->DisplayName : FText::GetEmpty());
-	if (Text_WeaponDescription) Text_WeaponDescription->SetText(Item ? Item->Description : FText::GetEmpty());
+	if (Text_WeaponName) Text_WeaponName->SetText(Item ? Item->DisplayName : (Active ? Active->DisplayWeaponName : FText::GetEmpty()));
+	if (Text_WeaponDescription) Text_WeaponDescription->SetText(Item ? Item->Description : (Active ? Active->DisplayWeaponDescription : FText::GetEmpty()));
+	if (WeaponChoices) WeaponChoices->SetVisibility(Active && !Active->WeaponPresentations.IsEmpty() ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 	UButton* Buttons[] = {Button_RepairGun, Button_ExplosionGun, Button_ElectricGun};
 	UImage* Images[] = {Image_RepairGun, Image_ExplosionGun, Image_ElectricGun};
 	UImage* Corners[] = {Corner_RepairGun, Corner_ExplosionGun, Corner_ElectricGun};
@@ -89,6 +116,8 @@ void ULobbyPresentationWidgetBase::SelectWeapon(int32 Index)
 
 void ULobbyPresentationWidgetBase::ShowCharacter()
 {
+	bShowingCharacterDetails = true;
+	bNeedsRefresh = true;
 	if (auto* PC = GetOwningPlayer<ACharacterSelectPlayerController>())
 	{
 		PC->SetWeaponPresentationView(false);
@@ -96,8 +125,28 @@ void ULobbyPresentationWidgetBase::ShowCharacter()
 	}
 }
 
+void ULobbyPresentationWidgetBase::ShowMenu()
+{
+	bShowingCharacterDetails = false;
+	bNeedsRefresh = true;
+	if (auto* PC = GetOwningPlayer<ACharacterSelectPlayerController>()) PC->SetWeaponPresentationView(false);
+	RefreshPresentation();
+}
+
+void ULobbyPresentationWidgetBase::SelectMaintenanceWorker() { SelectCharacter(0); }
+void ULobbyPresentationWidgetBase::SelectExecutive() { SelectCharacter(1); }
+
+void ULobbyPresentationWidgetBase::SelectCharacter(int32 Index)
+{
+	if (!bShowingCharacterDetails) return;
+	if (auto* PC = GetOwningPlayer<ACharacterSelectPlayerController>())
+		if (PC->SelectPresentationCharacter(Index)) { bNeedsRefresh = true; RefreshPresentation(); }
+}
+
 void ULobbyPresentationWidgetBase::ShowWeapon()
 {
+	bShowingCharacterDetails = false;
+	bNeedsRefresh = true;
 	if (auto* PC = GetOwningPlayer<ACharacterSelectPlayerController>())
 	{
 		PC->SetWeaponPresentationView(true);

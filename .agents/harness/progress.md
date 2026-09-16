@@ -1,14 +1,15 @@
 # 当前工作面板
 
-- Active feature：FEAT-085 执行官 Lobby 展示。首批 Relax 持枪成品与 BP_Executive_Lobby 已完成，等待用户按前面约定确认比例、握持后再做举枪及正式选角接入。
-- 保留 A0102 原身材、CAT 蒙皮；在 TMIIR 重定向，在外部 Blender 烘焙左臂握枪修正。3.2667 秒、30fps，含自带狙击枪、深色材质与红色全息。
-- 实际 LobbyMap PIE 播放和清晰近、远截图通过，正式地图未保存替换；31 个成品资产冷加载与依赖审计通过。详见 archive/FEAT-085-executive-lobby.md。
+- FEAT-085 已完成并归档，当前无新 active feature；未自动恢复其他暂停功能。
+- Character 打开文字角色选择：维修工／执行官，名字与介绍，无缩略图。选择／Back 保持 Relax，返回主菜单后 Weapon 对当前角色进入举枪与近景；每个角色保留自己的枪种。
+- 执行官保留 A0102 原身材、CAT 蒙皮，自带狙击枪；Relax／Ready 两条30fps、3.2667秒成品，仅在 TMIIR 重定向并在外部 Blender 修正。32个成品包，目标无IK或源工作依赖。
+- Development Editor Win64、三项BP编译、13个实际Lobby PIE检查点和冷加载审计通过，界面截图已查看。地图未修改；详见 archive/FEAT-085-executive-lobby.md。
 - Phantom 腿偏细及鞋底悬空明确暂缓，见 FEAT-084 archive；本轮未修改 Phantom。
 
 ## 会话交接
 
-- 外部工程及所有证据：D:/Blender Projects/ExecutiveLobby。Executive_Relaxed.blend 可编辑，Executive_Relaxed_Loop.gif 为循环预览；Lobby_Executive_Relaxed.png 和 Lobby_Executive_Hands.png 为大厅 PIE 截图。
-- 目标入口：/Game/Characters/TheExecutive/Lobby/Blueprint/BP_Executive_Lobby。目前仅 Relaxed，Rifle/Standing 未配置；正式大厅仍使用维修工，下一步按用户观感反馈继续。
-- 操作前本地检查点 56ce39f 保存此前 Phantom 及检查记录，未 push；本批执行官资产与 harness 未最终提交或 push。
-- 无 C++ 改动，无需重新构建；BP 已编译。重定向工具留在 TMIIR 的 ExecutiveWork；目标零源工作依赖、IK 资产及 Redirector。
+- 外部证据：D:/Blender Projects/ExecutiveLobby。selection-build-final.log、selection_author.json、selection_pie.json、selection_audit.json 均通过；Character_Executive_UI00002.png／Weapon_Executive_UI00002.png 为最终UI预览。Executive_Relaxed.blend／Executive_Ready.blend 可编辑。
+- 入口：WBP_LobbyPresentation、BP_CharacterSelectPlayerController.CharacterPresentations、BP_Executive_Lobby。角色选择只影响大厅展示，不启动游戏、不改变战斗Pawn；执行官Standing非本批范围。
+- 本批前检查点4cf536c保存首批Relax；本批代码／资产／harness未最终提交或push。当前构建已包含C++修改。
+- 后台验证编辑器已退出，地图无临时对象写入。等待用户下一项任务或观感反馈；Phantom腿细／浮空仍暂缓。
 - 已有索引问题 FEAT-080 跨两 JSON 重复，非本轮引入，未扩大范围修复。

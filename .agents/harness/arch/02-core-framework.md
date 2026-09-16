@@ -1,5 +1,7 @@
 # 核心框架（Core）
 
+FEAT-085（2026-09-16）大厅展示选角：CharacterSelectPlayerController.CharacterPresentations 在 BP 中配置维修工和执行官的 ID、英文名字／介绍、展示类。GetDisplayCharacter 返回当前可见展示对象，SelectPresentationCharacter 缓存各角色实例、保留各自枪索引、切换可见性并进入 Relax／远景。UI、Weapon 和预留1键都使用当前对象，不再遍历取首个。该入口只选择大厅展示，不调用旧 SelectCharacterAndStart 或切换战斗 Pawn。
+
 **何时读取：** 修改输入处理、角色切换流程、GameMode / PlayerState 初始化时。
 
 > 回合系统 / 死亡 / 大厅选角色 / 关卡切换 / GameInstance 跨关卡持久 → 见 `13-game-flow.md`。
