@@ -1,9 +1,24 @@
 {
     "schema_version":  "1.0",
-    "last_updated":  "2026-09-03-feat080-complete",
+    "last_updated": "2026-09-15-phantom-soldier-complete",
     "source_file":  "feature_list.json",
     "status_scope":  "done",
     "features":  [
+{
+    "id": "FEAT-084",
+    "name": "Phantom soldier appearance on existing animation skeleton",
+    "status": "done",
+    "created": "2026-09-15",
+    "updated": "2026-09-15",
+    "archive_file": "archive/FEAT-084-phantom-soldier-model.md",
+    "current_batch": "Completed: BP_Phantom uses SK_Phantom_Soldier on its unchanged original Skeleton, AnimBP and PhysicsAsset. Three materials and twelve textures connected.",
+    "done_criteria": [
+        "Preserve current Skeleton, animations, AnimBP, weapon attachment and gameplay.",
+        "Validate material slots, existing motion deformation, cloak and ragdoll in PIE.",
+        "Keep source work outside UE and leave TestMap unchanged."
+    ],
+    "verification_evidence": "Material-corrected actual TestMap PIE passed five original animations, 70-bone pose comparison (max 0.000122 cm), original AnimBP and weapon attachment, cloak restoration and ragdoll simulation. EnemyDeathRagdoll automation Success. Cold audit loaded all 16 new assets and verified dependencies, transforms and no scoped redirectors. Original Skeleton SHA256 unchanged. TestMap unchanged. Rendered animation and cloak screenshots inspected; ragdoll screenshot out of frame, physical behavior verified by automation. External evidence D:/Blender Projects/PhantomSoldier. No C++ edits, retargeting or final commit/push."
+},
                      {
                          "id": "FEAT-080", "name": "Combat HUD 与玩家枪械弹药", "status": "done",
                          "description": "由 PlayerController 管理本地 Combat HUD 生命周期；显示准星、血量和弹药；玩家枪械支持事件驱动弹药状态，以及 R/IA_Reload 经 Input.Weapon.Reload Gameplay Event 激活的换弹 Ability。",
