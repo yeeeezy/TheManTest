@@ -21,4 +21,6 @@ public:
 	static bool RefineWeaponDetails(UBlueprint* Blueprint, UTexture2D* CornerTexture);
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Lobby")
 	static bool AddCharacterDetails(UBlueprint* Blueprint);
+	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Lobby")
+	static bool RefineCharacterNavigation(UBlueprint* Blueprint);
 };

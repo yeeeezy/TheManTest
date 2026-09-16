@@ -294,3 +294,86 @@ bool UTheManLobbyAssetLibrary::RefineWeaponDetails(UBlueprint* Blueprint, UTextu
 #endif
 }
 
+
+bool UTheManLobbyAssetLibrary::RefineCharacterNavigation(UBlueprint* Blueprint)
+{
+#if WITH_EDITOR
+ auto* BP = Cast<UWidgetBlueprint>(Blueprint);
+ if (!BP || !BP->WidgetTree) return false;
+ auto* Tree = BP->WidgetTree.Get();
+ auto* Panel = Cast<UVerticalBox>(Tree->FindWidget(TEXT("CharacterDetailsPanel")));
+ auto* Weapon = Cast<UVerticalBox>(Tree->FindWidget(TEXT("WeaponDetailsPanel")));
+ auto* Name = Cast<UTextBlock>(Tree->FindWidget(TEXT("Text_CharacterName")));
+ auto* Description = Cast<UTextBlock>(Tree->FindWidget(TEXT("Text_CharacterDescription")));
+ auto* Category = Cast<UTextBlock>(Tree->FindWidget(TEXT("Text_CharacterCategory")));
+ auto* RuleSize = Cast<USizeBox>(Tree->FindWidget(TEXT("CharacterRuleSize")));
+ if (!Panel || !Weapon || !Name || !Description || !Category || !RuleSize) return false;
+ if (Tree->FindWidget(TEXT("Button_StartGame")))
+ {
+  BP->Modify(); Name->Modify(); Description->Modify();
+  Name->SetLineHeightPercentage(1.f);
+  auto DescriptionFont=Description->GetFont(); DescriptionFont.LetterSpacing=20; Description->SetFont(DescriptionFont);
+  if (auto* Rule=Cast<UBorder>(RuleSize->GetContent())) { Rule->Modify(); Rule->SetBrushColor(FLinearColor(.65f,.40f,.09f,1)); }
+  if (auto* Arrow=Tree->FindWidget(TEXT("Text_NextCharacterArrow"))) { Arrow->Modify(); Arrow->SetRenderTranslation(FVector2D(0,-8)); }
+  FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(BP); FKismetEditorUtilities::CompileBlueprint(BP);
+  return BP->Status != BS_Error;
+ }
+ BP->Modify(); Tree->Modify(); Panel->Modify(); Weapon->Modify();
+ const FLinearColor Gold(.65f,.40f,.09f,1);
+ const FLinearColor White(.78f,.80f,.82f,1);
+ auto Font = [](int32 Size, int32 Spacing) { FSlateFontInfo F(LoadObject<UObject>(nullptr,TEXT("/Engine/EngineFonts/Roboto.Roboto")),Size,TEXT("Regular")); F.LetterSpacing=Spacing; return F; };
+ auto Text = [&](const TCHAR* Key,const TCHAR* Copy,int32 Size,int32 Spacing,FLinearColor Color)
+ {
+  auto* T=Tree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(),Key);
+  T->SetText(FText::FromString(Copy)); T->SetFont(Font(Size,Spacing)); T->SetColorAndOpacity(FSlateColor(Color)); T->SetVisibility(ESlateVisibility::HitTestInvisible); return T;
+ };
+ auto Button = [&](const TCHAR* Key)
+ {
+  auto* B=Tree->ConstructWidget<UButton>(UButton::StaticClass(),Key);
+  FButtonStyle S; S.Normal.DrawAs=ESlateBrushDrawType::NoDrawType; S.Hovered=S.Normal; S.Pressed=S.Normal; S.Disabled=S.Normal;
+  S.NormalPadding=FMargin(0); S.PressedPadding=FMargin(0); B->SetStyle(S); return B;
+ };
+ auto ButtonText = [&](UButton* B,UTextBlock* T)
+ {
+  auto* S=CastChecked<UButtonSlot>(B->AddChild(T)); S->SetPadding(FMargin(0)); S->SetHorizontalAlignment(HAlign_Left); S->SetVerticalAlignment(VAlign_Center);
+ };
+ for (const TCHAR* Key : {TEXT("CharacterSize_MaintenanceWorker"),TEXT("CharacterSize_Executive")})
+  if (auto* W=Tree->FindWidget(Key)) { W->Modify(); W->SetVisibility(ESlateVisibility::Collapsed); }
+ Panel->ClearChildren();
+ Category->SetText(FText::FromString(TEXT("SELECT YOUR CHARACTER"))); Category->SetFont(Font(16,350)); Category->SetColorAndOpacity(FSlateColor(Gold)); Category->SetMinDesiredWidth(0); Category->SetWrapTextAt(0);
+ Panel->AddChildToVerticalBox(Category)->SetPadding(FMargin(0,0,0,24));
+ auto* NameRow=Tree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(),TEXT("CharacterNameRow"));
+ Panel->AddChildToVerticalBox(NameRow)->SetPadding(FMargin(0,0,0,10));
+ Name->SetFont(Font(36,230)); Name->SetLineHeightPercentage(1.f); Name->SetColorAndOpacity(FSlateColor(White)); Name->SetMinDesiredWidth(0); Name->SetWrapTextAt(0); Name->SetAutoWrapText(false);
+ NameRow->AddChildToHorizontalBox(Name)->SetVerticalAlignment(VAlign_Center);
+ auto* Next=Button(TEXT("Button_NextCharacter")); ButtonText(Next,Text(TEXT("Text_NextCharacterArrow"),TEXT("\u203a"),38,0,Gold));
+ Next->GetContent()->SetRenderTranslation(FVector2D(0,-8));
+ auto* NextSlot=NameRow->AddChildToHorizontalBox(Next); NextSlot->SetPadding(FMargin(22,0,0,0)); NextSlot->SetVerticalAlignment(VAlign_Center);
+ auto* Hint=Tree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(),TEXT("CharacterNextHint"));
+ Panel->AddChildToVerticalBox(Hint)->SetPadding(FMargin(0,0,0,38));
+ auto* Key=Tree->ConstructWidget<UBorder>(UBorder::StaticClass(),TEXT("TabKeycap"));
+ FSlateBrush KeyBrush; KeyBrush.DrawAs=ESlateBrushDrawType::RoundedBox; KeyBrush.TintColor=FSlateColor(FLinearColor(.025f,.025f,.025f,.7f)); KeyBrush.OutlineSettings.RoundingType=ESlateBrushRoundingType::FixedRadius; KeyBrush.OutlineSettings.CornerRadii=FVector4(3,3,3,3); KeyBrush.OutlineSettings.Width=1; KeyBrush.OutlineSettings.Color=FSlateColor(FLinearColor(.22f,.22f,.22f,1));
+ Key->SetBrush(KeyBrush); Key->SetPadding(FMargin(10,4)); Key->SetContent(Text(TEXT("Text_TabHint"),TEXT("TAB"),12,200,FLinearColor(.45f,.45f,.45f,1)));
+ Hint->AddChildToHorizontalBox(Key)->SetVerticalAlignment(VAlign_Center);
+ auto* HintSlot=Hint->AddChildToHorizontalBox(Text(TEXT("Text_NextCharacterHint"),TEXT("NEXT CHARACTER"),12,200,FLinearColor(.32f,.34f,.36f,1))); HintSlot->SetPadding(FMargin(14,0,0,0)); HintSlot->SetVerticalAlignment(VAlign_Center);
+ RuleSize->SetWidthOverride(48); RuleSize->SetHeightOverride(1);
+ if (auto* Rule=Cast<UBorder>(RuleSize->GetContent())) Rule->SetBrushColor(Gold);
+ auto* RuleSlot=Panel->AddChildToVerticalBox(RuleSize); RuleSlot->SetHorizontalAlignment(HAlign_Left); RuleSlot->SetPadding(FMargin(0,0,0,18));
+ Description->SetFont(Font(15,20)); Description->SetWrapTextAt(440); Description->SetMinDesiredWidth(440); Description->SetLineHeightPercentage(1.45f);
+ Panel->AddChildToVerticalBox(Description)->SetPadding(FMargin(0,0,0,32));
+ auto* View=Button(TEXT("Button_ViewWeapons")); ButtonText(View,Text(TEXT("Text_ViewWeapons"),TEXT("VIEW WEAPONS  \u203a"),14,200,FLinearColor(.65f,.68f,.70f,1)));
+ Panel->AddChildToVerticalBox(View)->SetHorizontalAlignment(HAlign_Left);
+ // Preserve the existing weapon hierarchy, typography, thumbnails and spacing.
+ auto* Start=Button(TEXT("Button_StartGame")); ButtonText(Start,Text(TEXT("Text_StartGame"),TEXT("START GAME  \u203a"),16,250,Gold));
+ auto* StartSlot=Weapon->AddChildToVerticalBox(Start); StartSlot->SetPadding(FMargin(0,32,0,0)); StartSlot->SetHorizontalAlignment(HAlign_Left);
+ if (auto* T=Cast<UTextBlock>(Tree->FindWidget(TEXT("Text_WeaponCategory")))) T->SetColorAndOpacity(FSlateColor(Gold));
+ if (auto* R=Cast<UBorder>(Tree->FindWidget(TEXT("WeaponRule")))) R->SetBrushColor(Gold);
+ if (auto* T=Cast<UTextBlock>(Tree->FindWidget(TEXT("Text_Character")))) T->SetText(FText::FromString(TEXT("START")));
+ if (auto* T=Cast<UTextBlock>(Tree->FindWidget(TEXT("Text_Weapon")))) T->SetText(FText::FromString(TEXT("SETTINGS")));
+ if (auto* B=Cast<UButton>(Tree->FindWidget(TEXT("Button_Weapon")))) { B->SetIsEnabled(false); B->SetToolTipText(FText::FromString(TEXT("Settings are not available yet."))); }
+ FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(BP); FKismetEditorUtilities::CompileBlueprint(BP);
+ return BP->Status != BS_Error;
+#else
+ return false;
+#endif
+}

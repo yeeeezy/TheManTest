@@ -11,7 +11,7 @@ class UImage;
 class UHorizontalBox;
 class ALobbyCharacterBase;
 
-/** Presentation navigation only; character selection/start-game remains separate. */
+/** Lobby navigation and selected-character handoff to the existing game flow. */
 UCLASS(Abstract)
 class THEMANTEST_API ULobbyPresentationWidgetBase : public UUserWidget
 {
@@ -19,6 +19,17 @@ class THEMANTEST_API ULobbyPresentationWidgetBase : public UUserWidget
 protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual FReply NativeOnPreviewKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UButton> Button_NextCharacter;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UButton> Button_ViewWeapons;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UButton> Button_StartGame;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> Text_ViewWeapons;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> Text_StartGame;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
 	TObjectPtr<UVerticalBox> PresentationMenu;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
@@ -74,6 +85,16 @@ protected:
 	UFUNCTION()
 	void ShowMenu();
 	UFUNCTION()
+	void GoBack();
+	UFUNCTION()
+	void NextCharacter();
+	UFUNCTION()
+	void StartGame();
+	UFUNCTION()
+	void HoverViewWeapons();
+	UFUNCTION()
+	void UnhoverViewWeapons();
+	UFUNCTION()
 	void SelectMaintenanceWorker();
 	UFUNCTION()
 	void SelectExecutive();
@@ -93,5 +114,6 @@ protected:
 	bool bShowingCharacterDetails = false;
 	bool bNeedsRefresh = true;
 	int32 LastCharacterIndex = INDEX_NONE;
+	bool bStartingGame = false;
 };
 

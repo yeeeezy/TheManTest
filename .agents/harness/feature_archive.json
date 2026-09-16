@@ -1,9 +1,24 @@
 {
     "schema_version":  "1.0",
-    "last_updated": "2026-09-16-executive-effects-complete",
+    "last_updated": "2026-09-16-lobby-ui-complete",
     "source_file":  "feature_list.json",
     "status_scope":  "done",
     "features":  [
+{
+    "id": "FEAT-087",
+    "name": "Lobby UI navigation and selected-character start game",
+    "status": "done",
+    "created": "2026-09-16",
+    "updated": "2026-09-16",
+    "archive_file": "archive/FEAT-087-lobby-ui-start-game.md",
+    "done_criteria": [
+        "Approved START/SETTINGS, character name/Tab and VIEW WEAPONS layout authored in UMG; existing weapon layout retained with left START GAME.",
+        "Reuse GameInstance selected-character handoff into /Game/Maps/Test/TestMap; audit gameplay Blueprints and roster.",
+        "Development Editor build, Blueprint compilation, rendered Lobby PIE navigation and real TestMap travel with selected character pass.",
+        "Update architecture and handoff; no map changes. User-authorized Executive/Infiltrator temporary playable configuration copies worker meshes, animations, equipment and movement while preserving their classes, IDs and abilities."
+    ],
+    "verification_evidence": "Development Editor Win64 build succeeded; UMG and both placeholder gameplay Blueprints compiled/saved. ui_pie.json: ten actual PIE navigation/travel checks passed, both map hashes unchanged. travel.json: Executive via Lobby StartGame, Infiltrator and MaintenanceWorker via existing GameInstance, distinct Pawn classes/IDs, body/arms animation instances and three weapons verified; Executive movement and weapon switching passed. preview.json: native Windows TAB passed; final rendered screenshots Final_*00002.png inspected. Evidence D:/UnrealWork/LobbyUI. Checkpoint 3870e05; final results uncommitted."
+},
 {
     "id": "FEAT-086",
     "name": "Executive original red emissive and hologram look",

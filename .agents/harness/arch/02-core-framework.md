@@ -42,3 +42,5 @@ IMC_Default 的 IA_Test = One（键盘1）。BP_TheManPlayerController 的 TestS
 
 
 FEAT-082按钮姿势联动（2026-09-14）：SetWeaponPresentationView现在同步大厅展示Actor和镜头。true=Rifle/近景，false=从当前枪非空RelaxedAnimations均匀随机选一条并进入Relaxed/远景，每次调用重新选，允许重复。UI不再保留选中高亮，仅Hovered高亮。角色仍SingleNode硬切，没有动画混合；既有0.7秒平滑仅用于相机。此说明覆盖之前“按钮仅切相机”的行为记录。
+
+FEAT-087（2026-09-16）：ULobbyPresentationWidgetBase 将主菜单 START、角色箭头/TAB、VIEW WEAPONS 与武器页 START GAME 串联。GoBack 从武器回角色，从角色回主菜单。StartGame 复用 TheManGameInstance.SelectCharacterAndStart 并传当前 CharacterPresentations.CharacterID。旧 Button_Character/Button_Weapon 绑定名保留以兼容资产；前者显示 START，后者显示 SETTINGS 且禁用。

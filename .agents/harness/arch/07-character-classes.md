@@ -116,3 +116,9 @@ FLobbyWeaponPresentation新增DisplayName和Description（FText）供大厅武�
 
 
 FLobbyWeaponPresentation新增Thumbnail(UTexture2D)，用于三枪实际模型侧视选择图。归UI/Lobby/Textures；BP默认值配置，目标地图自动继承，无需改地图。
+
+## FEAT-087 临时战斗角色配置（2026-09-16）
+
+用户授权先补齐 BP_FPSTheExecutive 与 BP_Infiltrator 的临时可玩配置。两者保留各自原生父类、资产路径、角色 ID 和专属技能，引用维修工当前身体、第一人称手臂、腿部、AnimBP、材质与三枪初始装备；不覆盖独立大厅展示。潜伏者原 BGA_InfiltratorScan 保留。没有复制源骨架或新增动画资产，没有重定向。
+
+为匹配当前实际维修工 BeginPlay 行为，临时 BP 的 Walk/Sprint 为 550/750，MaxAcceleration=2000、BrakingDecelerationWalking=750；不是旧序列化的 100/300。后续换正式角色战斗资源时在各自 BP 独立替换。当前角色专属身体/武器表现不代表已完成。

@@ -124,3 +124,12 @@ FEAT-082按钮姿势联动（2026-09-14）：SetWeaponPresentationView现在同�
 
 
 大厅三点光现状（2026-09-14，覆盖旧灯配置说明）：LobbyLighting/Previous_Disabled归档关闭Lobby_Top_SoftWhite、Lobby_Left_Red、Lobby_Right_White、SpotLight3、SpotLight4。关闭方式是LightComponent Visibility=false，旧灯位置/强度/颜色保留。LobbyLighting/ThreePoint新增三盏Movable RectLight：Lobby_Key_SoftWhite白色主光650lm、160×180cm、位置(-155,-185,295)；Lobby_Fill_SoftWhite白色补光220lm、160×200cm、位置(170,-150,175)；Lobby_Rim_Red红色轮廓光220lm、100×200cm、位置(160,130,235)。衰减半径均650cm，间接强度0，仅Lighting Channel1。人物和两枪组件原Channel0+1保持；曝光、环境灯、相机、人物位置保持。调亮度在对应灯Details的Intensity，调覆盖范围在Attenuation Radius，柔和程度在Source Width/Height。宽面光覆盖Relax/Rifle，不存在运行时灯位切换或跟随骨骼。
+
+## FEAT-087（2026-09-16）：大厅入口与游戏启动
+
+- WBP_LobbyPresentation 主菜单改为 START / SETTINGS；SETTINGS 按用户要求保留禁用。
+- START 打开角色详情：SELECT YOUR CHARACTER、角色名与右箭头、TAB NEXT CHARACTER、介绍、VIEW WEAPONS。NextCharacter 按 Controller.CharacterPresentations 循环，键盘 TAB 在 Widget NativeOnPreviewKeyDown 消费，长按重复不连跳。
+- VIEW WEAPONS 对当前展示 Actor 进入原武器页/举枪近景；武器页 BACK 回当前角色详情/Relax，角色页 BACK 回菜单。Escape 与 BACK 相同。
+- 左侧 START GAME 调用既有 GameInstance.SelectCharacterAndStart(Current CharacterID)，目标 /Game/Maps/Test/TestMap；TestMap GameMode 仍通过 DT_CharacterRoster 查对应战斗 BP。按钮有重复启动和 GameOver 守卫。
+- UI 由原 Editor 辅助库 RefineCharacterNavigation 显式写入 UMG；运行时只管理状态、文本与动作。不导入生成效果图做 UI。
+- 大厅当前只有维修工和执行官展示。潜伏者仅存在战斗花名册，不自动增加未制作的大厅展示。

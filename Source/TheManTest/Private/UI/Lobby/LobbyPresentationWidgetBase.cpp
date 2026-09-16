@@ -1,6 +1,8 @@
 #include "UI/Lobby/LobbyPresentationWidgetBase.h"
 #include "Components/Button.h"
 #include "Core/CharacterSelectPlayerController.h"
+#include "Core/TheManGameInstance.h"
+#include "InputCoreTypes.h"
 #include "Characters/CharacterBase/Lobby/LobbyCharacterBase.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
@@ -13,8 +15,18 @@ void ULobbyPresentationWidgetBase::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 	if (Button_Character) Button_Character->OnClicked.AddUniqueDynamic(this, &ThisClass::ShowCharacter);
-	if (Button_Weapon) Button_Weapon->OnClicked.AddUniqueDynamic(this, &ThisClass::ShowWeapon);
-	if (Button_Back) Button_Back->OnClicked.AddUniqueDynamic(this, &ThisClass::ShowMenu);
+	// The former WEAPON main-menu entry is now the reserved SETTINGS entry.
+	if (Button_Weapon) Button_Weapon->SetIsEnabled(false);
+	if (Button_Back) Button_Back->OnClicked.AddUniqueDynamic(this, &ThisClass::GoBack);
+	if (Button_NextCharacter) Button_NextCharacter->OnClicked.AddUniqueDynamic(this, &ThisClass::NextCharacter);
+	if (Button_ViewWeapons)
+	{
+		Button_ViewWeapons->OnClicked.AddUniqueDynamic(this, &ThisClass::ShowWeapon);
+		Button_ViewWeapons->OnHovered.AddUniqueDynamic(this, &ThisClass::HoverViewWeapons);
+		Button_ViewWeapons->OnUnhovered.AddUniqueDynamic(this, &ThisClass::UnhoverViewWeapons);
+	}
+	if (Button_StartGame) Button_StartGame->OnClicked.AddUniqueDynamic(this, &ThisClass::StartGame);
+	SetIsFocusable(true);
 	if (Button_MaintenanceWorker) Button_MaintenanceWorker->OnClicked.AddUniqueDynamic(this, &ThisClass::SelectMaintenanceWorker);
 	if (Button_Executive) Button_Executive->OnClicked.AddUniqueDynamic(this, &ThisClass::SelectExecutive);
 	if (Button_RepairGun) Button_RepairGun->OnClicked.AddUniqueDynamic(this, &ThisClass::SelectRepairGun);
@@ -24,6 +36,66 @@ void ULobbyPresentationWidgetBase::NativeOnInitialized()
 	if (WeaponDetailsPanel) WeaponDetailsPanel->SetVisibility(ESlateVisibility::Collapsed);
 	if (Button_Back) Button_Back->SetVisibility(ESlateVisibility::Collapsed);
 	RefreshPresentation();
+}
+
+FReply ULobbyPresentationWidgetBase::NativeOnPreviewKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+{
+	if (InKeyEvent.GetKey() == EKeys::Tab && bShowingCharacterDetails)
+	{
+		if (!InKeyEvent.IsRepeat()) NextCharacter();
+		return FReply::Handled();
+	}
+	if (InKeyEvent.GetKey() == EKeys::Escape && (bShowingCharacterDetails || bShowingWeaponDetails))
+	{
+		if (!InKeyEvent.IsRepeat()) GoBack();
+		return FReply::Handled();
+	}
+	return Super::NativeOnPreviewKeyDown(InGeometry, InKeyEvent);
+}
+
+void ULobbyPresentationWidgetBase::NextCharacter()
+{
+	auto* PC = GetOwningPlayer<ACharacterSelectPlayerController>();
+	if (!PC || !bShowingCharacterDetails || bStartingGame) return;
+	for (int32 Offset = 1; Offset <= PC->CharacterPresentations.Num(); ++Offset)
+	{
+		const int32 Index = (PC->SelectedPresentationIndex + Offset) % PC->CharacterPresentations.Num();
+		if (PC->CharacterPresentations[Index].DisplayClass)
+		{
+			SelectCharacter(Index);
+			break;
+		}
+	}
+}
+
+void ULobbyPresentationWidgetBase::GoBack()
+{
+	if (bStartingGame) return;
+	if (bShowingWeaponDetails) ShowCharacter();
+	else ShowMenu();
+}
+
+void ULobbyPresentationWidgetBase::StartGame()
+{
+	auto* PC = GetOwningPlayer<ACharacterSelectPlayerController>();
+	auto* GI = GetGameInstance<UTheManGameInstance>();
+	if (bStartingGame || !bShowingWeaponDetails || !PC || !GI || GI->IsGameOver()
+		|| !PC->CharacterPresentations.IsValidIndex(PC->SelectedPresentationIndex)) return;
+	const FName CharacterID = PC->CharacterPresentations[PC->SelectedPresentationIndex].CharacterID;
+	if (CharacterID.IsNone()) return;
+	bStartingGame = true;
+	if (Button_StartGame) Button_StartGame->SetIsEnabled(false);
+	GI->SelectCharacterAndStart(CharacterID);
+}
+
+void ULobbyPresentationWidgetBase::HoverViewWeapons()
+{
+	if (Text_ViewWeapons) Text_ViewWeapons->SetColorAndOpacity(FSlateColor(FLinearColor(0.65f, 0.40f, 0.09f, 1.f)));
+}
+
+void ULobbyPresentationWidgetBase::UnhoverViewWeapons()
+{
+	if (Text_ViewWeapons) Text_ViewWeapons->SetColorAndOpacity(FSlateColor(FLinearColor(0.65f, 0.68f, 0.70f, 1.f)));
 }
 
 void ULobbyPresentationWidgetBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -53,6 +125,11 @@ void ULobbyPresentationWidgetBase::RefreshPresentation()
 	const auto* Character = PC->CharacterPresentations.IsValidIndex(LastCharacterIndex) ? &PC->CharacterPresentations[LastCharacterIndex] : nullptr;
 	if (Text_CharacterName) Text_CharacterName->SetText(Character ? Character->DisplayName : FText::GetEmpty());
 	if (Text_CharacterDescription) Text_CharacterDescription->SetText(Character ? Character->Description : FText::GetEmpty());
+	if (Button_StartGame)
+	{
+		const auto* GI = GetGameInstance<UTheManGameInstance>();
+		Button_StartGame->SetIsEnabled(Character && !Character->CharacterID.IsNone() && GI && !GI->IsGameOver() && !bStartingGame);
+	}
 	UButton* CharacterButtons[] = {Button_MaintenanceWorker, Button_Executive};
 	UTextBlock* CharacterLabels[] = {Text_MaintenanceWorkerChoice, Text_ExecutiveChoice};
 	for (int32 Choice = 0; Choice < UE_ARRAY_COUNT(CharacterButtons); ++Choice)
@@ -122,6 +199,7 @@ void ULobbyPresentationWidgetBase::ShowCharacter()
 	{
 		PC->SetWeaponPresentationView(false);
 		RefreshPresentation();
+		SetKeyboardFocus();
 	}
 }
 
