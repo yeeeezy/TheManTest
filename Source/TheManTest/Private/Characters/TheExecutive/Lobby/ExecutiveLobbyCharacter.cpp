@@ -1,9 +1,13 @@
 #include "Characters/TheExecutive/Lobby/ExecutiveLobbyCharacter.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Characters/TheExecutive/Drone/ExecutiveDroneComponent.h"
+#include "Characters/TheExecutive/Drone/ExecutiveDrone.h"
 
 AExecutiveLobbyCharacter::AExecutiveLobbyCharacter()
 {
+ DroneCompanion=CreateDefaultSubobject<UExecutiveDroneComponent>(TEXT("DroneCompanion"));
+ DroneCompanion->bLobbyPresentation=true;
 	FaceGlow = CreateDefaultSubobject<UPointLightComponent>(TEXT("FaceGlow"));
 	ChestGlow = CreateDefaultSubobject<UPointLightComponent>(TEXT("ChestGlow"));
 	FaceGlow->SetupAttachment(DisplayMesh, TEXT("Bip01-Head"));
@@ -30,4 +34,9 @@ void AExecutiveLobbyCharacter::SetActorHiddenInGame(bool bNewHidden)
 	Super::SetActorHiddenInGame(bNewHidden);
 	FaceGlow->SetVisibility(!bNewHidden);
 	ChestGlow->SetVisibility(!bNewHidden);
+ if(IsValid(DroneCompanion->Drone))
+ {
+  DroneCompanion->Drone->SetActorHiddenInGame(bNewHidden);
+  DroneCompanion->Drone->SetActorTickEnabled(!bNewHidden);
+ }
 }

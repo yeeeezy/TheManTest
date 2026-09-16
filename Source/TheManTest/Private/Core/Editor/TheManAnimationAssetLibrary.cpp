@@ -1791,3 +1791,74 @@ UAnimBlueprint* UTheManAnimationAssetLibrary::CreateControlRigAnimBlueprint(
 	return nullptr;
 #endif
 }
+
+#if WITH_EDITOR
+#include "AnimGraphNode_BlendListByInt.h"
+#include "BehaviorTree/BehaviorTree.h"
+#include "BehaviorTree/BlackboardData.h"
+#include "BehaviorTree/Blackboard/BlackboardKeyType_Object.h"
+#include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
+#include "BehaviorTree/Composites/BTComposite_Sequence.h"
+#include "BehaviorTreeGraph.h"
+#include "Characters/TheExecutive/Drone/BTTask_ExecutiveDroneFollow.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "UObject/ObjectRedirector.h"
+#endif
+bool UTheManAnimationAssetLibrary::InitializeDroneFollowAnimation(UAnimBlueprint* BP,UAnimSequence* Idle,UAnimSequence* Left,UAnimSequence* Right)
+{
+#if WITH_EDITOR
+ if(!BP || !Idle || !Left || !Right) return false;
+ UEdGraph* Graph=nullptr;
+ for(UEdGraph* G:BP->FunctionGraphs) if(G && G->GetFName()==UEdGraphSchema_K2::GN_AnimGraph) Graph=G;
+ if(!Graph) return false;
+ UAnimGraphNode_Root* Root=nullptr;
+ for(UEdGraphNode* N:Graph->Nodes) if(auto* R=Cast<UAnimGraphNode_Root>(N)) Root=R;
+ if(!Root || Graph->Nodes.Num()>1) return false;
+ FGraphNodeCreator<UAnimGraphNode_BlendListByInt> BC(*Graph);auto* Blend=BC.CreateNode();Blend->NodePosX=-250;BC.Finalize();
+ while(!Blend->FindPin(TEXT("BlendPose_2"))) Blend->AddPinToBlendList();
+ const auto* Schema=Graph->GetSchema();
+ UAnimSequence* Sequences[]={Idle,Left,Right};
+ for(int32 I=0;I<3;++I)
+ {
+  FGraphNodeCreator<UAnimGraphNode_SequencePlayer> C(*Graph);auto* P=C.CreateNode();P->SetAnimationAsset(Sequences[I]);P->Node.SetLoopAnimation(true);P->NodePosX=-650;P->NodePosY=I*170;C.Finalize();
+  if(!Schema->TryCreateConnection(P->FindPin(TEXT("Pose")),Blend->FindPin(*FString::Printf(TEXT("BlendPose_%d"),I)))) return false;
+  if(auto* Pin=Blend->FindPin(*FString::Printf(TEXT("BlendTime_%d"),I))) Pin->DefaultValue=TEXT("0.3");
+ }
+ FGraphNodeCreator<UK2Node_VariableGet> VC(*Graph);auto* V=VC.CreateNode();V->VariableReference.SetSelfMember(TEXT("FlightPose"));V->NodePosX=-650;V->NodePosY=-150;VC.Finalize();
+ if(!Schema->TryCreateConnection(V->FindPin(TEXT("FlightPose")),Blend->FindPin(TEXT("ActiveChildIndex")))) return false;
+ if(!Schema->TryCreateConnection(Blend->FindPin(TEXT("Pose")),Root->FindPin(TEXT("Result")))) return false;
+ FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(BP);FKismetEditorUtilities::CompileBlueprint(BP);BP->MarkPackageDirty();return BP->Status!=BS_Error;
+#else
+ return false;
+#endif
+}
+bool UTheManAnimationAssetLibrary::InitializeDroneFollowTree(UBehaviorTree* Tree,UBlackboardData* BB)
+{
+#if WITH_EDITOR
+ if(!Tree || !BB || Tree->RootNode) return false;
+ FBlackboardEntry Leader;Leader.EntryName=TEXT("Leader");Leader.KeyType=NewObject<UBlackboardKeyType_Object>(BB);BB->Keys.Add(Leader);
+ FBlackboardEntry Goal;Goal.EntryName=TEXT("FollowLocation");Goal.KeyType=NewObject<UBlackboardKeyType_Vector>(BB);BB->Keys.Add(Goal);
+ Tree->BlackboardAsset=BB;
+ auto* Root=NewObject<UBTComposite_Sequence>(Tree,TEXT("FollowSequence"),RF_Transactional);
+ auto* Task=NewObject<UBTTask_ExecutiveDroneFollow>(Tree,TEXT("FollowTask"),RF_Transactional);
+ FBTCompositeChild Child;Child.ChildTask=Task;Root->Children.Add(Child);Tree->RootNode=Root;
+ const auto SchemaClass=GetDefault<UBehaviorTreeGraph>()->Schema;
+ Tree->BTGraph=FBlueprintEditorUtils::CreateNewGraph(Tree,TEXT("Behavior Tree"),UBehaviorTreeGraph::StaticClass(),SchemaClass);
+ auto* Graph=CastChecked<UBehaviorTreeGraph>(Tree->BTGraph);Graph->GetSchema()->CreateDefaultNodesForGraph(*Graph);Graph->OnCreated();Graph->Initialize();Graph->UpdateAsset();
+ Tree->MarkPackageDirty();BB->MarkPackageDirty();return Tree->RootNode!=nullptr;
+#else
+ return false;
+#endif
+}
+bool UTheManAnimationAssetLibrary::FixupMigrationRedirectors(const FString& Path)
+{
+#if WITH_EDITOR
+ auto& Registry=FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
+ TArray<FAssetData> Assets;Registry.GetAssetsByPath(*Path,Assets,true);TArray<UObjectRedirector*> Redirectors;
+ for(const auto& A:Assets) if(A.IsRedirector()) if(auto* R=Cast<UObjectRedirector>(A.GetAsset())) Redirectors.Add(R);
+ if(!Redirectors.IsEmpty()) FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools")).Get().FixupReferencers(Redirectors,false,ERedirectFixupMode::DeleteFixedUpRedirectors);
+ return true;
+#else
+ return false;
+#endif
+}

@@ -22,6 +22,12 @@ class THEMANTEST_API UTheManAnimationAssetLibrary : public UBlueprintFunctionLib
 	GENERATED_BODY()
 
 public:
+ UFUNCTION(BlueprintCallable,Category="TheManTest|Editor|Animation")
+ static bool InitializeDroneFollowAnimation(UAnimBlueprint* Blueprint,UAnimSequence* Idle,UAnimSequence* Left,UAnimSequence* Right);
+ UFUNCTION(BlueprintCallable,Category="TheManTest|Editor|AI")
+ static bool InitializeDroneFollowTree(class UBehaviorTree* Tree,class UBlackboardData* Blackboard);
+ UFUNCTION(BlueprintCallable,Category="TheManTest|Editor|Assets")
+ static bool FixupMigrationRedirectors(const FString& PackagePath);
 	/** Replace every animation segment in a montage with an ownership-local copy. */
 	UFUNCTION(BlueprintCallable, Category="TheManTest|Editor|Animation")
 	static bool ReplaceMontageAnimation(UAnimMontage* Montage, UAnimSequence* Animation);

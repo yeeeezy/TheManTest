@@ -13,6 +13,8 @@ class THEMANTEST_API AExecutiveLobbyCharacter : public ALobbyCharacterBase
 	GENERATED_BODY()
 public:
 	AExecutiveLobbyCharacter();
+ UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Lobby|Drone")
+ TObjectPtr<class UExecutiveDroneComponent> DroneCompanion;
 	virtual void SetActorHiddenInGame(bool bNewHidden) override;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Lobby|Effects")
 	TObjectPtr<UPointLightComponent> FaceGlow;

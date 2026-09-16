@@ -8,4 +8,8 @@ UCLASS()
 class THEMANTEST_API AFPSTheExecutive : public AFPSCharacterBase
 {
 	GENERATED_BODY()
+public:
+ AFPSTheExecutive();
+ UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Executive|Drone")
+ TObjectPtr<class UExecutiveDroneComponent> DroneCompanion;
 };
