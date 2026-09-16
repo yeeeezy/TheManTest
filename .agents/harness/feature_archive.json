@@ -5,6 +5,17 @@
     "status_scope":  "done",
     "features":  [
 {
+    "id": "FEAT-091",
+    "name": "Temporary combat character dynamic shadows",
+    "status": "done",
+    "archive_file": "archive/FEAT-091-character-dynamic-shadows.md",
+    "done_criteria": [
+        "Executive/Infiltrator body dynamic shadow matches Worker",
+        "Blueprint compilation and actual PIE verification pass"
+    ],
+    "verification_evidence": "shadow-fix.json and shadow-pie.json ok=true. Both BPs compiled/saved without error. Cold editor actual TestMap travel through Worker/Executive/Infiltrator: body CastShadow/CastDynamicShadow/CastHiddenShadow/OwnerNoSee all true; arms and legs no shadow, obsolete shadow meshes empty; weapon framing still matches. Secondary monitor, no source/map edits."
+},
+{
     "id": "FEAT-090",
     "name": "Distance-only Executive drone following",
     "status": "done",

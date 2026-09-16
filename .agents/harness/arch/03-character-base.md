@@ -78,3 +78,7 @@ FPSCharacterBase 继续指定 EquipmentManager.AttachTargetMesh=ArmsViewMesh、�
 ## 2026-09-16 temporary combat character framing
 
 Executive/Infiltrator reuse Worker first-person assets and must also copy ViewmodelRoot SceneComponent transform. Current offset is(-6.153601,30.210103,-12.871626), now copied to both BPs. Do not reset to identity or historical -7cm. Rendered PIE verified root/arms/camera positions,90-degree FOV,anim class and RepairGun attached to ArmsViewMesh/GripPoint1 match across all3 characters. Lobby uses independent presentation settings.
+
+## FEAT-091 dynamic body shadow parity
+
+BP_FPSTheExecutive and BP_Infiltrator CharacterMesh0 now explicitly enable CastDynamicShadow like BP_MaintenanceWorker; this was missing from the temporary setup copy. Runtime body CastShadow/CastDynamicShadow/CastHiddenShadow/OwnerNoSee must all be true. ArmsViewMesh/LegsMesh CastShadow=false, old ShadowBodyMesh/ShadowUpperBodyMesh remain empty. Verified in actual TestMap PIE for all3 characters.

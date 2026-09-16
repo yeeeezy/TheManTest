@@ -1,12 +1,11 @@
 # Current work
 
-- FEAT-090 complete: gameplay drone follows by distance, independent of player yaw. Defaults300cm start/180cm stop with5cm arrival tolerance. Lobby unchanged.
-- Build and actual secondary-monitor PIE passed: yaw independence, near hold, far follow, local avoidance, pause and cleanup.
+- FEAT-091 complete: Executive/Infiltrator body dynamic shadows now match Worker.
+- Both BPs compile/save and separate actual3-character TestMap PIE passed; shadow flags and existing weapon framing verified.
 
 ## Handoff
 
-- Evidence D:/UnrealWork/ExecutiveDrone/distance-build.log,distance-pie.json,distance-obstacles.json. No UE processes left.
-- Local checkpoint ff37920 preserves previous drone/weapon work. Final FEAT-090 source/docs uncommitted; no push.
-- No asset/map edits in FEAT-090. Parameters exposed on BP_ExecutiveDrone under Drone|Follow.
-- All UE windows must remain on secondary monitor.
-- FEAT-089 drone foundation and weapon framing repair complete; older deferred tasks unchanged.
+- Evidence D:/UnrealWork/ExecutiveDrone/shadow-fix.json and shadow-pie.json ok=true. UE operated on secondary monitor.
+- User authorized publishing all current changes. This publication includes drone follow/lobby implementation, distance-only follow, viewmodel framing and dynamic-shadow fixes, including local checkpoints14adb1f/ff37920/9bc1c8b. Final remote synchronization is verified through Git.
+- No C++ or map edits in this repair. FEAT-089/090 complete; older deferred work unchanged.
+- All UE operations must stay on secondary monitor.
