@@ -1,17 +1,14 @@
 # 当前工作面板
 
-- Phantom后续待修：用户反馈腿偏细、鞋底悬空，2026-09-15明确暂缓；原模型与蒙皮适配比例、运行时接地高度尚需对比测量。见FEAT-084 archive；本轮不改资产。
-- A0102科幻狙击手由用户指定为执行官模型，当前只检查是否附带持枪/Relax动作，证据目录`D:\Blender Projects\A0102_Inspection`。
-- A0102检查完成：Blend无骨架/Action，FBX无骨骼/动画曲线，Max有CAT/Skin但0–100逐帧无对象变换变化；未找到持枪/Relax动画。详见`archive/A0102-executive-animation-inspection.md`，未导入UE。
-
-- FEAT-084 Phantom士兵外观接入完成，已归档至`archive/FEAT-084-phantom-soldier-model.md`。BP_Phantom使用SK_Phantom_Soldier，复用原骨架/动画/AnimBP/PhysicsAsset；3套材质、12张贴图已接入。
-- 最终实际PIE五条动作、隐身恢复、布娃娃模拟通过；真实EnemyDeathRagdoll回归Success；16资产冷引用审计通过，TestMap和原Skeleton未改。
-- 启动索引回到此前FEAT-083；目录整理468项及冷验证详情见`archive/FEAT-083-enemy-character-asset-organization.md`，本轮未继续其他功能。
+- Active feature：FEAT-085 执行官 Lobby 展示。首批 Relax 持枪成品与 BP_Executive_Lobby 已完成，等待用户按前面约定确认比例、握持后再做举枪及正式选角接入。
+- 保留 A0102 原身材、CAT 蒙皮；在 TMIIR 重定向，在外部 Blender 烘焙左臂握枪修正。3.2667 秒、30fps，含自带狙击枪、深色材质与红色全息。
+- 实际 LobbyMap PIE 播放和清晰近、远截图通过，正式地图未保存替换；31 个成品资产冷加载与依赖审计通过。详见 archive/FEAT-085-executive-lobby.md。
+- Phantom 腿偏细及鞋底悬空明确暂缓，见 FEAT-084 archive；本轮未修改 Phantom。
 
 ## 会话交接
 
-- 2026-09-15：本次用户授权工作已完成。外部可编辑Blend/FBX及验证证据在`D:\Blender Projects\PhantomSoldier`；Max原绑定恢复记录见`archive/A0100-external-rig-recovery.md`。
-- 本轮操作前检查点`551ff37`；此次新网格、材质、贴图、BP及harness结果未最终提交或push。
-- 动画/隐身预览为外部UE_*.png；隐身仅身体透明、枪仍可见为原有逻辑。用户尚未反馈新外观观感。
-- 无动画重定向、IK Retargeter或动画生成；未新增永久地图摆件。所有验证编辑器已退出。
-- 已有索引问题：FEAT-080跨两个JSON重复（HEAD已存在）；本次FEAT-084唯一，未扩大范围修复历史条目。
+- 外部工程及所有证据：D:/Blender Projects/ExecutiveLobby。Executive_Relaxed.blend 可编辑，Executive_Relaxed_Loop.gif 为循环预览；Lobby_Executive_Relaxed.png 和 Lobby_Executive_Hands.png 为大厅 PIE 截图。
+- 目标入口：/Game/Characters/TheExecutive/Lobby/Blueprint/BP_Executive_Lobby。目前仅 Relaxed，Rifle/Standing 未配置；正式大厅仍使用维修工，下一步按用户观感反馈继续。
+- 操作前本地检查点 56ce39f 保存此前 Phantom 及检查记录，未 push；本批执行官资产与 harness 未最终提交或 push。
+- 无 C++ 改动，无需重新构建；BP 已编译。重定向工具留在 TMIIR 的 ExecutiveWork；目标零源工作依赖、IK 资产及 Redirector。
+- 已有索引问题 FEAT-080 跨两 JSON 重复，非本轮引入，未扩大范围修复。

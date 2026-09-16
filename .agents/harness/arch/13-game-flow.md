@@ -1,5 +1,7 @@
 # 游戏流程（回合 + 死亡 → 大厅选角色 → 重开）
 
+FEAT-085执行官首批已提供BP_Executive_Lobby和Relax持枪成品，实际LobbyMap只做未保存的临时PIE预览；正式地图仍为维修工展示。执行官的举枪/Standing以及角色选择UI尚未接入，不能将首批单独BP等同于完整选角流程。
+
 > 地图现状（2026-09-14）：FEAT-045选角场景已恢复并正式保存为`/Game/Maps/Lobby/LobbyMap`，原同名弃用空地图已删除。326个大厅地图专属依赖已从素材包路径`/Game/Maps/SciFiIndustrialBase`迁至`/Game/Maps/Lobby/{Blueprint,Meshes,Materials,Textures,Audio}`，预计算数据仍为`/Game/Maps/Lobby/LobbyMap_BuiltData`。`/Game/Environment`保留给游戏环境中的交互与场景功能，不接收地图专属依赖。`UTheManGameInstance::LobbyMapName`原本就是`LobbyMap`，因此死亡返回大厅流程直接进入正式选角场景。
 
 ## 大厅人物展示资源（FEAT-082）

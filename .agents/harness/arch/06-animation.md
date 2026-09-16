@@ -1,5 +1,7 @@
 # 动画实例
 
+FEAT-085执行官首批：TheExecutive/Lobby/Animations/AS_Executive_Lobby_RelaxedIdle使用执行官原CAT衍生63骨Skeleton，30fps/3.2667秒；在TMIIR重定向原Rifle_01 Relaxed Idle后，外部烘焙左臂握持修正。成品无运行时IK，保留原比例；Rifle/Standing尚未制作，首批等观感反馈。
+
 ## 大厅持枪姿态（FEAT-082，2026-09-14）
 
 FEAT-082大厅：已移除旧LobbyCharacterAnimInstance及左臂IK；运行时由LobbyPoseBlendAnimInstance混合每枪成品。每把正式武器配置独立两条Relaxed与一条Rifle成品序列，Blender对照Phantom修正左前臂、手腕及拇指／四指前两节旋转，TMIIR生成最终序列；上臂与肘部位置、身体／右手保持。共九条按枪命名成品，目标不保留动画制作Rig或Retargeter。
