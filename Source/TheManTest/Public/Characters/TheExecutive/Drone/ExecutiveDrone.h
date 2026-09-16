@@ -25,6 +25,8 @@ public:
  UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Drone") TObjectPtr<UExecutiveDroneMovementComponent> Flight;
  UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Drone|AI") TObjectPtr<UBehaviorTree> FollowTree;
  UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Drone|Follow") FVector FollowOffset = FVector(-130,130,100);
+ UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Drone|Follow",meta=(ClampMin="0.0")) float FollowStartDistance = 300.f;
+ UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Drone|Follow",meta=(ClampMin="0.0")) float FollowStopDistance = 180.f;
  UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Drone|Lobby") FVector LobbyOffset = FVector(85,15,180);
  UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Drone|Lobby") float TurnInterval = 12.f;
  UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Drone|Lobby") float TurnDuration = 5.f;
@@ -38,6 +40,7 @@ public:
 private:
  UPROPERTY(Transient) TWeakObjectPtr<AActor> Leader;
  TArray<FVector> Breadcrumbs;
+ bool bFollowing = false;
  float Age = 0.f;
  float LastYaw = 0.f;
  bool HasClearPath(const FVector& Target) const;

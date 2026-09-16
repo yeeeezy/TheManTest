@@ -5,6 +5,18 @@
     "status_scope":  "done",
     "features":  [
 {
+    "id": "FEAT-090",
+    "name": "Distance-only Executive drone following",
+    "status": "done",
+    "archive_file": "archive/FEAT-090-drone-distance-follow.md",
+    "done_criteria": [
+        "Stationary player yaw does not move or rotate drone",
+        "Distance hysteresis following with existing local avoidance",
+        "Lobby behavior unchanged; build and actual PIE pass"
+    ],
+    "verification_evidence": "distance-build.log Succeeded; distance-pie.json and distance-obstacles.json ok=true. Actual secondary-monitor PIE: lobby full turn,160deg/reverse yaw holds drone position/yaw, small movement holds,900cm owner displacement resumes follow and settles184.98cm;343 wall samples no penetration, pause freezes, unpossess destroys Pawn/controller. No asset/map changes."
+},
+{
     "id": "FEAT-089",
     "name": "Executive drone follow AI and lobby idle flight",
     "status": "done",

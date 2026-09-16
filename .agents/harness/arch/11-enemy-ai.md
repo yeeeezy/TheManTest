@@ -183,3 +183,7 @@ Near／FarPhaseSkill 任务比较启动前后的 Active Spec，保存自己新�
 Owner-local classes live in Characters/TheExecutive/Drone, not Enemy. AExecutiveDroneAIController runs /Game/Characters/TheExecutive/Drone/AI/BT_ExecutiveDrone with BB_ExecutiveDrone (Leader Object, FollowLocation Vector). UBTTask_ExecutiveDroneFollow stays active and updates following goals. Movement is handled by UExecutiveDroneMovementComponent (acceleration-limited swept movement and slide); Pawn chooses direct owner-relative anchor, visible recorded owner-path points, then local sphere-checked detours. This is local avoidance, not general 3D global pathfinding. Hidden/lobby drone does not run gameplay AI. AI is destroyed with its Pawn; gameplay pause freezes movement.
 
 Behavior tree owns follow decisions only. No drone GA/ASC, attack or damage implementation in this phase. Future Executive GAS integration remains separate work.
+
+## FEAT-090 distance-only follow update
+
+Gameplay no longer rotates its anchor or idle yaw with the player. FollowStartDistance defaults300cm and FollowStopDistance180cm, measured from owner position plus FollowOffset.Z. Start/stop hysteresis preserves a world-space hold point while nearby; when far, radial approach and existing local avoidance bring it closer. Only flight velocity steers gameplay yaw. FollowOffset.X/Y affect initial spawning only; Lobby still uses owner-relative LobbyOffset and its existing hover/full-turn logic. Tuning lives in BP_ExecutiveDrone Drone|Follow.

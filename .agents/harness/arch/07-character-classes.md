@@ -130,3 +130,7 @@ AFPSTheExecutive and AExecutiveLobbyCharacter own UExecutiveDroneComponent. Thei
 AExecutiveDrone owns sphere collision32cm, DroneMesh and UExecutiveDroneMovementComponent. BP mesh is60cm wide, recentered, relative yaw -90 to align native +Y art with movement +X; LobbyYawOffset90 preserves lobby facing. Lobby offset(-65,15,180), gameplay offset(-130,130,100), rotated by owner yaw. Only WorldStatic blocks movement; drone does not intercept WorldDynamic projectiles. No attack, health system, ASC or granted abilities on drone in this phase.
 
 18 packages under Executive/Drone own mesh/skeleton/physics/material/4textures/6sequences/BP/ABP/BT/BB. TMIIR originals unchanged; no retargeting. Native drone skeleton is the final runtime skeleton, not a humanoid retarget source. Idle/TurnLeft/TurnRight are active; Attack/Landing/Death reserved for later approved work.
+
+## FEAT-090 distance-only follow update
+
+Gameplay no longer rotates its anchor or idle yaw with the player. FollowStartDistance defaults300cm and FollowStopDistance180cm, measured from owner position plus FollowOffset.Z. Start/stop hysteresis preserves a world-space hold point while nearby; when far, radial approach and existing local avoidance bring it closer. Only flight velocity steers gameplay yaw. FollowOffset.X/Y affect initial spawning only; Lobby still uses owner-relative LobbyOffset and its existing hover/full-turn logic. Tuning lives in BP_ExecutiveDrone Drone|Follow.

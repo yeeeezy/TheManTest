@@ -35,7 +35,7 @@ void AExecutiveDrone::BeginPlay()
  Super::BeginPlay();
  Collision->IgnoreActorWhenMoving(Leader.Get(),true);
  if(bLobbyPresentation) Collision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
- FlightGoal=GetAnchor(); LastYaw=GetActorRotation().Yaw;
+ FlightGoal=bLobbyPresentation?GetAnchor():GetActorLocation(); LastYaw=GetActorRotation().Yaw;
  AddTickPrerequisiteComponent(Flight); DroneMesh->AddTickPrerequisiteActor(this);
  if(!bLobbyPresentation) SpawnDefaultController();
 }
@@ -43,7 +43,10 @@ FVector AExecutiveDrone::GetAnchor() const
 {
  if(!Leader.IsValid()) return GetActorLocation();
  const FRotator Heading(0,Leader->GetActorRotation().Yaw,0);
- return Leader->GetActorLocation()+Heading.RotateVector(bLobbyPresentation?LobbyOffset:FollowOffset);
+ if(bLobbyPresentation) return Leader->GetActorLocation()+Heading.RotateVector(LobbyOffset);
+ const FVector Center=Leader->GetActorLocation()+FVector(0,0,FollowOffset.Z);
+ const FVector Delta=GetActorLocation()-Center;
+ return Center+Delta.GetSafeNormal()*FMath::Min(Delta.Size(),FMath::Max(0.f,FollowStopDistance));
 }
 bool AExecutiveDrone::HasClearPath(const FVector& Target) const
 {
@@ -53,8 +56,18 @@ bool AExecutiveDrone::HasClearPath(const FVector& Target) const
 void AExecutiveDrone::UpdateFollowGoal()
 {
  if(!Leader.IsValid()) return;
- const FVector Anchor=GetAnchor();
  const FVector Trail=Leader->GetActorLocation()+FVector(0,0,FollowOffset.Z);
+ const float Distance=FVector::Dist(GetActorLocation(),Trail);
+ const float StopDistance=FMath::Max(0.f,FollowStopDistance);
+ const float StartDistance=FMath::Max(FollowStartDistance,StopDistance+50.f);
+ if(!bFollowing && Distance>StartDistance) bFollowing=true;
+ if(bFollowing && Distance<=StopDistance+5.f)
+ {
+  bFollowing=false;
+  FlightGoal=GetActorLocation();
+ }
+ if(!bFollowing) { Breadcrumbs.Reset(); return; }
+ const FVector Anchor=GetAnchor();
  if(Breadcrumbs.IsEmpty() || FVector::DistSquared(Trail,Breadcrumbs.Last())>FMath::Square(60.f))
  { Breadcrumbs.Add(Trail); if(Breadcrumbs.Num()>96) Breadcrumbs.RemoveAt(0); }
  FlightGoal=Anchor;
@@ -79,10 +92,10 @@ void AExecutiveDrone::Tick(float Dt)
  Super::Tick(Dt);
  if(!Leader.IsValid()) {Destroy();return;}
  Age+=Dt;
- float TargetYaw=Leader->GetActorRotation().Yaw;
+ float TargetYaw=GetActorRotation().Yaw;
  if(bLobbyPresentation)
  {
-  TargetYaw+=LobbyYawOffset;
+  TargetYaw=Leader->GetActorRotation().Yaw+LobbyYawOffset;
   FlightGoal=GetAnchor()+FVector(4.f*FMath::Sin(Age*.7f),3.f*FMath::Cos(Age*.6f),4.f*FMath::Sin(Age*1.2f));
   const float Interval=FMath::Max(TurnInterval,TurnDuration+1.f);
   const float Phase=FMath::Fmod(Age,Interval);
