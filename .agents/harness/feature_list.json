@@ -1,12 +1,14 @@
 {
     "schema_version": "1.0",
+    "deferred_ui_feedback": "2026-09-16: User deferred all UI revisions until tomorrow. Latest Weapon design reference keeps original layout, yellow WEAPON heading and short yellow divider. Character next-character/start-game proposal is not implemented; revisit design feedback tomorrow.",
     "deferred_visual_feedback": "2026-09-15: FEAT-084 Phantom leg thickness and apparent foot-ground gap need later visual correction; user explicitly deferred changes. Diagnose against original model and runtime ground/capsule measurements first. See archive/FEAT-084-phantom-soldier-model.md. A0102 Executive lobby presentation and character selection completed in FEAT-085; see its archive and D:/Blender Projects/ExecutiveLobby.",
     "external_asset_handoff": "2026-09-15: User-authorized A0100 CAT/Skin recovery complete outside UE at D:/Blender Projects/A0100_RigRecovery. Blend and rigged FBX delivered; deformation and FBX reimport validated. Source assets unchanged. Subsequent FEAT-084 reskin and Phantom integration completed; see archive/FEAT-084-phantom-soldier-model.md. No retargeting.",
-    "last_updated": "2026-09-16-executive-lobby-complete",
+    "last_updated": "2026-09-16-executive-effects-complete",
     "active_animation_task": "Accepted behavior: ONLY delayed explosion damage triggers directional knockback on all actually damaged surviving enemies; first impact still damages and attaches without reaction. Development Editor Win64 and three focused PIE tests passed. Implementation f1eda8b and prior history were pushed to origin/main and remote SHA verified. User clarified that audio and remaining saved asset edits should also be published; supplemental commit includes all 88 remaining Content packages (73 modified, 15 new), including audio, hit texture, weapon settings, test maps and 80 external actors. Valid package headers and LFS tracking verified; 29.75 MB. No asset-content or source-code changes during publication. This supersedes earlier instructions to leave those asset edits local. Delivery and synchronization are tracked in Git.",
     "active_feature": null,
-    "archive_file": "archive/FEAT-085-executive-lobby.md",
+    "archive_file": "archive/FEAT-086-executive-original-effects.md",
     "features": [
+
         {
             "id": "FEAT-082",
             "name": "Lobby character presentation and Maintenance Worker assets",

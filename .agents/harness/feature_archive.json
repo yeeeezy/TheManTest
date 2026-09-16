@@ -1,9 +1,25 @@
 {
     "schema_version":  "1.0",
-    "last_updated": "2026-09-16-executive-lobby-complete",
+    "last_updated": "2026-09-16-executive-effects-complete",
     "source_file":  "feature_list.json",
     "status_scope":  "done",
     "features":  [
+{
+    "id": "FEAT-086",
+    "name": "Executive original red emissive and hologram look",
+    "status": "done",
+    "created": "2026-09-16",
+    "updated": "2026-09-16",
+    "archive_file": "archive/FEAT-086-executive-original-effects.md",
+    "current_batch": "Saved: original-style red emissive and localized face/chest glow; translucent hologram. Executive-specific native display subclass attaches lights to bones and hides them with actor. UI unchanged/deferred. Shutdown requested by user after completion.",
+    "done_criteria": [
+        "Save original-like red face/chest and translucent hologram effects",
+        "Verify actual Lobby Relax/Ready and character switching",
+        "Record results and shut down after completion as requested"
+    ],
+    "closed": "2026-09-16",
+    "verification_evidence": "effects-build-final.log Development Editor Win64 Succeeded. effects_author/refine saved 3 materials and display Blueprint; final face6lm. effects-pie-final.log and effects_pie.json13 checkpoints passed: Relax/Ready, bone-following lights, hide/restore on character switch, worker3 weapons, map unchanged. Final_Character_Executive_UI.png and Final_Weapon_Executive_UI.png inspected. effects_audit.json32 assets, persisted emission20/8/5 and opacity0.45, no source/retarget assets. Checkpoint392d853; final changes saved but uncommitted, no push."
+},
 {
     "id": "FEAT-085",
     "name": "Executive lobby rifle presentation",

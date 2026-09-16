@@ -1,6 +1,8 @@
 # 具体角色类
 
-FEAT-085：`/Game/Characters/TheExecutive/Lobby/Blueprint/BP_Executive_Lobby`直接继承ALobbyCharacterBase，具有Relaxed和Rifle成品；网格/目标Skeleton/静态狙击枪/动画/材质纹理均归TheExecutive/Lobby。武器挂Bip01-R-Hand，各姿态挂点由成品动画与枪的世界姿态计算。大厅Controller按Character选择生成并缓存展示实例；未替换可玩执行官。基类DisplayWeaponName/Description为没有WeaponPresentations列表的单枪角色提供武器页英文文案。Standing非本批范围。
+FEAT-086（2026-09-16）：BP_Executive_Lobby现继承AExecutiveLobbyCharacter→ALobbyCharacterBase。专属Native类位于Characters/TheExecutive/Lobby，创建FaceGlow/ChestGlow两个无阴影Movable PointLight，分别跟随Bip01-Head／Bip01-Spine4；仅LightingChannel1，间接强度0。BP配置Face=6lm、24cm半径、10cm光源半径、SpecularScale0.3；Chest=1.2lm、22cm半径、6cm光源半径、SpecularScale0.05；局部位置按原骨骼计算并保存。SetActorHiddenInGame同步关闭／恢复两灯，避免切回维修工时残留红光。专属Armor／Sniper／Hologram材质新增EmissionStrength=20／8／5，HologramOpacity=0.45。没有动态粒子、改骨架或全局曝光调整。
+
+FEAT-085：`/Game/Characters/TheExecutive/Lobby/Blueprint/BP_Executive_Lobby`具有Relaxed和Rifle成品，现继承链见上方FEAT-086；网格/目标Skeleton/静态狙击枪/动画/材质纹理均归TheExecutive/Lobby。武器挂Bip01-R-Hand，各姿态挂点由成品动画与枪的世界姿态计算。大厅Controller按Character选择生成并缓存展示实例；未替换可玩执行官。基类DisplayWeaponName/Description为没有WeaponPresentations列表的单枪角色提供武器页英文文案。Standing非本批范围。
 
 ## 大厅展示角色（FEAT-082）
 
