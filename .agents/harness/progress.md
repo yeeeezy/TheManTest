@@ -1,10 +1,13 @@
-﻿# 当前工作面板
+# Current work
 
-- FEAT-089执行中：用户授权执行官无人机仅跟随+Lobby待机飞行偶尔转一圈，暂不接攻击/血量/GAS/降落。
-- 14包源资产迁入并归档，18项目标资产含BP/ABP/BT/BB；专属AI/飞行与双场景生命周期代码已编译。
+- FEAT-089 complete and archived: Executive drone follow with dedicated AI/BT and lobby hover/occasional full turn.
+- Weapon framing correction also complete: Executive/Infiltrator ViewmodelRoot matches Worker; real3-character PIE verified.
 
-## 会话交接
+## Handoff
 
-- 基线6491f27已推送，开始时干净，无额外checkpoint；本轮结果不自动提交。
-- 外部证据D:/UnrealWork/ExecutiveDrone，author.json ok=true，build.log成功，PIE验证进行中。
-- TMIIR源14资产校验不变；目标MilitaryDrone旧路径Registry为0，磁盘空目录待清理。没有修改地图或动画重定向。
+- Evidence D:/UnrealWork/ExecutiveDrone: build.log Succeeded; pie.json, obstacles.json, cold.json and weapon-pie.json ok=true. Final rendered viewport screenshots inspected.
+- Cold audit18 packages/20registry entries, no vendor refs or redirects; maps unchanged. Source TMIIR unchanged. No retargeting.
+- Local checkpoint14adb1f contains drone implementation; later two combat BP fixes and docs remain uncommitted. No push performed.
+- All UE windows operated on secondary monitor via external launch_secondary.py; editors exited.
+- Current scope: follow/local obstacle avoidance, lobby idle/turn. No attacks/GAS/health/landing or global3D pathfinding. Those require future scope.
+- Other deferred features retain their existing status; no active feature selected.

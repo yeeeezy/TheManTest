@@ -1,5 +1,7 @@
 # AGENTS.md
 
+- User requirement (2026-09-16): open and operate every visible UE editor/PIE window on the secondary (non-primary) monitor; verify window placement. Headless commandlets may run in the background.
+
 TheManTest — UE 5.7.4 单人游戏项目。C++ 负责数据结构、GAS 配置和核心逻辑；蓝图负责组件连接和每个角色的参数配置。
 
 ## 启动流程

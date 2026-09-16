@@ -74,3 +74,7 @@ Capsule(root) [bUseControllerRotationYaw=true, bUseControllerRotationPitch=FALSE
 ## 装备初始化职责（2026-09-04）
 
 FPSCharacterBase 继续指定 EquipmentManager.AttachTargetMesh=ArmsViewMesh、初始化背包并预热初始姿势。首装与切装的延迟显示/VFX 统一归 EquipmentManager.QueueEquipPresentation，旧 PlayInitialEquipEffect 方法及角色定时回调已删除。
+
+## 2026-09-16 temporary combat character framing
+
+Executive/Infiltrator reuse Worker first-person assets and must also copy ViewmodelRoot SceneComponent transform. Current offset is(-6.153601,30.210103,-12.871626), now copied to both BPs. Do not reset to identity or historical -7cm. Rendered PIE verified root/arms/camera positions,90-degree FOV,anim class and RepairGun attached to ArmsViewMesh/GripPoint1 match across all3 characters. Lobby uses independent presentation settings.

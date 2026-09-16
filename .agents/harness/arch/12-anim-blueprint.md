@@ -414,3 +414,7 @@ Cache_Locomotion → WeaponUpperBody → Slot"UpperBody" → WeaponAimOffset →
 - MaintenanceWorker 身体资产的视觉正前方为 Mesh 局部 `+Y`；`CharacterMesh0`、`ShadowBodyMesh`、`LegsMesh` 必须使用蓝色 Z/Yaw `-90°`，把视觉 `+Y` 对齐 Character/Actor 的 `+X` 前向箭头。第一人称 `ArmsViewMesh` 的相机空间构图旋转保持独立，不得用它反推或覆盖身体朝向。Unreal Python 的 `Rotator` 位置参数为 roll/pitch/yaw，脚本写 Yaw 时必须使用第三个参数。
 - 初始装备完成链接后，在首个渲染帧前对 CharacterMesh0 与 ArmsViewMesh 执行零时长动画评估，避免冷启动入口 Pose 闪帧。
 - 无引用旧 `ABP_CharacterBase` 已删除；正式运行类仅保留模板 `TABP_BodyLocomotion` → 最终 `ABP_CharacterBase_Body` → RepairGun Linked Layer。
+
+## FEAT-089 Executive drone animation
+
+/Game/Characters/TheExecutive/Drone/Animations/ABP_ExecutiveDrone derives from UExecutiveDroneAnimInstance. Three looping sequence players feed BlendListByInt using native FlightPose (0Idle,1TurnLeft,2TurnRight),0.3s blend. Pawn yaw rate selects turning above18deg/s and returns to idle below8deg/s. No retargeting or root-motion locomotion. Attack/Landing/Death sequences are migrated but intentionally not connected until those mechanics are authorized.

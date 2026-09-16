@@ -5,6 +5,19 @@
     "status_scope":  "done",
     "features":  [
 {
+    "id": "FEAT-089",
+    "name": "Executive drone follow AI and lobby idle flight",
+    "status": "done",
+    "archive_file": "archive/FEAT-089-executive-drone-follow.md",
+    "done_criteria": [
+        "Owner-local finalized drone assets with no vendor paths or retargeting.",
+        "Dedicated Pawn/AIController/BT/Blackboard, swept following and clean Executive lifecycle.",
+        "Lobby-only idle hover and occasional full turn, follows Executive visibility without combat.",
+        "Build, BP/AnimBP compile, actual PIE behavior and rendered screenshots pass; no map/test fixtures saved."
+    ],
+    "verification_evidence": "D:/UnrealWork/ExecutiveDrone: build.log Succeeded; author.json, pie.json, obstacles.json, cold.json all ok=true. Full lobby hover/turn/visibility, real travel/movement/settle, wall avoidance, pause and unpossess cleanup passed. 18 packages, no vendor refs or redirectors, six sequences final skeleton, BP/ABP compile. Final_Character00000/Final_Weapon00000 actual rendered viewport inspected after native F11; drone visible, clear of UI. Both map hashes unchanged. Prior weapon repair weapon-pie.json passed3 characters. Local checkpoint14adb1f; no push."
+},
+{
     "id": "FEAT-088",
     "name": "Lobby subject focus for character and weapon pages",
     "status": "done",

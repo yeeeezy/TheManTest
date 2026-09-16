@@ -122,3 +122,11 @@ FLobbyWeaponPresentation新增Thumbnail(UTexture2D)，用于三枪实际模型�
 用户授权先补齐 BP_FPSTheExecutive 与 BP_Infiltrator 的临时可玩配置。两者保留各自原生父类、资产路径、角色 ID 和专属技能，引用维修工当前身体、第一人称手臂、腿部、AnimBP、材质与三枪初始装备；不覆盖独立大厅展示。潜伏者原 BGA_InfiltratorScan 保留。没有复制源骨架或新增动画资产，没有重定向。
 
 为匹配当前实际维修工 BeginPlay 行为，临时 BP 的 Walk/Sprint 为 550/750，MaxAcceleration=2000、BrakingDecelerationWalking=750；不是旧序列化的 100/300。后续换正式角色战斗资源时在各自 BP 独立替换。当前角色专属身体/武器表现不代表已完成。
+
+## FEAT-089 Executive companion drone (2026-09-16)
+
+AFPSTheExecutive and AExecutiveLobbyCharacter own UExecutiveDroneComponent. Their BPs configure BP_ExecutiveDrone at /Game/Characters/TheExecutive/Drone/Blueprint; lobby sets presentation mode. Gameplay spawn requires player control and living owner; unpossess, owner EndPlay/death removes the drone and its AI controller. Lobby uses the same Pawn without AI, mirrors owner visibility, hovers and completes a smooth full yaw turn every12 game seconds (last5 seconds turning).
+
+AExecutiveDrone owns sphere collision32cm, DroneMesh and UExecutiveDroneMovementComponent. BP mesh is60cm wide, recentered, relative yaw -90 to align native +Y art with movement +X; LobbyYawOffset90 preserves lobby facing. Lobby offset(-65,15,180), gameplay offset(-130,130,100), rotated by owner yaw. Only WorldStatic blocks movement; drone does not intercept WorldDynamic projectiles. No attack, health system, ASC or granted abilities on drone in this phase.
+
+18 packages under Executive/Drone own mesh/skeleton/physics/material/4textures/6sequences/BP/ABP/BT/BB. TMIIR originals unchanged; no retargeting. Native drone skeleton is the final runtime skeleton, not a humanoid retarget source. Idle/TurnLeft/TurnRight are active; Attack/Landing/Death reserved for later approved work.
