@@ -1,4 +1,8 @@
 #include "Core/CharacterSelectCameraSwitcher.h"
+#include "Core/CharacterSelectPlayerController.h"
+#include "Characters/CharacterBase/Lobby/LobbyCharacterBase.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 
 #include "Camera/CameraActor.h"
 #include "CineCameraActor.h"
@@ -165,6 +169,38 @@ void ACharacterSelectCameraSwitcher::SyncRigCameraSettings() const
 	RigComponent->SetFilmback(SourceComponent->Filmback);
 	RigComponent->SetLensSettings(SourceComponent->LensSettings);
 	FCameraFocusSettings Focus = SourceComponent->FocusSettings;
+	// Focus on the displayed subject, not the scene camera's old fixed distance.
+	// A focal plane uses forward depth, rather than distance to an off-centre subject.
+	if (auto* PC = Cast<ACharacterSelectPlayerController>(GetWorld()->GetFirstPlayerController()))
+	{
+		if (const ALobbyCharacterBase* Character = PC->GetDisplayCharacter())
+		{
+			const UPrimitiveComponent* Subject = Character->DisplayMesh;
+			bool bWeaponSubject = false;
+			if (bUsingNearCamera)
+			{
+				if (Character->DisplayWeapon && Character->DisplayWeapon->GetStaticMesh() && Character->DisplayWeapon->IsVisible())
+					Subject = Character->DisplayWeapon;
+				else if (Character->DisplaySkeletalWeapon && Character->DisplaySkeletalWeapon->GetSkeletalMeshAsset() && Character->DisplaySkeletalWeapon->IsVisible())
+					Subject = Character->DisplaySkeletalWeapon;
+				bWeaponSubject = Subject && Subject != Character->DisplayMesh;
+			}
+			if (Subject)
+			{
+				const FBoxSphereBounds Bounds = Subject->CalcBounds(Subject->GetComponentTransform());
+				FVector FocusPoint = Bounds.Origin;
+				// Upper torso keeps the face and body near the character page's focal plane.
+				if (!bWeaponSubject) FocusPoint.Z += Bounds.BoxExtent.Z * 0.35f;
+				const float Depth = FVector::DotProduct(FocusPoint - RigComponent->GetComponentLocation(), RigComponent->GetForwardVector());
+				if (Depth > 0.f)
+				{
+					Focus.FocusMethod = ECameraFocusMethod::Manual;
+					Focus.FocusOffset = 0.f;
+					Focus.ManualFocusDistance = Depth;
+				}
+			}
+		}
+	}
 	Focus.ManualFocusDistance = FMath::Lerp(StartFocusDistance, Focus.ManualFocusDistance, TransitionAlpha);
 	Focus.bSmoothFocusChanges = false;
 	RigComponent->SetFocusSettings(Focus);

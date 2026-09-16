@@ -5,6 +5,18 @@
     "status_scope":  "done",
     "features":  [
 {
+    "id": "FEAT-088",
+    "name": "Lobby subject focus for character and weapon pages",
+    "status": "done",
+    "archive_file": "archive/FEAT-088-lobby-subject-focus.md",
+    "done_criteria": [
+        "Focus character upper torso in far view and visible weapon bounds in near view.",
+        "Retain lens, aperture, camera framing and smooth transitions; validate both characters, worker weapons and F11 in rendered PIE.",
+        "Development Editor build passes; no map/assets saved."
+    ],
+    "verification_evidence": "build-fix.log Development Editor Win64 succeeded; fixed.json ok=true, nine actual rendered PIE samples across Worker/Executive, three Worker guns, native F11 character and weapon roundtrip. Runtime focus matches subject forward depth within 0.001 cm at sampled frames. Both map hashes unchanged; no asset saves. Screenshots reviewed; evidence D:/UnrealWork/LobbyFocus. Checkpoint f5449f5; final change uncommitted."
+},
+{
     "id": "FEAT-087",
     "name": "Lobby UI navigation and selected-character start game",
     "status": "done",
